@@ -1,0 +1,5 @@
+# MiniMIP default bazel build setup.
+build --show_timestamps
+build --color=yes
+build --keep_going
+build --cxxopt=-std=c++17
