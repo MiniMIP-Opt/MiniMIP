@@ -1,1 +1,3 @@
 bazel-*
+minimip/testing/minimip.code-workspace
+.vscode/settings.json
