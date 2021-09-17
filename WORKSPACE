@@ -1,5 +1,39 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rules_foreign_cc",
+    # TODO: Get the latest sha256 value from a bazel debug message or the latest
+    #       release on the releases page: https://github.com/bazelbuild/rules_foreign_cc/releases
+    #
+    # sha256 = "...",
+    strip_prefix = "rules_foreign_cc-f01fd353ee2adcd55aab899c12fa2733223228a1",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/f01fd353ee2adcd55aab899c12fa2733223228a1.tar.gz",
+)
+
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
+_ALL_CONTENT = """\
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+"""
+
+# soplex source code repository
+http_archive(
+    name = "soplex",
+    build_file_content = _ALL_CONTENT,
+    strip_prefix = "soplex-master",
+    urls = [
+        "https://github.com/scipopt/soplex/archive/refs/heads/master.zip",
+    ],
+    # sha256 = "0b8e7465dc5e98c757cc3650a20a7843ee4c3edf50aaf60bb33fd879690d2c73",
+)
 
 # Extra Bazel utilities that may be handy.
 git_repository(
@@ -85,7 +119,7 @@ http_archive(
     url = "http://www.tcs.hut.fi/Software/bliss/bliss-0.73.zip",
 )
 
-# SCIP -- MIP solver, available via OR-Tools MPSolver. Also includes SoPlex.
+# SCIP -- MIP solver, available via OR-Tools MPSolver. Also includes SoPlex. (It does not)
 http_archive(
     name = "scip",
     build_file = "@com_google_ortools//bazel:scip.BUILD",

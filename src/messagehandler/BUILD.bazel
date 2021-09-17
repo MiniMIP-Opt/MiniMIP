@@ -1,0 +1,17 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "message_handler",
+    srcs = ["message_handler.cc"],
+    hdrs = ["message_handler.h"],
+)
+
+cc_library(
+    name = "message_macros",
+    srcs = ["message_macros.h"],
+    deps = [":message_handler"],
+)

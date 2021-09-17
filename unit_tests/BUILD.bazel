@@ -1,0 +1,55 @@
+# Testing utilities.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cc_test(
+    name = "bases_test",
+    size = "small",
+    srcs = ["bases.cc"],
+    deps = [
+        "//src/lp_interface:lpi_factory",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "matrix_test",
+    size = "small",
+    srcs = ["matrix.cc"],
+    deps = [
+        "//src/lp_interface:lpi_factory",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "bound_changes_test",
+    size = "small",
+    srcs = ["bound_changes.cc"],
+    deps = [
+        "//src/lp_interface:lpi_factory",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "solve_test",
+    size = "small",
+    srcs = ["solve.cc"],
+    deps = [
+        "//src/lp_interface:lpi_factory",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "change_test",
+    size = "small",
+    srcs = ["change.cc"],
+    deps = [
+        "//src/lp_interface:lpi_factory",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
