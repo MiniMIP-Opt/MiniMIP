@@ -7,11 +7,11 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
     name = "gtest_main",
     srcs = ["gtest_main.cc"],
-    alwayslink = True,
     deps = [
         "@com_google_googletest//:gtest",
         "@com_google_ortools//ortools/base",
     ],
+    alwayslink = True,
 )
 
 cc_test(

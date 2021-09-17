@@ -1,0 +1,73 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cmake(
+    name = "soplex",
+    cache_entries = {
+        "CMAKE_CXX_FLAGS": "-Wno-psabi",
+        "CMAKE_DISABLE_FIND_PACKAGE_GMP": "True",
+        "CMAKE_DISABLE_FIND_PACKAGE_ZLIB": "True",
+        "BOOST": "off"
+    },
+    lib_source = "@soplex//:all_srcs",
+    out_static_libs = ["libsoplex.a"],
+)
+
+cc_library(
+     name = "lpi",
+     hdrs = ["lpi.h"],
+     deps = [
+         "//src/lp_interface:lp_types",
+         "//src/messagehandler:message_handler",
+     ],
+ )
+
+cc_library(
+    name = "lpi_glop",
+    srcs = ["lpi_glop.cc"],
+    hdrs = ["lpi_glop.h"],
+    deps = [
+        "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/lp_data:lp_data_utils",
+        "@com_google_ortools//ortools/lp_data:lp_print_utils",
+        "@com_google_ortools//ortools/lp_data:proto_utils",
+        "@com_google_ortools//ortools/lp_data:scattered_vector",
+        "@com_google_ortools//ortools/util:file_util",
+        "@com_google_ortools//ortools/util:stats",
+        "@com_google_ortools//ortools/util:time_limit",
+        "@com_google_ortools//ortools/glop:revised_simplex",
+        "@com_google_ortools//ortools/glop:lp_solver",
+        "//src/minimip:minimip_def",
+        ":lpi",
+    ],
+)
+
+cc_library(
+    name = "lpi_soplex",
+    srcs = ["lpi_soplex.cc"],
+    hdrs = ["lpi_soplex.h"],
+    deps = [
+        ":soplex",
+        "//src/minimip:minimip_def",
+        ":lpi",
+    ],
+    linkstatic = True,
+)
+
+cc_library(
+    name = "lpi_factory",
+    hdrs = ["lpi_factory.h"],
+    deps = [
+        ":lpi_glop",
+        ":lpi_soplex",
+    ]
+)
+
+cc_library(
+    name = "lp_types",
+    hdrs = ["lp_types.h"]
+)
