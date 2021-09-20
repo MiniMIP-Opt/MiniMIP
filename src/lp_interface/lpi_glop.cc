@@ -879,7 +879,7 @@ RetCode LPGlopInterface::StrongbranchFractionalValue(
 
 /** performs strong branching iterations on given @b fractional candidates */
 RetCode LPGlopInterface::StrongbranchFractionalValues(
-  LPNumArray& cols,                       /**< columns to apply strong branching on */
+  LPIndexArray& cols,                       /**< columns to apply strong branching on */
   LPNum num_cols,                         /**< number of columns */
   LPValueArray& primal_sols,              /**< fractional current primal solution values of columns */
   LPNum iteration_limit,                  /**< iteration limit for strong branchings */
@@ -916,7 +916,7 @@ RetCode LPGlopInterface::StrongbranchIntegerValue(
 
 /** performs strong branching iterations on given candidates with @b integral values */
 RetCode LPGlopInterface::StrongbranchIntegerValues(
-  LPNumArray& cols,                       /**< columns to apply strong branching on */
+  LPIndexArray& cols,                       /**< columns to apply strong branching on */
   LPNum num_cols,                         /**< number of columns */
   LPValueArray& primal_sols,              /**< current integral primal solution values of columns */
   LPNum iteration_limit,                  /**< iteration limit for strong branchings */

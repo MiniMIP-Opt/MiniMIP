@@ -416,7 +416,7 @@ class MoreVarsThanRows : public ::testing::Test {
     /* initialize program */
     LPNum ncols;
     LPIndexArray beg = {0};
-    LPNumArray inds(4);
+    LPIndexArray inds(4);
     LPNum nrows;
     LPValueArray vals(4);
     LPValueArray lb(1);
