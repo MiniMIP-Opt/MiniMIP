@@ -837,13 +837,8 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   if (DEF_INTERFACE == 0)
     ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"), RetCode::OKAY);
   else
-    {
-      RetCode ret = lp_interface_->ReadLP("lpi_change_test_problem.lp"); 
-      if (ret == RetCode::OKAY) std::cout << "OKAY!!" << std::endl;
-      if (ret == RetCode::READ_ERROR) std::cout << "READ_ERROR!!" << std::endl;
- 
-    ASSERT_EQ(ret, RetCode::OKAY);
-   }
+    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"), RetCode::OKAY);
+
   ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::OKAY);
   ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2, redcost2), RetCode::OKAY);
   ASSERT_FLOAT_EQ(objval, objval2);
