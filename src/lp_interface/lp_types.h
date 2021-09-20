@@ -6,10 +6,10 @@
 
 namespace minimip {
 
-typedef unsigned int LPIndex;
+typedef unsigned int LPIndex; /**< unsigned integer representing a number or count in LP solvers*/
 typedef std::vector<LPIndex> LPIndexArray;
 
-typedef unsigned int LPNum;
+typedef unsigned int LPNum; /**<  unsigned integer representing an index in LP solvers*/
 typedef std::vector<LPNum> LPNumArray;
 
 typedef long long LPLongInt;
