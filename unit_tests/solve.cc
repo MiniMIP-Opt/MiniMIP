@@ -86,8 +86,8 @@ class Solve : public ::testing::Test {
     bool dualfeasible;
     LPNum ntmprows;
     LPNum ntmpcols;
-    LPNum i;
-    LPNum j;
+    LPIndex i;
+    LPIndex j;
 
     /* check size */
     ntmprows = lp_interface_->GetNumberOfRows();
@@ -329,8 +329,8 @@ class Solve : public ::testing::Test {
     LPNum check_nrows;
     LPNum check_nnonz;
     LPNum check_nnonz2;
-    LPNum i;
-    LPNum j;
+    LPIndex i;
+    LPIndex j;
 
     /* check number of rows and columns */
     check_nrows = lp_interface_->GetNumberOfRows();

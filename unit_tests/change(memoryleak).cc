@@ -282,7 +282,7 @@ class Change : public ::testing::Test {
 //};
 //
 //TEST_P(ChangeObjective, checkChgObj) {
-//  LPIndex prob = std::get<2>(GetParam());
+//  LPNum prob = std::get<2>(GetParam());
 //  LPNum nrows, ncols, nnonz;
 //  LPObjectiveSense sense;
 //  LPIndexArray ind = {0, 1};
@@ -350,7 +350,7 @@ class Change : public ::testing::Test {
 //};
 //
 //TEST_P(ChangeBounds, checkChgBounds) {
-//  LPIndex prob = std::get<4>(GetParam());
+//  LPNum prob = std::get<4>(GetParam());
 //
 //  LPNum nrows, ncols, nnonz;
 //  LPIndexArray ind = {0, 1};
@@ -427,7 +427,7 @@ class Change : public ::testing::Test {
 //  LPValue left2 = substituteInfinity( std::get<1>(GetParam()) );
 //  LPValue right1 = substituteInfinity( std::get<2>(GetParam()) );
 //  LPValue right2 = substituteInfinity( std::get<3>(GetParam()) );
-//  LPIndex prob = std::get<4>(GetParam());
+//  LPNum prob = std::get<4>(GetParam());
 //
 //  LPNum nrows, ncols, nnonz;
 //  LPIndexArray ind = {0, 1};
@@ -479,7 +479,7 @@ class Change : public ::testing::Test {
 //TEST_P(ChangeObjectiveSense, ChgObjSen) {
 //
 //  LPObjectiveSense newsense = std::get<0>(GetParam());
-//  LPIndex prob = std::get<1>(GetParam());
+//  LPNum prob = std::get<1>(GetParam());
 //
 //  LPNum nrows, ncols, nnonz;
 //  LPObjectiveSense sense;

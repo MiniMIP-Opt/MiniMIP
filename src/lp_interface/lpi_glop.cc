@@ -100,14 +100,14 @@ RetCode LPGlopInterface::AddColumns(
 #ifndef NDEBUG
     /* perform check that no new rows are added */
     RowIndex num_rows = linear_program_.num_constraints();
-    for (LPNum j = 0; j < num_non_zeros; ++j) {
+    for (LPIndex j = 0; j < num_non_zeros; ++j) {
       assert(0 <= indices[j] && static_cast<int>(indices[j]) < num_rows.value());
       assert(vals[j] != 0.0);
     }
 #endif
 
     LPIndex nz = 0;
-    for (LPNum i = 0; i < num_cols; ++i) {
+    for (LPIndex i = 0; i < num_cols; ++i) {
       const ColIndex col = linear_program_.CreateNewVariable();
       linear_program_.SetVariableBounds(col, lower_bounds[i], upper_bounds[i]);
       linear_program_.SetObjectiveCoefficient(col, objective_values[i]);
@@ -119,7 +119,7 @@ RetCode LPGlopInterface::AddColumns(
     }
     assert(nz == num_non_zeros);
   } else {
-    for (LPNum i = 0; i < num_cols; ++i) {
+    for (LPIndex i = 0; i < num_cols; ++i) {
       const ColIndex col = linear_program_.CreateNewVariable();
       linear_program_.SetVariableBounds(col, lower_bounds[i], upper_bounds[i]);
       linear_program_.SetObjectiveCoefficient(col, objective_values[i]);
@@ -133,8 +133,8 @@ RetCode LPGlopInterface::AddColumns(
 
 /** deletes all columns in the given range from LP */
 RetCode LPGlopInterface::DeleteColumns(
-  LPNum first_col, /**< first column to be deleted */
-  LPNum last_col   /**< last column to be deleted */
+  LPIndex first_col, /**< first column to be deleted */
+  LPIndex last_col   /**< last column to be deleted */
 ) {
   assert(0 <= first_col && first_col <= last_col && last_col < linear_program_.num_variables());
 
@@ -142,7 +142,7 @@ RetCode LPGlopInterface::DeleteColumns(
 
   const ColIndex num_cols = linear_program_.num_variables();
   DenseBooleanRow columns_to_delete(num_cols, false);
-  for (LPNum i = first_col; i <= last_col; ++i)
+  for (LPIndex i = first_col; i <= last_col; ++i)
     columns_to_delete[ColIndex(static_cast<int>(i))] = true;
 
   linear_program_.DeleteColumns(columns_to_delete);
@@ -197,14 +197,14 @@ RetCode LPGlopInterface::AddRows(
 #ifndef NDEBUG
     /* perform check that no new columns are added - this is likely to be a mistake */
     const ColIndex num_cols = linear_program_.num_variables();
-    for (LPNum j = 0; j < num_non_zeros; ++j) {
+    for (LPIndex j = 0; j < num_non_zeros; ++j) {
       assert(vals[j] != 0.0);
       assert(0 <= indices[j] && static_cast<int>(indices[j]) < num_cols.value());
     }
 #endif
 
-    LPNum nz = 0;
-    for (LPNum i = 0; i < num_rows; ++i) {
+    LPIndex nz = 0;
+    for (LPIndex i = 0; i < num_rows; ++i) {
       const RowIndex row = linear_program_.CreateNewConstraint();
       linear_program_.SetConstraintBounds(row, left_hand_sides[i], right_hand_sides[i]);
       const LPNum end = (num_non_zeros == 0 || i == num_rows - 1) ? num_non_zeros : begin_rows[i + 1];
@@ -215,7 +215,7 @@ RetCode LPGlopInterface::AddRows(
     }
     assert(nz == num_non_zeros);
   } else {
-    for (LPNum i = 0; i < num_rows; ++i) {
+    for (LPIndex i = 0; i < num_rows; ++i) {
       const RowIndex row = linear_program_.CreateNewConstraint();
       linear_program_.SetConstraintBounds(row, left_hand_sides[i], right_hand_sides[i]);
     }
@@ -254,14 +254,14 @@ void LPGlopInterface::DeleteRowsAndUpdateCurrentBasis(
 
 /** deletes all rows in the given range from LP */
 RetCode LPGlopInterface::DeleteRows(
-  LPNum first_row, /**< first row to be deleted */
-  LPNum last_row   /**< last row to be deleted */
+  LPIndex first_row, /**< first row to be deleted */
+  LPIndex last_row   /**< last row to be deleted */
 ) {
   assert(0 <= first_row && first_row <= last_row && last_row < linear_program_.num_constraints());
 
   const RowIndex num_rows = linear_program_.num_constraints();
   DenseBooleanColumn rows_to_delete(num_rows, false);
-  for (LPNum i = first_row; i <= last_row; ++i)
+  for (LPIndex i = first_row; i <= last_row; ++i)
     rows_to_delete[RowIndex(static_cast<int>(i))] = true;
 
   MiniMIPdebugMessage("deleting rows %d to %d.\n", first_row, last_row);
@@ -323,7 +323,7 @@ RetCode LPGlopInterface::ChangeBounds(
 
   MiniMIPdebugMessage("changing %d bounds.\n", num_cols);
 
-  for (LPNum i = 0; i < num_cols; ++i) {
+  for (LPIndex i = 0; i < num_cols; ++i) {
     MiniMIPdebugMessage("  col %d: [%g,%g]\n", indices[i], lower_bounds[i], upper_bounds[i]);
 
     if (IsInfinity(lower_bounds[i])) {
@@ -352,7 +352,7 @@ RetCode LPGlopInterface::ChangeSides(
 
   MiniMIPdebugMessage("changing %d sides\n", num_rows);
 
-  for (LPNum i = 0; i < num_rows; ++i)
+  for (LPIndex i = 0; i < num_rows; ++i)
     linear_program_.SetConstraintBounds(RowIndex(static_cast<int>(indices[i])), left_hand_sides[i], right_hand_sides[i]);
 
   lp_modified_since_last_solve_ = true;
@@ -389,7 +389,7 @@ RetCode LPGlopInterface::ChangeObjective(
 
   MiniMIPdebugMessage("changing %d objective values\n", num_cols);
 
-  for (LPNum i = 0; i < num_cols; ++i)
+  for (LPIndex i = 0; i < num_cols; ++i)
     linear_program_.SetObjectiveCoefficient(ColIndex(static_cast<int>(indices[i])), new_obj_vals[i]);
 
   lp_modified_since_last_solve_ = true;
@@ -443,8 +443,8 @@ LPNum LPGlopInterface::GetNumberOfNonZeros() {
  *  either num_non_zeros, begin_cols, indices, and val have to be NULL, or all of them have to be non-NULL.
  */
 RetCode LPGlopInterface::GetColumns(
-  LPNum first_col,            /**< first column to get from LP */
-  LPNum last_col,             /**< last column to get from LP */
+  LPIndex first_col,            /**< first column to get from LP */
+  LPIndex last_col,             /**< last column to get from LP */
   LPValueArray& lower_bounds, /**< array to store the lower bound vector */
   LPValueArray& upper_bounds, /**< array to store the upper bound vector */
   LPNum& num_non_zeros,       /**< store the number of non-zero elements */
@@ -490,8 +490,8 @@ RetCode LPGlopInterface::GetColumns(
  *  either num_non_zeros, begin_rows, indices, and val have to be NULL, or all of them have to be non-NULL.
  */
 RetCode LPGlopInterface::GetRows(
-  LPNum first_row,                /**< first row to get from LP */
-  LPNum last_row,                 /**< last row to get from LP */
+  LPIndex first_row,                /**< first row to get from LP */
+  LPIndex last_row,                 /**< last row to get from LP */
   LPValueArray& left_hand_sides,  /**< array to store left hand side vector */
   LPValueArray& right_hand_sides, /**< array to store right hand side vector */
   LPNum& num_non_zeros,           /**< store the number of non-zero elements */
@@ -531,8 +531,8 @@ RetCode LPGlopInterface::GetRows(
 
 /** gets objective coefficients from LP problem object */
 RetCode LPGlopInterface::GetObjective(
-  LPNum first_col,         /**< first column to get objective coefficient for */
-  LPNum last_col,          /**< last column to get objective coefficient for */
+  LPIndex first_col,         /**< first column to get objective coefficient for */
+  LPIndex last_col,          /**< last column to get objective coefficient for */
   LPValueArray& obj_coeffs /**< array to store objective coefficients */
 ) {
   assert(first_col <= last_col);
@@ -550,8 +550,8 @@ RetCode LPGlopInterface::GetObjective(
 
 /** gets current bounds from LP problem object */
 RetCode LPGlopInterface::GetBounds(
-  LPNum first_col,            /**< first column to get bounds for */
-  LPNum last_col,             /**< last column to get bounds for */
+  LPIndex first_col,            /**< first column to get bounds for */
+  LPIndex last_col,             /**< last column to get bounds for */
   LPValueArray& lower_bounds, /**< array to store lower bound values */
   LPValueArray& upper_bounds  /**< array to store upper bound values */
 ) {
@@ -573,8 +573,8 @@ RetCode LPGlopInterface::GetBounds(
 
 /** gets current row sides from LP problem object */
 RetCode LPGlopInterface::GetSides(
-  LPNum first_row,               /**< first row to get sides for */
-  LPNum last_row,                /**< last row to get sides for */
+  LPIndex first_row,               /**< first row to get sides for */
+  LPIndex last_row,                /**< last row to get sides for */
   LPValueArray& left_hand_sides, /**< array to store left hand side values */
   LPValueArray& right_hand_sides /**< array to store right hand side values */
 ) {
@@ -596,7 +596,7 @@ RetCode LPGlopInterface::GetSides(
 
 /** gets a single coefficient */
 RetCode LPGlopInterface::GetCoefficient(
-  LPNum row,         /**< row number of coefficient */
+  LPIndex row,         /**< row number of coefficient */
   LPIndex col_index, /**< column number of coefficient */
   LPValue& val       /**< array to store the value of the coefficient */
 ) {
@@ -879,7 +879,7 @@ RetCode LPGlopInterface::StrongbranchFractionalValue(
 
 /** performs strong branching iterations on given @b fractional candidates */
 RetCode LPGlopInterface::StrongbranchFractionalValues(
-  LPNumArray& cols,                       /**< columns to apply strong branching on */
+  LPIndexArray& cols,                       /**< columns to apply strong branching on */
   LPNum num_cols,                         /**< number of columns */
   LPValueArray& primal_sols,              /**< fractional current primal solution values of columns */
   LPNum iteration_limit,                  /**< iteration limit for strong branchings */
@@ -916,7 +916,7 @@ RetCode LPGlopInterface::StrongbranchIntegerValue(
 
 /** performs strong branching iterations on given candidates with @b integral values */
 RetCode LPGlopInterface::StrongbranchIntegerValues(
-  LPNumArray& cols,                       /**< columns to apply strong branching on */
+  LPIndexArray& cols,                       /**< columns to apply strong branching on */
   LPNum num_cols,                         /**< number of columns */
   LPValueArray& primal_sols,              /**< current integral primal solution values of columns */
   LPNum iteration_limit,                  /**< iteration limit for strong branchings */
@@ -1328,7 +1328,7 @@ RetCode LPGlopInterface::GetBasisIndices(
  *        see also the explanation in lpi.h.
  */
 RetCode LPGlopInterface::GetBInvertedRow(
-  LPNum row_number,         /**< row number */
+  LPIndex row_number,         /**< row number */
   LPValueArray& row_coeffs, /**< array to store the coefficients of the row */
   LPIndexArray& indices,    /**< array to store the non-zero indices */
   int& num_indices          /**< the number of non-zero indices (-1: if we do not store sparsity information) */
@@ -1386,7 +1386,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
  *        see also the explanation in lpi.h.
  */
 RetCode LPGlopInterface::GetBInvertedColumn(
-  LPNum col_number,         /**< column number of B^-1; this is NOT the number of the column in the LP;
+  LPIndex col_number,         /**< column number of B^-1; this is NOT the number of the column in the LP;
                              *   you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
                              *   B^-1 column numbers to the row and column numbers of the LP!
                              *   c must be between 0 and num_rows-1, since the basis has the size
@@ -1438,7 +1438,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
  *        see also the explanation in lpi.h.
  */
 RetCode LPGlopInterface::GetBInvertedARow(
-  LPNum row_number,                   /**< row number */
+  LPIndex row_number,                   /**< row number */
   const LPValueArray& b_inverted_row, /**< row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow() */
   LPValueArray& row_coeffs,           /**< array to store coefficients of the row */
   LPIndexArray& indices,              /**< array to store the non-zero indices */
@@ -1487,7 +1487,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
  *        see also the explanation in lpi.h.
  */
 RetCode LPGlopInterface::GetBInvertedAColumn(
-  LPNum col_number,         /**< column number */
+  LPIndex col_number,         /**< column number */
   LPValueArray& col_coeffs, /**< array to store coefficients of the column */
   LPIndexArray& indices,    /**< array to store the non-zero indices */
   int& num_indices          /**< the number of non-zero indices (-1: if we do not store sparsity information) */

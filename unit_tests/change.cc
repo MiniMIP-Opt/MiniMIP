@@ -272,7 +272,7 @@ class ChangeObjective : public Change,
 };
 
 TEST_P(ChangeObjective, checkChgObj) {
-  LPIndex prob = std::get<2>(GetParam());
+  LPNum prob = std::get<2>(GetParam());
   LPNum nrows, ncols, nnonz;
   LPObjectiveSense sense;
   LPIndexArray ind = {0, 1};
@@ -286,12 +286,12 @@ TEST_P(ChangeObjective, checkChgObj) {
 
   if (DEF_INTERFACE == 0) {
     if (TEST_ERRORS) {
-      for (LPNum i = 0; i < ncols; i++) {
+      for (LPIndex i = 0; i < ncols; i++) {
         if (lp_interface_->IsInfinity(fabs(setobj[i])))
           deathflag = true;
       }
     } else {
-      for (LPNum i = 0; i < ncols; i++) {
+      for (LPIndex i = 0; i < ncols; i++) {
         if (lp_interface_->IsInfinity(fabs(setobj[i])))
           GTEST_SKIP();
       }
@@ -340,7 +340,7 @@ class ChangeBounds : public Change,
 };
 
 TEST_P(ChangeBounds, checkChgBounds) {
-  LPIndex prob = std::get<4>(GetParam());
+  LPNum prob = std::get<4>(GetParam());
 
   LPNum nrows, ncols, nnonz;
   LPIndexArray ind = {0, 1};
@@ -357,14 +357,14 @@ TEST_P(ChangeBounds, checkChgBounds) {
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
   if (TEST_ERRORS) {
-    for (LPNum i = 0; i < ncols; i++) {
+    for (LPIndex i = 0; i < ncols; i++) {
       if (setub[i] < setlb[i])
         deathflag = true;
       if (lp_interface_->IsInfinity(setlb[i]) || lp_interface_->IsInfinity(-setub[i]))
         deathflag = true;
     }
   } else {
-    for (LPNum i = 0; i < ncols; i++) {
+    for (LPIndex i = 0; i < ncols; i++) {
       if (setub[i] < setlb[i])
         GTEST_SKIP();
       if (lp_interface_->IsInfinity(setlb[i]) || lp_interface_->IsInfinity(-setub[i]))
@@ -401,10 +401,10 @@ class ChangeSides : public Change,
     ASSERT_TRUE(!lp_interface_->WasSolved());
     ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs), RetCode::OKAY);
 
-    for (LPNum i; i < setls.size(); i++) {
+    for (LPIndex i; i < setls.size(); i++) {
       ASSERT_EQ(ls[i], setls[i]);
     }
-    for (LPNum i; i < setrs.size(); i++) {
+    for (LPIndex i; i < setrs.size(); i++) {
       ASSERT_EQ(rs[i], setrs[i]);
     }
   }
@@ -415,7 +415,7 @@ TEST_P(ChangeSides, checkChgSides) {
   LPValue left2 = substituteInfinity(std::get<1>(GetParam()));
   LPValue right1 = substituteInfinity(std::get<2>(GetParam()));
   LPValue right2 = substituteInfinity(std::get<3>(GetParam()));
-  LPIndex prob = std::get<4>(GetParam());
+  LPNum prob = std::get<4>(GetParam());
 
   LPNum nrows, ncols, nnonz;
   LPIndexArray ind = {0, 1};
@@ -427,14 +427,14 @@ TEST_P(ChangeSides, checkChgSides) {
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
   if (TEST_ERRORS) {
-    for (LPNum i = 0; i < nrows; i++) {
+    for (LPIndex i = 0; i < nrows; i++) {
       if (setrhs[i] < setlhs[i])
         deathflag = true;
       if (lp_interface_->IsInfinity(fabs(setlhs[i])) && lp_interface_->IsInfinity(fabs(setrhs[i])))
         deathflag = true;
     }
   } else {
-    for (LPNum i = 0; i < nrows; i++) {
+    for (LPIndex i = 0; i < nrows; i++) {
       if (setrhs[i] < setlhs[i])
         GTEST_SKIP();
       if (lp_interface_->IsInfinity(fabs(setlhs[i])) && lp_interface_->IsInfinity(fabs(setrhs[i])))
@@ -466,7 +466,7 @@ class ChangeObjectiveSense : public Change,
 TEST_P(ChangeObjectiveSense, ChgObjSen) {
 
   LPObjectiveSense newsense = std::get<0>(GetParam());
-  LPIndex prob = std::get<1>(GetParam());
+  LPNum prob = std::get<1>(GetParam());
 
   LPNum nrows, ncols, nnonz;
   LPObjectiveSense sense;
