@@ -196,8 +196,8 @@ class LPGlopInterface : public LPInterface {
 
   /** deletes all columns in the given range from LP */
   RetCode DeleteColumns(
-    LPNum first_col, /**< first column to be deleted */
-    LPNum last_col   /**< last column to be deleted */
+    LPIndex first_col, /**< first column to be deleted */
+    LPIndex last_col   /**< last column to be deleted */
     ) override;
 
   /** deletes columns from LP; the new position of a column must not be greater than its old position */
@@ -222,8 +222,8 @@ class LPGlopInterface : public LPInterface {
 
   /** deletes all rows in the given range from LP */
   RetCode DeleteRows(
-    LPNum first_row, /**< first row to be deleted */
-    LPNum last_row   /**< last row to be deleted */
+    LPIndex first_row, /**< first row to be deleted */
+    LPIndex last_row   /**< last row to be deleted */
     ) override;
 
   /** deletes rows from LP; the new position of a row must not be greater that its old position */
@@ -284,8 +284,8 @@ class LPGlopInterface : public LPInterface {
 
   /** gets columns from LP problem object; the arrays have to be large enough to store all values; */
   RetCode GetColumns(
-    LPNum first_col,            /**< first column to get from LP */
-    LPNum last_col,             /**< last column to get from LP */
+    LPIndex first_col,            /**< first column to get from LP */
+    LPIndex last_col,             /**< last column to get from LP */
     LPValueArray& lower_bounds, /**< array to store the lower bound vector */
     LPValueArray& upper_bounds, /**< array to store the upper bound vector */
     LPNum& num_non_zeros,       /**< store the number of non-zero elements */
@@ -296,8 +296,8 @@ class LPGlopInterface : public LPInterface {
 
   /** gets rows from LP problem object; the arrays have to be large enough to store all values. */
   RetCode GetRows(
-    LPNum first_row,                /**< first row to get from LP */
-    LPNum last_row,                 /**< last row to get from LP */
+    LPIndex first_row,                /**< first row to get from LP */
+    LPIndex last_row,                 /**< last row to get from LP */
     LPValueArray& left_hand_sides,  /**< array to store left hand side vector */
     LPValueArray& right_hand_sides, /**< array to store right hand side vector */
     LPNum& num_non_zeros,           /**< store the number of non-zero elements */
@@ -308,31 +308,31 @@ class LPGlopInterface : public LPInterface {
 
   /** gets objective coefficients from LP problem object */
   RetCode GetObjective(
-    LPNum first_col,         /**< first column to get objective coefficient for */
-    LPNum last_col,          /**< last column to get objective coefficient for */
+    LPIndex first_col,         /**< first column to get objective coefficient for */
+    LPIndex last_col,          /**< last column to get objective coefficient for */
     LPValueArray& obj_coeffs /**< array to store objective coefficients */
     ) override;
 
   /** gets current bounds from LP problem object */
   RetCode GetBounds(
-    LPNum first_col,            /**< first column to get bounds for */
-    LPNum last_col,             /**< last column to get bounds for */
+    LPIndex first_col,            /**< first column to get bounds for */
+    LPIndex last_col,             /**< last column to get bounds for */
     LPValueArray& lower_bounds, /**< array to store lower bound values */
     LPValueArray& upper_bounds  /**< array to store upper bound values */
     ) override;
 
   /** gets current row sides from LP problem object */
   RetCode GetSides(
-    LPNum first_row,               /**< first row to get sides for */
-    LPNum last_row,                /**< last row to get sides for */
+    LPIndex first_row,               /**< first row to get sides for */
+    LPIndex last_row,                /**< last row to get sides for */
     LPValueArray& left_hand_sides, /**< array to store left hand side values */
     LPValueArray& right_hand_sides /**< array to store right hand side values */
     ) override;
 
   /** gets a single coefficient */
   RetCode GetCoefficient(
-    LPNum row,   /**< row number of coefficient */
-    LPNum col,   /**< column number of coefficient */
+    LPIndex row,   /**< row number of coefficient */
+    LPIndex col,   /**< column number of coefficient */
     LPValue& val /**< array to store the value of the coefficient */
     ) override;
 
@@ -359,7 +359,7 @@ class LPGlopInterface : public LPInterface {
 
   /** performs strong branching iterations on one @b fractional candidate */
   RetCode StrongbranchFractionalValue(
-    LPNum col,                 /**< column to apply strong branching on */
+    LPIndex col,                 /**< column to apply strong branching on */
     LPValue primal_sol,              /**< fractional current primal solution value of column */
     LPNum iteration_limit,           /**< iteration limit for strong branchings */
     LPValue& dual_bound_down_branch, /**< stores dual bound after branching column down */
@@ -386,7 +386,7 @@ class LPGlopInterface : public LPInterface {
 
   /** performs strong branching iterations on one candidate with @b integral value */
   RetCode StrongbranchIntegerValue(
-    LPNum col,                       /**< column to apply strong branching on */
+    LPIndex col,                       /**< column to apply strong branching on */
     LPValue primal_sol,              /**< current integral primal solution value of column */
     LPNum iteration_limit,           /**< iteration limit for strong branchings */
     LPValue& dual_bound_down_branch, /**< stores dual bound after branching column down */
@@ -541,7 +541,7 @@ class LPGlopInterface : public LPInterface {
    *        see also the explanation in lpi.h.
    */
   RetCode GetBInvertedRow(
-    LPNum row_number,         /**< row number */
+    LPIndex row_number,         /**< row number */
     LPValueArray& row_coeffs, /**< array to store the coefficients of the row */
     LPIndexArray& indices,    /**< array to store the non-zero indices */
     int& num_indices          /**< the number of non-zero indices (-1: if we do not store sparsity information) */
@@ -553,7 +553,7 @@ class LPGlopInterface : public LPInterface {
    *        uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated
    */
   RetCode GetBInvertedColumn(
-    LPNum col_number,         /**< column number of B^-1; this is NOT the number of the column in the LP;
+    LPIndex col_number,         /**< column number of B^-1; this is NOT the number of the column in the LP;
                                *   you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
                                *   B^-1 column numbers to the row and column numbers of the LP!
                                *   c must be between 0 and num_rows-1, since the basis has the size
@@ -570,7 +570,7 @@ class LPGlopInterface : public LPInterface {
    *        see also the explanation in lpi.h.
    */
   RetCode GetBInvertedARow(
-    LPNum row_number,                   /**< row number */
+    LPIndex row_number,                   /**< row number */
     const LPValueArray& b_inverted_row, /**< row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow() */
     LPValueArray& row_coeffs,           /**< array to store coefficients of the row */
     LPIndexArray& indices,              /**< array to store the non-zero indices */
@@ -584,7 +584,7 @@ class LPGlopInterface : public LPInterface {
    *        see also the explanation in lpi.h.
    */
   RetCode GetBInvertedAColumn(
-    LPNum col_number,         /**< column number */
+    LPIndex col_number,         /**< column number */
     LPValueArray& col_coeffs, /**< array to store coefficients of the column */
     LPIndexArray& indices,    /**< array to store the non-zero indices */
     int& num_indices          /**< the number of non-zero indices (-1: if we do not store sparsity information) */
