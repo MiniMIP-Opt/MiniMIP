@@ -10,6 +10,8 @@
 namespace minimip {
 
 /** LPInterface base class */
+//
+// Just testing how the change appears.
 class LPInterface : private messagehandler {
 
  public:
