@@ -15,6 +15,7 @@ namespace minimip {
 class LPInterface : private messagehandler {
 
  public:
+  // This is yet another change in a separate commit.
   /* Methods */
   virtual ~LPInterface() = default;
 
