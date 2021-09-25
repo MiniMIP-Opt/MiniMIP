@@ -34,14 +34,14 @@ class BoundChanges : public ::testing::Test {
     InterfaceCode interface_code;
     switch (DEF_INTERFACE) {
       case 1:
-        interface_code = InterfaceCode::SOPLEX;
+        interface_code = InterfaceCode::kSoplex;
         break;
       default:
-        interface_code = InterfaceCode::GLOP;
+        interface_code = InterfaceCode::kGlop;
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::OBJ_SENSE_MAXIMIZE);
+    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
 
     obj.push_back(1.0);
     lb.push_back(0.0);
@@ -51,7 +51,7 @@ class BoundChanges : public ::testing::Test {
     ubnew.reserve(1);
 
     /* add one column */
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
   }
 };
 
@@ -61,10 +61,10 @@ TEST_F(BoundChanges, SimpleBoundTest) {
   ub[0] = 2.0;
 
   /* change bounds to some value */
-  ASSERT_EQ(lp_interface_->ChangeBounds(1, ind, lb, ub), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeBounds(1, ind, lb, ub), RetCode::kOkay);
 
   /* get bounds and compare */
-  ASSERT_EQ(lp_interface_->GetBounds(0, 0, lbnew, ubnew), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->GetBounds(0, 0, lbnew, ubnew), RetCode::kOkay);
 
   ASSERT_FLOAT_EQ(lb[0], lbnew[0]);
   ASSERT_FLOAT_EQ(ub[0], ubnew[0]);
@@ -74,10 +74,10 @@ TEST_F(BoundChanges, ChangeBoundBySmallValue) {
   /* change bound to small value */
   lb[0] = 1e-11;
   ub[0] = 1.0 - 1e-11;
-  ASSERT_EQ(lp_interface_->ChangeBounds(1, ind, lb, ub), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeBounds(1, ind, lb, ub), RetCode::kOkay);
 
   /* get bounds and compare */
-  ASSERT_EQ(lp_interface_->GetBounds(0, 0, lbnew, ubnew), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->GetBounds(0, 0, lbnew, ubnew), RetCode::kOkay);
 
   ASSERT_FLOAT_EQ(lb[0], lbnew[0]);
   ASSERT_FLOAT_EQ(ub[0], ubnew[0]);
@@ -93,7 +93,7 @@ TEST_F(BoundChanges, FixToInfinity) {
   /* calling should return an LPERROR */
   retcode = lp_interface_->ChangeBounds(1, ind, lb, ub);
 
-  ASSERT_EQ(retcode, RetCode::LP_ERROR) << "Fixing variables to infinity does not return an error.";
+  ASSERT_EQ(retcode, RetCode::kLPError) << "Fixing variables to infinity does not return an error.";
 }
 
 } /*namespace minimip */

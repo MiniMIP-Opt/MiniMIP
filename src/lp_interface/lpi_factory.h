@@ -7,15 +7,15 @@
 namespace minimip {
 
 enum class InterfaceCode {
-  GLOP = 0,
-  SOPLEX = 1
+  kGlop = 0,
+  kSoplex = 1
 };
 
 class LPInterfaceFactory {
  public:
   LPInterface* CreateLPInterface(InterfaceCode interface_code) {
     switch (interface_code) {
-      case InterfaceCode::SOPLEX:
+      case InterfaceCode::kSoplex:
         return new LPSoplexInterface();
       default:
         return new LPGlopInterface();

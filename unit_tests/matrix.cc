@@ -21,14 +21,14 @@ class matrix : public ::testing::Test {
     InterfaceCode interface_code;
     switch (DEF_INTERFACE) {
       case 1:
-        interface_code = InterfaceCode::SOPLEX;
+        interface_code = InterfaceCode::kSoplex;
         break;
       default:
-        interface_code = InterfaceCode::GLOP;
+        interface_code = InterfaceCode::kGlop;
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::OBJ_SENSE_MAXIMIZE);
+    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
 
     obj.push_back(0.0);
     lb.push_back(0.0);
@@ -52,17 +52,17 @@ TEST_F(matrix, create_matrix) {
   LPNum nnonz, nrows, ncols;
 
   /* add one column */
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY) << "hello";
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay) << "hello";
 
   /* add additional column */
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
 
   /* add one row */
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::kOkay);
 
   /* add one more row using a new variable */
   ind[0] = 1;
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::kOkay);
 
   /* ------------------------------------------------------------ */
 
@@ -73,7 +73,7 @@ TEST_F(matrix, create_matrix) {
   ASSERT_EQ(ncols, 2);
 
   /* get rows */
-  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind, matval), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind, matval), RetCode::kOkay);
   ASSERT_EQ(nnonz, 2);
 
   /* equal, to within 4 ULPs ( Unit in the last place) */

@@ -35,14 +35,14 @@ class Change : public ::testing::Test {
     InterfaceCode interface_code;
     switch (DEF_INTERFACE) {
       case 1:
-        interface_code = InterfaceCode::SOPLEX;
+        interface_code = InterfaceCode::kSoplex;
         break;
       default:
-        interface_code = InterfaceCode::GLOP;
+        interface_code = InterfaceCode::kGlop;
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::OBJ_SENSE_MAXIMIZE);
+    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
   }
 
   /** write ncols, nrows and objsen into variables to check later */
@@ -72,7 +72,7 @@ class Change : public ::testing::Test {
         ncols = 1;
         nrows = 1;
         nnonz = 1;
-        objsen = LPObjectiveSense::OBJ_SENSE_MAXIMIZE;
+        objsen = LPObjectiveSense::kMaximize;
         val[0] = -1.0;
         break;
 
@@ -89,7 +89,7 @@ class Change : public ::testing::Test {
         ncols = 1;
         nrows = 1;
         nnonz = 1;
-        objsen = LPObjectiveSense::OBJ_SENSE_MAXIMIZE;
+        objsen = LPObjectiveSense::kMaximize;
         rhs[0] = 0.0;
         break;
 
@@ -98,7 +98,7 @@ class Change : public ::testing::Test {
         ncols = 1;
         nrows = 1;
         nnonz = 1;
-        objsen = LPObjectiveSense::OBJ_SENSE_MINIMIZE;
+        objsen = LPObjectiveSense::kMinimize;
         rhs[0] = lp_interface_->Infinity();
         lhs[0] = 1;
         val[0] = -1.0;
@@ -108,7 +108,7 @@ class Change : public ::testing::Test {
         ncols = 1;
         nrows = 1;
         nnonz = 1;
-        objsen = LPObjectiveSense::OBJ_SENSE_MINIMIZE;
+        objsen = LPObjectiveSense::kMinimize;
         rhs[0] = lp_interface_->Infinity();
         lhs[0] = 1;
         obj[0] = 0.0;
@@ -134,7 +134,7 @@ class Change : public ::testing::Test {
         ncols = 2;
         nrows = 2;
         nnonz = 2;
-        objsen = LPObjectiveSense::OBJ_SENSE_MAXIMIZE;
+        objsen = LPObjectiveSense::kMaximize;
         val[0] = -1.0;
         val[1] = -1.0;
         break;
@@ -158,7 +158,7 @@ class Change : public ::testing::Test {
         ncols = 2;
         nrows = 2;
         nnonz = 2;
-        objsen = LPObjectiveSense::OBJ_SENSE_MAXIMIZE;
+        objsen = LPObjectiveSense::kMaximize;
         break;
 
       case 6:
@@ -180,7 +180,7 @@ class Change : public ::testing::Test {
         ncols = 2;
         nrows = 2;
         nnonz = 2;
-        objsen = LPObjectiveSense::OBJ_SENSE_MAXIMIZE;
+        objsen = LPObjectiveSense::kMaximize;
         rhs[0] = -1.0;
         rhs[1] = -1.0;
         val[0] = -1.0;
@@ -191,7 +191,7 @@ class Change : public ::testing::Test {
         ncols = 2;
         nrows = 2;
         nnonz = 2;
-        objsen = LPObjectiveSense::OBJ_SENSE_MINIMIZE;
+        objsen = LPObjectiveSense::kMinimize;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
         lhs[0] = 1.0;
@@ -204,7 +204,7 @@ class Change : public ::testing::Test {
         ncols = 2;
         nrows = 2;
         nnonz = 2;
-        objsen = LPObjectiveSense::OBJ_SENSE_MINIMIZE;
+        objsen = LPObjectiveSense::kMinimize;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
         lhs[0] = 1.0;
@@ -215,7 +215,7 @@ class Change : public ::testing::Test {
         ncols = 2;
         nrows = 2;
         nnonz = 2;
-        objsen = LPObjectiveSense::OBJ_SENSE_MINIMIZE;
+        objsen = LPObjectiveSense::kMinimize;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
         lhs[0] = 1.0;
@@ -233,11 +233,11 @@ class Change : public ::testing::Test {
     LPValueArray empty_vals;
     LPIndexArray empty_indices;
 
-    ASSERT_EQ(lp_interface_->ChangeObjectiveSense(objsen), RetCode::OKAY);
-    ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY);
-    ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->ChangeObjectiveSense(objsen), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
     ASSERT_TRUE(!lp_interface_->WasSolved());
-    ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
     ASSERT_TRUE(lp_interface_->WasSolved());
   }
 
@@ -261,9 +261,9 @@ class ChangeObjective : public Change,
   static void checkChgObj(LPIndex& lastcol, LPIndexArray& ind, LPValueArray& setobj) {
     LPValueArray obj(2);
     ASSERT_LE(lastcol, 2);
-    ASSERT_EQ(lp_interface_->ChangeObjective(lastcol, ind, setobj), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->ChangeObjective(lastcol, ind, setobj), RetCode::kOkay);
     ASSERT_TRUE(!lp_interface_->WasSolved());
-    ASSERT_EQ(lp_interface_->GetObjective(0, lastcol - 1, obj), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->GetObjective(0, lastcol - 1, obj), RetCode::kOkay);
 
     for (size_t i; i < setobj.size(); i++) {
       ASSERT_EQ(obj[i], setobj[i]);
@@ -317,18 +317,18 @@ INSTANTIATE_TEST_SUITE_P(
 class ChangeBounds : public Change,
                      public ::testing::WithParamInterface<std::tuple<LPValue, LPValue, LPValue, LPValue, LPIndex>> {
  protected:
-  static void checkChgBounds(LPIndex& lastcol, LPIndexArray& ind, LPValueArray& setlb, LPValueArray& setub, RetCode error = RetCode::OKAY) {
+  static void checkChgBounds(LPIndex& lastcol, LPIndexArray& ind, LPValueArray& setlb, LPValueArray& setub, RetCode error = RetCode::kOkay) {
     LPValueArray ub(2);
     LPValueArray lb(2);
 
     ASSERT_LE(lastcol, 2);
-    if (error != RetCode::OKAY) {
+    if (error != RetCode::kOkay) {
       ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), error);
       abort();
     } else
-      ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), RetCode::kOkay);
     ASSERT_TRUE(!lp_interface_->WasSolved());
-    ASSERT_EQ(lp_interface_->GetBounds(0, lastcol - 1, lb, ub), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->GetBounds(0, lastcol - 1, lb, ub), RetCode::kOkay);
 
     for (size_t i; i < setub.size(); i++) {
       ASSERT_EQ(ub[i], setub[i]);
@@ -373,7 +373,7 @@ TEST_P(ChangeBounds, checkChgBounds) {
   }
 
   if (deathflag)
-    ASSERT_DEATH(checkChgBounds(ncols, ind, setlb, setub, RetCode::LP_ERROR), "");
+    ASSERT_DEATH(checkChgBounds(ncols, ind, setlb, setub, RetCode::kLPError), "");
   else
     ASSERT_NO_FATAL_FAILURE(checkChgBounds(ncols, ind, setlb, setub));
 }
@@ -397,9 +397,9 @@ class ChangeSides : public Change,
     LPValueArray rs(2);
 
     ASSERT_LE(lastcol, 2);
-    ASSERT_EQ(lp_interface_->ChangeSides(lastcol, ind, setls, setrs), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->ChangeSides(lastcol, ind, setls, setrs), RetCode::kOkay);
     ASSERT_TRUE(!lp_interface_->WasSolved());
-    ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs), RetCode::kOkay);
 
     for (LPIndex i; i < setls.size(); i++) {
       ASSERT_EQ(ls[i], setls[i]);
@@ -474,7 +474,7 @@ TEST_P(ChangeObjectiveSense, ChgObjSen) {
 
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(newsense), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(newsense), RetCode::kOkay);
   ASSERT_TRUE(!lp_interface_->WasSolved());
 
   probsense = lp_interface_->GetObjectiveSense();
@@ -486,7 +486,7 @@ INSTANTIATE_TEST_SUITE_P(
   ChangeObjectiveSenseCombinations,
   ChangeObjectiveSense,
   ::testing::Combine(
-    ::testing::Values(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, LPObjectiveSense::OBJ_SENSE_MINIMIZE),
+    ::testing::Values(LPObjectiveSense::kMaximize, LPObjectiveSense::kMinimize),
     ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
 /** Test for AddRows, DeleteRowSet, DeleteRows */
@@ -516,7 +516,7 @@ TEST_F(Change, testrowmethods) {
   LPIndexArray empty_indices;
 
   /* create original lp */
-  ASSERT_EQ(lp_interface_->AddColumns(5, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddColumns(5, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
   ncolsbefore = lp_interface_->GetNumberOfColumns();
 
   for (i = 0; i < iterations; i++) {
@@ -531,7 +531,7 @@ TEST_F(Change, testrowmethods) {
     nrowsbefore = lp_interface_->GetNumberOfRows();
 
     if (nrows < 0) {
-      ASSERT_EQ(lp_interface_->DeleteRows(0, -(1 + nrows)), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->DeleteRows(0, -(1 + nrows)), RetCode::kOkay);
     } else { /* nrows >= 0 */
       LPValueArray lhs(100);
       LPValueArray rhs(100);
@@ -562,10 +562,10 @@ TEST_F(Change, testrowmethods) {
         ind[j] = indvals[j];
         val[j] = vals[j];
       }
-      ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
 
       /* checks */
-      ASSERT_EQ(lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs, newrhs, newnnonz, newbeg, newind, newval), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs, newrhs, newnnonz, newbeg, newind, newval), RetCode::kOkay);
       ASSERT_EQ(nnonz, newnnonz);
 
       for (j = 0; j < (unsigned) nrows; j++) {
@@ -623,7 +623,7 @@ TEST_F(Change, testrowmethods) {
       rows[(2 * j) + 1] = true;
 
     nrowsbefore = lp_interface_->GetNumberOfRows();
-    ASSERT_EQ(lp_interface_->DeleteRowSet(rows), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->DeleteRowSet(rows), RetCode::kOkay);
 
     nrowsafter = lp_interface_->GetNumberOfRows();
     ASSERT_EQ(nrowsbefore - i, nrowsafter);
@@ -656,7 +656,7 @@ TEST_F(Change, testcolmethods) {
   LPIndexArray empty_indices;
 
   /* create original lp */
-  ASSERT_EQ(lp_interface_->AddRows(5, lhs, rhs, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddRows(5, lhs, rhs, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
   nrowsbefore = lp_interface_->GetNumberOfRows();
 
   for (LPIndex i = 0; i < iterations; i++) {
@@ -672,7 +672,7 @@ TEST_F(Change, testcolmethods) {
     ncolsbefore = lp_interface_->GetNumberOfColumns();
 
     if (k[i] < 0) {
-      ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + ncols)), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + ncols)), RetCode::kOkay);
     } else { /* ncols >= 0 */
       LPValueArray lb(100);
       LPValueArray ub(100);
@@ -702,10 +702,10 @@ TEST_F(Change, testcolmethods) {
         ind[j] = indvals[j];
         val[j] = vals[j];
       }
-      ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
 
       /* checks */
-      ASSERT_EQ(lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb, newub, newnnonz, newbeg, newind, newval), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb, newub, newnnonz, newbeg, newind, newval), RetCode::kOkay);
       ASSERT_EQ(nnonz, newnnonz);
 
       for (LPIndex j = 0; j < ncols; j++) {
@@ -741,7 +741,7 @@ TEST_F(Change, testcolmethods) {
       cols[(2 * j) + 1] = true;
 
     ncolsbefore = lp_interface_->GetNumberOfColumns();
-    ASSERT_EQ(lp_interface_->DeleteColumnSet(cols), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->DeleteColumnSet(cols), RetCode::kOkay);
     ncolsafter = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(ncolsbefore - i, ncolsafter);
     /* assert that the rows that are left are the ones I intended */
@@ -774,7 +774,7 @@ TEST_F(Change, testzerosincols) {
 #endif
   /* this test can only work in debug mode, so we make it pass in opt mode */
 #ifdef NDEBUG
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
   SUCCEED(); /* return SIGABORT */
 #endif
 }
@@ -805,7 +805,7 @@ TEST_F(Change, testzerosinrows) {
   ASSERT_DEATH(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), "");
 #else
   /* this test can only work in debug mode, so we make it pass in opt mode */
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
   SUCCEED();
 #endif
 }
@@ -828,19 +828,19 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   /* 2x2 problem */
   ASSERT_NO_FATAL_FAILURE(initProb(5, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::OKAY);
-  ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::kOkay);
 
-  ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"), RetCode::OKAY);
-  ASSERT_EQ(lp_interface_->Clear(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->Clear(), RetCode::kOkay);
 
   if (DEF_INTERFACE == 0)
-    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"), RetCode::kOkay);
   else
-    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"), RetCode::kOkay);
 
-  ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::OKAY);
-  ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2, redcost2), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2, redcost2), RetCode::kOkay);
   ASSERT_FLOAT_EQ(objval, objval2);
 
   ASSERT_EQ(primsol.size(), primsol2.size());
@@ -867,8 +867,8 @@ TEST_F(Change, testlpiwritereadlpmethods) {
     remove("lpi_change_test_problem.lp.gz");
     SUCCEED();
   } else {
-    ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem2.lp"), RetCode::OKAY);
-    ASSERT_EQ(lp_interface_->Clear(), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem2.lp"), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->Clear(), RetCode::kOkay);
 
     std::ifstream t1("lpi_change_test_problem.lp");
     std::stringstream buffer1;

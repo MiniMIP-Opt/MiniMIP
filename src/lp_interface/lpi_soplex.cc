@@ -34,11 +34,11 @@
     } catch (const SPxMemoryException& E) {                                    \
       std::string s = E.what();                                                \
       MiniMIPerrorMessage("SoPlex threw a memory exception: %s\n", s.c_str()); \
-      return RetCode::ERROR;                                                   \
+      return RetCode::kError;                                                   \
     } catch (const SPxException& E) {                                          \
       std::string s = E.what();                                                \
       MiniMIPerrorMessage("SoPlex threw an exception: %s\n", s.c_str());       \
-      return RetCode::LP_ERROR;                                                \
+      return RetCode::kLPError;                                                \
     }                                                                          \
   } while (false)
 
@@ -75,7 +75,7 @@ namespace minimip {
 
 /** constructor */
 LPSoplexInterface::LPSoplexInterface() : spx_(new soplex::SoPlex),
-                                         pricing_(LPPricing::DEFAULT),
+                                         pricing_(LPPricing::kDefault),
                                          solved_(false),
                                          lp_info_(false),
                                          from_scratch_(false),
@@ -242,7 +242,7 @@ RetCode LPSoplexInterface::SoPlexSolve() {
     catch (const SPxException&) {
 #endif
       assert(spx_->status() != SPxSolver::OPTIMAL);
-      return RetCode::LP_ERROR;
+      return RetCode::kLPError;
     }
   }
   assert(!GetFromScratch() || spx_->status() == SPxSolver::NO_PROBLEM);
@@ -265,9 +265,9 @@ RetCode LPSoplexInterface::SoPlexSolve() {
     case SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
     case SPxSolver::UNBOUNDED:
     case SPxSolver::INFEASIBLE:
-      return RetCode::OKAY;
+      return RetCode::kOkay;
     default:
-      return RetCode::LP_ERROR;
+      return RetCode::kLPError;
   } /*lint !e788*/
 }
 
@@ -521,9 +521,9 @@ RetCode LPSoplexInterface::StrongBranch(
 
   if (error) {
     MiniMIPdebugMessage("StrongBranch() returned SoPlex status %d\n", int(status)); /*lint !e644*/
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 RetCode LPSoplexInterface::LoadColumnLP(
@@ -559,7 +559,7 @@ RetCode LPSoplexInterface::LoadColumnLP(
     spx_->clearLPReal();
 
     /* set objective sense */
-    static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::OBJ_SENSE_MINIMIZE ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
+    static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
 
     /* create empty rows with given sides */
     for (i = 0; i < static_cast<int>(num_rows); ++i)
@@ -576,9 +576,9 @@ RetCode LPSoplexInterface::LoadColumnLP(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** adds columns to the LP
@@ -640,10 +640,10 @@ RetCode LPSoplexInterface::AddColumns(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes all columns in the given range from LP */
@@ -661,7 +661,7 @@ RetCode LPSoplexInterface::DeleteColumns(
 
   SOPLEX_TRY(spx_->removeColRangeReal(first_col, last_col));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes columns from LP; the new position of a column must not be greater than its old position */
@@ -686,7 +686,7 @@ RetCode LPSoplexInterface::DeleteColumnSet(
 
   SOPLEX_TRY(spx_->removeColsReal(int_deletion_status.data()));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** adds rows to the LP
@@ -747,9 +747,9 @@ RetCode LPSoplexInterface::AddRows(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes all rows in the given range from LP */
@@ -767,7 +767,7 @@ RetCode LPSoplexInterface::DeleteRows(
 
   SOPLEX_TRY(spx_->removeRowRangeReal(first_row, last_row));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes rows from LP; the new position of a row must not be greater that its old position */
@@ -793,7 +793,7 @@ RetCode LPSoplexInterface::DeleteRowSet(
 
   SOPLEX_TRY(spx_->removeRowsReal(int_deletion_status.data()));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** clears the whole LP */
@@ -805,7 +805,7 @@ RetCode LPSoplexInterface::Clear() {
   assert(PreStrongBranchingBasisFreed());
   SOPLEX_TRY(spx_->clearLPReal());
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** clears current LP Interface state (like basis information) of the solver */
@@ -824,9 +824,9 @@ RetCode LPSoplexInterface::ClearState() {
   catch (const SPxException&) {
 #endif
     assert(spx_->status() != SPxSolver::OPTIMAL);
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes lower and upper bounds of columns */
@@ -850,11 +850,11 @@ RetCode LPSoplexInterface::ChangeBounds(
 
       if (IsInfinity(lower_bounds[i])) {
         MiniMIPerrorMessage("LP Error: fixing lower bound for variable %d to infinity.\n", indices[i]);
-        return RetCode::LP_ERROR;
+        return RetCode::kLPError;
       }
       if (IsInfinity(-upper_bounds[i])) {
         MiniMIPerrorMessage("LP Error: fixing upper bound for variable %d to -infinity.\n", indices[i]);
-        return RetCode::LP_ERROR;
+        return RetCode::kLPError;
       }
       spx_->changeBoundsReal(indices[i], lower_bounds[i], upper_bounds[i]);
       assert(spx_->lowerReal(indices[i]) <= spx_->upperReal(indices[i]) + spx_->realParam(SoPlex::EPSILON_ZERO));
@@ -867,9 +867,9 @@ RetCode LPSoplexInterface::ChangeBounds(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes left and right hand sides of rows */
@@ -884,7 +884,7 @@ RetCode LPSoplexInterface::ChangeSides(
   MiniMIPdebugMessage("calling ChangeSides()\n");
 
   if (num_rows <= 0)
-    return RetCode::OKAY;
+    return RetCode::kOkay;
 
   InvalidateSolution();
 
@@ -904,9 +904,9 @@ RetCode LPSoplexInterface::ChangeSides(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes the objective sense */
@@ -919,9 +919,9 @@ RetCode LPSoplexInterface::ChangeObjectiveSense(
 
   assert(PreStrongBranchingBasisFreed());
 
-  SOPLEX_TRY(static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, obj_sense == LPObjectiveSense::OBJ_SENSE_MINIMIZE ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
+  SOPLEX_TRY(static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes objective values of columns in the LP */
@@ -951,9 +951,9 @@ RetCode LPSoplexInterface::ChangeObjective(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -999,7 +999,7 @@ LPNum LPSoplexInterface::GetNumberOfNonZeros() {
 LPObjectiveSense LPSoplexInterface::GetObjectiveSense() {
   MiniMIPdebugMessage("calling GetObjectiveSense()\n");
 
-  return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE) ? LPObjectiveSense::OBJ_SENSE_MINIMIZE : LPObjectiveSense::OBJ_SENSE_MAXIMIZE;
+  return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE) ? LPObjectiveSense::kMinimize : LPObjectiveSense::kMaximize;
 }
 
 /** gets columns from LP problem object
@@ -1063,7 +1063,7 @@ RetCode LPSoplexInterface::GetColumns(
       }
     }
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets rows from LP problem object
@@ -1127,7 +1127,7 @@ RetCode LPSoplexInterface::GetRows(
       }
     }
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets objective coefficients from LP problem object */
@@ -1145,7 +1145,7 @@ RetCode LPSoplexInterface::GetObjective(
   for (i = first_col; i <= last_col; ++i)
     obj_coeffs[i - first_col] = spx_->objReal(i);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets current bounds from LP problem object */
@@ -1166,7 +1166,7 @@ RetCode LPSoplexInterface::GetBounds(
     upper_bounds[i - first_col] = spx_->upperReal(i);
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets current row sides from LP problem object */
@@ -1186,7 +1186,7 @@ RetCode LPSoplexInterface::GetSides(
     left_hand_sides[i - first_row] = spx_->lhsReal(i);
     right_hand_sides[i - first_row] = spx_->rhsReal(i);
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets a single coefficient */
@@ -1202,7 +1202,7 @@ RetCode LPSoplexInterface::GetCoefficient(
 
   val = spx_->coefReal(row, col);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -1232,7 +1232,7 @@ RetCode LPSoplexInterface::StartStrongbranch() {
   assert(PreStrongBranchingBasisFreed());
   SavePreStrongbranchingBasis();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** end strong branching - call after any strong branching */
@@ -1242,7 +1242,7 @@ RetCode LPSoplexInterface::EndStrongbranch() {
   RestorePreStrongbranchingBasis();
   FreePreStrongBranchingBasis();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on one @b fractional candidate */
@@ -1262,14 +1262,14 @@ RetCode LPSoplexInterface::StrongbranchFractionalValue(
   /* pass call on to StrongBranch() */
   retcode = StrongBranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations);
 
-  /* pass RetCode::LP_ERROR to MiniMIP without a back trace */
-  if (retcode == RetCode::LP_ERROR)
-    return RetCode::LP_ERROR;
+  /* pass RetCode::kLPError to MiniMIP without a back trace */
+  if (retcode == RetCode::kLPError)
+    return RetCode::kLPError;
 
   /* evaluate retcode */
   MINIMIP_CALL(retcode);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on given @b fractional candidates */
@@ -1295,14 +1295,14 @@ RetCode LPSoplexInterface::StrongbranchFractionalValues(
     retcode = StrongBranch(cols[j], primal_sols[j], iteration_limit, (dual_bound_down_branches[j]), (dual_bound_up_branches[j]), down, up, iterations);
     down_valids[j] = down;
     up_valids[j] = up;
-    /* pass RetCode::LP_ERROR to MiniMIP without a back trace */
-    if (retcode == RetCode::LP_ERROR)
-      return RetCode::LP_ERROR;
+    /* pass RetCode::kLPError to MiniMIP without a back trace */
+    if (retcode == RetCode::kLPError)
+      return RetCode::kLPError;
 
     /* evaluate retcode */
     MINIMIP_CALL(retcode);
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on one candidate with @b integral value */
@@ -1323,14 +1323,14 @@ RetCode LPSoplexInterface::StrongbranchIntegerValue(
   /* pass call on to StrongBranch() */
   retcode = StrongBranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations);
 
-  /* pass RetCode::LP_ERROR to MiniMIP without a back trace */
-  if (retcode == RetCode::LP_ERROR)
-    return RetCode::LP_ERROR;
+  /* pass RetCode::kLPError to MiniMIP without a back trace */
+  if (retcode == RetCode::kLPError)
+    return RetCode::kLPError;
 
   /* evaluate retcode */
   MINIMIP_CALL(retcode);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on given candidates with @b integral values */
@@ -1357,15 +1357,15 @@ RetCode LPSoplexInterface::StrongbranchIntegerValues(
     down_valids[j] = down;
     up_valids[j] = up;
 
-    /* pass RetCode::LP_ERROR to MiniMIP without a back trace */
-    if (retcode == RetCode::LP_ERROR)
-      return RetCode::LP_ERROR;
+    /* pass RetCode::kLPError to MiniMIP without a back trace */
+    if (retcode == RetCode::kLPError)
+      return RetCode::kLPError;
 
     /* evaluate retcode */
     MINIMIP_CALL(retcode);
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 /**@} */
 
@@ -1516,7 +1516,7 @@ RetCode LPSoplexInterface::GetObjectiveValue(
 
   obj_val = spx_->objValueReal();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets primal and dual solution vectors for feasible LPs
@@ -1555,10 +1555,10 @@ RetCode LPSoplexInterface::GetSolution(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets primal ray for unbounded LPs */
@@ -1579,9 +1579,9 @@ RetCode LPSoplexInterface::GetPrimalRay(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets dual Farkas proof for infeasibility */
@@ -1602,9 +1602,9 @@ RetCode LPSoplexInterface::GetDualFarkasMultiplier(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets the number of LP iterations of the last solve call */
@@ -1615,7 +1615,7 @@ RetCode LPSoplexInterface::GetIterations(
 
   iterations = spx_->numIterations();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -1637,23 +1637,23 @@ RetCode LPSoplexInterface::GetBase(
     for (i = 0; i < spx_->numRowsReal(); ++i) {
       switch (spx_->basisRowStatus(i)) {
         case SPxSolver::BASIC:
-          row_basis_status[i] = LPBaseStat::BASESTAT_BASIC; /*lint !e641*/
+          row_basis_status[i] = LPBaseStat::kBasic; /*lint !e641*/
           break;
         case SPxSolver::FIXED:
         case SPxSolver::ON_LOWER:
-          row_basis_status[i] = LPBaseStat::BASESTAT_LOWER; /*lint !e641*/
+          row_basis_status[i] = LPBaseStat::kLower; /*lint !e641*/
           break;
         case SPxSolver::ON_UPPER:
-          row_basis_status[i] = LPBaseStat::BASESTAT_UPPER; /*lint !e641*/
+          row_basis_status[i] = LPBaseStat::kUpper; /*lint !e641*/
           break;
         case SPxSolver::ZERO:
           MiniMIPerrorMessage("slack variable has basis status ZERO (should not occur)\n");
-          return RetCode::LP_ERROR;
+          return RetCode::kLPError;
         case SPxSolver::UNDEFINED:
         default:
           MiniMIPerrorMessage("invalid basis status\n");
           /* std::abort(); */
-          return RetCode::INVALID_DATA; /*lint !e527*/
+          return RetCode::kInvalidData; /*lint !e527*/
       }
     }
   }
@@ -1663,7 +1663,7 @@ RetCode LPSoplexInterface::GetBase(
       /*         LPValue obj_coeffs = 0.0; */
       switch (spx_->basisColStatus(i)) {
         case SPxSolver::BASIC:
-          column_basis_status[i] = LPBaseStat::BASESTAT_BASIC; /*lint !e641*/
+          column_basis_status[i] = LPBaseStat::kBasic; /*lint !e641*/
           break;
         case SPxSolver::FIXED:
           /* Get reduced cost estimation. If the estimation is not correct this should not hurt:
@@ -1677,27 +1677,27 @@ RetCode LPSoplexInterface::GetBase(
            *             if( obj_coeffs < 0.0 )  // reduced costs < 0 => UPPER  else => LOWER
            *                column_basis_status[i] = BASESTAT_UPPER;  //lint !e641
            *             else */
-          column_basis_status[i] = LPBaseStat::BASESTAT_LOWER; /*lint !e641*/
+          column_basis_status[i] = LPBaseStat::kLower; /*lint !e641*/
           break;
         case SPxSolver::ON_LOWER:
-          column_basis_status[i] = LPBaseStat::BASESTAT_LOWER; /*lint !e641*/
+          column_basis_status[i] = LPBaseStat::kLower; /*lint !e641*/
           break;
         case SPxSolver::ON_UPPER:
-          column_basis_status[i] = LPBaseStat::BASESTAT_UPPER; /*lint !e641*/
+          column_basis_status[i] = LPBaseStat::kUpper; /*lint !e641*/
           break;
         case SPxSolver::ZERO:
-          column_basis_status[i] = LPBaseStat::BASESTAT_ZERO; /*lint !e641*/
+          column_basis_status[i] = LPBaseStat::kZero; /*lint !e641*/
           break;
         case SPxSolver::UNDEFINED:
         default:
           MiniMIPerrorMessage("invalid basis status\n");
           /* MINIMIP_ABORT(); */
           assert(false);
-          return RetCode::INVALID_DATA; /*lint !e527*/
+          return RetCode::kInvalidData; /*lint !e527*/
       }
     }
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** sets current basis status for columns and rows */
@@ -1724,55 +1724,55 @@ RetCode LPSoplexInterface::SetBase(
   for (i = 0; i < static_cast<int>(num_rows); ++i) {
     switch (row_basis_status[i]) /*lint !e613*/
     {
-      case LPBaseStat::BASESTAT_LOWER:
+      case LPBaseStat::kLower:
         _rowstat[i] = SPxSolver::ON_LOWER;
         break;
-      case LPBaseStat::BASESTAT_BASIC:
+      case LPBaseStat::kBasic:
         _rowstat[i] = SPxSolver::BASIC;
         break;
-      case LPBaseStat::BASESTAT_UPPER:
+      case LPBaseStat::kUpper:
         _rowstat[i] = SPxSolver::ON_UPPER;
         break;
-      case LPBaseStat::BASESTAT_ZERO:
+      case LPBaseStat::kZero:
         MiniMIPerrorMessage("slack variable has basis status ZERO (should not occur)\n");
-        return RetCode::LP_ERROR; /*lint !e429*/
+        return RetCode::kLPError; /*lint !e429*/
       default:
         MiniMIPerrorMessage("invalid basis status\n");
 
         /* MINIMIP_ABORT(); */
         assert(false);
 
-        return RetCode::INVALID_DATA; /*lint !e527*/
+        return RetCode::kInvalidData; /*lint !e527*/
     }
   }
 
   for (i = 0; i < static_cast<int>(num_cols); ++i) {
     switch (column_basis_status[i]) /*lint !e613*/
     {
-      case LPBaseStat::BASESTAT_LOWER:
+      case LPBaseStat::kLower:
         _colstat[i] = SPxSolver::ON_LOWER;
         break;
-      case LPBaseStat::BASESTAT_BASIC:
+      case LPBaseStat::kBasic:
         _colstat[i] = SPxSolver::BASIC;
         break;
-      case LPBaseStat::BASESTAT_UPPER:
+      case LPBaseStat::kUpper:
         _colstat[i] = SPxSolver::ON_UPPER;
         break;
-      case LPBaseStat::BASESTAT_ZERO:
+      case LPBaseStat::kZero:
         _colstat[i] = SPxSolver::ZERO;
         break;
       default:
         MiniMIPerrorMessage("invalid basis status\n");
         /* MINIMIP_ABORT(); */
         assert(false);
-        return RetCode::INVALID_DATA; /*lint !e527*/
+        return RetCode::kInvalidData; /*lint !e527*/
     }
   }
 
   SOPLEX_TRY(spx_->setBasis(_rowstat.get_ptr(), _colstat.get_ptr()));
   FreePreStrongBranchingBasis();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m */
@@ -1786,7 +1786,7 @@ RetCode LPSoplexInterface::GetBasisIndices(
 
   spx_->getBasisInd(basis_indices.data());
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get row of inverse basis matrix B^-1
@@ -1810,11 +1810,11 @@ RetCode LPSoplexInterface::GetBInvertedRow(
   IntArray integer_indices(indices.begin(), indices.end());
 
   if (!spx_->getBasisInverseRowReal(row_number, row_coeffs.data(), integer_indices.data(), &num_indices))
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
 
   indices.assign(integer_indices.begin(), integer_indices.end());
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get column of inverse basis matrix B^-1
@@ -1840,11 +1840,11 @@ RetCode LPSoplexInterface::GetBInvertedColumn(
   IntArray integer_indices(indices.begin(), indices.end());
 
   if (!spx_->getBasisInverseColReal(col_number, col_coeffs.data(), integer_indices.data(), &num_indices))
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
 
   indices.assign(integer_indices.begin(), integer_indices.end());
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -1900,7 +1900,7 @@ RetCode LPSoplexInterface::GetBInvertedARow(
     row_coeffs[c] = binv_vec * acol; /* scalar product */ /*lint !e1702*/
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -1942,9 +1942,9 @@ RetCode LPSoplexInterface::GetBInvertedAColumn(
 
   /* solve */
   if (!spx_->getBasisInverseTimesVecReal(col.get_ptr(), col_coeffs.data()))
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -1962,24 +1962,24 @@ RetCode LPSoplexInterface::GetIntegerParameter(
   MiniMIPdebugMessage("calling GetIntegerParameter()\n");
 
   switch (type) {
-    case LPParameter::FROM_SCRATCH:
+    case LPParameter::kFromScratch:
       param_val = GetFromScratch();
       break;
-    case LPParameter::LP_INFO:
+    case LPParameter::kLPInfo:
       param_val = GetLPInfo();
       break;
-    case LPParameter::LP_ITERATION_LIMIT:
+    case LPParameter::kLPIterationLimit:
       if (spx_->intParam(SoPlex::ITERLIMIT) == -1)
         param_val = INT_MAX;
       break;
       param_val = spx_->intParam(SoPlex::ITERLIMIT);
-    case LPParameter::PRESOLVING:
+    case LPParameter::kPresolving:
       param_val = spx_->intParam(SoPlex::SIMPLIFIER) == SoPlex::SIMPLIFIER_AUTO;
       break;
-    case LPParameter::PRICING:
+    case LPParameter::kPricing:
       param_val = (LPNum) pricing_;
       break;
-    case LPParameter::SCALING:
+    case LPParameter::kScaling:
       scale_param = spx_->intParam(SoPlex::SCALER);
 
       if (scale_param == SoPlex::SCALER_OFF)
@@ -1991,20 +1991,20 @@ RetCode LPSoplexInterface::GetIntegerParameter(
         param_val = 2;
       }
       break;
-    case LPParameter::TIMING:
+    case LPParameter::kTiming:
       param_val = (LPNum) (spx_->intParam(SoPlex::TIMER));
       break;
-    case LPParameter::RANDOMSEED:
+    case LPParameter::kRandomSeed:
       param_val = (LPNum) spx_->randomSeed();
       break;
-    case LPParameter::REFACTOR:
+    case LPParameter::kRefactor:
       param_val = (LPNum) spx_->intParam(SoPlex::FACTOR_UPDATE_MAX);
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   } /*lint !e788*/
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** sets integer parameter of LP */
@@ -2015,51 +2015,51 @@ RetCode LPSoplexInterface::SetIntegerParameter(
   MiniMIPdebugMessage("calling SetIntegerParameter()\n");
 
   switch (type) {
-    case LPParameter::FROM_SCRATCH:
+    case LPParameter::kFromScratch:
       assert(param_val == true || param_val == false);
       SetFromScratch(bool(param_val));
       break;
-    case LPParameter::LP_INFO:
+    case LPParameter::kLPInfo:
       assert(param_val == true || param_val == false);
       SetLPInfo(bool(param_val));
       break;
-    case LPParameter::LP_ITERATION_LIMIT:
+    case LPParameter::kLPIterationLimit:
       assert(param_val >= 0);
       /* -1 <= param_val, -1 meaning no time limit, 0 stopping immediately */
       if (param_val >= INT_MAX)
         static_cast<void>(spx_->setIntParam(SoPlex::ITERLIMIT, -1));
       break;
-    case LPParameter::PRESOLVING:
+    case LPParameter::kPresolving:
       assert(param_val == true || param_val == false);
       static_cast<void>(spx_->setIntParam(SoPlex::SIMPLIFIER, (param_val ? SoPlex::SIMPLIFIER_AUTO : SoPlex::SIMPLIFIER_OFF)));
       break;
-    case LPParameter::PRICING:
+    case LPParameter::kPricing:
       pricing_ = (LPPricing) param_val;
       switch (pricing_) {
-        case LPPricing::DEFAULT:
-        case LPPricing::AUTO:
+        case LPPricing::kDefault:
+        case LPPricing::kAuto:
           static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_AUTO));
           break;
-        case LPPricing::FULL:
+        case LPPricing::kFull:
           static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_STEEP));
           break;
-        case LPPricing::PARTIAL:
+        case LPPricing::kPartial:
           static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_PARMULT));
           break;
-        case LPPricing::STEEP:
+        case LPPricing::kSteep:
           static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_STEEP));
           break;
-        case LPPricing::STEEPQSTART:
+        case LPPricing::kSteepQStart:
           static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_QUICKSTEEP));
           break;
-        case LPPricing::DEVEX:
+        case LPPricing::kDevex:
           static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_DEVEX));
           break;
         default:
-          return RetCode::LP_ERROR;
+          return RetCode::kLPError;
       }
       break;
-    case LPParameter::SCALING:
+    case LPParameter::kScaling:
       assert(param_val >= 0 && param_val <= 2);
       if (param_val == 0)
         static_cast<void>(spx_->setIntParam(SoPlex::SCALER, SoPlex::SCALER_OFF));
@@ -2068,22 +2068,22 @@ RetCode LPSoplexInterface::SetIntegerParameter(
       else
         static_cast<void>(spx_->setIntParam(SoPlex::SCALER, SoPlex::SCALER_LEASTSQ));
       break;
-    case LPParameter::TIMING:
+    case LPParameter::kTiming:
       assert(param_val >= 0 && param_val < 3);
       static_cast<void>(spx_->setIntParam(SoPlex::TIMER, param_val));
       break;
-    case LPParameter::RANDOMSEED:
+    case LPParameter::kRandomSeed:
       spx_->setRandomSeed((unsigned long) (long) param_val); /* TODO: add c++ style static_cast */
       break;
-    case LPParameter::REFACTOR:
+    case LPParameter::kRefactor:
       assert(param_val >= 0);
       static_cast<void>(spx_->setIntParam(SoPlex::FACTOR_UPDATE_MAX, param_val));
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   } /*lint !e788*/
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets floating point parameter of LP */
@@ -2094,29 +2094,29 @@ RetCode LPSoplexInterface::GetRealParameter(
   MiniMIPdebugMessage("calling GetRealParameter()\n");
 
   switch (type) {
-    case LPParameter::FEASIBLITY_TOLERANCE:
+    case LPParameter::kFeasibilityTolerance:
       LPValue_val = FeasibilityTolerance();
       break;
-    case LPParameter::DUAL_FEASIBILITY_TOLERANCE:
+    case LPParameter::kDualFeasibilityTolerance:
       LPValue_val = OptimalityTolerance();
       break;
-    case LPParameter::OBJECTIVE_LIMIT:
+    case LPParameter::kObjectiveLimit:
       if (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
         LPValue_val = spx_->realParam(SoPlex::OBJLIMIT_UPPER);
       else
         LPValue_val = spx_->realParam(SoPlex::OBJLIMIT_LOWER);
       break;
-    case LPParameter::LP_TIME_LIMIT:
+    case LPParameter::kLPTimeLimit:
       LPValue_val = spx_->realParam(SoPlex::TIMELIMIT);
       break;
-    case LPParameter::MARKOWITZ:
+    case LPParameter::kMarkowitz:
       LPValue_val = spx_->realParam(SoPlex::MIN_MARKOWITZ);
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   } /*lint !e788*/
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** sets floating point parameter of LP */
@@ -2127,29 +2127,29 @@ RetCode LPSoplexInterface::SetRealParameter(
   MiniMIPdebugMessage("calling SetRealParameter()\n");
 
   switch (type) {
-    case LPParameter::FEASIBLITY_TOLERANCE:
+    case LPParameter::kFeasibilityTolerance:
       /* 0 < LPValue_val */
       assert(LPValue_val > 0.0);
       SetFeasibilityTolerance(LPValue_val);
       break;
-    case LPParameter::DUAL_FEASIBILITY_TOLERANCE:
+    case LPParameter::kDualFeasibilityTolerance:
       /* 0 < LPValue_val */
       assert(LPValue_val > 0.0);
       SetOptimalityTolerance(LPValue_val);
       break;
-    case LPParameter::OBJECTIVE_LIMIT:
+    case LPParameter::kObjectiveLimit:
       /* no restrictions on LPValue_val */
       if (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
         static_cast<void>(spx_->setRealParam(SoPlex::OBJLIMIT_UPPER, LPValue_val));
       else
         static_cast<void>(spx_->setRealParam(SoPlex::OBJLIMIT_LOWER, LPValue_val));
       break;
-    case LPParameter::LP_TIME_LIMIT:
+    case LPParameter::kLPTimeLimit:
       assert(LPValue_val > 0.0);
       /* soplex requires 0 < LPValue_val < DEFAULT_INFINITY (= 1e100), -1 means unlimited */
       static_cast<void>(spx_->setRealParam(SoPlex::TIMELIMIT, LPValue_val));
       break;
-    case LPParameter::MARKOWITZ:
+    case LPParameter::kMarkowitz:
       /* 1e-4 <= LPValue_val <= 0.999 */
       if (LPValue_val < 1e-4)
         LPValue_val = 1e-4;
@@ -2159,10 +2159,10 @@ RetCode LPSoplexInterface::SetRealParameter(
       static_cast<void>(spx_->setRealParam(SoPlex::MIN_MARKOWITZ, LPValue_val));
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   } /*lint !e788*/
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -2217,12 +2217,12 @@ RetCode LPSoplexInterface::ReadLP(
   assert(PreStrongBranchingBasisFreed());
 
   if (!FileExists(file_name))
-    return RetCode::READ_ERROR;
+    return RetCode::kReadError;
 
   try {
     assert(spx_->intParam(SoPlex::READMODE) == SoPlex::READMODE_REAL);
     if (!spx_->readFile((char*) (file_name)))
-      return RetCode::READ_ERROR;
+      return RetCode::kReadError;
   }
 #ifndef NDEBUG
   catch (const SPxException& x) {
@@ -2231,10 +2231,10 @@ RetCode LPSoplexInterface::ReadLP(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::READ_ERROR;
+    return RetCode::kReadError;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** writes LP to a file */
@@ -2255,9 +2255,9 @@ RetCode LPSoplexInterface::WriteLP(
 #else
   catch (const SPxException&) {
 #endif
-    return RetCode::WRITE_ERROR;
+    return RetCode::kWriteError;
   }
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 } /* namespace minimip*/

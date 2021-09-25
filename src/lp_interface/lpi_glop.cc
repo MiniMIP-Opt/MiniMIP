@@ -32,7 +32,7 @@ namespace minimip {
 LPGlopInterface::LPGlopInterface() : lp_modified_since_last_solve_(true),
                                      lp_time_limit_was_reached_(false),
                                      lp_info_(false),
-                                     pricing_(LPPricing::DEFAULT),
+                                     pricing_(LPPricing::kDefault),
                                      from_scratch_(false),
                                      num_threads_(0),
                                      timing_(0),
@@ -75,7 +75,7 @@ RetCode LPGlopInterface::LoadColumnLP(
   AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names, num_non_zeros, begin_cols, row_indices, vals);
   ChangeObjectiveSense(obj_sense);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** adds columns to the LP */
@@ -128,7 +128,7 @@ RetCode LPGlopInterface::AddColumns(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes all columns in the given range from LP */
@@ -148,7 +148,7 @@ RetCode LPGlopInterface::DeleteColumns(
   linear_program_.DeleteColumns(columns_to_delete);
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes columns from MiniMIP_LP; the new position of a column must not be greater that its old position */
@@ -173,7 +173,7 @@ RetCode LPGlopInterface::DeleteColumnSet(
   linear_program_.DeleteColumns(columns_to_delete);
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** adds rows to the LP */
@@ -223,7 +223,7 @@ RetCode LPGlopInterface::AddRows(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** delete rows from LP and update the current basis */
@@ -267,7 +267,7 @@ RetCode LPGlopInterface::DeleteRows(
   MiniMIPdebugMessage("deleting rows %d to %d.\n", first_row, last_row);
   DeleteRowsAndUpdateCurrentBasis(rows_to_delete);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** deletes rows from LP; the new position of a row must not be greater that its old position */
@@ -291,7 +291,7 @@ RetCode LPGlopInterface::DeleteRowSet(
   MiniMIPdebugMessage("DeleteRowSet: deleting %d rows.\n", num_deleted_rows);
   DeleteRowsAndUpdateCurrentBasis(rows_to_delete);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** clears the whole LP */
@@ -302,7 +302,7 @@ RetCode LPGlopInterface::Clear() {
   linear_program_.Clear();
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** clears current LPi state (like basis information) of the solver */
@@ -310,7 +310,7 @@ RetCode LPGlopInterface::ClearState() {
 
   solver_.ClearStateForNextSolve();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes lower and upper bounds of columns */
@@ -328,18 +328,18 @@ RetCode LPGlopInterface::ChangeBounds(
 
     if (IsInfinity(lower_bounds[i])) {
       MiniMIPerrorMessage("LP Error: fixing lower bound for variable %d to infinity.\n", indices[i]);
-      return RetCode::LP_ERROR;
+      return RetCode::kLPError;
     }
     if (IsInfinity(-upper_bounds[i])) {
       MiniMIPerrorMessage("LP Error: fixing upper bound for variable %d to -infinity.\n", indices[i]);
-      return RetCode::LP_ERROR;
+      return RetCode::kLPError;
     }
 
     linear_program_.SetVariableBounds(ColIndex(static_cast<int>(indices[i])), lower_bounds[i], upper_bounds[i]);
   }
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes left and right hand sides of rows */
@@ -357,7 +357,7 @@ RetCode LPGlopInterface::ChangeSides(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes the objective sense */
@@ -366,18 +366,18 @@ RetCode LPGlopInterface::ChangeObjectiveSense(
 ) {
 
   switch (obj_sense) {
-    case LPObjectiveSense::OBJ_SENSE_MAXIMIZE:
+    case LPObjectiveSense::kMaximize:
       MiniMIPdebugMessage("changing objective sense to MAXIMIZE\n");
       linear_program_.SetMaximizationProblem(true);
       break;
-    case LPObjectiveSense::OBJ_SENSE_MINIMIZE:
+    case LPObjectiveSense::kMinimize:
       MiniMIPdebugMessage("changing objective sense to MINIMIZE\n");
       linear_program_.SetMaximizationProblem(false);
       break;
   }
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** changes objective values of columns in the LP */
@@ -394,7 +394,7 @@ RetCode LPGlopInterface::ChangeObjective(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 
@@ -426,7 +426,7 @@ LPObjectiveSense LPGlopInterface::GetObjectiveSense() {
 
   MiniMIPdebugMessage("getting objective sense.\n");
 
-  return linear_program_.IsMaximizationProblem() ? LPObjectiveSense::OBJ_SENSE_MAXIMIZE : LPObjectiveSense::OBJ_SENSE_MINIMIZE;
+  return linear_program_.IsMaximizationProblem() ? LPObjectiveSense::kMaximize : LPObjectiveSense::kMinimize;
 }
 
 /** gets the number of nonzero elements in the LP constraint matrix */
@@ -481,7 +481,7 @@ RetCode LPGlopInterface::GetColumns(
     }
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets rows from LP problem object
@@ -526,7 +526,7 @@ RetCode LPGlopInterface::GetRows(
     }
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets objective coefficients from LP problem object */
@@ -545,7 +545,7 @@ RetCode LPGlopInterface::GetObjective(
     ++index;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets current bounds from LP problem object */
@@ -568,7 +568,7 @@ RetCode LPGlopInterface::GetBounds(
     ++index;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets current row sides from LP problem object */
@@ -591,7 +591,7 @@ RetCode LPGlopInterface::GetSides(
     ++index;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets a single coefficient */
@@ -605,7 +605,7 @@ RetCode LPGlopInterface::GetCoefficient(
   const SparseMatrix& matrix = linear_program_.GetSparseMatrix();
   val = matrix.LookUpValue(RowIndex(static_cast<int>(row)), ColIndex(static_cast<int>(col_index)));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -694,7 +694,7 @@ RetCode LPGlopInterface::SolveInternal(
     solver_.ClearStateForNextSolve();
 
   if (!solver_.Solve(scaled_lp_, time_limit.get()).ok()) {
-    return RetCode::LP_ERROR;
+    return RetCode::kLPError;
   }
   lp_time_limit_was_reached_ = time_limit->LimitReached();
   if (recursive)
@@ -720,7 +720,7 @@ RetCode LPGlopInterface::SolveInternal(
 
   lp_modified_since_last_solve_ = false;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** calls primal simplex to solve the LP */
@@ -751,14 +751,14 @@ RetCode LPGlopInterface::StartStrongbranch() { /*lint --e{715}*/
   updateScaledLP();
 
   /* @todo Save state and do all the branching from there. */
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** end strong branching */
 RetCode LPGlopInterface::EndStrongbranch() { /*lint --e{715}*/
 
   /* @todo Restore the saved state. */
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 /** determine whether the dual bound is valid */
 bool LPGlopInterface::IsDualBoundValid(
@@ -855,7 +855,7 @@ RetCode LPGlopInterface::strongbranch(
   if (iterations > 0)
     iterations = num_iterations;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on one @b fractional candidate */
@@ -874,7 +874,7 @@ RetCode LPGlopInterface::StrongbranchFractionalValue(
 
   MINIMIP_CALL(strongbranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on given @b fractional candidates */
@@ -891,7 +891,7 @@ RetCode LPGlopInterface::StrongbranchFractionalValues(
                                            *   otherwise, they can only be used as an estimate values */
   LPNum& iterations                       /**< stores total number of strong branching iterations */
 ) {
-  return RetCode::NOT_IMPLEMENTED;
+  return RetCode::kNotImplemented;
 }
 
 /** performs strong branching iterations on one candidate with @b integral value */
@@ -911,7 +911,7 @@ RetCode LPGlopInterface::StrongbranchIntegerValue(
 
   MINIMIP_CALL(strongbranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations));
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** performs strong branching iterations on given candidates with @b integral values */
@@ -928,7 +928,7 @@ RetCode LPGlopInterface::StrongbranchIntegerValues(
                                            *   otherwise, they can only be used as an estimate values */
   LPNum& iterations                       /**< stores total number of strong branching iterations */
 ) {
-  return RetCode::NOT_IMPLEMENTED;
+  return RetCode::kNotImplemented;
 }
 
 /**@} */
@@ -1079,7 +1079,7 @@ RetCode LPGlopInterface::GetObjectiveValue(
 
   obj_val = solver_.GetObjectiveValue();
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets primal and dual solution vectors for feasible LPs
@@ -1116,7 +1116,7 @@ RetCode LPGlopInterface::GetSolution(
     activity[j] = scaler_.UnscaleConstraintActivity(row, solver_.GetConstraintActivity(row));
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets primal ray for unbounded LPs */
@@ -1131,7 +1131,7 @@ RetCode LPGlopInterface::GetPrimalRay(
   for (ColIndex col(0); col < num_cols; ++col)
     primal_ray[col.value()] = scaler_.UnscaleVariableValue(col, primal_ray_solver[col]);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets dual Farkas proof for infeasibility */
@@ -1146,7 +1146,7 @@ RetCode LPGlopInterface::GetDualFarkasMultiplier(
   for (RowIndex row(0); row < num_rows; ++row)
     dual_farkas_multiplier[row.value()] = -scaler_.UnscaleDualValue(row, dual_ray[row]); /* reverse sign */
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets the number of LP iterations of the last solve call */
@@ -1156,7 +1156,7 @@ RetCode LPGlopInterface::GetIterations(
 
   iterations = static_cast<int>(niterations_);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /*
@@ -1173,15 +1173,15 @@ LPBaseStat LPGlopInterface::ConvertGlopVariableStatus(
 ) {
   switch (status) {
     case VariableStatus::BASIC:
-      return LPBaseStat::BASESTAT_BASIC;
+      return LPBaseStat::kBasic;
     case VariableStatus::AT_UPPER_BOUND:
-      return LPBaseStat::BASESTAT_UPPER;
+      return LPBaseStat::kUpper;
     case VariableStatus::AT_LOWER_BOUND:
-      return LPBaseStat::BASESTAT_LOWER;
+      return LPBaseStat::kLower;
     case VariableStatus::FREE:
-      return LPBaseStat::BASESTAT_ZERO;
+      return LPBaseStat::kZero;
     case VariableStatus::FIXED_VALUE:
-      return reduced_cost > 0.0 ? LPBaseStat::BASESTAT_LOWER : LPBaseStat::BASESTAT_UPPER;
+      return reduced_cost > 0.0 ? LPBaseStat::kLower : LPBaseStat::kUpper;
     default:
       MiniMIPerrorMessage("invalid Glop basis status.\n");
       std::abort();
@@ -1195,15 +1195,15 @@ LPBaseStat LPGlopInterface::ConvertGlopConstraintStatus(
 ) {
   switch (status) {
     case ConstraintStatus::BASIC:
-      return LPBaseStat::BASESTAT_BASIC;
+      return LPBaseStat::kBasic;
     case ConstraintStatus::AT_UPPER_BOUND:
-      return LPBaseStat::BASESTAT_UPPER;
+      return LPBaseStat::kUpper;
     case ConstraintStatus::AT_LOWER_BOUND:
-      return LPBaseStat::BASESTAT_LOWER;
+      return LPBaseStat::kLower;
     case ConstraintStatus::FREE:
-      return LPBaseStat::BASESTAT_ZERO;
+      return LPBaseStat::kZero;
     case ConstraintStatus::FIXED_VALUE:
-      return dual_value > 0.0 ? LPBaseStat::BASESTAT_LOWER : LPBaseStat::BASESTAT_UPPER;
+      return dual_value > 0.0 ? LPBaseStat::kLower : LPBaseStat::kUpper;
     default:
       MiniMIPerrorMessage("invalid Glop basis status.\n");
       std::abort();
@@ -1215,13 +1215,13 @@ VariableStatus LPGlopInterface::ConvertMiniMIPVariableStatus(
   LPBaseStat status /**< MiniMIP variable status */
 ) {
   switch (status) {
-    case LPBaseStat::BASESTAT_BASIC:
+    case LPBaseStat::kBasic:
       return VariableStatus::BASIC;
-    case LPBaseStat::BASESTAT_UPPER:
+    case LPBaseStat::kUpper:
       return VariableStatus::AT_UPPER_BOUND;
-    case LPBaseStat::BASESTAT_LOWER:
+    case LPBaseStat::kLower:
       return VariableStatus::AT_LOWER_BOUND;
-    case LPBaseStat::BASESTAT_ZERO:
+    case LPBaseStat::kZero:
       return VariableStatus::FREE;
     default:
       MiniMIPerrorMessage("invalid MiniMIP basis status.\n");
@@ -1237,13 +1237,13 @@ VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
   LPBaseStat status /**< MiniMIP constraint status */
 ) {
   switch (status) {
-    case LPBaseStat::BASESTAT_BASIC:
+    case LPBaseStat::kBasic:
       return VariableStatus::BASIC;
-    case LPBaseStat::BASESTAT_UPPER:
+    case LPBaseStat::kUpper:
       return VariableStatus::AT_LOWER_BOUND;
-    case LPBaseStat::BASESTAT_LOWER:
+    case LPBaseStat::kLower:
       return VariableStatus::AT_UPPER_BOUND;
-    case LPBaseStat::BASESTAT_ZERO:
+    case LPBaseStat::kZero:
       return VariableStatus::FREE;
     default:
       MiniMIPerrorMessage("invalid MiniMIP basis status.\n");
@@ -1271,7 +1271,7 @@ RetCode LPGlopInterface::GetBase(
     row_basis_status[i] = (LPBaseStat) ConvertGlopConstraintStatus(solver_.GetConstraintStatus(row), solver_.GetDualValue(row));
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** sets current basis status for columns and rows */
@@ -1296,7 +1296,7 @@ RetCode LPGlopInterface::SetBase(
 
   solver_.LoadStateForNextSolve(state);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m */
@@ -1318,7 +1318,7 @@ RetCode LPGlopInterface::GetBasisIndices(
     }
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get row of inverse basis matrix B^-1
@@ -1366,7 +1366,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
         }
       }
     }
-    return RetCode::OKAY;
+    return RetCode::kOkay;
   }
 
   /* dense version */
@@ -1376,7 +1376,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
   if (num_indices >= 0)
     num_indices = -1;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get column of inverse basis matrix B^-1
@@ -1415,7 +1415,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
         indices[(num_indices)++] = row;
       }
     }
-    return RetCode::OKAY;
+    return RetCode::kOkay;
   }
 
   /* dense version */
@@ -1428,7 +1428,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
   if (num_indices >= 0)
     num_indices = -1;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -1463,7 +1463,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
         indices[num_indices++] = col.value();
       }
     }
-    return RetCode::OKAY;
+    return RetCode::kOkay;
   }
 
   /* dense version */
@@ -1477,7 +1477,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
   }
   num_indices = -1;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -1522,7 +1522,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
         }
       }
     }
-    return RetCode::OKAY;
+    return RetCode::kOkay;
   }
 
   /* dense version */
@@ -1532,7 +1532,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
   if (num_indices >= 0)
     num_indices = -1;
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -1551,49 +1551,49 @@ RetCode LPGlopInterface::GetIntegerParameter(
 ) {
 
   switch (type) {
-    case LPParameter::FROM_SCRATCH:
+    case LPParameter::kFromScratch:
       param_val = (LPNum) from_scratch_;
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::FROM_SCRATCH = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kFromScratch = %d.\n", param_val);
       break;
-    case LPParameter::LP_INFO:
+    case LPParameter::kLPInfo:
       param_val = (LPNum) lp_info_;
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::LP_INFO = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kLPInfo = %d.\n", param_val);
       break;
-    case LPParameter::LP_ITERATION_LIMIT:
+    case LPParameter::kLPIterationLimit:
       param_val = (LPNum) parameters_.max_number_of_iterations();
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::LP_ITERATION_LIMIT = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kLPIterationLimit = %d.\n", param_val);
       break;
-    case LPParameter::PRESOLVING:
+    case LPParameter::kPresolving:
       param_val = parameters_.use_preprocessing();
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::PRESOLVING = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kPresolving = %d.\n", param_val);
       break;
-    case LPParameter::PRICING:
+    case LPParameter::kPricing:
       param_val = (LPNum) pricing_;
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::PRICING = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kPricing = %d.\n", param_val);
       break;
 #ifndef NOSCALING
-    case LPParameter::SCALING:
+    case LPParameter::kScaling:
       param_val = parameters_.use_scaling();
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::SCALING = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kScaling = %d.\n", param_val);
       break;
 #endif
-    case LPParameter::THREADS:
+    case LPParameter::kThreads:
       param_val = num_threads_;
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::THREADS = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kThreads = %d.\n", param_val);
       break;
-    case LPParameter::TIMING:
+    case LPParameter::kTiming:
       param_val = timing_;
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::TIMING = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kTiming = %d.\n", param_val);
       break;
-    case LPParameter::RANDOMSEED:
+    case LPParameter::kRandomSeed:
       param_val = (LPNum) parameters_.random_seed();
-      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::RANDOMSEED = %d.\n", param_val);
+      MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kRandomSeed = %d.\n", param_val);
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** sets integer parameter of LP */
@@ -1603,12 +1603,12 @@ RetCode LPGlopInterface::SetIntegerParameter(
 ) {
 
   switch (type) {
-    case LPParameter::FROM_SCRATCH:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::FROM_SCRATCH -> %d.\n", param_val);
+    case LPParameter::kFromScratch:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kFromScratch -> %d.\n", param_val);
       from_scratch_ = static_cast<bool>(param_val);
       break;
-    case LPParameter::LP_INFO:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::LP_INFO -> %d.\n", param_val);
+    case LPParameter::kLPInfo:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kLPInfo -> %d.\n", param_val);
       if (param_val == 0) {
         static_cast<void>(google::SetVLOGLevel("*", google::GLOG_INFO));
         lp_info_ = false;
@@ -1617,52 +1617,52 @@ RetCode LPGlopInterface::SetIntegerParameter(
         lp_info_ = true;
       }
       break;
-    case LPParameter::LP_ITERATION_LIMIT:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::LP_ITERATION_LIMIT -> %d.\n", param_val);
+    case LPParameter::kLPIterationLimit:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kLPIterationLimit -> %d.\n", param_val);
       parameters_.set_max_number_of_iterations(param_val);
       break;
-    case LPParameter::PRESOLVING:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::PRESOLVING -> %d.\n", param_val);
+    case LPParameter::kPresolving:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kPresolving -> %d.\n", param_val);
       parameters_.set_use_preprocessing(param_val);
       break;
-    case LPParameter::PRICING:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::PRICING -> %d.\n", param_val);
+    case LPParameter::kPricing:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kPricing -> %d.\n", param_val);
       pricing_ = (LPPricing) param_val;
       switch (pricing_) {
-        case LPPricing::DEFAULT:
-        case LPPricing::AUTO:
-        case LPPricing::PARTIAL:
-        case LPPricing::STEEP:
-        case LPPricing::STEEPQSTART:
+        case LPPricing::kDefault:
+        case LPPricing::kAuto:
+        case LPPricing::kPartial:
+        case LPPricing::kSteep:
+        case LPPricing::kSteepQStart:
           parameters_.set_feasibility_rule(operations_research::glop::GlopParameters_PricingRule_STEEPEST_EDGE);
           break;
-        case LPPricing::FULL:
+        case LPPricing::kFull:
           /* Dantzig does not really fit, but use it anyway */
           parameters_.set_feasibility_rule(operations_research::glop::GlopParameters_PricingRule_DANTZIG);
           break;
-        case LPPricing::DEVEX:
+        case LPPricing::kDevex:
           parameters_.set_feasibility_rule(operations_research::glop::GlopParameters_PricingRule_DEVEX);
           break;
         default:
-          return RetCode::PARAMETER_UNKNOWN;
+          return RetCode::kParameterUnknown;
       }
       break;
 #ifndef NOSCALING
-    case LPParameter::SCALING:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::SCALING -> %d.\n", param_val);
+    case LPParameter::kScaling:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kScaling -> %d.\n", param_val);
       parameters_.set_use_scaling(param_val);
       break;
 #endif
-    case LPParameter::THREADS:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::THREADS -> %d.\n", param_val);
+    case LPParameter::kThreads:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kThreads -> %d.\n", param_val);
       num_threads_ = param_val;
       if (param_val == 0)
         parameters_.set_num_omp_threads(1);
       else
         parameters_.set_num_omp_threads(static_cast<int>(param_val));
       break;
-    case LPParameter::TIMING:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::TIMING -> %d.\n", param_val);
+    case LPParameter::kTiming:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kTiming -> %d.\n", param_val);
       assert(param_val <= 2);
       timing_ = param_val;
       if (param_val == 1)
@@ -1670,15 +1670,15 @@ RetCode LPGlopInterface::SetIntegerParameter(
       else
         absl::SetFlag(&FLAGS_time_limit_use_usertime, false);
       break;
-    case LPParameter::RANDOMSEED:
-      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::RANDOMSEED -> %d.\n", param_val);
+    case LPParameter::kRandomSeed:
+      MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kRandomSeed -> %d.\n", param_val);
       parameters_.set_random_seed(static_cast<int>(param_val));
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** gets floating point parameter of LP */
@@ -1688,34 +1688,34 @@ RetCode LPGlopInterface::GetRealParameter(
 ) {
 
   switch (type) {
-    case LPParameter::FEASIBLITY_TOLERANCE:
+    case LPParameter::kFeasibilityTolerance:
       param_val = parameters_.primal_feasibility_tolerance();
-      MiniMIPdebugMessage("GetRealParameter: LPParameter::FEASIBLITY_TOLERANCE = %g.\n", param_val);
+      MiniMIPdebugMessage("GetRealParameter: LPParameter::kFeasibilityTolerance = %g.\n", param_val);
       break;
-    case LPParameter::DUAL_FEASIBILITY_TOLERANCE:
+    case LPParameter::kDualFeasibilityTolerance:
       param_val = parameters_.dual_feasibility_tolerance();
-      MiniMIPdebugMessage("GetRealParameter: LPParameter::DUAL_FEASIBILITY_TOLERANCE = %g.\n", param_val);
+      MiniMIPdebugMessage("GetRealParameter: LPParameter::kDualFeasibilityTolerance = %g.\n", param_val);
       break;
-    case LPParameter::OBJECTIVE_LIMIT:
+    case LPParameter::kObjectiveLimit:
       if (linear_program_.IsMaximizationProblem())
         param_val = parameters_.objective_lower_limit();
       else
         param_val = parameters_.objective_upper_limit();
-      MiniMIPdebugMessage("GetRealParameter: LPParameter::OBJECTIVE_LIMIT = %f.\n", param_val);
+      MiniMIPdebugMessage("GetRealParameter: LPParameter::kObjectiveLimit = %f.\n", param_val);
       break;
-    case LPParameter::LP_TIME_LIMIT:
+    case LPParameter::kLPTimeLimit:
       if (absl::GetFlag(FLAGS_time_limit_use_usertime))
         param_val = parameters_.max_time_in_seconds();
       else
         param_val = parameters_.max_deterministic_time();
-      MiniMIPdebugMessage("GetRealParameter: LPParameter::LP_TIME_LIMIT = %f.\n", param_val);
+      MiniMIPdebugMessage("GetRealParameter: LPParameter::kLPTimeLimit = %f.\n", param_val);
       break;
 
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** sets floating point parameter of LP */
@@ -1725,33 +1725,33 @@ RetCode LPGlopInterface::SetRealParameter(
 ) {
 
   switch (type) {
-    case LPParameter::FEASIBLITY_TOLERANCE:
-      MiniMIPdebugMessage("SetRealParameter: LPParameter::FEASIBLITY_TOLERANCE -> %g.\n", param_val);
+    case LPParameter::kFeasibilityTolerance:
+      MiniMIPdebugMessage("SetRealParameter: LPParameter::kFeasibilityTolerance -> %g.\n", param_val);
       parameters_.set_primal_feasibility_tolerance(param_val);
       break;
-    case LPParameter::DUAL_FEASIBILITY_TOLERANCE:
-      MiniMIPdebugMessage("SetRealParameter: LPParameter::DUAL_FEASIBILITY_TOLERANCE -> %g.\n", param_val);
+    case LPParameter::kDualFeasibilityTolerance:
+      MiniMIPdebugMessage("SetRealParameter: LPParameter::kDualFeasibilityTolerance -> %g.\n", param_val);
       parameters_.set_dual_feasibility_tolerance(param_val);
       break;
-    case LPParameter::OBJECTIVE_LIMIT:
-      MiniMIPdebugMessage("SetRealParameter: LPParameter::OBJECTIVE_LIMIT -> %f.\n", param_val);
+    case LPParameter::kObjectiveLimit:
+      MiniMIPdebugMessage("SetRealParameter: LPParameter::kObjectiveLimit -> %f.\n", param_val);
       if (linear_program_.IsMaximizationProblem())
         parameters_.set_objective_lower_limit(param_val);
       else
         parameters_.set_objective_upper_limit(param_val);
       break;
-    case LPParameter::LP_TIME_LIMIT:
-      MiniMIPdebugMessage("SetRealParameter: LPParameter::LP_TIME_LIMIT -> %f.\n", param_val);
+    case LPParameter::kLPTimeLimit:
+      MiniMIPdebugMessage("SetRealParameter: LPParameter::kLPTimeLimit -> %f.\n", param_val);
       if (absl::GetFlag(FLAGS_time_limit_use_usertime))
         parameters_.set_max_time_in_seconds(param_val);
       else
         parameters_.set_max_deterministic_time(param_val);
       break;
     default:
-      return RetCode::PARAMETER_UNKNOWN;
+      return RetCode::kParameterUnknown;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /**@} */
@@ -1794,12 +1794,12 @@ RetCode LPGlopInterface::ReadLP(
   MPModelProto proto;
   if (!ReadFileToProto(filespec, &proto)) {
     MiniMIPerrorMessage("Could not read <%s>\n", file_name);
-    return RetCode::READ_ERROR;
+    return RetCode::kReadError;
   }
   linear_program_.Clear();
   MPModelProtoToLinearProgram(proto, &linear_program_);
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 /** writes LP to a file */
@@ -1813,10 +1813,10 @@ RetCode LPGlopInterface::WriteLP(
   const char* filespec(file_name);
   if (!WriteProtoToFile(filespec, proto, operations_research::ProtoWriteFormat::kProtoText, true)) {
     MiniMIPerrorMessage("Could not write <%s>\n", file_name);
-    return RetCode::READ_ERROR;
+    return RetCode::kReadError;
   }
 
-  return RetCode::OKAY;
+  return RetCode::kOkay;
 }
 
 } /* namespace minimip*/

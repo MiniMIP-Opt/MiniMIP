@@ -51,14 +51,14 @@ class Solve : public ::testing::Test {
     InterfaceCode interface_code;
     switch (DEF_INTERFACE) {
       case 1:
-        interface_code = InterfaceCode::SOPLEX;
+        interface_code = InterfaceCode::kSoplex;
         break;
       default:
-        interface_code = InterfaceCode::GLOP;
+        interface_code = InterfaceCode::kGlop;
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::OBJ_SENSE_MAXIMIZE);
+    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
   }
   /* local functions */
 
@@ -97,9 +97,9 @@ class Solve : public ::testing::Test {
 
     /* solve problem */
     if (solveprimal) {
-      ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
     } else {
-      ASSERT_EQ(lp_interface_->SolveDual(), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
     }
 
     /* check status */
@@ -199,7 +199,7 @@ class Solve : public ::testing::Test {
     /* check solution */
     if (exp_primalfeas == LPFeasibilityStat::FEASIBLE) {
       /* get solution */
-      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::kOkay);
 
       for (j = 0; j < ncols; ++j) {
         ASSERT_FLOAT_EQ(primsol[j], exp_primsol[j]);// EPS, "Violation of primal solution %d: %g != %g\n", j, primsol[j], exp_primsol[j]);
@@ -210,7 +210,7 @@ class Solve : public ::testing::Test {
       if (lp_interface_->HasPrimalRay()) {
         LPValue scalingfactor = 1.0;
 
-        ASSERT_EQ(lp_interface_->GetPrimalRay(primsol), RetCode::OKAY);
+        ASSERT_EQ(lp_interface_->GetPrimalRay(primsol), RetCode::kOkay);
 
         /* loop until scaling factor can be determined */
         for (j = 0; j < ncols; ++j) {
@@ -231,7 +231,7 @@ class Solve : public ::testing::Test {
 
     if (exp_dualfeas == LPFeasibilityStat::FEASIBLE) {
       /* get solution */
-      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::OKAY);
+      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::kOkay);
 
       for (i = 0; i < nrows; ++i) {
         ASSERT_FLOAT_EQ(dualsol[i], exp_dualsol[i]);  // EPS, "Violation of dual solution %d: %g != %g\n", i, dualsol[i], exp_dualsol[i]);
@@ -245,10 +245,10 @@ class Solve : public ::testing::Test {
         LPValueArray rhs(nrows);
 
         /* get lhs/rhs for check of dual ray */
-        ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, lhs, rhs), RetCode::OKAY);
+        ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, lhs, rhs), RetCode::kOkay);
 
         /* get dual ray */
-        ASSERT_EQ(lp_interface_->GetDualFarkasMultiplier(dualsol), RetCode::OKAY);
+        ASSERT_EQ(lp_interface_->GetDualFarkasMultiplier(dualsol), RetCode::kOkay);
 
         /* loop until scaling factor can be determined */
         for (i = 0; i < nrows; ++i) {
@@ -294,7 +294,7 @@ class Solve : public ::testing::Test {
     StringArray empty_names;
 
     /* load problem */
-    ASSERT_EQ(lp_interface_->LoadColumnLP(objsen, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->LoadColumnLP(objsen, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
     ASSERT_TRUE(!lp_interface_->WasSolved());
 
     /* solve problem */
@@ -354,8 +354,8 @@ class Solve : public ::testing::Test {
     check_ind.reserve(check_nnonz);
 
     /* get matrix data */
-    ASSERT_EQ(lp_interface_->GetColumns(0, ncols - 1, check_lb, check_ub, check_nnonz2, check_beg, check_ind, check_val), RetCode::OKAY);
-    ASSERT_EQ(lp_interface_->GetObjective(0, ncols - 1, check_obj), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->GetColumns(0, ncols - 1, check_lb, check_ub, check_nnonz2, check_beg, check_ind, check_val), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->GetObjective(0, ncols - 1, check_obj), RetCode::kOkay);
 
     /* compare data */
     for (j = 0; j < ncols; ++j) {
@@ -380,7 +380,7 @@ class Solve : public ::testing::Test {
     check_lhs.reserve(nrows);
     check_rhs.reserve(nrows);
 
-    ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, check_lhs, check_rhs), RetCode::OKAY);
+    ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, check_lhs, check_rhs), RetCode::kOkay);
 
     for (i = 0; i < nrows; ++i) {
 
@@ -450,27 +450,27 @@ TEST_F(Solve, test1) {
     ASSERT_EQ(lhs[j], -lp_interface_->Infinity());
   }
   /* solve problem with primal simplex */
-  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
+  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
               LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* solve problem with dual simplex */
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* change objective */
   obj[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), RetCode::kOkay);
 
   /* change expected solution */
   exp_primsol[0] = 3;
@@ -482,11 +482,11 @@ TEST_F(Solve, test1) {
   exp_redcost[1] = 0;
 
   /* check changed problem with primal simplex */
-  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
+  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
               LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 }
 
 /** Test 2
@@ -546,33 +546,33 @@ TEST_F(Solve, test2) {
   LPValueArray empty_vals;
 
   /* solve problem with primal simplex */
-  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
+  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
               LPFeasibilityStat::UNBOUNDED, LPFeasibilityStat::INFEASIBLE, exp_primray, empty_vals, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* solve problem with dual simplex */
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::UNBOUNDED, LPFeasibilityStat::INFEASIBLE, exp_primray, empty_vals, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* change objective */
   obj[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), RetCode::kOkay);
 
   /* solve with primal simplex */
   ASSERT_NO_FATAL_FAILURE(solveTest(true, 2, 2, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 }
 
 /** Test 3
@@ -629,32 +629,32 @@ TEST_F(Solve, test3) {
   LPValueArray empty_vals;
 
   /* check problem with primal simplex */
-  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
+  ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
               LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED, empty_vals, exp_dualray, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* check problem with dual simplex */
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED, empty_vals, exp_dualray, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* change lhs/rhs */
   lhs[0] = 1.0;
   rhs[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeSides(1, ind, lhs, rhs), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeSides(1, ind, lhs, rhs), RetCode::kOkay);
   ASSERT_NO_FATAL_FAILURE(solveTest(true, 2, 2, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 }
 
 /** Test 4
@@ -696,17 +696,17 @@ TEST_F(Solve, test4) {
   LPValueArray empty_vals;
 
   /* check problem with primal simplex */
-  ASSERT_NO_FATAL_FAILURE(  performTest(true, LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
+  ASSERT_NO_FATAL_FAILURE(  performTest(true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
               LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::INFEASIBLE, empty_vals, empty_vals, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* check problem with dual simplex */
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::INFEASIBLE, empty_vals, empty_vals, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 }
 
 /** Test 5: Test objective limit
@@ -743,8 +743,8 @@ TEST_F(Solve, test5) {
   LPValue objval;
   LPBaseStatArray cstat(2);
   LPBaseStatArray rstat(2);
-  cstat = {LPBaseStat::BASESTAT_LOWER, LPBaseStat::BASESTAT_LOWER};
-  rstat = {LPBaseStat::BASESTAT_BASIC, LPBaseStat::BASESTAT_BASIC};
+  cstat = {LPBaseStat::kLower, LPBaseStat::kLower};
+  rstat = {LPBaseStat::kBasic, LPBaseStat::kBasic};
   LPValue exp_objval = 5.0;
 
   /* expected solutions */
@@ -763,18 +763,18 @@ TEST_F(Solve, test5) {
   StringArray empty_names;
 
   /* load problem */
-  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMaximize, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
 
   /* set objective limit */
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::FROM_SCRATCH, 1) == RetCode::OKAY) || (lp_interface_->SetIntegerParameter(LPParameter::FROM_SCRATCH, 1) == RetCode::PARAMETER_UNKNOWN));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::PRESOLVING, 0) == RetCode::OKAY) || (lp_interface_->SetIntegerParameter(LPParameter::PRESOLVING, 0) == RetCode::PARAMETER_UNKNOWN));
-  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::OBJECTIVE_LIMIT, 0.0), RetCode::OKAY);
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 1) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 1) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 0) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 0) == RetCode::kParameterUnknown));
+  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, 0.0), RetCode::kOkay);
 
   /* set basis */
-  ASSERT_EQ(lp_interface_->SetBase(cstat, rstat), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SetBase(cstat, rstat), RetCode::kOkay);
 
   /* solve problem */
-  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
 
   /* check status */
   ASSERT_TRUE(lp_interface_->WasSolved());
@@ -783,11 +783,11 @@ TEST_F(Solve, test5) {
   ASSERT_TRUE(!lp_interface_->IsTimeLimitExceeded());
 
   /* the objective should be equal to the objective limit */
-  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::kOkay);
   ASSERT_GE(objval, exp_objval);// << "Objective value not equal to objective limit: %g != %g\n", objval, exp_objval);
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MAXIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 }
 
 /** Test 6: More complex example
@@ -890,34 +890,34 @@ TEST_F(Solve, test6) {
   StringArray empty_names;
 
   /* load problem */
-  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 12, obj, lb, ub, empty_names, 8, lhs, rhs, empty_names, 30, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMinimize, 12, obj, lb, ub, empty_names, 8, lhs, rhs, empty_names, 30, beg, ind, val), RetCode::kOkay);
 
   /* set some parameters - simulate settings in MiniMIP */
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::FROM_SCRATCH, 0) == RetCode::OKAY) || (lp_interface_->SetIntegerParameter(LPParameter::FROM_SCRATCH, 0) == RetCode::PARAMETER_UNKNOWN));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::SCALING, 1) == RetCode::OKAY) || (lp_interface_->SetIntegerParameter(LPParameter::SCALING, 1) == RetCode::PARAMETER_UNKNOWN));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::PRESOLVING, 1) == RetCode::OKAY) || (lp_interface_->SetIntegerParameter(LPParameter::PRESOLVING, 1) == RetCode::PARAMETER_UNKNOWN));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::PRICING, 0) == RetCode::OKAY) || (lp_interface_->SetIntegerParameter(LPParameter::PRICING, 0) == RetCode::PARAMETER_UNKNOWN));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 0) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 0) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kScaling, 1) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kScaling, 1) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 1) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 1) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPricing, 0) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kPricing, 0) == RetCode::kParameterUnknown));
 
-  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::FEASIBLITY_TOLERANCE, 1e-06) == RetCode::OKAY) || (lp_interface_->SetRealParameter(LPParameter::FEASIBLITY_TOLERANCE, 1e-06) == RetCode::PARAMETER_UNKNOWN));
-  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::DUAL_FEASIBILITY_TOLERANCE, 1e-07) == RetCode::OKAY) || (lp_interface_->SetRealParameter(LPParameter::DUAL_FEASIBILITY_TOLERANCE, 1e-07) == RetCode::PARAMETER_UNKNOWN));
+  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::kFeasibilityTolerance, 1e-06) == RetCode::kOkay) || (lp_interface_->SetRealParameter(LPParameter::kFeasibilityTolerance, 1e-06) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::kDualFeasibilityTolerance, 1e-07) == RetCode::kOkay) || (lp_interface_->SetRealParameter(LPParameter::kDualFeasibilityTolerance, 1e-07) == RetCode::kParameterUnknown));
 
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* set objlimit */
-  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::OBJECTIVE_LIMIT, 4.320412501), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, 4.320412501), RetCode::kOkay);
 
   /* solve problem */
-  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
 
   /* check status */
   ASSERT_TRUE(lp_interface_->WasSolved());
 
   /* the objective should be equal to the objective limit */
-  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::kOkay);
   ASSERT_FLOAT_EQ(objval, exp_objval);
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 12, obj, lb, ub, 8, lhs, rhs, 30, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 12, obj, lb, ub, 8, lhs, rhs, 30, beg, ind, val));
 
   /* change some bounds */
   lb[0] = 1;
@@ -936,18 +936,18 @@ TEST_F(Solve, test6) {
   ub[10] = 1.750;
   lb[11] = 0.499951;
   ub[11] = 0.5;
-  ASSERT_EQ(lp_interface_->ChangeBounds(12, varind, lb, ub), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ChangeBounds(12, varind, lb, ub), RetCode::kOkay);
 
   /* set objlimit */
-  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::OBJECTIVE_LIMIT, -2.0625), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, -2.0625), RetCode::kOkay);
 
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* solve problem */
-  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 12, obj, lb, ub, 8, lhs, rhs, 30, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 12, obj, lb, ub, 8, lhs, rhs, 30, beg, ind, val));
 }
 
 /** Test 7
@@ -1004,19 +1004,19 @@ TEST_F(Solve, test7) {
   LPValueArray empty_vals;
 
   /* check problem with primal simplex */
-  ASSERT_NO_FATAL_FAILURE(  performTest(true, LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
+  ASSERT_NO_FATAL_FAILURE(  performTest(true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
               LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED, empty_vals, exp_dualray, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   /* clear basis status */
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
 
   /* check problem with dual simplex */
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED, empty_vals, exp_dualray, empty_vals, empty_vals));
 
   /* check that data stored in lpi is still the same */
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::OBJ_SENSE_MINIMIZE, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 }
 } /* namespace minimip */
