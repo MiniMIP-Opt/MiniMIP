@@ -8,7 +8,7 @@ namespace minimip {
 
 enum class InterfaceCode {
   kGlop = 0,
-  kSoplex = 1
+  kSoplex = 1,
 };
 
 class LPInterfaceFactory {

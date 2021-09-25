@@ -84,7 +84,7 @@ enum class LPBaseStat {
   kLower = 0, /**< (slack) variable is at its lower bound */
   kBasic = 1, /**< (slack) variable is basic */
   kUpper = 2, /**< (slack) variable is at its upper bound */
-  kZero = 3   /**< free variable is non-basic and set to zero */
+  kZero = 3,  /**< free variable is non-basic and set to zero */
 };
 
 typedef std::vector<LPBaseStat> LPBaseStatArray;
