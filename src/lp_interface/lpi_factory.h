@@ -23,5 +23,5 @@ class LPInterfaceFactory {
   }
 };
 
-} /* namespace minimip */
-#endif /* MINIMIP_SRC_FACTORIES_LPI_FACTORY_H_ */
+} // namespace minimip
+#endif // MINIMIP_SRC_FACTORIES_LPI_FACTORY_H_

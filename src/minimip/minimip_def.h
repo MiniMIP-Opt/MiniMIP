@@ -17,7 +17,7 @@
 
 #define MINIMIP_CALL(x)                                               \
   do {                                                                \
-    minimip::RetCode _restat_; /*lint -e{506,774}*/                   \
+    minimip::RetCode _restat_;                                         \
     if ((_restat_ = (x)) != minimip::RetCode::kOkay) {                 \
     MiniMIPerrorMessage("Error <%d> in function call\n", static_cast<int>(_restat_)); \
       return _restat_;                                                \

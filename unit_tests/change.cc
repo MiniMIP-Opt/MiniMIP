@@ -1,36 +1,35 @@
-/**@file   change.c
- * @brief  unit tests for testing the methods that change and get coefficients in the .
- *
- * The tested methods are:
- * GetCoefficient,
- * ChangeObjective, GetObjective,
- * ChangeBounds, GetBounds,
- * ChangeSides, GetSides,
- * ChangeObjectiveSense, GetObjectiveSense,
- * GetNumberOfColumns, GetNumberOfRows, GetNumberOfNonZeros,
- * GetColumns, GetRows,
- * ClearState,
- * WriteLP, ReadLP, Clear
- */
+// @file   change.c
+// @brief  unit tests for testing the methods that change and get coefficients in the .
+//
+// The tested methods are:
+// GetCoefficient,
+// ChangeObjective, GetObjective,
+// ChangeBounds, GetBounds,
+// ChangeSides, GetSides,
+// ChangeObjectiveSense, GetObjectiveSense,
+// GetNumberOfColumns, GetNumberOfRows, GetNumberOfNonZeros,
+// GetColumns, GetRows,
+// ClearState,
+// WriteLP, ReadLP, Clear
 
 #include "src/lp_interface/lpi_factory.h"
 
 #include <gtest/gtest.h>
 
-#define TEST_ERRORS 0   /* if 0 then skip tests expected to fail. */
-#define DEF_INTERFACE 1 /* 0 = Glop Interface (Default), \
-                          * 1 = SoPlex Interface, */
+#define TEST_ERRORS 0   // if 0 then skip tests expected to fail.
+#define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
+                        // 1 = SoPlex Interface,
 
 namespace minimip {
 
-/*** TEST SUITE SOLVE ***/
+// TEST SUITE SOLVE
 
 static LPInterface* lp_interface_ = nullptr;
 
 class Change : public ::testing::Test {
  protected:
   void SetUp() override {
-    /* build interface factory */
+    // build interface factory
     auto* interface_factory = new LPInterfaceFactory();
     InterfaceCode interface_code;
     switch (DEF_INTERFACE) {
@@ -45,7 +44,7 @@ class Change : public ::testing::Test {
     lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
   }
 
-  /** write ncols, nrows and objsen into variables to check later */
+  // write ncols, nrows and objsen into variables to check later
   static void initProb(LPNum pos, LPNum& ncols, LPNum& nrows, LPNum& nnonz, LPObjectiveSense& objsen) {
 
     LPValueArray obj = {1.0, 1.0};
@@ -57,18 +56,17 @@ class Change : public ::testing::Test {
     LPIndexArray beg = {0, 1};
     LPIndexArray ind = {0, 1};
 
-    /* maximization problems, ncols is 1, nrows is 1*/
+    // maximization problems, ncols is 1, nrows is 1
     switch (pos) {
       case 0:
-        /* unbounded - infeasible
-         * (P):  max x
-         * -x <= 1 (constr)
-         *  0 <= x (bound)
-         *
-         * (D):  min y
-         * 1 <= -y (constr)
-         * 0 <= y (bound)
-         */
+        // unbounded - infeasible
+        // (P):  max x
+        // -x <= 1 (constr)
+        //  0 <= x (bound)
+        //
+        // (D):  min y
+        // 1 <= -y (constr)
+        // 0 <= y (bound)
         ncols = 1;
         nrows = 1;
         nnonz = 1;
@@ -77,15 +75,14 @@ class Change : public ::testing::Test {
         break;
 
       case 1:
-        /* optimal - optimal
-         * (P):  max x
-         *  x <= 0 (constr)
-         *  0 <= x (bound)
-         *
-         * (D):  min 0
-         * 1 <= y (constr)
-         * 0 <= y (bound)
-         */
+        // optimal - optimal
+        // (P):  max x
+        //  x <= 0 (constr)
+        //  0 <= x (bound)
+        //
+        // (D):  min 0
+        // 1 <= y (constr)
+        // 0 <= y (bound)
         ncols = 1;
         nrows = 1;
         nnonz = 1;
@@ -94,7 +91,7 @@ class Change : public ::testing::Test {
         break;
 
       case 2:
-        /* minimization problems (duals of the above) */
+        // minimization problems (duals of the above)
         ncols = 1;
         nrows = 1;
         nnonz = 1;
@@ -115,22 +112,21 @@ class Change : public ::testing::Test {
         break;
 
       case 4:
-        /* maximization problems, ncols is 2, *nrows is 2 */
-        /* unbounded - infeasible
-         * (P):  max x+y
-         * -x    <= 1 (constr)
-         *    -y <= 1 (constr)
-         *
-         *  0 <= x (bound)
-         *  0 <= y (bound)
-         *
-         * (D):  min x+y
-         * 1 <= -x   (constr)
-         * 1 <=   -y (constr)
-         *
-         * 0 <= x (bound)
-         * 0 <= y (bound)
-         */
+        // maximization problems, ncols is 2, *nrows is 2
+        // unbounded - infeasible
+        // (P):  max x+y
+        // -x    <= 1 (constr)
+        //    -y <= 1 (constr)
+        //
+        //  0 <= x (bound)
+        //  0 <= y (bound)
+        //
+        // (D):  min x+y
+        // 1 <= -x   (constr)
+        // 1 <=   -y (constr)
+        //
+        // 0 <= x (bound)
+        // 0 <= y (bound)
         ncols = 2;
         nrows = 2;
         nnonz = 2;
@@ -140,21 +136,20 @@ class Change : public ::testing::Test {
         break;
 
       case 5:
-        /* optimal - optimal
-         * (P):  max x+y
-         * x     <= 1 (constr)
-         *     y <= 1 (constr)
-         *
-         *  0 <= x (bound)
-         *  0 <= y (bound)
-         *
-         * (D):  min x+y
-         * 1 <= x    (constr)
-         * 1 <=    y (constr)
-         *
-         * 0 <= x (bound)
-         * 0 <= y (bound)
-         */
+        // optimal - optimal
+        // (P):  max x+y
+        // x     <= 1 (constr)
+        //     y <= 1 (constr)
+        //
+        //  0 <= x (bound)
+        //  0 <= y (bound)
+        //
+        // (D):  min x+y
+        // 1 <= x    (constr)
+        // 1 <=    y (constr)
+        //
+        // 0 <= x (bound)
+        // 0 <= y (bound)
         ncols = 2;
         nrows = 2;
         nnonz = 2;
@@ -162,21 +157,20 @@ class Change : public ::testing::Test {
         break;
 
       case 6:
-        /* infeasible - infeasible
-         * (P):  max x+y
-         * -x    <= -1 (constr)
-         *     y <= -1 (constr)
-         *
-         *  0 <= x (bound)
-         *  0 <= y (bound)
-         *
-         * (D):  min -x-y
-         * 1 <= -x    (constr)
-         * 1 <=     y (constr)
-         *
-         * 0 <= x (bound)
-         * 0 <= y (bound)
-         */
+        // infeasible - infeasible
+        // (P):  max x+y
+        // -x    <= -1 (constr)
+        //     y <= -1 (constr)
+        //
+        //  0 <= x (bound)
+        //  0 <= y (bound)
+        //
+        // (D):  min -x-y
+        // 1 <= -x    (constr)
+        // 1 <=     y (constr)
+        //
+        // 0 <= x (bound)
+        // 0 <= y (bound)
         ncols = 2;
         nrows = 2;
         nnonz = 2;
@@ -187,7 +181,7 @@ class Change : public ::testing::Test {
         break;
 
       case 7:
-        /* minimization problems (duals of the above) */
+        // minimization problems (duals of the above)
         ncols = 2;
         nrows = 2;
         nnonz = 2;
@@ -228,7 +222,7 @@ class Change : public ::testing::Test {
       default:
         return;
     }
-    /* empty placeholders */
+    // empty placeholders
     StringArray empty_names;
     LPValueArray empty_vals;
     LPIndexArray empty_indices;
@@ -241,7 +235,7 @@ class Change : public ::testing::Test {
     ASSERT_TRUE(lp_interface_->WasSolved());
   }
 
-   /* We treat -2 and 2 as -infinity and infinity resp. */
+   // We treat -2 and 2 as -infinity and infinity resp.
   static LPValue substituteInfinity(LPValue inf) {
     if (inf == 2)
       return lp_interface_->Infinity();
@@ -252,9 +246,9 @@ class Change : public ::testing::Test {
   }
 };
 
-/* TESTS **/
+// TESTS
 
-/** Test ChangeObjectives */
+// Test ChangeObjectives
 class ChangeObjective : public Change,
                         public ::testing::WithParamInterface<std::tuple<LPValue, LPValue, LPIndex>> {
  protected:
@@ -313,7 +307,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(0, 1, -1, 2, -2),
     ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
-/** Test ChangeBounds */
+// Test ChangeBounds
 class ChangeBounds : public Change,
                      public ::testing::WithParamInterface<std::tuple<LPValue, LPValue, LPValue, LPValue, LPIndex>> {
  protected:
@@ -388,7 +382,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(0, 1, -1, 2, -2),
     ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
-/** Test ChangeSides */
+// Test ChangeSides
 class ChangeSides : public Change,
                     public ::testing::WithParamInterface<std::tuple<LPValue, LPValue, LPValue, LPValue, LPIndex>> {
  protected:
@@ -458,7 +452,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(0, 1, -1, 2, -2),
     ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
-/** Test ChangeObjectiveSense */
+// Test ChangeObjectiveSense
 class ChangeObjectiveSense : public Change,
                              public ::testing::WithParamInterface<std::tuple<LPObjectiveSense, LPIndex>> {
 };
@@ -489,9 +483,9 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(LPObjectiveSense::kMaximize, LPObjectiveSense::kMinimize),
     ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
-/** Test for AddRows, DeleteRowSet, DeleteRows */
+// Test for AddRows, DeleteRowSet, DeleteRows
 TEST_F(Change, testrowmethods) {
-  /* problem data */
+  // problem data
   LPValueArray obj = {1.0, 1.0, 1.0, 1.0, 1.0};
   LPValueArray lb = {-1.0, -lp_interface_->Infinity(), 0.0, -lp_interface_->Infinity(), 0.0};
   LPValueArray ub = {10.0, lp_interface_->Infinity(), lp_interface_->Infinity(), 29.0, 0.0};
@@ -510,29 +504,29 @@ TEST_F(Change, testrowmethods) {
   LPIndex i;
   LPIndex j;
 
-  /* empty placeholders */
+  // empty placeholders
   StringArray empty_names;
   LPValueArray empty_vals;
   LPIndexArray empty_indices;
 
-  /* create original lp */
+  // create original lp
   ASSERT_EQ(lp_interface_->AddColumns(5, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
   ncolsbefore = lp_interface_->GetNumberOfColumns();
 
   for (i = 0; i < iterations; i++) {
-    /* setup row values */
+    // setup row values
     int nrows;
     LPNum nnonzsbefore;
     LPNum nnonzsafter;
 
     nrows = k[i];
-    /* get data before modification */
+    // get data before modification
     nnonzsbefore = lp_interface_->GetNumberOfNonZeros();
     nrowsbefore = lp_interface_->GetNumberOfRows();
 
     if (nrows < 0) {
       ASSERT_EQ(lp_interface_->DeleteRows(0, -(1 + nrows)), RetCode::kOkay);
-    } else { /* nrows >= 0 */
+    } else { // nrows >= 0
       LPValueArray lhs(100);
       LPValueArray rhs(100);
       LPIndexArray beg(100);
@@ -564,7 +558,7 @@ TEST_F(Change, testrowmethods) {
       }
       ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
 
-      /* checks */
+      // checks
       ASSERT_EQ(lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs, newrhs, newnnonz, newbeg, newind, newval), RetCode::kOkay);
       ASSERT_EQ(nnonz, newnnonz);
 
@@ -574,7 +568,7 @@ TEST_F(Change, testrowmethods) {
       beg[nrows] = nnonz;
       newbeg[nrows] = newnnonz;
 
-      /* check each row seperately */
+      // check each row seperately
       for (j = 0; j < (unsigned) nrows; j++) {
         if (fabs(lhs[j]) < 1e30 && fabs(newlhs[j]) < 1e30) {
           ASSERT_DOUBLE_EQ(lhs[j], newlhs[j]);
@@ -583,25 +577,25 @@ TEST_F(Change, testrowmethods) {
           ASSERT_DOUBLE_EQ(rhs[j], newrhs[j]);
         }
 
-        /* We add a row where the indices are not sorted, some lp solvers give them back sorted (e.g. soplex), some others don't (e.g. cplex).
-         * Therefore we cannot simply assert the ind and val arrays to be equal, but have to search for and check each value individually. */
+        // We add a row where the indices are not sorted, some lp solvers give them back sorted (e.g. soplex), some others don't (e.g. cplex).
+        // Therefore we cannot simply assert the ind and val arrays to be equal, but have to search for and check each value individually.
         for (indold = beg[j]; indold < beg[j + 1]; indold++) {
           int occurrences = 0;
 
-          /* for each value ind associated to the current row search for it in the newind array */
+          // for each value ind associated to the current row search for it in the newind array
           for (indnew = beg[j]; indnew < beg[j + 1]; indnew++) {
             if (ind[indold] == newind[indnew]) {
               occurrences = occurrences + 1;
               ASSERT_DOUBLE_EQ(val[indold], newval[indnew]);
             }
           }
-          /* assert that we found only one occurrence in the current row */
+          // assert that we found only one occurrence in the current row
           ASSERT_EQ(occurrences, 1);
         }
       }
     }
 
-    /* checks */
+    // checks
     nrowsafter = lp_interface_->GetNumberOfRows();
     ASSERT_EQ(nrowsbefore + nrows, nrowsafter);
 
@@ -612,8 +606,8 @@ TEST_F(Change, testrowmethods) {
     ASSERT_EQ(ncolsbefore, ncolsafter);
   }
 
-  /* delete rowsets */
-  /* should have 8 rows now */
+  // delete rowsets
+  // should have 8 rows now
   nrowsbefore = lp_interface_->GetNumberOfRows();
   ASSERT_EQ(8, nrowsbefore);
   for (i = 3; i > 0; i--) {
@@ -627,13 +621,13 @@ TEST_F(Change, testrowmethods) {
 
     nrowsafter = lp_interface_->GetNumberOfRows();
     ASSERT_EQ(nrowsbefore - i, nrowsafter);
-    /* assert that the rows that are left are the ones I intended */
+    // assert that the rows that are left are the ones I intended
   }
 }
 
-/** Test for AddColumns, DeleteColumnSet, DeleteColumns */
+// Test for AddColumns, DeleteColumnSet, DeleteColumns
 TEST_F(Change, testcolmethods) {
-  /* problem data */
+  // problem data
   LPValueArray obj = {1.0, 1.0, 1.0, 1.0, 1.0};
   LPValueArray lhs = {-1.0, -lp_interface_->Infinity(), 0.0, -lp_interface_->Infinity(), 0.0};
   LPValueArray rhs = {10.0, lp_interface_->Infinity(), lp_interface_->Infinity(), 29.0, 0.0};
@@ -650,30 +644,30 @@ TEST_F(Change, testcolmethods) {
   IntArray k = {1, 6, -1, 4, -2};
   IntArray nnonzsdiff = {1, 10, -1, 6, -3};
 
-  /* empty placeholders */
+  // empty placeholders
   StringArray empty_names;
   LPValueArray empty_vals;
   LPIndexArray empty_indices;
 
-  /* create original lp */
+  // create original lp
   ASSERT_EQ(lp_interface_->AddRows(5, lhs, rhs, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
   nrowsbefore = lp_interface_->GetNumberOfRows();
 
   for (LPIndex i = 0; i < iterations; i++) {
-    /* setup col values */
+    // setup col values
     LPNum ncols;
     LPNum nnonzsbefore;
     LPNum nnonzsafter;
 
     ncols = k[i];
 
-    /* get data before modification */
+    // get data before modification
     nnonzsbefore = lp_interface_->GetNumberOfNonZeros();
     ncolsbefore = lp_interface_->GetNumberOfColumns();
 
     if (k[i] < 0) {
       ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + ncols)), RetCode::kOkay);
-    } else { /* ncols >= 0 */
+    } else { // ncols >= 0
       LPValueArray lb(100);
       LPValueArray ub(100);
       LPIndexArray beg(100);
@@ -704,7 +698,7 @@ TEST_F(Change, testcolmethods) {
       }
       ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
 
-      /* checks */
+      // checks
       ASSERT_EQ(lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb, newub, newnnonz, newbeg, newind, newval), RetCode::kOkay);
       ASSERT_EQ(nnonz, newnnonz);
 
@@ -719,7 +713,7 @@ TEST_F(Change, testcolmethods) {
       }
     }
 
-    /* checks */
+    // checks
     nrowsafter = lp_interface_->GetNumberOfRows();
     ASSERT_EQ(nrowsbefore, nrowsafter);
 
@@ -730,8 +724,8 @@ TEST_F(Change, testcolmethods) {
     ASSERT_EQ(ncolsbefore + ncols, ncolsafter);
   }
 
-  /* delete rowsets */
-  /* should have 8 rows now */
+  // delete rowsets
+  // should have 8 rows now
   ncolsbefore = lp_interface_->GetNumberOfColumns();
   ASSERT_EQ(8, ncolsbefore);
   for (LPIndex i = 3; i > 0; i--) {
@@ -744,11 +738,11 @@ TEST_F(Change, testcolmethods) {
     ASSERT_EQ(lp_interface_->DeleteColumnSet(cols), RetCode::kOkay);
     ncolsafter = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(ncolsbefore - i, ncolsafter);
-    /* assert that the rows that are left are the ones I intended */
+    // assert that the rows that are left are the ones I intended
   }
 }
 
-/** Test adding zero coeffs cols */
+// Test adding zero coeffs cols
 TEST_F(Change, testzerosincols) {
   LPNum ncols;
   LPNum nrows;
@@ -761,10 +755,10 @@ TEST_F(Change, testzerosincols) {
   LPValueArray val = {0, 3};
   LPValueArray obj = {1};
 
-  /* empty placeholders */
+  // empty placeholders
   StringArray empty_names;
 
-  /* 2x2 problem */
+  // 2x2 problem
   initProb(4, ncols, nrows, nnonz, sense);
   ASSERT_EQ(2, nrows);
   ASSERT_EQ(2, ncols);
@@ -772,17 +766,16 @@ TEST_F(Change, testzerosincols) {
 #ifndef NDEBUG
   ASSERT_DEATH(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, nnonz, beg, ind, val), "");
 #endif
-  /* this test can only work in debug mode, so we make it pass in opt mode */
+  // this test can only work in debug mode, so we make it pass in opt mode
 #ifdef NDEBUG
   ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
-  SUCCEED(); /* return SIGABORT */
+  SUCCEED(); // return SIGABORT
 #endif
 }
 
-/** Test adding zero coeffs in rows, expecting an assert in debug mode
- *
- *  This test should fail with an assert from the which causes SIGABRT to be issued. Thus, this test should pass.
- */
+// Test adding zero coeffs in rows, expecting an assert in debug mode
+//
+// This test should fail with an assert from the which causes SIGABRT to be issued. Thus, this test should pass.
 TEST_F(Change, testzerosinrows) {
   LPNum nrows;
   LPNum ncols;
@@ -793,10 +786,10 @@ TEST_F(Change, testzerosinrows) {
   LPIndexArray beg = {0};
   LPIndexArray ind = {0, 1};
   LPValueArray val = {0, 3};
-  /* empty placeholders */
+  // empty placeholders
   StringArray empty_names;
 
-  /* 2x2 problem */
+  // 2x2 problem
   initProb(4, ncols, nrows, nnonz, sense);
   ASSERT_EQ(2, nrows);
   ASSERT_EQ(2, ncols);
@@ -804,13 +797,13 @@ TEST_F(Change, testzerosinrows) {
 #ifndef NDEBUG
   ASSERT_DEATH(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), "");
 #else
-  /* this test can only work in debug mode, so we make it pass in opt mode */
+  // this test can only work in debug mode, so we make it pass in opt mode
   ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
   SUCCEED();
 #endif
 }
 
-/** test WriteLP, ReadLP, Clear */
+// test WriteLP, ReadLP, Clear
 TEST_F(Change, testlpiwritereadlpmethods) {
   LPNum nrows, ncols, nnonz;
   LPValue objval;
@@ -825,7 +818,7 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   LPValueArray redcost2(2);
   LPObjectiveSense sense;
 
-  /* 2x2 problem */
+  // 2x2 problem
   ASSERT_NO_FATAL_FAILURE(initProb(5, ncols, nrows, nnonz, sense));
 
   ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
@@ -883,4 +876,4 @@ TEST_F(Change, testlpiwritereadlpmethods) {
     remove("lpi_change_test_problem2.lp");
   }
 }
-} /* namespace minimip */
+} // namespace minimip
