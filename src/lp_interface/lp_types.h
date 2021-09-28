@@ -6,24 +6,6 @@
 
 namespace minimip {
 
-// unsigned integer representing an index in LP solvers
-typedef unsigned int LPIndex;
-typedef std::vector<LPIndex> LPIndexArray;
-
-// unsigned integer representing a number or count in LP solvers
-typedef unsigned int LPNum;
-typedef std::vector<LPNum> LPNumArray;
-
-typedef long long LPLongInt;
-
-typedef double LPValue;
-typedef std::vector<LPValue> LPValueArray;
-
-typedef std::vector<int> IntArray;
-typedef std::vector<double> DoubleArray;
-typedef std::vector<std::string> StringArray;
-typedef std::vector<bool> BoolArray;
-
 // return codes for MiniMIP methods: non-positive return codes are errors
 enum class RetCode {
   kOkay = +1,                 // normal termination

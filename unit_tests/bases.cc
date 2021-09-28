@@ -29,21 +29,21 @@ class SimpleTest : public ::testing::Test {
     lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
 
     // initialize program
-    LPNum num_rows;
-    LPNum num_cols;
-    LPIndexArray begin_rows{0};
-    LPValueArray lower_bounds{0.0};
-    LPValueArray upper_bounds{3.0};
-    LPValueArray left_hand_sides{1.0};
-    LPValueArray right_hand_sides{2.0};
-    LPValueArray objective_values{1.0};
-    LPValueArray vals{1.0};
-    LPIndexArray indices{0};
+    int num_rows;
+    int num_cols;
+    std::vector<int> begin_rows{0};
+    std::vector<double> lower_bounds{0.0};
+    std::vector<double> upper_bounds{3.0};
+    std::vector<double> left_hand_sides{1.0};
+    std::vector<double> right_hand_sides{2.0};
+    std::vector<double> objective_values{1.0};
+    std::vector<double> vals{1.0};
+    std::vector<int> indices{0};
 
     // empty vectors
-    StringArray empty_names;
-    LPIndexArray empty_indices;
-    LPValueArray empty_vals;
+    std::vector<std::string> empty_names;
+    std::vector<int> empty_indices;
+    std::vector<double> empty_vals;
 
     // use the following LP as base:
     //   max x
@@ -109,9 +109,9 @@ TEST_F(SimpleTest, test2) {
 TEST_F(SimpleTest, test3) {
   LPBaseStatArray column_basis_status(1);
   LPBaseStatArray row_basis_status(1);
-  LPValueArray left_hand_sides{1.0};
-  LPValueArray right_hand_sides(1.0);
-  LPIndexArray indices{0};
+  std::vector<double> left_hand_sides{1.0};
+  std::vector<double> right_hand_sides(1.0);
+  std::vector<int> indices{0};
 
   // modify LP to:
   //   min x
@@ -138,9 +138,9 @@ TEST_F(SimpleTest, test3) {
 TEST_F(SimpleTest, test4) {
   LPBaseStatArray column_basis_status(1);
   LPBaseStatArray row_basis_status(1);
-  LPValueArray left_hand_sides(1.0);
-  LPValueArray right_hand_sides{1.0};
-  LPIndexArray indices{0};
+  std::vector<double> left_hand_sides(1.0);
+  std::vector<double> right_hand_sides{1.0};
+  std::vector<int> indices{0};
 
   // modify LP to:
   //   max x
@@ -166,9 +166,9 @@ TEST_F(SimpleTest, test4) {
 class Complex : public ::testing::Test {
  protected:
   // empty vectors
-  StringArray empty_names;
-  LPIndexArray empty_indices;
-  LPValueArray empty_vals;
+  std::vector<std::string> empty_names;
+  std::vector<int> empty_indices;
+  std::vector<double> empty_vals;
   int null_int = 0;
 
   // setup for test
@@ -189,16 +189,16 @@ class Complex : public ::testing::Test {
     lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
 
     // initialize program
-    LPNum ncols;
-    LPIndexArray beg = {0};
-    LPIndexArray inds(2);
-    LPNum nrows;
-    LPValueArray vals(2);
-    LPValueArray lb(1);
-    LPValueArray ub(1);
-    LPValueArray obj(1);
-    LPValueArray lhs(1);
-    LPValueArray rhs(1);
+    int ncols;
+    std::vector<int> beg = {0};
+    std::vector<int> inds(2);
+    int nrows;
+    std::vector<double> vals(2);
+    std::vector<double> lb(1);
+    std::vector<double> ub(1);
+    std::vector<double> obj(1);
+    std::vector<double> lhs(1);
+    std::vector<double> rhs(1);
 
     // use the following LP:
     // max 1 x1 + 1 x2 + 1 x3
@@ -250,27 +250,27 @@ class Complex : public ::testing::Test {
 
 // TESTS
 TEST_F(Complex, test1) {
-  LPValueArray binvrow(3);
-  LPValueArray binvcol(3);
-  LPValueArray coef(3);
-  LPValueArray coeftwo(3);
-  LPValue objval;
+  std::vector<double> binvrow(3);
+  std::vector<double> binvcol(3);
+  std::vector<double> coef(3);
+  std::vector<double> coeftwo(3);
+  double objval;
   LPBaseStatArray cstats(3);
-  LPNum nrows;
+  int nrows;
   LPBaseStatArray rstats(3);
-  IntArray basinds(3);
-  LPIndexArray inds(3);
+  std::vector<int> basinds(3);
+  std::vector<int> inds(3);
   int ninds;
-  LPIndex idx;
-  LPIndex entry;
+  int idx;
+  int entry;
   int i;
 
   // expected values for the first column of BInv with corresponding variables
-  LPValueArray exp_vars = {-2, 1, 2};
-  LPValueArray exp_vals = {0.0, 0.0, -1.0};
+  std::vector<double> exp_vars = {-2, 1, 2};
+  std::vector<double> exp_vals = {0.0, 0.0, -1.0};
 
   // expected values for the first column of BAInv with corresponding variables
-  LPValueArray exp_avals = {-0.5, 0.5, 1.0};
+  std::vector<double> exp_avals = {-0.5, 0.5, 1.0};
 
   // -------------------------------------
   // first solve problem
@@ -294,7 +294,7 @@ TEST_F(Complex, test1) {
 
   // search for slack variable in basis
   nrows = lp_interface_->GetNumberOfRows();
-  for (i = 0; i < static_cast<int>(nrows); ++i) {
+  for (i = 0; i < nrows; ++i) {
     if (basinds[i] < 0)
       break;
   }
@@ -313,7 +313,7 @@ TEST_F(Complex, test1) {
   ASSERT_EQ(lp_interface_->GetBInvertedRow(i, coef, inds, ninds), RetCode::kOkay);
   if (ninds >= 0) {
     ASSERT_TRUE(ninds == 2);
-    for (entry = 0; entry < (unsigned) ninds; ++entry) {
+    for (entry = 0; entry < ninds; ++entry) {
       idx = inds[entry];
       ASSERT_TRUE(0 <= idx && idx < 3);
       ASSERT_FLOAT_EQ(coef[idx], binvrow[idx]);
@@ -341,7 +341,7 @@ TEST_F(Complex, test1) {
   ASSERT_TRUE(ninds < 0 || ninds == 1);
 
   // check basis inverse times nonbasic matrix for row corresponding to the basic slack variable
-  ASSERT_TRUE(0 <= i && (unsigned) i < nrows);
+  ASSERT_TRUE(0 <= i && i < nrows);
   ASSERT_EQ(lp_interface_->GetBInvertedARow(i, empty_vals, coef, empty_indices, null_int), RetCode::kOkay);
 
   // row of basis inverse times nonbasic matrix should be (-0.5, 0, 0)
@@ -353,7 +353,7 @@ TEST_F(Complex, test1) {
   ASSERT_EQ(lp_interface_->GetBInvertedARow(i, empty_vals, coeftwo, inds, ninds), RetCode::kOkay);
   if (ninds >= 0) {
     ASSERT_TRUE(ninds == 1);
-    for (entry = 0; entry < (unsigned) ninds; ++entry) {
+    for (entry = 0; entry < ninds; ++entry) {
       idx = inds[entry];
       ASSERT_TRUE(0 <= idx && idx < 3);
       ASSERT_FLOAT_EQ(coeftwo[idx], coef[idx]);
@@ -385,9 +385,9 @@ TEST_F(Complex, test1) {
 class MoreVarsThanRows : public ::testing::Test {
  protected:
   // empty vectors
-  StringArray empty_names;
-  LPIndexArray empty_indices;
-  LPValueArray empty_vals;
+  std::vector<std::string> empty_names;
+  std::vector<int> empty_indices;
+  std::vector<double> empty_vals;
   int null_int = 0;
 
   //SetUp for Test
@@ -408,16 +408,16 @@ class MoreVarsThanRows : public ::testing::Test {
     lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
 
     // initialize program
-    LPNum ncols;
-    LPIndexArray beg = {0};
-    LPIndexArray inds(4);
-    LPNum nrows;
-    LPValueArray vals(4);
-    LPValueArray lb(1);
-    LPValueArray ub(1);
-    LPValueArray lhs(1);
-    LPValueArray rhs(1);
-    LPValueArray obj(1);
+    int ncols;
+    std::vector<int> beg = {0};
+    std::vector<int> inds(4);
+    int nrows;
+    std::vector<double> vals(4);
+    std::vector<double> lb(1);
+    std::vector<double> ub(1);
+    std::vector<double> lhs(1);
+    std::vector<double> rhs(1);
+    std::vector<double> obj(1);
 
     // use the following LP:
     // max 1 x1 + 1 x2 + 1 x3 + x4
@@ -478,12 +478,12 @@ class MoreVarsThanRows : public ::testing::Test {
 
 // TESTS
 TEST_F(MoreVarsThanRows, test1) {
-  LPValueArray binvarow(4);
-  LPValue objval;
+  std::vector<double> binvarow(4);
+  double objval;
   LPBaseStatArray cstats(4);
   LPBaseStatArray rstats(3);
-  IntArray basinds(3);
-  LPIndex basicvarpos;
+  std::vector<int> basinds(3);
+  int basicvarpos;
 
   // -------------------------------------
   // first solve problem

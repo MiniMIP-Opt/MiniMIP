@@ -103,18 +103,18 @@ void LPSoplexInterface::SetLPInfo(bool lp_info) {
 }
 
 // get objective limit according to objective sense
-LPValue LPSoplexInterface::GetObjectiveLimit() const {
+double LPSoplexInterface::GetObjectiveLimit() const {
   return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
     ? spx_->realParam(SoPlex::OBJLIMIT_UPPER)
     : spx_->realParam(SoPlex::OBJLIMIT_LOWER);
 }
 
-LPValue LPSoplexInterface::FeasibilityTolerance() const {
+double LPSoplexInterface::FeasibilityTolerance() const {
   return spx_->realParam(SoPlex::FEASTOL);
 }
 
 // return optimality tolerance
-LPValue LPSoplexInterface::OptimalityTolerance() const {
+double LPSoplexInterface::OptimalityTolerance() const {
   return spx_->realParam(SoPlex::OPTTOL);
 }
 
@@ -327,22 +327,22 @@ void LPSoplexInterface::FreePreStrongBranchingBasis() {
 }
 
 RetCode LPSoplexInterface::StrongBranch(
-  LPIndex col,                       // column to apply strong branching on
-  LPValue primal_sol,              // current primal solution value of column
-  LPNum iteration_limit,           // iteration limit for strong branchings
-  LPValue& dual_bound_down_branch, // stores dual bound after branching column down
-  LPValue& dual_bound_up_branch,   // stores dual bound after branching column up
+  int col,                       // column to apply strong branching on
+  double primal_sol,              // current primal solution value of column
+  int iteration_limit,           // iteration limit for strong branchings
+  double& dual_bound_down_branch, // stores dual bound after branching column down
+  double& dual_bound_up_branch,   // stores dual bound after branching column up
   bool& down_valid,                // stores whether the returned down value is a valid dual bound;
                                    // otherwise, it can only be used as an estimate value
   bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
                                    // otherwise, it can only be used as an estimate value
-  LPNum& iterations                // stores total number of strong branching iterations, or -1
+  int& iterations                // stores total number of strong branching iterations, or -1
 ) {
   SPxSolver::Status status;
-  LPValue old_lb;
-  LPValue old_ub;
-  LPValue new_lb;
-  LPValue new_ub;
+  double old_lb;
+  double old_ub;
+  double new_lb;
+  double new_ub;
   bool from_parent_basis;
   bool error;
   int old_iter_limit;
@@ -418,7 +418,7 @@ RetCode LPSoplexInterface::StrongBranch(
 #else
       // if cycling or singular basis occured and we started not from the pre-strong-branching basis, then we restore the
       // pre-strong-branching basis and try again with reduced iteration limit
-      repeat_strong_branching = ((status == SPxSolver::ABORT_CYCLING || status == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS || status == SPxSolver::SINGULAR) && !from_parent_basis && spx_->numIterations() < static_cast<int>(iteration_limit));
+      repeat_strong_branching = ((status == SPxSolver::ABORT_CYCLING || status == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS || status == SPxSolver::SINGULAR) && !from_parent_basis && spx_->numIterations() < iteration_limit);
 
       if (repeat_strong_branching) {
         MiniMIPdebugMessage(" --> Repeat strong branching down with %d iterations after restoring basis\n",
@@ -489,7 +489,7 @@ RetCode LPSoplexInterface::StrongBranch(
 #else
         // if cycling or singular basis occured and we started not from the pre-strong-branching basis, then we restore the
         // pre-strong-branching basis and try again with reduced iteration limit
-        repeat_strong_branching = ((status == SPxSolver::ABORT_CYCLING || status == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS || status == SPxSolver::SINGULAR) && !from_parent_basis && spx_->numIterations() < static_cast<int>(iteration_limit));
+        repeat_strong_branching = ((status == SPxSolver::ABORT_CYCLING || status == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS || status == SPxSolver::SINGULAR) && !from_parent_basis && spx_->numIterations() < iteration_limit);
 
         if (repeat_strong_branching) {
           MiniMIPdebugMessage(" --> Repeat strong branching  up  with %d iterations after restoring basis\n", iteration_limit - spx_->numIterations());
@@ -526,22 +526,22 @@ RetCode LPSoplexInterface::StrongBranch(
 
 RetCode LPSoplexInterface::LoadColumnLP(
   LPObjectiveSense obj_sense,           // objective sense
-  LPNum num_cols,                       // number of columns
-  const LPValueArray& objective_values, // objective function values of columns
-  const LPValueArray& lower_bounds,     // lower bounds of columns
-  const LPValueArray& upper_bounds,     // upper bounds of columns
-  StringArray& col_names,               // column names
-  LPNum num_rows,                       // number of rows
-  const LPValueArray& left_hand_sides,  // left hand sides of rows
-  const LPValueArray& right_hand_sides, // right hand sides of rows
-  StringArray& row_names,               // row names
-  LPNum num_non_zeros,                  // number of non-zero elements in the constraint matrix
-  const LPIndexArray& begin_cols,       // start index of each column in row_indices- and vals-array
-  const LPIndexArray& row_indices,      // row indices of constraint matrix entries
-  const LPValueArray& vals              // values of constraint matrix entries
+  int num_cols,                       // number of columns
+  const std::vector<double>& objective_values, // objective function values of columns
+  const std::vector<double>& lower_bounds,     // lower bounds of columns
+  const std::vector<double>& upper_bounds,     // upper bounds of columns
+  std::vector<std::string>& col_names,               // column names
+  int num_rows,                       // number of rows
+  const std::vector<double>& left_hand_sides,  // left hand sides of rows
+  const std::vector<double>& right_hand_sides, // right hand sides of rows
+  std::vector<std::string>& row_names,               // row names
+  int num_non_zeros,                  // number of non-zero elements in the constraint matrix
+  const std::vector<int>& begin_cols,       // start index of each column in row_indices- and vals-array
+  const std::vector<int>& row_indices,      // row indices of constraint matrix entries
+  const std::vector<double>& vals              // values of constraint matrix entries
 ) {
 #ifndef NDEBUG
-   for (int j = 0; j < static_cast<int>(num_non_zeros); j++)
+   for (int j = 0; j < num_non_zeros; j++)
       assert(vals[j] != 0);
 #endif
 
@@ -560,7 +560,7 @@ RetCode LPSoplexInterface::LoadColumnLP(
     static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
 
     // create empty rows with given sides
-    for (i = 0; i < static_cast<int>(num_rows); ++i)
+    for (i = 0; i < num_rows; ++i)
       rows.add(left_hand_sides[i], empty_vector, right_hand_sides[i]);
     spx_->addRowsReal(rows);
 
@@ -583,15 +583,15 @@ RetCode LPSoplexInterface::LoadColumnLP(
 //
 // @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
 RetCode LPSoplexInterface::AddColumns(
-  LPNum num_cols,                       // number of columns to be added
-  const LPValueArray& objective_values, // objective function values of new columns
-  const LPValueArray& lower_bounds,     // lower bounds of new columns
-  const LPValueArray& upper_bounds,     // upper bounds of new columns
-  StringArray& col_names,               // column names
-  LPNum num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
-  const LPIndexArray& begin_cols,       // start index of each column in indices- and vals-array
-  const LPIndexArray& indices,          // row indices of constraint matrix entries
-  const LPValueArray& vals              // values of constraint matrix entries
+  int num_cols,                       // number of columns to be added
+  const std::vector<double>& objective_values, // objective function values of new columns
+  const std::vector<double>& lower_bounds,     // lower bounds of new columns
+  const std::vector<double>& upper_bounds,     // upper bounds of new columns
+  std::vector<std::string>& col_names,               // column names
+  int num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
+  const std::vector<int>& begin_cols,       // start index of each column in indices- and vals-array
+  const std::vector<int>& indices,          // row indices of constraint matrix entries
+  const std::vector<double>& vals              // values of constraint matrix entries
 ) {
   MiniMIPdebugMessage("calling AddColumns()\n");
 
@@ -603,15 +603,15 @@ RetCode LPSoplexInterface::AddColumns(
   if (num_non_zeros > 0) {
     // perform check that no new rows are added - this is likely to be a mistake
     int num_rows = spx_->numRowsReal();
-    for (unsigned int j = 0; j < num_non_zeros; ++j) {
-      assert(0 <= indices[j] && indices[j] < static_cast<unsigned int>(num_rows));
+    for (int j = 0; j < num_non_zeros; ++j) {
+      assert(0 <= indices[j] && indices[j] < num_rows);
       assert(vals[j] != 0.0);
     }
   }
 #endif
 
   try {
-    IntArray integer_indices(indices.begin(), indices.end());
+    std::vector<int> integer_indices(indices.begin(), indices.end());
     LPColSet cols(num_cols);
     DSVector col_Vector(num_cols);
     int start;
@@ -619,11 +619,11 @@ RetCode LPSoplexInterface::AddColumns(
     int i;
 
     // create column vectors with coefficients and bounds
-    for (i = 0; i < static_cast<int>(num_cols); ++i) {
+    for (i = 0; i < num_cols; ++i) {
       col_Vector.clear();
       if (num_non_zeros > 0) {
         start = begin_cols[i];
-        last = (i == static_cast<int>(num_cols) - 1 ? num_non_zeros : begin_cols[i + 1]);
+        last = (i == num_cols - 1 ? num_non_zeros : begin_cols[i + 1]);
         col_Vector.add(last - start, &integer_indices[start], &vals[start]);
       }
       cols.add(objective_values[i], lower_bounds[i], col_Vector, upper_bounds[i]);
@@ -645,12 +645,12 @@ RetCode LPSoplexInterface::AddColumns(
 
 // deletes all columns in the given range from LP
 RetCode LPSoplexInterface::DeleteColumns(
-  LPIndex first_col, // first column to be deleted
-  LPIndex last_col   // last column to be deleted
+  int first_col, // first column to be deleted
+  int last_col   // last column to be deleted
 ) {
   MiniMIPdebugMessage("calling DeleteColumns()\n");
 
-  assert(0 <= first_col && first_col <= last_col && static_cast<int>(last_col) < spx_->numColsReal());
+  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
 
   InvalidateSolution();
 
@@ -663,7 +663,7 @@ RetCode LPSoplexInterface::DeleteColumns(
 
 // deletes columns from LP; the new position of a column must not be greater than its old position
 RetCode LPSoplexInterface::DeleteColumnSet(
-  BoolArray& deletion_status // deletion status of columns
+  std::vector<bool>& deletion_status // deletion status of columns
 ) {
   int num_cols;
   int i;
@@ -674,7 +674,7 @@ RetCode LPSoplexInterface::DeleteColumnSet(
 
   assert(PreStrongBranchingBasisFreed());
 
-  IntArray int_deletion_status(deletion_status.begin(), deletion_status.end());
+  std::vector<int> int_deletion_status(deletion_status.begin(), deletion_status.end());
   num_cols = spx_->numColsReal();
 
   // SoPlex removeCols() method deletes the columns with deletion_status[i] < 0, so we have to negate the values
@@ -690,14 +690,14 @@ RetCode LPSoplexInterface::DeleteColumnSet(
 //
 // @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
 RetCode LPSoplexInterface::AddRows(
-  LPNum num_rows,                       // number of rows to be added
-  const LPValueArray& left_hand_sides,  // left hand sides of new rows
-  const LPValueArray& right_hand_sides, // right hand sides of new rows
-  StringArray& row_names,               // row names
-  LPNum num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
-  const LPIndexArray& begin_rows,       // start index of each row in indices- and vals-array
-  const LPIndexArray& indices,          // column indices of constraint matrix entries
-  const LPValueArray& vals              // values of constraint matrix entries
+  int num_rows,                       // number of rows to be added
+  const std::vector<double>& left_hand_sides,  // left hand sides of new rows
+  const std::vector<double>& right_hand_sides, // right hand sides of new rows
+  std::vector<std::string>& row_names,               // row names
+  int num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
+  const std::vector<int>& begin_rows,       // start index of each row in indices- and vals-array
+  const std::vector<int>& indices,          // column indices of constraint matrix entries
+  const std::vector<double>& vals              // values of constraint matrix entries
 ) {
   MiniMIPdebugMessage("calling AddRows()\n");
 
@@ -709,9 +709,9 @@ RetCode LPSoplexInterface::AddRows(
   if (num_non_zeros > 0) {
     // perform check that no new columns are added - this is likely to be a mistake
     int num_cols = spx_->numColsReal();
-    for (int j = 0; j < static_cast<int>(num_non_zeros); ++j) {
+    for (int j = 0; j < num_non_zeros; ++j) {
       assert(vals[j] != 0.0);
-      assert(0 <= indices[j] && static_cast<int>(indices[j]) < num_cols);
+      assert(0 <= indices[j] && indices[j] < num_cols);
     }
   }
 #endif
@@ -719,10 +719,10 @@ RetCode LPSoplexInterface::AddRows(
   try {
     LPRowSet rows(num_rows);
     DSVector row_Vector;
-    unsigned int start;
-    unsigned int last;
-    unsigned int i;
-    IntArray integer_indices(indices.begin(), indices.end());
+    int start;
+    int last;
+    int i;
+    std::vector<int> integer_indices(indices.begin(), indices.end());
 
     // create row vectors with given sides
     for (i = 0; i < num_rows; ++i) {
@@ -750,12 +750,12 @@ RetCode LPSoplexInterface::AddRows(
 
 // deletes all rows in the given range from LP
 RetCode LPSoplexInterface::DeleteRows(
-  LPIndex first_row, // first row to be deleted
-  LPIndex last_row   // last row to be deleted
+  int first_row, // first row to be deleted
+  int last_row   // last row to be deleted
 ) {
   MiniMIPdebugMessage("calling DeleteRows()\n");
 
-  assert(0 <= first_row && first_row <= last_row && static_cast<int>(last_row) < spx_->numRowsReal());
+  assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
 
   InvalidateSolution();
 
@@ -768,7 +768,7 @@ RetCode LPSoplexInterface::DeleteRows(
 
 // deletes rows from LP; the new position of a row must not be greater that its old position
 RetCode LPSoplexInterface::DeleteRowSet(
-  BoolArray& deletion_status // deletion status of rows
+  std::vector<bool>& deletion_status // deletion status of rows
 ) {
   int num_rows;
   int i;
@@ -779,7 +779,7 @@ RetCode LPSoplexInterface::DeleteRowSet(
 
   assert(PreStrongBranchingBasisFreed());
 
-  IntArray int_deletion_status(deletion_status.begin(), deletion_status.end());
+  std::vector<int> int_deletion_status(deletion_status.begin(), deletion_status.end());
 
   num_rows = spx_->numRowsReal();
 
@@ -827,12 +827,12 @@ RetCode LPSoplexInterface::ClearState() {
 
 // changes lower and upper bounds of columns
 RetCode LPSoplexInterface::ChangeBounds(
-  LPNum num_cols,                   // number of columns to change bounds for
-  const LPIndexArray& indices,      // column indices
-  const LPValueArray& lower_bounds, // values for the new lower bounds
-  const LPValueArray& upper_bounds  // values for the new upper bounds
+  int num_cols,                   // number of columns to change bounds for
+  const std::vector<int>& indices,      // column indices
+  const std::vector<double>& lower_bounds, // values for the new lower bounds
+  const std::vector<double>& upper_bounds  // values for the new upper bounds
 ) {
-  unsigned int i;
+  int i;
 
   MiniMIPdebugMessage("calling ChangeBounds()\n");
 
@@ -842,7 +842,7 @@ RetCode LPSoplexInterface::ChangeBounds(
 
   try {
     for (i = 0; i < num_cols; ++i) {
-      assert(0 <= indices[i] && static_cast<int>(indices[i]) < spx_->numColsReal());
+      assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
 
       if (IsInfinity(lower_bounds[i])) {
         MiniMIPerrorMessage("LP Error: fixing lower bound for variable %d to infinity.\n", indices[i]);
@@ -870,12 +870,12 @@ RetCode LPSoplexInterface::ChangeBounds(
 
 // changes left and right hand sides of rows
 RetCode LPSoplexInterface::ChangeSides(
-  LPNum num_rows,                      // number of rows to change sides for
-  const LPIndexArray& indices,         // row indices
-  const LPValueArray& left_hand_sides, // new values for left hand sides
-  const LPValueArray& right_hand_sides // new values for right hand sides
+  int num_rows,                      // number of rows to change sides for
+  const std::vector<int>& indices,         // row indices
+  const std::vector<double>& left_hand_sides, // new values for left hand sides
+  const std::vector<double>& right_hand_sides // new values for right hand sides
 ) {
-  unsigned int i;
+  int i;
 
   MiniMIPdebugMessage("calling ChangeSides()\n");
 
@@ -888,7 +888,7 @@ RetCode LPSoplexInterface::ChangeSides(
 
   try {
     for (i = 0; i < num_rows; ++i) {
-      assert(0 <= indices[i] && static_cast<int>(indices[i]) < spx_->numRowsReal());
+      assert(0 <= indices[i] && indices[i] < spx_->numRowsReal());
       spx_->changeRangeReal(indices[i], left_hand_sides[i], right_hand_sides[i]);
       assert(spx_->lhsReal(indices[i]) <= spx_->rhsReal(indices[i]) + spx_->realParam(SoPlex::EPSILON_ZERO));
     }
@@ -922,11 +922,11 @@ RetCode LPSoplexInterface::ChangeObjectiveSense(
 
 // changes objective values of columns in the LP
 RetCode LPSoplexInterface::ChangeObjective(
-  LPNum num_cols,                  // number of columns to change objective value for
-  const LPIndexArray& indices,     // column indices to change objective value for
-  const LPValueArray& new_obj_vals // new objective values for columns
+  int num_cols,                  // number of columns to change objective value for
+  const std::vector<int>& indices,     // column indices to change objective value for
+  const std::vector<double>& new_obj_vals // new objective values for columns
 ) {
-  unsigned int i;
+  int i;
 
   MiniMIPdebugMessage("calling ChangeObjective()\n");
 
@@ -936,7 +936,7 @@ RetCode LPSoplexInterface::ChangeObjective(
 
   try {
     for (i = 0; i < num_cols; ++i) {
-      assert(0 <= indices[i] && static_cast<int>(indices[i]) < spx_->numColsReal());
+      assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
       spx_->changeObjReal(indices[i], new_obj_vals[i]);
     }
   }
@@ -958,24 +958,24 @@ RetCode LPSoplexInterface::ChangeObjective(
 // @{
 
 // gets the number of rows in the LP
-LPNum LPSoplexInterface::GetNumberOfRows() {
+int LPSoplexInterface::GetNumberOfRows() {
   MiniMIPdebugMessage("calling GetNumberOfRows()\n");
 
   return spx_->numRowsReal();
 }
 
 // gets the number of columns in the LP
-LPNum LPSoplexInterface::GetNumberOfColumns() {
+int LPSoplexInterface::GetNumberOfColumns() {
   MiniMIPdebugMessage("calling GetNumberOfColumns()\n");
 
   return spx_->numColsReal();
 }
 
 // gets the number of nonzero elements in the LP constraint matrix
-LPNum LPSoplexInterface::GetNumberOfNonZeros() {
+int LPSoplexInterface::GetNumberOfNonZeros() {
   int i;
   // SoPlex has no direct method to return the number of nonzeros, so we have to count them manually
-  LPNum num_non_zeros = 0;
+  int num_non_zeros = 0;
 
   MiniMIPdebugMessage("calling GetNumberOfNonZeros()\n");
 
@@ -1003,21 +1003,21 @@ LPObjectiveSense LPSoplexInterface::GetObjectiveSense() {
 // Either both, lower_bound and upper_bound, have to be 0, or both have to be non-0,
 // either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0, or all of them have to be non-0.
 RetCode LPSoplexInterface::GetColumns(
-  LPIndex first_col,            // first column to get from LP
-  LPIndex last_col,             // last column to get from LP
-  LPValueArray& lower_bounds, // array to store the lower bound vector
-  LPValueArray& upper_bounds, // array to store the upper bound vector
-  LPNum& num_non_zeros,       // store the number of non-zero elements
-  LPIndexArray& begin_cols,   // array to store start index of each column in indices- and vals-array
-  LPIndexArray& indices,      // array to store row indices of constraint matrix entries
-  LPValueArray& vals          // array to store values of constraint matrix entries
+  int first_col,            // first column to get from LP
+  int last_col,             // last column to get from LP
+  std::vector<double>& lower_bounds, // array to store the lower bound vector
+  std::vector<double>& upper_bounds, // array to store the upper bound vector
+  int& num_non_zeros,       // store the number of non-zero elements
+  std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
+  std::vector<int>& indices,      // array to store row indices of constraint matrix entries
+  std::vector<double>& vals          // array to store values of constraint matrix entries
 ) {
-  unsigned int i;
+  int i;
   int j;
 
   MiniMIPdebugMessage("calling GetColumns()\n");
 
-  assert(0 <= first_col && first_col <= last_col && static_cast<int>(last_col) < spx_->numColsReal());
+  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
 
   if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
     DVector tmp_lower_bound(spx_->numColsReal());
@@ -1066,21 +1066,21 @@ RetCode LPSoplexInterface::GetColumns(
 // Either both, left_hand_side and right_hand_side, have to be 0, or both have to be non-0,
 // either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0, or all of them have to be non-0.
 RetCode LPSoplexInterface::GetRows(
-  LPIndex first_row,                // first row to get from LP
-  LPIndex last_row,                 // last row to get from LP
-  LPValueArray& left_hand_sides,  // array to store left hand side vector
-  LPValueArray& right_hand_sides, // array to store right hand side vector
-  LPNum& num_non_zeros,           // store the number of non-zero elements
-  LPIndexArray& begin_cols,       // array to store start index of each row in indices- and vals-array
-  LPIndexArray& indices,          // array to store column indices of constraint matrix entries
-  LPValueArray& vals              // array to store values of constraint matrix entries
+  int first_row,                // first row to get from LP
+  int last_row,                 // last row to get from LP
+  std::vector<double>& left_hand_sides,  // array to store left hand side vector
+  std::vector<double>& right_hand_sides, // array to store right hand side vector
+  int& num_non_zeros,           // store the number of non-zero elements
+  std::vector<int>& begin_cols,       // array to store start index of each row in indices- and vals-array
+  std::vector<int>& indices,          // array to store column indices of constraint matrix entries
+  std::vector<double>& vals              // array to store values of constraint matrix entries
 ) {
-  unsigned int i;
+  int i;
   int j;
 
   MiniMIPdebugMessage("calling GetRows()\n");
 
-  assert(0 <= first_row && first_row <= last_row && static_cast<int>(last_row) < spx_->numRowsReal());
+  assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
 
   if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
     DVector lhsvec(spx_->numRowsReal());
@@ -1126,15 +1126,15 @@ RetCode LPSoplexInterface::GetRows(
 
 // gets objective coefficients from LP problem object
 RetCode LPSoplexInterface::GetObjective(
-  LPIndex first_col,         // first column to get objective coefficient for
-  LPIndex last_col,          // last column to get objective coefficient for
-  LPValueArray& obj_coeffs // array to store objective coefficients
+  int first_col,         // first column to get objective coefficient for
+  int last_col,          // last column to get objective coefficient for
+  std::vector<double>& obj_coeffs // array to store objective coefficients
 ) {
-  unsigned int i;
+  int i;
 
   MiniMIPdebugMessage("calling GetObjective()\n");
 
-  assert(0 <= first_col && first_col <= last_col && static_cast<int>(last_col) < spx_->numColsReal());
+  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
 
   for (i = first_col; i <= last_col; ++i)
     obj_coeffs[i - first_col] = spx_->objReal(i);
@@ -1144,16 +1144,16 @@ RetCode LPSoplexInterface::GetObjective(
 
 // gets current bounds from LP problem object
 RetCode LPSoplexInterface::GetBounds(
-  LPIndex first_col,            // first column to get bounds for
-  LPIndex last_col,             // last column to get bounds for
-  LPValueArray& lower_bounds, // array to store lower bound values
-  LPValueArray& upper_bounds  // array to store upper bound values
+  int first_col,            // first column to get bounds for
+  int last_col,             // last column to get bounds for
+  std::vector<double>& lower_bounds, // array to store lower bound values
+  std::vector<double>& upper_bounds  // array to store upper bound values
 ) {
-  unsigned int i;
+  int i;
 
   MiniMIPdebugMessage("calling GetBounds()\n");
 
-  assert(0 <= first_col && first_col <= last_col && static_cast<int>(last_col) < spx_->numColsReal());
+  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
 
   for (i = first_col; i <= last_col; ++i) {
     lower_bounds[i - first_col] = spx_->lowerReal(i);
@@ -1165,16 +1165,16 @@ RetCode LPSoplexInterface::GetBounds(
 
 // gets current row sides from LP problem object
 RetCode LPSoplexInterface::GetSides(
-  LPIndex first_row,               // first row to get sides for
-  LPIndex last_row,                // last row to get sides for
-  LPValueArray& left_hand_sides, // array to store left hand side values
-  LPValueArray& right_hand_sides // array to store right hand side values
+  int first_row,               // first row to get sides for
+  int last_row,                // last row to get sides for
+  std::vector<double>& left_hand_sides, // array to store left hand side values
+  std::vector<double>& right_hand_sides // array to store right hand side values
 ) {
-  unsigned int i;
+  int i;
 
   MiniMIPdebugMessage("calling GetSides()\n");
 
-  assert(0 <= first_row && first_row <= last_row && static_cast<int>(last_row) < spx_->numRowsReal());
+  assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
 
   for (i = first_row; i <= last_row; ++i) {
     left_hand_sides[i - first_row] = spx_->lhsReal(i);
@@ -1185,14 +1185,14 @@ RetCode LPSoplexInterface::GetSides(
 
 // gets a single coefficient
 RetCode LPSoplexInterface::GetCoefficient(
-  LPIndex row,   // row number of coefficient
-  LPIndex col,   // column number of coefficient
-  LPValue& val // array to store the value of the coefficient
+  int row,   // row number of coefficient
+  int col,   // column number of coefficient
+  double& val // array to store the value of the coefficient
 ) {
   MiniMIPdebugMessage("calling GetCoefficients()\n");
 
-  assert(0 <= col && static_cast<int>(col) < static_cast<int>(spx_->numColsReal()));
-  assert(0 <= row && static_cast<int>(row) < static_cast<int>(spx_->numRowsReal()));
+  assert(0 <= col && col < spx_->numColsReal());
+  assert(0 <= row && row < spx_->numRowsReal());
 
   val = spx_->coefReal(row, col);
 
@@ -1241,14 +1241,14 @@ RetCode LPSoplexInterface::EndStrongbranch() {
 
 // performs strong branching iterations on one @b fractional candidate
 RetCode LPSoplexInterface::StrongbranchFractionalValue(
-  LPIndex col,                       // column to apply strong branching on
-  LPValue primal_sol,              // fractional current primal solution value of column
-  LPNum iteration_limit,           // iteration limit for strong branchings
-  LPValue& dual_bound_down_branch, // stores dual bound after branching column down
-  LPValue& dual_bound_up_branch,   // stores dual bound after branching column up
+  int col,                       // column to apply strong branching on
+  double primal_sol,              // fractional current primal solution value of column
+  int iteration_limit,           // iteration limit for strong branchings
+  double& dual_bound_down_branch, // stores dual bound after branching column down
+  double& dual_bound_up_branch,   // stores dual bound after branching column up
   bool& down_valid,                // whether the returned down value is a valid dual bound; otherwise, it can only be used as an estimate value
   bool& up_valid,                  // whether the returned up value is a valid dual bound; otherwise, it can only be used as an estimate value
-  LPNum& iterations                // stores total number of strong branching iterations
+  int& iterations                // stores total number of strong branching iterations
 ) {
 
   RetCode retcode;
@@ -1268,23 +1268,23 @@ RetCode LPSoplexInterface::StrongbranchFractionalValue(
 
 // performs strong branching iterations on given @b fractional candidates
 RetCode LPSoplexInterface::StrongbranchFractionalValues(
-  LPIndexArray& cols,                       // columns to apply strong branching on
-  LPNum num_cols,                         // number of columns
-  LPValueArray& primal_sols,              // fractional current primal solution values of columns
-  LPNum iteration_limit,                  // iteration limit for strong branchings
-  LPValueArray& dual_bound_down_branches, // stores dual bounds after branching columns down
-  LPValueArray& dual_bound_up_branches,   // stores dual bounds after branching columns up
-  BoolArray& down_valids,                 // stores whether the returned down values are valid dual bounds;
+  std::vector<int>& cols,                       // columns to apply strong branching on
+  int num_cols,                         // number of columns
+  std::vector<double>& primal_sols,              // fractional current primal solution values of columns
+  int iteration_limit,                  // iteration limit for strong branchings
+  std::vector<double>& dual_bound_down_branches, // stores dual bounds after branching columns down
+  std::vector<double>& dual_bound_up_branches,   // stores dual bounds after branching columns up
+  std::vector<bool>& down_valids,                 // stores whether the returned down values are valid dual bounds;
                                           // otherwise, they can only be used as an estimate values
-  BoolArray& up_valids,                   // stores whether the returned up values are a valid dual bounds;
+  std::vector<bool>& up_valids,                   // stores whether the returned up values are a valid dual bounds;
                                           // otherwise, they can only be used as an estimate values
-  LPNum& iterations                       // stores total number of strong branching iterations
+  int& iterations                       // stores total number of strong branching iterations
 ) {
   RetCode retcode;
   iterations = 0;
   bool up, down;
 
-  for (int j = 0; j < static_cast<int>(num_cols); ++j) {
+  for (int j = 0; j < num_cols; ++j) {
     // pass call on to StrongBranch()
     retcode = StrongBranch(cols[j], primal_sols[j], iteration_limit, (dual_bound_down_branches[j]), (dual_bound_up_branches[j]), down, up, iterations);
     down_valids[j] = down;
@@ -1301,16 +1301,16 @@ RetCode LPSoplexInterface::StrongbranchFractionalValues(
 
 // performs strong branching iterations on one candidate with @b integral value
 RetCode LPSoplexInterface::StrongbranchIntegerValue(
-  LPIndex col,                       // column to apply strong branching on
-  LPValue primal_sol,              // current integral primal solution value of column
-  LPNum iteration_limit,           // iteration limit for strong branchings
-  LPValue& dual_bound_down_branch, // stores dual bound after branching column down
-  LPValue& dual_bound_up_branch,   // stores dual bound after branching column up
+  int col,                       // column to apply strong branching on
+  double primal_sol,              // current integral primal solution value of column
+  int iteration_limit,           // iteration limit for strong branchings
+  double& dual_bound_down_branch, // stores dual bound after branching column down
+  double& dual_bound_up_branch,   // stores dual bound after branching column up
   bool& down_valid,                // stores whether the returned down value is a valid dual bound;
                                    // otherwise, it can only be used as an estimate value
   bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
                                    // otherwise, it can only be used as an estimate value
-  LPNum& iterations                // stores total number of strong branching iterations
+  int& iterations                // stores total number of strong branching iterations
 ) {
   RetCode retcode;
 
@@ -1329,23 +1329,23 @@ RetCode LPSoplexInterface::StrongbranchIntegerValue(
 
 // performs strong branching iterations on given candidates with @b integral values
 RetCode LPSoplexInterface::StrongbranchIntegerValues(
-  LPIndexArray& cols,                       // columns to apply strong branching on
-  LPNum num_cols,                         // number of columns
-  LPValueArray& primal_sols,              // current integral primal solution values of columns
-  LPNum iteration_limit,                  // iteration limit for strong branchings
-  LPValueArray& dual_bound_down_branches, // stores dual bounds after branching columns down
-  LPValueArray& dual_bound_up_branches,   // stores dual bounds after branching columns up
-  BoolArray& down_valids,                 // stores whether the returned down values are valid dual bounds;
+  std::vector<int>& cols,                       // columns to apply strong branching on
+  int num_cols,                         // number of columns
+  std::vector<double>& primal_sols,              // current integral primal solution values of columns
+  int iteration_limit,                  // iteration limit for strong branchings
+  std::vector<double>& dual_bound_down_branches, // stores dual bounds after branching columns down
+  std::vector<double>& dual_bound_up_branches,   // stores dual bounds after branching columns up
+  std::vector<bool>& down_valids,                 // stores whether the returned down values are valid dual bounds;
                                           // otherwise, they can only be used as an estimate values
-  BoolArray& up_valids,                   // stores whether the returned up values are a valid dual bounds;
+  std::vector<bool>& up_valids,                   // stores whether the returned up values are a valid dual bounds;
                                           // otherwise, they can only be used as an estimate values
-  LPNum& iterations                       // stores total number of strong branching iterations
+  int& iterations                       // stores total number of strong branching iterations
 ) {
   RetCode retcode;
   iterations = 0;
   bool up, down;
 
-  for (int j = 0; j < static_cast<int>(num_cols); ++j) {
+  for (int j = 0; j < num_cols; ++j) {
     // pass call on to StrongBranch()
     retcode = StrongBranch(cols[j], primal_sols[j], iteration_limit, (dual_bound_down_branches[j]), (dual_bound_up_branches[j]), down, up, iterations);
     down_valids[j] = down;
@@ -1498,7 +1498,7 @@ bool LPSoplexInterface::IsTimeLimitExceeded() {
 
 // gets objective value of solution
 RetCode LPSoplexInterface::GetObjectiveValue(
-  LPValue& obj_val // the objective value
+  double& obj_val // the objective value
 ) {
   MiniMIPdebugMessage("calling GetObjectiveValue()\n");
 
@@ -1512,11 +1512,11 @@ RetCode LPSoplexInterface::GetObjectiveValue(
 //*  Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
 //*  MiniMIP::LPInterface.IsOptimal() returns true.
 RetCode LPSoplexInterface::GetSolution(
-  LPValue& obj_val,          // stores the objective value
-  LPValueArray& primal_sol,  // primal solution vector
-  LPValueArray& dual_sol,    // dual solution vector
-  LPValueArray& activity,    // row activity vector
-  LPValueArray& reduced_cost // reduced cost vector
+  double& obj_val,          // stores the objective value
+  std::vector<double>& primal_sol,  // primal solution vector
+  std::vector<double>& dual_sol,    // dual solution vector
+  std::vector<double>& activity,    // row activity vector
+  std::vector<double>& reduced_cost // reduced cost vector
 ) {
   MiniMIPdebugMessage("calling GetSolution()\n");
   obj_val = spx_->objValueReal();
@@ -1550,7 +1550,7 @@ RetCode LPSoplexInterface::GetSolution(
 
 // gets primal ray for unbounded LPs
 RetCode LPSoplexInterface::GetPrimalRay(
-  LPValueArray& primal_ray // primal ray
+  std::vector<double>& primal_ray // primal ray
 ) {
   MiniMIPdebugMessage("calling GetPrimalRay()\n");
 
@@ -1573,7 +1573,7 @@ RetCode LPSoplexInterface::GetPrimalRay(
 
 // gets dual Farkas proof for infeasibility
 RetCode LPSoplexInterface::GetDualFarkasMultiplier(
-  LPValueArray& dual_farkas_multiplier // dual Farkas row multipliers
+  std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
 ) {
   MiniMIPdebugMessage("calling GetDualFarkasMultiplier()\n");
 
@@ -1596,7 +1596,7 @@ RetCode LPSoplexInterface::GetDualFarkasMultiplier(
 
 // gets the number of LP iterations of the last solve call
 RetCode LPSoplexInterface::GetIterations(
-  LPNum& iterations // the number of iterations of the last solve call
+  int& iterations // the number of iterations of the last solve call
 ) {
   MiniMIPdebugMessage("calling GetIterations()\n");
 
@@ -1647,7 +1647,7 @@ RetCode LPSoplexInterface::GetBase(
 
   if (column_basis_status.size() != 0) {
     for (i = 0; i < spx_->numColsReal(); ++i) {
-      //         LPValue obj_coeffs = 0.0;
+      //         double obj_coeffs = 0.0;
       switch (spx_->basisColStatus(i)) {
         case SPxSolver::BASIC:
           column_basis_status[i] = LPBaseStat::kBasic;
@@ -1696,8 +1696,8 @@ RetCode LPSoplexInterface::SetBase(
 
   MiniMIPdebugMessage("calling SetBase()\n");
 
-  LPNum num_cols = GetNumberOfColumns();
-  LPNum num_rows = GetNumberOfRows();
+  int num_cols = GetNumberOfColumns();
+  int num_rows = GetNumberOfRows();
 
   assert(PreStrongBranchingBasisFreed());
   InvalidateSolution();
@@ -1708,7 +1708,7 @@ RetCode LPSoplexInterface::SetBase(
   _colstat.reSize(num_cols);
   _rowstat.reSize(num_rows);
 
-  for (i = 0; i < static_cast<int>(num_rows); ++i) {
+  for (i = 0; i < num_rows; ++i) {
     switch (row_basis_status[i])
     {
       case LPBaseStat::kLower:
@@ -1733,7 +1733,7 @@ RetCode LPSoplexInterface::SetBase(
     }
   }
 
-  for (i = 0; i < static_cast<int>(num_cols); ++i) {
+  for (i = 0; i < num_cols; ++i) {
     switch (column_basis_status[i])
     {
       case LPBaseStat::kLower:
@@ -1764,7 +1764,7 @@ RetCode LPSoplexInterface::SetBase(
 
 // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
 RetCode LPSoplexInterface::GetBasisIndices(
-  IntArray& basis_indices // array to store basis indices ready to keep number of rows entries
+  std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
 ) {
 
   MiniMIPdebugMessage("calling GetBasisInd()\n");
@@ -1782,18 +1782,18 @@ RetCode LPSoplexInterface::GetBasisIndices(
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 RetCode LPSoplexInterface::GetBInvertedRow(
-  LPIndex row_number,         // row number
-  LPValueArray& row_coeffs, // array to store the coefficients of the row
-  LPIndexArray& indices,    // array to store the non-zero indices
+  int row_number,         // row number
+  std::vector<double>& row_coeffs, // array to store the coefficients of the row
+  std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
 ) {
   MiniMIPdebugMessage("calling GetBInvertedRow()\n");
 
   assert(PreStrongBranchingBasisFreed());
   assert(row_number >= 0);
-  assert(row_number < (unsigned) spx_->numRowsReal());
+  assert(row_number < spx_->numRowsReal());
 
-  IntArray integer_indices(indices.begin(), indices.end());
+  std::vector<int> integer_indices(indices.begin(), indices.end());
 
   if (!spx_->getBasisInverseRowReal(row_number, row_coeffs.data(), integer_indices.data(), &num_indices))
     return RetCode::kLPError;
@@ -1809,20 +1809,20 @@ RetCode LPSoplexInterface::GetBInvertedRow(
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 RetCode LPSoplexInterface::GetBInvertedColumn(
-  LPIndex col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
+  int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
                              // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
                              // B^-1 column numbers to the row and column numbers of the LP!
                              // c must be between 0 and num_rows-1, since the basis has the size
                              // num_rows * num_rows
-  LPValueArray& col_coeffs, // array to store the coefficients of the column
-  LPIndexArray& indices,    // array to store the non-zero indices
+  std::vector<double>& col_coeffs, // array to store the coefficients of the column
+  std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
 ) {
   MiniMIPdebugMessage("calling GetBInvertedColumn()\n");
 
   assert(PreStrongBranchingBasisFreed());
 
-  IntArray integer_indices(indices.begin(), indices.end());
+  std::vector<int> integer_indices(indices.begin(), indices.end());
 
   if (!spx_->getBasisInverseColReal(col_number, col_coeffs.data(), integer_indices.data(), &num_indices))
     return RetCode::kLPError;
@@ -1838,15 +1838,15 @@ RetCode LPSoplexInterface::GetBInvertedColumn(
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 RetCode LPSoplexInterface::GetBInvertedARow(
-  LPIndex row_number,                   // row number
-  const LPValueArray& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
-  LPValueArray& row_coeffs,           // array to store coefficients of the row
-  LPIndexArray& indices,              // array to store the non-zero indices
+  int row_number,                   // row number
+  const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
+  std::vector<double>& row_coeffs,           // array to store coefficients of the row
+  std::vector<int>& indices,              // array to store the non-zero indices
   int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
 ) {
 
-  LPValueArray buf;
-  LPValueArray binv;
+  std::vector<double> buf;
+  std::vector<double> binv;
   int num_rows;
   int num_cols;
   int c;
@@ -1867,7 +1867,7 @@ RetCode LPSoplexInterface::GetBInvertedARow(
   } else
     binv.assign(b_inverted_row.begin(), b_inverted_row.end());
 
-  assert(binv.size() == (unsigned) num_rows);
+  assert(binv.size() == num_rows);
 
   // mark sparsity pattern as invalid
   num_indices = -1;
@@ -1893,9 +1893,9 @@ RetCode LPSoplexInterface::GetBInvertedARow(
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 RetCode LPSoplexInterface::GetBInvertedAColumn(
-  LPIndex col_number,         // column number
-  LPValueArray& col_coeffs, // array to store coefficients of the column
-  LPIndexArray& indices,    // array to store the non-zero indices
+  int col_number,         // column number
+  std::vector<double>& col_coeffs, // array to store coefficients of the column
+  std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
 ) {
   // create a new uninitialized full vector
@@ -1910,7 +1910,7 @@ RetCode LPSoplexInterface::GetBInvertedAColumn(
 
   // extract column col_number of A
   assert(col_number >= 0);
-  assert(col_number < (unsigned) spx_->numColsReal());
+  assert(col_number < spx_->numColsReal());
 
   // @todo implement this with sparse vectors
   // mark sparsity pattern as invalid
@@ -1938,7 +1938,7 @@ RetCode LPSoplexInterface::GetBInvertedAColumn(
 // gets integer parameter of LP
 RetCode LPSoplexInterface::GetIntegerParameter(
   LPParameter type, // parameter number
-  LPNum& param_val  // returns the parameter value
+  int& param_val  // returns the parameter value
 ) {
   int scale_param;
 
@@ -1960,7 +1960,7 @@ RetCode LPSoplexInterface::GetIntegerParameter(
       param_val = spx_->intParam(SoPlex::SIMPLIFIER) == SoPlex::SIMPLIFIER_AUTO;
       break;
     case LPParameter::kPricing:
-      param_val = (LPNum) pricing_;
+      param_val = (int) pricing_;
       break;
     case LPParameter::kScaling:
       scale_param = spx_->intParam(SoPlex::SCALER);
@@ -1975,13 +1975,13 @@ RetCode LPSoplexInterface::GetIntegerParameter(
       }
       break;
     case LPParameter::kTiming:
-      param_val = (LPNum) (spx_->intParam(SoPlex::TIMER));
+      param_val = (int) (spx_->intParam(SoPlex::TIMER));
       break;
     case LPParameter::kRandomSeed:
-      param_val = (LPNum) spx_->randomSeed();
+      param_val = (int) spx_->randomSeed();
       break;
     case LPParameter::kRefactor:
-      param_val = (LPNum) spx_->intParam(SoPlex::FACTOR_UPDATE_MAX);
+      param_val = (int) spx_->intParam(SoPlex::FACTOR_UPDATE_MAX);
       break;
     default:
       return RetCode::kParameterUnknown;
@@ -1993,7 +1993,7 @@ RetCode LPSoplexInterface::GetIntegerParameter(
 // sets integer parameter of LP
 RetCode LPSoplexInterface::SetIntegerParameter(
   LPParameter type, // parameter number
-  LPNum param_val   // parameter value
+  int param_val   // parameter value
 ) {
   MiniMIPdebugMessage("calling SetIntegerParameter()\n");
 
@@ -2072,7 +2072,7 @@ RetCode LPSoplexInterface::SetIntegerParameter(
 // gets floating point parameter of LP
 RetCode LPSoplexInterface::GetRealParameter(
   LPParameter type,    // parameter number
-  LPValue& LPValue_val // returns the parameter value
+  double& LPValue_val // returns the parameter value
 ) {
   MiniMIPdebugMessage("calling GetRealParameter()\n");
 
@@ -2105,7 +2105,7 @@ RetCode LPSoplexInterface::GetRealParameter(
 // sets floating point parameter of LP
 RetCode LPSoplexInterface::SetRealParameter(
   LPParameter type,   // parameter number
-  LPValue LPValue_val // parameter value
+  double LPValue_val // parameter value
 ) {
   MiniMIPdebugMessage("calling SetRealParameter()\n");
 
@@ -2154,7 +2154,7 @@ RetCode LPSoplexInterface::SetRealParameter(
 // @{
 
 // returns value treated as infinity in the LP solver
-LPValue LPSoplexInterface::Infinity() {
+double LPSoplexInterface::Infinity() {
   MiniMIPdebugMessage("calling Infinity()\n");
 
   return spx_->realParam(SoPlex::INFTY);
@@ -2162,7 +2162,7 @@ LPValue LPSoplexInterface::Infinity() {
 
 // checks if given value is treated as infinity in the LP solver
 bool LPSoplexInterface::IsInfinity(
-  LPValue val // value to be checked for infinity
+  double val // value to be checked for infinity
 ) {
   MiniMIPdebugMessage("calling IsInfinity()\n");
 

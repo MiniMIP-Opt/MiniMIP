@@ -23,9 +23,9 @@ static LPInterface* lp_interface_ = nullptr;
 
 class BoundChanges : public ::testing::Test {
  protected:
-  LPValueArray obj, lb, ub, lbnew, ubnew, empty_vals;
-  LPIndexArray ind, empty_indices;
-  StringArray empty_names;
+  std::vector<double> obj, lb, ub, lbnew, ubnew, empty_vals;
+  std::vector<int> ind, empty_indices;
+  std::vector<std::string> empty_names;
 
   void SetUp() override {
     // build interface factory

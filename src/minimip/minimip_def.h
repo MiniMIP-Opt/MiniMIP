@@ -6,10 +6,10 @@
 #include "src/messagehandler/message_macros.h"
 #include "src/lp_interface/lp_types.h"
 
-/* #define MINIMIP_VERSION 000 / **< MiniMIP version number (multiplied by 100 to get integer number) * /
-  #define MINIMIP_SUBVERSION               0 / **< MiniMIP sub version number * /
-  #define MINIMIP_APIVERSION              00 / **< MiniMIP API version number * /
-  #define MINIMIP_COPYRIGHT   PLACEHOLDER:"~~Copyright (C) 2002-2020 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)~~" */
+// #define MINIMIP_VERSION 000   // MiniMIP version number (multiplied by 100 to get integer number)
+//  #define MINIMIP_SUBVERSION               0 // MiniMIP sub version number
+//  #define MINIMIP_APIVERSION              00 // MiniMIP API version number
+//  #define MINIMIP_COPYRIGHT   // PLACEHOLDER:"~~Copyright (C) 2002-2020 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)~~"
 
 #define EPSCEIL(x, eps) (ceil((x) - (eps)))
 #define EPSFLOOR(x, eps) (floor((x) + (eps)))

@@ -11,9 +11,9 @@ static LPInterface* lp_interface_ = nullptr;
 
 class matrix : public ::testing::Test {
  protected:
-  LPValueArray obj, lb, ub, lhs, rhs, val, matval, matlhs, matrhs, row1, row2, empty_vals;
-  LPIndexArray matbeg, matind, beg, ind, empty_indices;
-  StringArray empty_names;
+  std::vector<double> obj, lb, ub, lhs, rhs, val, matval, matlhs, matrhs, row1, row2, empty_vals;
+  std::vector<int> matbeg, matind, beg, ind, empty_indices;
+  std::vector<std::string> empty_names;
 
   void SetUp() override {
     // build interface factory
@@ -49,7 +49,7 @@ class matrix : public ::testing::Test {
 };
 
 TEST_F(matrix, create_matrix) {
-  LPNum nnonz, nrows, ncols;
+  int nnonz, nrows, ncols;
 
   // add one column
   ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay) << "hello";

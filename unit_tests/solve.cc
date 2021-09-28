@@ -31,18 +31,18 @@ static LPInterface* lp_interface_ = nullptr;
 class Solve : public ::testing::Test {
  protected:
   // perform test
-  LPValueArray obj;          // objective function values of columns
-  LPValueArray lb;           // lower bounds of columns
-  LPValueArray ub;           // upper bounds of columns
-  LPValueArray lhs;          // left hand sides of rows
-  LPValueArray rhs;          // right hand sides of rows
-  LPIndexArray beg;          // start index of each column in ind- and val-array
-  LPIndexArray ind;          // row indices of constraint matrix entries
-  LPValueArray val;          // values of constraint matrix entries
-  LPValueArray exp_primsol;  // expected primal optimal solution or primal ray if primal is unbounded or NULL
-  LPValueArray exp_dualsol;  // expected dual optimal solution or dual ray if dual is unbounded or NULL
-  LPValueArray exp_activity; // expected activity of optimal solution or NULL
-  LPValueArray exp_redcost;  // expected reduced cost of optimal solution or NULL
+  std::vector<double> obj;          // objective function values of columns
+  std::vector<double> lb;           // lower bounds of columns
+  std::vector<double> ub;           // upper bounds of columns
+  std::vector<double> lhs;          // left hand sides of rows
+  std::vector<double> rhs;          // right hand sides of rows
+  std::vector<int> beg;          // start index of each column in ind- and val-array
+  std::vector<int> ind;          // row indices of constraint matrix entries
+  std::vector<double> val;          // values of constraint matrix entries
+  std::vector<double> exp_primsol;  // expected primal optimal solution or primal ray if primal is unbounded or NULL
+  std::vector<double> exp_dualsol;  // expected dual optimal solution or dual ray if dual is unbounded or NULL
+  std::vector<double> exp_activity; // expected activity of optimal solution or NULL
+  std::vector<double> exp_redcost;  // expected reduced cost of optimal solution or NULL
 
   void SetUp() override {
     // build interface factory
@@ -64,29 +64,29 @@ class Solve : public ::testing::Test {
   // solve problem
   static void solveTest(
     bool solveprimal,                 // use primal simplex
-    LPNum ncols,                      // number of columns
-    LPNum nrows,                      // number of rows
+    int ncols,                      // number of columns
+    int nrows,                      // number of rows
     LPFeasibilityStat exp_primalfeas, // expected primal feasibility status
     LPFeasibilityStat exp_dualfeas,   // expected primal feasibility status
-    const LPValueArray& exp_primsol,  // expected primal optimal solution or primal ray if primal is unbounded or NULL
-    const LPValueArray& exp_dualsol,  // expected dual optimal solution or dual ray if dual is unbounded or NULL
-    const LPValueArray& exp_activity, // expected activity of optimal solution or NULL
-    const LPValueArray& exp_redcost   // expected reduced cost of optimal solution or NULL
+    const std::vector<double>& exp_primsol,  // expected primal optimal solution or primal ray if primal is unbounded or NULL
+    const std::vector<double>& exp_dualsol,  // expected dual optimal solution or dual ray if dual is unbounded or NULL
+    const std::vector<double>& exp_activity, // expected activity of optimal solution or NULL
+    const std::vector<double>& exp_redcost   // expected reduced cost of optimal solution or NULL
   ) {
     // solution data
-    LPValue objval;
-    LPValueArray primsol;
-    LPValueArray dualsol;
-    LPValueArray activity;
-    LPValueArray redcost;
+    double objval;
+    std::vector<double> primsol;
+    std::vector<double> dualsol;
+    std::vector<double> activity;
+    std::vector<double> redcost;
 
     // auxiliary data
     bool primalfeasible;
     bool dualfeasible;
-    LPNum ntmprows;
-    LPNum ntmpcols;
-    LPIndex i;
-    LPIndex j;
+    int ntmprows;
+    int ntmpcols;
+    int i;
+    int j;
 
     // check size
     ntmprows = lp_interface_->GetNumberOfRows();
@@ -207,7 +207,7 @@ class Solve : public ::testing::Test {
     } else if (exp_primalfeas == LPFeasibilityStat::UNBOUNDED) {
 
       if (lp_interface_->HasPrimalRay()) {
-        LPValue scalingfactor = 1.0;
+        double scalingfactor = 1.0;
 
         ASSERT_EQ(lp_interface_->GetPrimalRay(primsol), RetCode::kOkay);
 
@@ -239,9 +239,9 @@ class Solve : public ::testing::Test {
     } else if (exp_dualfeas == LPFeasibilityStat::UNBOUNDED) {
 
       if (lp_interface_->HasDualRay()) {
-        LPValue scalingfactor = 1.0;
-        LPValueArray lhs(nrows);
-        LPValueArray rhs(nrows);
+        double scalingfactor = 1.0;
+        std::vector<double> lhs(nrows);
+        std::vector<double> rhs(nrows);
 
         // get lhs/rhs for check of dual ray
         ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, lhs, rhs), RetCode::kOkay);
@@ -273,24 +273,24 @@ class Solve : public ::testing::Test {
   static void performTest(
     bool solveprimal,                 // use primal simplex
     LPObjectiveSense objsen,          // objective sense
-    LPNum ncols,                      // number of columns
-    const LPValueArray& obj,          // objective function values of columns
-    const LPValueArray& lb,           // lower bounds of columns
-    const LPValueArray& ub,           // upper bounds of columns
-    LPNum nrows,                      // number of rows
-    const LPValueArray& lhs,          // left hand sides of rows
-    const LPValueArray& rhs,          // right hand sides of rows
-    const LPIndexArray& beg,          // start index of each column in ind- and val-array
-    const LPIndexArray& ind,          // row indices of constraint matrix entries
-    const LPValueArray& val,          // values of constraint matrix entries
+    int ncols,                      // number of columns
+    const std::vector<double>& obj,          // objective function values of columns
+    const std::vector<double>& lb,           // lower bounds of columns
+    const std::vector<double>& ub,           // upper bounds of columns
+    int nrows,                      // number of rows
+    const std::vector<double>& lhs,          // left hand sides of rows
+    const std::vector<double>& rhs,          // right hand sides of rows
+    const std::vector<int>& beg,          // start index of each column in ind- and val-array
+    const std::vector<int>& ind,          // row indices of constraint matrix entries
+    const std::vector<double>& val,          // values of constraint matrix entries
     LPFeasibilityStat exp_primalfeas, // expected primal feasibility status
     LPFeasibilityStat exp_dualfeas,   // expected primal feasibility status
-    const LPValueArray& exp_primsol,  // expected primal optimal solution or primal ray if primal is unbounded or NULL
-    const LPValueArray& exp_dualsol,  // expected dual optimal solution or dual ray if dual is unbounded or NULL
-    const LPValueArray& exp_activity, // expected activity of optimal solution or NULL
-    const LPValueArray& exp_redcost   // expected reduced cost of optimal solution or NULL
+    const std::vector<double>& exp_primsol,  // expected primal optimal solution or primal ray if primal is unbounded or NULL
+    const std::vector<double>& exp_dualsol,  // expected dual optimal solution or dual ray if dual is unbounded or NULL
+    const std::vector<double>& exp_activity, // expected activity of optimal solution or NULL
+    const std::vector<double>& exp_redcost   // expected reduced cost of optimal solution or NULL
   ) {
-    StringArray empty_names;
+    std::vector<std::string> empty_names;
 
     // load problem
     ASSERT_EQ(lp_interface_->LoadColumnLP(objsen, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
@@ -303,33 +303,33 @@ class Solve : public ::testing::Test {
   // check whether data in LP solver aggrees with original data
   static void checkData(
     LPObjectiveSense objsen, // objective sense
-    LPNum ncols,             // number of columns
-    const LPValueArray& obj, // objective function values of columns
-    const LPValueArray& lb,  // lower bounds of columns
-    const LPValueArray& ub,  // upper bounds of columns
-    LPNum nrows,             // number of rows
-    const LPValueArray& lhs, // left hand sides of rows
-    const LPValueArray& rhs, // right hand sides of rows
-    LPNum nnonz,             // number of nonzero elements in the constraint matrix
-    const LPIndexArray& beg, // start index of each column in ind- and val-array
-    const LPIndexArray& ind, // row indices of constraint matrix entries
-    const LPValueArray& val  // values of constraint matrix entries
+    int ncols,             // number of columns
+    const std::vector<double>& obj, // objective function values of columns
+    const std::vector<double>& lb,  // lower bounds of columns
+    const std::vector<double>& ub,  // upper bounds of columns
+    int nrows,             // number of rows
+    const std::vector<double>& lhs, // left hand sides of rows
+    const std::vector<double>& rhs, // right hand sides of rows
+    int nnonz,             // number of nonzero elements in the constraint matrix
+    const std::vector<int>& beg, // start index of each column in ind- and val-array
+    const std::vector<int>& ind, // row indices of constraint matrix entries
+    const std::vector<double>& val  // values of constraint matrix entries
   ) {
     LPObjectiveSense check_objsen;
-    LPValueArray check_val;
-    LPValueArray check_lb;
-    LPValueArray check_ub;
-    LPValueArray check_obj;
-    LPValueArray check_lhs;
-    LPValueArray check_rhs;
-    LPIndexArray check_beg;
-    LPIndexArray check_ind;
-    LPNum check_ncols;
-    LPNum check_nrows;
-    LPNum check_nnonz;
-    LPNum check_nnonz2;
-    LPIndex i;
-    LPIndex j;
+    std::vector<double> check_val;
+    std::vector<double> check_lb;
+    std::vector<double> check_ub;
+    std::vector<double> check_obj;
+    std::vector<double> check_lhs;
+    std::vector<double> check_rhs;
+    std::vector<int> check_beg;
+    std::vector<int> check_ind;
+    int check_ncols;
+    int check_nrows;
+    int check_nnonz;
+    int check_nnonz2;
+    int i;
+    int j;
 
     // check number of rows and columns
     check_nrows = lp_interface_->GetNumberOfRows();
@@ -505,7 +505,7 @@ TEST_F(Solve, test2) {
   ind.reserve(4);
   val.reserve(4);
 
-  LPValueArray exp_primray(2);
+  std::vector<double> exp_primray(2);
   exp_primsol.reserve(2);
   exp_dualsol.reserve(2);
   exp_activity.reserve(2);
@@ -540,7 +540,7 @@ TEST_F(Solve, test2) {
   lhs[1] = -lp_interface_->Infinity();
 
   // empty_placeholders
-  LPValueArray empty_vals;
+  std::vector<double> empty_vals;
 
   // solve problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
@@ -589,7 +589,7 @@ TEST_F(Solve, test3) {
   beg.reserve(2);
   ind.reserve(4);
   val.reserve(4);
-  LPValueArray exp_dualray(2);
+  std::vector<double> exp_dualray(2);
   exp_primsol.reserve(2);
   exp_dualsol.reserve(2);
   exp_activity.reserve(2);
@@ -622,7 +622,7 @@ TEST_F(Solve, test3) {
   ub[1] = lp_interface_->Infinity();
 
   // empty_placeholders
-  LPValueArray empty_vals;
+  std::vector<double> empty_vals;
 
   // check problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
@@ -688,7 +688,7 @@ TEST_F(Solve, test4) {
   lhs[1] = -lp_interface_->Infinity();
 
   // empty_placeholders
-  LPValueArray empty_vals;
+  std::vector<double> empty_vals;
 
   // check problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(  performTest(true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
@@ -734,12 +734,12 @@ TEST_F(Solve, test5) {
   ind = {0, 1, 0, 1};
   val = {2, 1, 1, 3};
 
-  LPValue objval;
+  double objval;
   LPBaseStatArray cstat(2);
   LPBaseStatArray rstat(2);
   cstat = {LPBaseStat::kLower, LPBaseStat::kLower};
   rstat = {LPBaseStat::kBasic, LPBaseStat::kBasic};
-  LPValue exp_objval = 5.0;
+  double exp_objval = 5.0;
 
   // expected solutions
   exp_primsol = {0.4, 0.2};
@@ -754,7 +754,7 @@ TEST_F(Solve, test5) {
   lhs[1] = -lp_interface_->Infinity();
 
   // empty_placeholders
-  StringArray empty_names;
+  std::vector<std::string> empty_names;
 
   // load problem
   ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMaximize, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
@@ -844,10 +844,10 @@ TEST_F(Solve, test6) {
 
   // data with fixed values:
 
-  LPValue exp_objval = -2.0625;
-  LPValue objval;
+  double exp_objval = -2.0625;
+  double objval;
 
-  LPIndexArray varind(12);
+  std::vector<int> varind(12);
   varind = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
   // LP data:
@@ -880,7 +880,7 @@ TEST_F(Solve, test6) {
       rhs[j] = lp_interface_->Infinity();
   }
   // empty_placeholders
-  StringArray empty_names;
+  std::vector<std::string> empty_names;
 
   // load problem
   ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMinimize, 12, obj, lb, ub, empty_names, 8, lhs, rhs, empty_names, 30, beg, ind, val), RetCode::kOkay);
@@ -983,7 +983,7 @@ TEST_F(Solve, test7) {
   val = {2, 1, 1, 3};
 
   // expected ray
-  LPValueArray exp_dualray(2);
+  std::vector<double> exp_dualray(2);
   exp_dualray= {0.5, -1};
 
   // fill data
@@ -993,7 +993,7 @@ TEST_F(Solve, test7) {
   ub[1] = lp_interface_->Infinity();
 
   // empty_placeholders
-  LPValueArray empty_vals;
+  std::vector<double> empty_vals;
 
   // check problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(  performTest(true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind, val,
