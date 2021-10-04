@@ -224,21 +224,6 @@ class LPInterface : private messagehandler {
     int& iterations                // stores total number of strong branching iterations
     ) = 0;
 
-  // performs strong branching iterations on given @b fractional candidates
-  virtual RetCode StrongbranchFractionalValues(
-    std::vector<int>& cols,                       // columns to apply strong branching on
-    int num_cols,                         // number of columns
-    std::vector<double>& primal_sols,              // fractional current primal solution values of columns
-    int iteration_limit,                  // iteration limit for strong branchings
-    std::vector<double>& dual_bound_down_branches, // stores dual bounds after branching columns down
-    std::vector<double>& dual_bound_up_branches,   // stores dual bounds after branching columns up
-    std::vector<bool>& down_valids,                 // stores whether the returned down values are valid dual bounds;
-                                            //  otherwise, they can only be used as an estimate values
-    std::vector<bool>& up_valids,                   // stores whether the returned up values are a valid dual bounds;
-                                            //  otherwise, they can only be used as an estimate values
-    int& iterations                       // stores total number of strong branching iterations
-    ) = 0;
-
   // performs strong branching iterations on one candidate with @b integral value
   virtual RetCode StrongbranchIntegerValue(
     int col,                       // column to apply strong branching on
@@ -253,20 +238,6 @@ class LPInterface : private messagehandler {
     int& iterations                // stores total number of strong branching iterations
     ) = 0;
 
-  // performs strong branching iterations on given candidates with @b integral values
-  virtual RetCode StrongbranchIntegerValues(
-    std::vector<int>& cols,                       // columns to apply strong branching on
-    int num_cols,                         // number of columns
-    std::vector<double>& primal_sols,              // current integral primal solution values of columns
-    int iteration_limit,                  // iteration limit for strong branchings
-    std::vector<double>& dual_bound_down_branches, // stores dual bounds after branching columns down
-    std::vector<double>& dual_bound_up_branches,   // stores dual bounds after branching columns up
-    std::vector<bool>& down_valids,                 // stores whether the returned down values are valid dual bounds;
-                                            //  otherwise, they can only be used as an estimate values
-    std::vector<bool>& up_valids,                   // stores whether the returned up values are a valid dual bounds;
-                                            //  otherwise, they can only be used as an estimate values
-    int& iterations                       // stores total number of strong branching iterations
-    ) = 0;
   // @}
 
   // @name Solution Information Methods

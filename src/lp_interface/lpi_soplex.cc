@@ -1266,39 +1266,6 @@ RetCode LPSoplexInterface::StrongbranchFractionalValue(
   return RetCode::kOkay;
 }
 
-// performs strong branching iterations on given @b fractional candidates
-RetCode LPSoplexInterface::StrongbranchFractionalValues(
-  std::vector<int>& cols,                       // columns to apply strong branching on
-  int num_cols,                         // number of columns
-  std::vector<double>& primal_sols,              // fractional current primal solution values of columns
-  int iteration_limit,                  // iteration limit for strong branchings
-  std::vector<double>& dual_bound_down_branches, // stores dual bounds after branching columns down
-  std::vector<double>& dual_bound_up_branches,   // stores dual bounds after branching columns up
-  std::vector<bool>& down_valids,                 // stores whether the returned down values are valid dual bounds;
-                                          // otherwise, they can only be used as an estimate values
-  std::vector<bool>& up_valids,                   // stores whether the returned up values are a valid dual bounds;
-                                          // otherwise, they can only be used as an estimate values
-  int& iterations                       // stores total number of strong branching iterations
-) {
-  RetCode retcode;
-  iterations = 0;
-  bool up, down;
-
-  for (int j = 0; j < num_cols; ++j) {
-    // pass call on to StrongBranch()
-    retcode = StrongBranch(cols[j], primal_sols[j], iteration_limit, (dual_bound_down_branches[j]), (dual_bound_up_branches[j]), down, up, iterations);
-    down_valids[j] = down;
-    up_valids[j] = up;
-    // pass RetCode::kLPError to MiniMIP without a back trace
-    if (retcode == RetCode::kLPError)
-      return RetCode::kLPError;
-
-    // evaluate retcode
-    MINIMIP_CALL(retcode);
-  }
-  return RetCode::kOkay;
-}
-
 // performs strong branching iterations on one candidate with @b integral value
 RetCode LPSoplexInterface::StrongbranchIntegerValue(
   int col,                       // column to apply strong branching on
@@ -1327,40 +1294,6 @@ RetCode LPSoplexInterface::StrongbranchIntegerValue(
   return RetCode::kOkay;
 }
 
-// performs strong branching iterations on given candidates with @b integral values
-RetCode LPSoplexInterface::StrongbranchIntegerValues(
-  std::vector<int>& cols,                       // columns to apply strong branching on
-  int num_cols,                         // number of columns
-  std::vector<double>& primal_sols,              // current integral primal solution values of columns
-  int iteration_limit,                  // iteration limit for strong branchings
-  std::vector<double>& dual_bound_down_branches, // stores dual bounds after branching columns down
-  std::vector<double>& dual_bound_up_branches,   // stores dual bounds after branching columns up
-  std::vector<bool>& down_valids,                 // stores whether the returned down values are valid dual bounds;
-                                          // otherwise, they can only be used as an estimate values
-  std::vector<bool>& up_valids,                   // stores whether the returned up values are a valid dual bounds;
-                                          // otherwise, they can only be used as an estimate values
-  int& iterations                       // stores total number of strong branching iterations
-) {
-  RetCode retcode;
-  iterations = 0;
-  bool up, down;
-
-  for (int j = 0; j < num_cols; ++j) {
-    // pass call on to StrongBranch()
-    retcode = StrongBranch(cols[j], primal_sols[j], iteration_limit, (dual_bound_down_branches[j]), (dual_bound_up_branches[j]), down, up, iterations);
-    down_valids[j] = down;
-    up_valids[j] = up;
-
-    // pass RetCode::kLPError to MiniMIP without a back trace
-    if (retcode == RetCode::kLPError)
-      return RetCode::kLPError;
-
-    // evaluate retcode
-    MINIMIP_CALL(retcode);
-  }
-
-  return RetCode::kOkay;
-}
 // @}
 
 // @name Solution Information Methods
