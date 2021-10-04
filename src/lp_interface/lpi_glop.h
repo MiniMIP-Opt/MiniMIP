@@ -57,7 +57,7 @@ class LPGlopInterface : public LPInterface {
   GlopParameters parameters_;    // parameters
   LpScalingHelper scaler_;       // scaler auxiliary class
 
-  // the following is used by WasSolved()
+  // the following is used by IsSolved()
   bool lp_modified_since_last_solve_;
   bool lp_time_limit_was_reached_;
 
@@ -87,7 +87,7 @@ class LPGlopInterface : public LPInterface {
   void updateScaledLP();
 
   // check primal feasibility
-  bool checkUnscaledPrimalFeasibility();
+  bool checkUnscaledPrimalFeasibility() const ;
 
   // common function between the two LPI Solve() functions
   RetCode SolveInternal(
@@ -98,7 +98,7 @@ class LPGlopInterface : public LPInterface {
   // determine whether the dual bound is valid
   bool IsDualBoundValid(
     ProblemStatus status // status to be checked
-  );
+  ) const ;
 
   // performs strong branching iterations
   RetCode strongbranch(
@@ -123,25 +123,25 @@ class LPGlopInterface : public LPInterface {
   LPBasisStatus ConvertGlopVariableStatus(
     VariableStatus status,  // variable status
     Fractional reduced_cost // reduced cost of variable
-  );
+  ) const ;
 
   // convert Glop constraint basis status to MiniMIP status
   LPBasisStatus ConvertGlopConstraintStatus(
     ConstraintStatus status, // constraint status
     Fractional dual_value    // dual variable value
-  );
+  ) const ;
 
   // Convert MiniMIP variable status to Glop status
   VariableStatus ConvertMiniMIPVariableStatus(
     LPBasisStatus status // MiniMIP variable status
-  );
+  ) const ;
 
   // Convert a MiniMIP constraint status to its corresponding Glop slack VariableStatus.
   //
   // Note that we swap the upper/lower bounds.
   VariableStatus ConvertMiniMIPConstraintStatusToSlackStatus(
     LPBasisStatus status // MiniMIP constraint status
-  );
+  ) const ;
 
  public:
   // constructor
@@ -266,16 +266,16 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // gets the number of rows in the LP
-   int GetNumberOfRows() override;
+   int GetNumberOfRows() const override;
 
   // gets the number of columns in the LP
-   int GetNumberOfColumns() override;
+   int GetNumberOfColumns() const override;
 
   // gets the number of non-zero elements in the LP constraint matrix
-   int GetNumberOfNonZeros() override;
+   int GetNumberOfNonZeros() const override;
 
   // gets the objective sense of the LP
-   LPObjectiveSense GetObjectiveSense() override;
+   LPObjectiveSense GetObjectiveSense() const override;
 
   // gets columns from LP problem object; the arrays have to be large enough to store all values;
   RetCode GetColumns(
@@ -287,7 +287,7 @@ class LPGlopInterface : public LPInterface {
     std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
     std::vector<int>& indices,      // array to store row indices of constraint matrix entries
     std::vector<double>& vals          // array to store values of constraint matrix entries
-    ) override;
+    ) const override;
 
   // gets rows from LP problem object; the arrays have to be large enough to store all values.
   RetCode GetRows(
@@ -299,14 +299,14 @@ class LPGlopInterface : public LPInterface {
     std::vector<int>& begin_rows,       // array to store start index of each row in indices- and vals-array
     std::vector<int>& indices,          // array to store column indices of constraint matrix entries
     std::vector<double>& vals              // array to store values of constraint matrix entries
-    ) override;
+    ) const override;
 
   // gets objective coefficients from LP problem object
   RetCode GetObjective(
     int first_col,         // first column to get objective coefficient for
     int last_col,          // last column to get objective coefficient for
     std::vector<double>& obj_coeffs // array to store objective coefficients
-    ) override;
+    ) const override;
 
   // gets current bounds from LP problem object
   RetCode GetBounds(
@@ -314,7 +314,7 @@ class LPGlopInterface : public LPInterface {
     int last_col,             // last column to get bounds for
     std::vector<double>& lower_bounds, // array to store lower bound values
     std::vector<double>& upper_bounds  // array to store upper bound values
-    ) override;
+    ) const override;
 
   // gets current row sides from LP problem object
   RetCode GetSides(
@@ -322,14 +322,14 @@ class LPGlopInterface : public LPInterface {
     int last_row,                // last row to get sides for
     std::vector<double>& left_hand_sides, // array to store left hand side values
     std::vector<double>& right_hand_sides // array to store right hand side values
-    ) override;
+    ) const override;
 
   // gets a single coefficient
   RetCode GetCoefficient(
     int row,   // row number of coefficient
     int col,   // column number of coefficient
     double& val // array to store the value of the coefficient
-    ) override;
+    ) const override;
 
   // @}
 
@@ -411,44 +411,44 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // returns whether a solve method was called after the last modification of the LP
-  bool WasSolved() override;
+  bool IsSolved() const override;
 
   // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
   //  this does not necessarily mean that the solver knows and can return the primal ray
-  bool ExistsPrimalRay() override;
+  bool ExistsPrimalRay() const override;
 
   // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
   //  and the solver knows and can return the primal ray
-  bool HasPrimalRay() override;
+  bool HasPrimalRay() const override;
 
   // returns true if LP is proven to be primal unbounded
-  bool IsPrimalUnbounded() override;
+  bool IsPrimalUnbounded() const override;
 
   // returns TRUE if LP is proven to be primal infeasible
-  bool IsPrimalInfeasible() override;
+  bool IsPrimalInfeasible() const override;
 
   // returns TRUE if LP is proven to be primal feasible
-  bool IsPrimalFeasible() override;
+  bool IsPrimalFeasible() const override;
 
   // returns TRUE if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
   // this does not necessarily mean that the solver knows and can return the dual ray
-  bool ExistsDualRay() override;
+  bool ExistsDualRay() const override;
 
   // returns TRUE if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
   // and the solver knows and can return the dual ray
-  bool HasDualRay() override;
+  bool HasDualRay() const override;
 
   // returns TRUE if LP is proven to be dual unbounded
-  bool IsDualUnbounded() override;
+  bool IsDualUnbounded() const override;
 
   // returns TRUE if LP is proven to be dual infeasible
-  bool IsDualInfeasible() override;
+  bool IsDualInfeasible() const override;
 
   // returns TRUE if LP is proven to be dual feasible
-  bool IsDualFeasible() override;
+  bool IsDualFeasible() const override;
 
   // returns TRUE if LP was solved to optimality
-  bool IsOptimal() override;
+  bool IsOptimal() const override;
 
   // returns TRUE if current LP solution is stable
   //
@@ -456,16 +456,16 @@ class LPGlopInterface : public LPInterface {
   // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
   // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
   // MiniMIP::LPInterface.IsStable() should return false.
-  bool IsStable() override;
+  bool IsStable() const override;
 
   // returns TRUE if the objective limit was reached
-  bool IsObjectiveLimitExceeded() override;
+  bool ObjectiveLimitIsExceeded() const override;
 
   // returns TRUE if the iteration limit was reached
-  bool IsIterationLimitExceeded() override;
+  bool IterationLimitIsExceeded() const override;
 
   // returns TRUE if the time limit was reached
-  bool IsTimeLimitExceeded() override;
+  bool TimeLimitIsExceeded() const override;
 
   // gets objective value of solution
   RetCode GetObjectiveValue(
@@ -482,22 +482,22 @@ class LPGlopInterface : public LPInterface {
     std::vector<double>& dual_sol,    // dual solution vector
     std::vector<double>& activity,    // row activity vector
     std::vector<double>& reduced_cost // reduced cost vector
-    ) override;
+    ) const override;
 
   // gets primal ray for unbounded LPs
   RetCode GetPrimalRay(
     std::vector<double>& primal_ray // primal ray
-    ) override;
+    ) const override;
 
   // gets dual Farkas proof for infeasibility
   RetCode GetDualFarkasMultiplier(
     std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
-    ) override;
+    ) const override;
 
   // gets the number of LP iterations of the last solve call
   RetCode GetIterations(
     int& iterations // number of iterations of the last solve call
-    ) override;
+    ) const override;
 
   // @}
 
@@ -508,7 +508,7 @@ class LPGlopInterface : public LPInterface {
   RetCode GetBase(
     std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
     std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
-    ) override;
+    ) const override;
 
   // sets current basis status for columns and rows
   RetCode SetBase(
@@ -519,7 +519,7 @@ class LPGlopInterface : public LPInterface {
   // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
   RetCode GetBasisIndices(
     std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
-    ) override;
+    ) const override;
 
   // get row of inverse basis matrix B^-1
   //
@@ -531,7 +531,7 @@ class LPGlopInterface : public LPInterface {
     std::vector<double>& row_coeffs, // array to store the coefficients of the row
     std::vector<int>& indices,    // array to store the non-zero indices
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) override;
+    ) const override;
 
   // get column of inverse basis matrix B^-1
   //
@@ -546,7 +546,7 @@ class LPGlopInterface : public LPInterface {
     std::vector<double>& col_coeffs, // array to store the coefficients of the column
     std::vector<int>& indices,    // array to store the non-zero indices
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) override;
+    ) const override;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -559,7 +559,7 @@ class LPGlopInterface : public LPInterface {
     std::vector<double>& row_coeffs,           // array to store coefficients of the row
     std::vector<int>& indices,              // array to store the non-zero indices
     int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
-    ) override;
+    ) const override;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -571,7 +571,7 @@ class LPGlopInterface : public LPInterface {
     std::vector<double>& col_coeffs, // array to store coefficients of the column
     std::vector<int>& indices,    // array to store the non-zero indices
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) override;
+    ) const override;
 
   // @}
 
@@ -582,7 +582,7 @@ class LPGlopInterface : public LPInterface {
   RetCode GetIntegerParameter(
     LPParameter type, // parameter number
     int& param_val  // returns the parameter value
-    ) override;
+    ) const override;
 
   // sets integer parameter of LP
   RetCode SetIntegerParameter(
@@ -594,7 +594,7 @@ class LPGlopInterface : public LPInterface {
   RetCode GetRealParameter(
     LPParameter type,  // parameter number
     double& param_val // returns the parameter value
-    ) override;
+    ) const override;
 
   // sets floating point parameter of LP
   RetCode SetRealParameter(
@@ -608,12 +608,12 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // returns value treated as infinity in the LP solver
-  double Infinity() override;
+  double Infinity() const override;
 
   // checks if given value is treated as infinity in the LP solver
   bool IsInfinity(
     double val // value to be checked for infinity
-    ) override;
+    ) const override;
 
   // @}
 
@@ -628,7 +628,7 @@ class LPGlopInterface : public LPInterface {
   // writes LP to a file
   RetCode WriteLP(
     const char* file_name // file name
-    ) override;
+    ) const override;
 
   // @}
 

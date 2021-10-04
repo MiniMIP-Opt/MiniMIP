@@ -230,9 +230,9 @@ class Change : public ::testing::Test {
     ASSERT_EQ(lp_interface_->ChangeObjectiveSense(objsen), RetCode::kOkay);
     ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
     ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
-    ASSERT_TRUE(!lp_interface_->WasSolved());
+    ASSERT_TRUE(!lp_interface_->IsSolved());
     ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
-    ASSERT_TRUE(lp_interface_->WasSolved());
+    ASSERT_TRUE(lp_interface_->IsSolved());
   }
 
    // We treat -2 and 2 as -infinity and infinity resp.
@@ -256,7 +256,7 @@ class ChangeObjective : public Change,
     std::vector<double> obj(2);
     ASSERT_LE(lastcol, 2);
     ASSERT_EQ(lp_interface_->ChangeObjective(lastcol, ind, setobj), RetCode::kOkay);
-    ASSERT_TRUE(!lp_interface_->WasSolved());
+    ASSERT_TRUE(!lp_interface_->IsSolved());
     ASSERT_EQ(lp_interface_->GetObjective(0, lastcol - 1, obj), RetCode::kOkay);
 
     for (size_t i; i < setobj.size(); i++) {
@@ -321,7 +321,7 @@ class ChangeBounds : public Change,
       abort();
     } else
       ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), RetCode::kOkay);
-    ASSERT_TRUE(!lp_interface_->WasSolved());
+    ASSERT_TRUE(!lp_interface_->IsSolved());
     ASSERT_EQ(lp_interface_->GetBounds(0, lastcol - 1, lb, ub), RetCode::kOkay);
 
     for (size_t i; i < setub.size(); i++) {
@@ -392,7 +392,7 @@ class ChangeSides : public Change,
 
     ASSERT_LE(lastcol, 2);
     ASSERT_EQ(lp_interface_->ChangeSides(lastcol, ind, setls, setrs), RetCode::kOkay);
-    ASSERT_TRUE(!lp_interface_->WasSolved());
+    ASSERT_TRUE(!lp_interface_->IsSolved());
     ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs), RetCode::kOkay);
 
     for (int i; i < setls.size(); i++) {
@@ -469,7 +469,7 @@ TEST_P(ChangeObjectiveSense, ChgObjSen) {
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
   ASSERT_EQ(lp_interface_->ChangeObjectiveSense(newsense), RetCode::kOkay);
-  ASSERT_TRUE(!lp_interface_->WasSolved());
+  ASSERT_TRUE(!lp_interface_->IsSolved());
 
   probsense = lp_interface_->GetObjectiveSense();
 

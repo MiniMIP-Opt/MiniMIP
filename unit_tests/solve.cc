@@ -102,10 +102,10 @@ class Solve : public ::testing::Test {
     }
 
     // check status
-    ASSERT_TRUE(lp_interface_->WasSolved());
-    ASSERT_TRUE(!lp_interface_->IsObjectiveLimitExceeded());
-    ASSERT_TRUE(!lp_interface_->IsIterationLimitExceeded());
-    ASSERT_TRUE(!lp_interface_->IsTimeLimitExceeded());
+    ASSERT_TRUE(lp_interface_->IsSolved());
+    ASSERT_TRUE(!lp_interface_->ObjectiveLimitIsExceeded());
+    ASSERT_TRUE(!lp_interface_->IterationLimitIsExceeded());
+    ASSERT_TRUE(!lp_interface_->TimeLimitIsExceeded());
 
     // check feasibility status
     primalfeasible = lp_interface_->IsPrimalFeasible();
@@ -294,7 +294,7 @@ class Solve : public ::testing::Test {
 
     // load problem
     ASSERT_EQ(lp_interface_->LoadColumnLP(objsen, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
-    ASSERT_TRUE(!lp_interface_->WasSolved());
+    ASSERT_TRUE(!lp_interface_->IsSolved());
 
     // solve problem
     ASSERT_NO_FATAL_FAILURE(solveTest(solveprimal, ncols, nrows, exp_primalfeas, exp_dualfeas, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
@@ -771,10 +771,10 @@ TEST_F(Solve, test5) {
   ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
 
   // check status
-  ASSERT_TRUE(lp_interface_->WasSolved());
-  ASSERT_TRUE(lp_interface_->IsObjectiveLimitExceeded() || lp_interface_->IsOptimal());
-  ASSERT_TRUE(!lp_interface_->IsIterationLimitExceeded());
-  ASSERT_TRUE(!lp_interface_->IsTimeLimitExceeded());
+  ASSERT_TRUE(lp_interface_->IsSolved());
+  ASSERT_TRUE(lp_interface_->ObjectiveLimitIsExceeded() || lp_interface_->IsOptimal());
+  ASSERT_TRUE(!lp_interface_->IterationLimitIsExceeded());
+  ASSERT_TRUE(!lp_interface_->TimeLimitIsExceeded());
 
   // the objective should be equal to the objective limit
   ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::kOkay);
@@ -903,7 +903,7 @@ TEST_F(Solve, test6) {
   ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
 
   // check status
-  ASSERT_TRUE(lp_interface_->WasSolved());
+  ASSERT_TRUE(lp_interface_->IsSolved());
 
   // the objective should be equal to the objective limit
   ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::kOkay);

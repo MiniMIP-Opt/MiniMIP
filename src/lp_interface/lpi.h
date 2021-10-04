@@ -130,16 +130,16 @@ class LPInterface : private messagehandler {
   // @{
 
   // gets the number of rows in the LP
-  virtual int GetNumberOfRows() = 0;
+  virtual int GetNumberOfRows() const = 0;
 
   // gets the number of columns in the LP
-  virtual int GetNumberOfColumns() = 0;
+  virtual int GetNumberOfColumns() const = 0;
 
   // gets the number of non-zero elements in the LP constraint matrix
-  virtual int GetNumberOfNonZeros() = 0;
+  virtual int GetNumberOfNonZeros() const = 0;
 
   // gets the objective sense of the LP
-  virtual LPObjectiveSense GetObjectiveSense() = 0;
+  virtual LPObjectiveSense GetObjectiveSense() const = 0;
 
   // gets columns from LP problem object
   virtual RetCode GetColumns(
@@ -151,7 +151,7 @@ class LPInterface : private messagehandler {
     std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
     std::vector<int>& indices,      // array to store row indices of constraint matrix entries
     std::vector<double>& vals          // array to store values of constraint matrix entries
-    ) = 0;
+    ) const = 0;
 
   // gets rows from LP problem object
   virtual RetCode GetRows(
@@ -163,14 +163,14 @@ class LPInterface : private messagehandler {
     std::vector<int>& begin_rows,       // array to store start index of each row in indices- and vals-array
     std::vector<int>& indices,          // array to store column indices of constraint matrix entries
     std::vector<double>& vals              // array to store values of constraint matrix entries
-    ) = 0;
+    ) const = 0;
 
   // gets objective coefficients from LP problem object
   virtual RetCode GetObjective(
     int first_col,         // first column to get objective coefficient for
     int last_col,          // last column to get objective coefficient for
     std::vector<double>& obj_coeffs // array to store objective coefficients
-    ) = 0;
+    ) const = 0;
 
   // gets current bounds from LP problem object
   virtual RetCode GetBounds(
@@ -178,7 +178,7 @@ class LPInterface : private messagehandler {
     int last_col,             // last column to get bounds for
     std::vector<double>& lower_bounds, // array to store lower bound values
     std::vector<double>& upper_bounds  // array to store upper bound values
-    ) = 0;
+    ) const = 0;
 
   // gets current row sides from LP problem object
   virtual RetCode GetSides(
@@ -186,14 +186,14 @@ class LPInterface : private messagehandler {
     int last_row,                // last row to get sides for
     std::vector<double>& left_hand_sides, // array to store left hand side values
     std::vector<double>& right_hand_sides // array to store right hand side values
-    ) = 0;
+    ) const = 0;
 
   // gets a single coefficient
   virtual RetCode GetCoefficient(
     int row,   // row number of coefficient
     int col,   // column number of coefficient
     double& val // array to store the value of the coefficient
-    ) = 0;
+    ) const = 0;
 
   // @}
 
@@ -273,44 +273,7 @@ class LPInterface : private messagehandler {
   // @{
 
   // returns whether a solve method was called after the last modification of the LP
-  virtual bool WasSolved() = 0;
-
-  // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
-  //  this does not necessarily mean that the solver knows and can return the primal ray
-  virtual bool ExistsPrimalRay() = 0;
-
-  // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
-  //  and the solver knows and can return the primal ray
-  virtual bool HasPrimalRay() = 0;
-
-  // returns true if LP is proven to be primal unbounded
-  virtual bool IsPrimalUnbounded() = 0;
-
-  // returns true if LP is proven to be primal infeasible
-  virtual bool IsPrimalInfeasible() = 0;
-
-  // returns true if LP is proven to be primal feasible
-  virtual bool IsPrimalFeasible() = 0;
-
-  // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
-  // this does not necessarily mean that the solver knows and can return the dual ray
-  virtual bool ExistsDualRay() = 0;
-
-  // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
-  // and the solver knows and can return the dual ray
-  virtual bool HasDualRay() = 0;
-
-  // returns true if LP is proven to be dual unbounded
-  virtual bool IsDualUnbounded() = 0;
-
-  // returns true if LP is proven to be dual infeasible
-  virtual bool IsDualInfeasible() = 0;
-
-  // returns true if LP is proven to be dual feasible
-  virtual bool IsDualFeasible() = 0;
-
-  // returns true if LP was solved to optimality
-  virtual bool IsOptimal() = 0;
+  virtual bool IsSolved() const = 0;
 
   // returns true if current LP solution is stable
   //
@@ -318,16 +281,53 @@ class LPInterface : private messagehandler {
   // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
   // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
   // MiniMIP::LPInterface.IsStable() should return false.
-  virtual bool IsStable() = 0;
+  virtual bool IsStable() const = 0;
+
+  // returns true if LP was solved to optimality
+  virtual bool IsOptimal() const = 0;
+
+  // returns true if LP is proven to be primal feasible
+  virtual bool IsPrimalFeasible() const = 0;
+
+  // returns true if LP is proven to be primal infeasible
+  virtual bool IsPrimalInfeasible() const = 0;
+
+  // returns true if LP is proven to be primal unbounded
+  virtual bool IsPrimalUnbounded() const = 0;
+
+  // returns true if LP is proven to be dual feasible
+  virtual bool IsDualFeasible() const = 0;
+
+  // returns true if LP is proven to be dual infeasible
+  virtual bool IsDualInfeasible() const = 0;
+
+  // returns true if LP is proven to be dual unbounded
+  virtual bool IsDualUnbounded() const = 0;
+
+  // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
+  //  this does not necessarily mean that the solver knows and can return the primal ray
+  virtual bool ExistsPrimalRay() const = 0;
+
+  // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
+  //  and the solver knows and can return the primal ray
+  virtual bool HasPrimalRay() const = 0;
+  
+  // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
+  // this does not necessarily mean that the solver knows and can return the dual ray
+  virtual bool ExistsDualRay() const = 0;
+
+  // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
+  // and the solver knows and can return the dual ray
+  virtual bool HasDualRay() const = 0;
 
   // returns true if the objective limit was reached
-  virtual bool IsObjectiveLimitExceeded() = 0;
+  virtual bool ObjectiveLimitIsExceeded() const = 0;
 
   // returns true if the iteration limit was reached
-  virtual bool IsIterationLimitExceeded() = 0;
+  virtual bool IterationLimitIsExceeded() const = 0;
 
   // returns true if the time limit was reached
-  virtual bool IsTimeLimitExceeded() = 0;
+  virtual bool TimeLimitIsExceeded() const = 0;
 
   // gets objective value of solution
   virtual RetCode GetObjectiveValue(
@@ -344,22 +344,22 @@ class LPInterface : private messagehandler {
     std::vector<double>& dual_sol,    // dual solution vector
     std::vector<double>& activity,    // row activity vector
     std::vector<double>& reduced_cost // reduced cost vector
-    ) = 0;
+    ) const = 0;
 
   // gets primal ray for unbounded LPs
   virtual RetCode GetPrimalRay(
     std::vector<double>& primal_ray // primal ray
-    ) = 0;
+    ) const = 0;
 
   // gets dual Farkas proof for infeasibility
   virtual RetCode GetDualFarkasMultiplier(
     std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
-    ) = 0;
+    ) const = 0;
 
   // gets the number of LP iterations of the last solve call
   virtual RetCode GetIterations(
     int& iterations // number of iterations of the last solve call
-    ) = 0;
+    ) const = 0;
 
   // @}
 
@@ -370,7 +370,7 @@ class LPInterface : private messagehandler {
   virtual RetCode GetBase(
     std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
     std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
-    ) = 0;
+    ) const = 0;
 
   // sets current basis status for columns and rows
   virtual RetCode SetBase(
@@ -381,7 +381,7 @@ class LPInterface : private messagehandler {
   // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
   virtual RetCode GetBasisIndices(
     std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
-    ) = 0;
+    ) const = 0;
 
   // get row of inverse basis matrix B^-1
   //
@@ -393,7 +393,7 @@ class LPInterface : private messagehandler {
     std::vector<double>& row_coeffs, // array to store the coefficients of the row
     std::vector<int>& indices,    // array to store the non-zero indices
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) = 0;
+    ) const = 0;
 
   // get column of inverse basis matrix B^-1
   //
@@ -408,7 +408,7 @@ class LPInterface : private messagehandler {
     std::vector<double>& col_coeffs, // array to store the coefficients of the column
     std::vector<int>& indices,    // array to store the non-zero indices
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) = 0;
+    ) const = 0;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -421,7 +421,7 @@ class LPInterface : private messagehandler {
     std::vector<double>& row_coeffs,           // array to store coefficients of the row
     std::vector<int>& indices,              // array to store the non-zero indices
     int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
-    ) = 0;
+    ) const = 0;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -433,7 +433,7 @@ class LPInterface : private messagehandler {
     std::vector<double>& col_coeffs, // array to store coefficients of the column
     std::vector<int>& indices,    // array to store the non-zero indices
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) = 0;
+    ) const = 0;
 
   // @}
 
@@ -444,7 +444,7 @@ class LPInterface : private messagehandler {
   virtual RetCode GetIntegerParameter(
     LPParameter type, // parameter number
     int& param_val  // returns the parameter value
-    ) = 0;
+    ) const = 0;
 
   // sets integer parameter of LP
   virtual RetCode SetIntegerParameter(
@@ -456,7 +456,7 @@ class LPInterface : private messagehandler {
   virtual RetCode GetRealParameter(
     LPParameter type,  // parameter number
     double& param_val // returns the parameter value
-    ) = 0;
+    ) const = 0;
 
   // sets floating point parameter of LP
   virtual RetCode SetRealParameter(
@@ -470,12 +470,12 @@ class LPInterface : private messagehandler {
   // @{
 
   // returns value treated as infinity in the LP solver
-  virtual double Infinity() = 0;
+  virtual double Infinity() const = 0;
 
   // checks if given value is treated as infinity in the LP solver
   virtual bool IsInfinity(
     double val // value to be checked for infinity
-    ) = 0;
+    ) const = 0;
 
   // @}
 
@@ -490,7 +490,7 @@ class LPInterface : private messagehandler {
   // writes LP to a file
   virtual RetCode WriteLP(
     const char* file_name // file name
-    ) = 0;
+    ) const = 0;
 
   // @}
 };

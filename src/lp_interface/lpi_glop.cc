@@ -402,7 +402,7 @@ RetCode LPGlopInterface::ChangeObjective(
 // @{
 
 // gets the number of rows in the LP
-int LPGlopInterface::GetNumberOfRows() {
+int LPGlopInterface::GetNumberOfRows() const {
 
   MiniMIPdebugMessage("getting number of rows.\n");
 
@@ -410,7 +410,7 @@ int LPGlopInterface::GetNumberOfRows() {
 }
 
 // gets the number of columns in the LP
-int LPGlopInterface::GetNumberOfColumns() {
+int LPGlopInterface::GetNumberOfColumns() const {
 
   MiniMIPdebugMessage("getting number of columns.\n");
 
@@ -418,7 +418,7 @@ int LPGlopInterface::GetNumberOfColumns() {
 }
 
 // gets objective sense of the LP
-LPObjectiveSense LPGlopInterface::GetObjectiveSense() {
+LPObjectiveSense LPGlopInterface::GetObjectiveSense() const {
 
   MiniMIPdebugMessage("getting objective sense.\n");
 
@@ -426,7 +426,7 @@ LPObjectiveSense LPGlopInterface::GetObjectiveSense() {
 }
 
 // gets the number of nonzero elements in the LP constraint matrix
-int LPGlopInterface::GetNumberOfNonZeros() {
+int LPGlopInterface::GetNumberOfNonZeros() const {
 
   MiniMIPdebugMessage("getting number of non-zeros.\n");
 
@@ -446,7 +446,7 @@ RetCode LPGlopInterface::GetColumns(
   std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
   std::vector<int>& indices,      // array to store row indices of constraint matrix entries
   std::vector<double>& vals          // array to store values of constraint matrix entries
-) {
+) const {
   assert(0 <= first_col && first_col <= last_col && last_col < linear_program_.num_variables());
 
   const DenseRow& tmp_lower_bound = linear_program_.variable_lower_bounds();
@@ -492,7 +492,7 @@ RetCode LPGlopInterface::GetRows(
   std::vector<int>& begin_rows,       // array to store start index of each row in indices- and vals-array
   std::vector<int>& indices,          // array to store column indices of constraint matrix entries
   std::vector<double>& vals              // array to store values of constraint matrix entries
-) {
+) const {
   assert(0 <= first_row && first_row <= last_row && last_row < linear_program_.num_constraints());
 
   const DenseColumn& tmplhs = linear_program_.constraint_lower_bounds();
@@ -528,7 +528,7 @@ RetCode LPGlopInterface::GetObjective(
   int first_col,         // first column to get objective coefficient for
   int last_col,          // last column to get objective coefficient for
   std::vector<double>& obj_coeffs // array to store objective coefficients
-) {
+) const {
   assert(first_col <= last_col);
 
   MiniMIPdebugMessage("getting objective values %d to %d\n", first_col, last_col);
@@ -548,7 +548,7 @@ RetCode LPGlopInterface::GetBounds(
   int last_col,             // last column to get bounds for
   std::vector<double>& lower_bounds, // array to store lower bound values
   std::vector<double>& upper_bounds  // array to store upper bound values
-) {
+) const {
   assert(first_col <= last_col);
 
   MiniMIPdebugMessage("getting bounds %d to %d\n", first_col, last_col);
@@ -571,7 +571,7 @@ RetCode LPGlopInterface::GetSides(
   int last_row,                // last row to get sides for
   std::vector<double>& left_hand_sides, // array to store left hand side values
   std::vector<double>& right_hand_sides // array to store right hand side values
-) {
+) const {
   assert(first_row <= last_row);
 
   MiniMIPdebugMessage("getting row sides %d to %d\n", first_row, last_row);
@@ -593,7 +593,7 @@ RetCode LPGlopInterface::GetCoefficient(
   int row,         // row number of coefficient
   int col_index, // column number of coefficient
   double& val       // array to store the value of the coefficient
-) {
+) const {
 
   // quite slow method: possibly needs linear time if matrix is not sorted
   const SparseMatrix& matrix = linear_program_.GetSparseMatrix();
@@ -626,7 +626,7 @@ void LPGlopInterface::updateScaledLP() {
 }
 
 // check primal feasibility
-bool LPGlopInterface::checkUnscaledPrimalFeasibility() {
+bool LPGlopInterface::checkUnscaledPrimalFeasibility() const {
 
 #if UNSCALEDFEAS_CHECK == 1
   // get unscaled solution
@@ -755,7 +755,7 @@ RetCode LPGlopInterface::EndStrongbranch() {
 // determine whether the dual bound is valid
 bool LPGlopInterface::IsDualBoundValid(
   ProblemStatus status // status to be checked
-) {
+) const {
   return status == ProblemStatus::OPTIMAL || status == ProblemStatus::DUAL_FEASIBLE || status == ProblemStatus::DUAL_UNBOUNDED;
 }
 
@@ -931,7 +931,7 @@ RetCode LPGlopInterface::StrongbranchIntegerValues(
 // @{
 
 // returns whether a solve method was called after the last modification of the LP
-bool LPGlopInterface::WasSolved() {
+bool LPGlopInterface::IsSolved() const {
 
   // @todo Track this to avoid uneeded resolving.
   return (!lp_modified_since_last_solve_);
@@ -939,26 +939,26 @@ bool LPGlopInterface::WasSolved() {
 
 // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
 // this does not necessarily mean that the solver knows and can return the primal ray
-bool LPGlopInterface::ExistsPrimalRay() {
+bool LPGlopInterface::ExistsPrimalRay() const {
 
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
 // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
 // and the solver knows and can return the primal ray
-bool LPGlopInterface::HasPrimalRay() {
+bool LPGlopInterface::HasPrimalRay() const {
 
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
 // returns true if LP is proven to be primal unbounded
-bool LPGlopInterface::IsPrimalUnbounded() {
+bool LPGlopInterface::IsPrimalUnbounded() const {
 
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
 // returns true if LP is proven to be primal infeasible
-bool LPGlopInterface::IsPrimalInfeasible() {
+bool LPGlopInterface::IsPrimalInfeasible() const {
 
   const ProblemStatus status = solver_.GetProblemStatus();
 
@@ -966,7 +966,7 @@ bool LPGlopInterface::IsPrimalInfeasible() {
 }
 
 // returns true if LP is proven to be primal feasible
-bool LPGlopInterface::IsPrimalFeasible() {
+bool LPGlopInterface::IsPrimalFeasible() const {
   const ProblemStatus status = solver_.GetProblemStatus();
 
   return status == ProblemStatus::PRIMAL_FEASIBLE || status == ProblemStatus::OPTIMAL;
@@ -974,7 +974,7 @@ bool LPGlopInterface::IsPrimalFeasible() {
 
 // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
 // this does not necessarily mean that the solver knows and can return the dual ray
-bool LPGlopInterface::ExistsDualRay() {
+bool LPGlopInterface::ExistsDualRay() const {
   const ProblemStatus status = solver_.GetProblemStatus();
 
   return status == ProblemStatus::DUAL_UNBOUNDED;
@@ -982,7 +982,7 @@ bool LPGlopInterface::ExistsDualRay() {
 
 // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
 // and the solver knows and can return the dual ray
-bool LPGlopInterface::HasDualRay() {
+bool LPGlopInterface::HasDualRay() const {
 
   const ProblemStatus status = solver_.GetProblemStatus();
 
@@ -990,28 +990,28 @@ bool LPGlopInterface::HasDualRay() {
 }
 
 // returns true if LP is proven to be dual unbounded
-bool LPGlopInterface::IsDualUnbounded() {
+bool LPGlopInterface::IsDualUnbounded() const {
 
   const ProblemStatus status = solver_.GetProblemStatus();
   return status == ProblemStatus::DUAL_UNBOUNDED;
 }
 
 // returns true if LP is proven to be dual infeasible
-bool LPGlopInterface::IsDualInfeasible() {
+bool LPGlopInterface::IsDualInfeasible() const {
 
   const ProblemStatus status = solver_.GetProblemStatus();
   return status == ProblemStatus::PRIMAL_UNBOUNDED || status == ProblemStatus::DUAL_INFEASIBLE;
 }
 
 // returns true if LP is proven to be dual feasible
-bool LPGlopInterface::IsDualFeasible() {
+bool LPGlopInterface::IsDualFeasible() const {
   const ProblemStatus status = solver_.GetProblemStatus();
 
   return status == ProblemStatus::DUAL_FEASIBLE || status == ProblemStatus::OPTIMAL;
 }
 
 // returns true if LP was solved to optimality
-bool LPGlopInterface::IsOptimal() {
+bool LPGlopInterface::IsOptimal() const {
 
   return solver_.GetProblemStatus() == ProblemStatus::OPTIMAL;
 }
@@ -1022,12 +1022,12 @@ bool LPGlopInterface::IsOptimal() {
 // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
 // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
 // IsStable() should return false.
-bool LPGlopInterface::IsStable() {
+bool LPGlopInterface::IsStable() const {
   // For correctness, we need to report "unstable" if Glop was not able to prove optimality because of numerical
   // issues. Currently, Glop still reports primal/dual feasible if at the end, one status is within the tolerance but not
   // the other.
   const ProblemStatus status = solver_.GetProblemStatus();
-  if ((status == ProblemStatus::PRIMAL_FEASIBLE || status == ProblemStatus::DUAL_FEASIBLE) && !IsObjectiveLimitExceeded() && !IsIterationLimitExceeded() && !IsTimeLimitExceeded()) {
+  if ((status == ProblemStatus::PRIMAL_FEASIBLE || status == ProblemStatus::DUAL_FEASIBLE) && !ObjectiveLimitIsExceeded() && !IterationLimitIsExceeded() && !TimeLimitIsExceeded()) {
     MiniMIPdebugMessage("OPTIMAL not reached and no limit: unstable.\n");
     return false;
   }
@@ -1038,13 +1038,13 @@ bool LPGlopInterface::IsStable() {
 } // @TODO: Case that neither if happens?
 
 // returns true if the objective limit was reached
-bool LPGlopInterface::IsObjectiveLimitExceeded() {
+bool LPGlopInterface::ObjectiveLimitIsExceeded() const {
 
   return solver_.objective_limit_reached();
 }
 
 // returns true if the iteration limit was reached
-bool LPGlopInterface::IsIterationLimitExceeded() {
+bool LPGlopInterface::IterationLimitIsExceeded() const {
   assert(niterations_ >= static_cast<int>(solver_.GetNumberOfIterations()));
 
   int maxiter = static_cast<int>(parameters_.max_number_of_iterations());
@@ -1052,7 +1052,7 @@ bool LPGlopInterface::IsIterationLimitExceeded() {
 }
 
 // returns true if the time limit was reached
-bool LPGlopInterface::IsTimeLimitExceeded() {
+bool LPGlopInterface::TimeLimitIsExceeded() const {
 
   return lp_time_limit_was_reached_;
 }
@@ -1077,7 +1077,7 @@ RetCode LPGlopInterface::GetSolution(
   std::vector<double>& dual_sol,    // dual solution vector
   std::vector<double>& activity,    // row activity vector
   std::vector<double>& reduced_cost // reduced cost vector
-) {
+) const {
 
   MiniMIPdebugMessage("GetSolution\n");
   obj_val = solver_.GetObjectiveValue();
@@ -1106,7 +1106,7 @@ RetCode LPGlopInterface::GetSolution(
 // gets primal ray for unbounded LPs
 RetCode LPGlopInterface::GetPrimalRay(
   std::vector<double>& primal_ray // primal ray
-) {
+) const {
 
   MiniMIPdebugMessage("GetPrimalRay\n");
 
@@ -1121,7 +1121,7 @@ RetCode LPGlopInterface::GetPrimalRay(
 // gets dual Farkas proof for infeasibility
 RetCode LPGlopInterface::GetDualFarkasMultiplier(
   std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
-) {
+) const {
 
   MiniMIPdebugMessage("GetDualFarkasMultiplier\n");
 
@@ -1136,7 +1136,7 @@ RetCode LPGlopInterface::GetDualFarkasMultiplier(
 // gets the number of LP iterations of the last solve call
 RetCode LPGlopInterface::GetIterations(
   int& iterations // number of iterations of the last solve call
-) {
+) const {
 
   iterations = static_cast<int>(niterations_);
 
@@ -1152,7 +1152,7 @@ RetCode LPGlopInterface::GetIterations(
 LPBasisStatus LPGlopInterface::ConvertGlopVariableStatus(
   VariableStatus status,  // variable status
   Fractional reduced_cost // reduced cost of variable
-) {
+) const {
   switch (status) {
     case VariableStatus::BASIC:
       return LPBasisStatus::kBasic;
@@ -1174,7 +1174,7 @@ LPBasisStatus LPGlopInterface::ConvertGlopVariableStatus(
 LPBasisStatus LPGlopInterface::ConvertGlopConstraintStatus(
   ConstraintStatus status, // constraint status
   Fractional dual_value    // dual variable value
-) {
+) const {
   switch (status) {
     case ConstraintStatus::BASIC:
       return LPBasisStatus::kBasic;
@@ -1195,7 +1195,7 @@ LPBasisStatus LPGlopInterface::ConvertGlopConstraintStatus(
 // Convert MiniMIP variable status to Glop status
 VariableStatus LPGlopInterface::ConvertMiniMIPVariableStatus(
   LPBasisStatus status // MiniMIP variable status
-) {
+) const {
   switch (status) {
     case LPBasisStatus::kBasic:
       return VariableStatus::BASIC;
@@ -1218,7 +1218,7 @@ VariableStatus LPGlopInterface::ConvertMiniMIPVariableStatus(
 // Note that we swap the upper/lower bounds.
 VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
   LPBasisStatus status // MiniMIP constraint status
-) {
+) const {
   switch (status) {
     case LPBasisStatus::kBasic:
       return VariableStatus::BASIC;
@@ -1240,7 +1240,7 @@ VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
 RetCode LPGlopInterface::GetBase(
   std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status, or NULL
   std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status, or NULL
-) {
+) const {
   MiniMIPdebugMessage("GetBase\n");
 
   assert(solver_.GetProblemStatus() == ProblemStatus::OPTIMAL);
@@ -1287,7 +1287,7 @@ RetCode LPGlopInterface::SetBase(
 // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
 RetCode LPGlopInterface::GetBasisIndices(
   std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
-) {
+) const {
   MiniMIPdebugMessage("GetBasisIndices\n");
 
   // the order is important!
@@ -1316,7 +1316,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
   std::vector<double>& row_coeffs, // array to store the coefficients of the row
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
 
   solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row_number), tmp_row_);
   scaler_.UnscaleUnitRowLeftSolve(solver_.GetBasis(RowIndex(row_number)), tmp_row_);
@@ -1377,7 +1377,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
   std::vector<double>& col_coeffs, // array to store the coefficients of the column
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
 
   // we need to loop through the rows to extract the values for column col_number
   const ColIndex col(col_number);
@@ -1425,7 +1425,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
   std::vector<double>& row_coeffs,           // array to store coefficients of the row
   std::vector<int>& indices,              // array to store the non-zero indices
   int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
 
   // get row of basis inverse, loop through columns and muliply with matrix
   solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row_number), tmp_row_);
@@ -1472,7 +1472,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
   std::vector<double>& col_coeffs, // array to store coefficients of the column
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
 
   solver_.GetBasisFactorization().RightSolveForProblemColumn(ColIndex(col_number), tmp_column_);
   scaler_.UnscaleColumnRightSolve(solver_.GetBasisVector(), ColIndex(col_number), tmp_column_);
@@ -1527,7 +1527,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
 RetCode LPGlopInterface::GetIntegerParameter(
   LPParameter type, // parameter number
   int& param_val  // buffer to store the parameter value
-) {
+) const {
 
   switch (type) {
     case LPParameter::kFromScratch:
@@ -1664,7 +1664,7 @@ RetCode LPGlopInterface::SetIntegerParameter(
 RetCode LPGlopInterface::GetRealParameter(
   LPParameter type,  // parameter number
   double& param_val // buffer to store the parameter value
-) {
+) const {
 
   switch (type) {
     case LPParameter::kFeasibilityTolerance:
@@ -1741,14 +1741,14 @@ RetCode LPGlopInterface::SetRealParameter(
 // @{
 
 // returns value treated as infinity in the LP solver
-double LPGlopInterface::Infinity() {
+double LPGlopInterface::Infinity() const {
   return std::numeric_limits<double>::infinity();
 }
 
 // checks if given value is treated as infinity in the LP solver
 bool LPGlopInterface::IsInfinity(
   double val // value to be checked for infinity
-) {
+) const {
   return val == std::numeric_limits<double>::infinity();
 }
 
@@ -1780,7 +1780,7 @@ RetCode LPGlopInterface::ReadLP(
 // writes LP to a file
 RetCode LPGlopInterface::WriteLP(
   const char* file_name // file name
-) {
+) const {
   assert(file_name != nullptr);
 
   MPModelProto proto;

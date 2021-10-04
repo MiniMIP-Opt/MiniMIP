@@ -958,21 +958,21 @@ RetCode LPSoplexInterface::ChangeObjective(
 // @{
 
 // gets the number of rows in the LP
-int LPSoplexInterface::GetNumberOfRows() {
+int LPSoplexInterface::GetNumberOfRows() const {
   MiniMIPdebugMessage("calling GetNumberOfRows()\n");
 
   return spx_->numRowsReal();
 }
 
 // gets the number of columns in the LP
-int LPSoplexInterface::GetNumberOfColumns() {
+int LPSoplexInterface::GetNumberOfColumns() const {
   MiniMIPdebugMessage("calling GetNumberOfColumns()\n");
 
   return spx_->numColsReal();
 }
 
 // gets the number of nonzero elements in the LP constraint matrix
-int LPSoplexInterface::GetNumberOfNonZeros() {
+int LPSoplexInterface::GetNumberOfNonZeros() const {
   int i;
   // SoPlex has no direct method to return the number of nonzeros, so we have to count them manually
   int num_non_zeros = 0;
@@ -992,7 +992,7 @@ int LPSoplexInterface::GetNumberOfNonZeros() {
 }
 
 // gets the objective sense of the LP
-LPObjectiveSense LPSoplexInterface::GetObjectiveSense() {
+LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
   MiniMIPdebugMessage("calling GetObjectiveSense()\n");
 
   return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE) ? LPObjectiveSense::kMinimize : LPObjectiveSense::kMaximize;
@@ -1011,7 +1011,7 @@ RetCode LPSoplexInterface::GetColumns(
   std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
   std::vector<int>& indices,      // array to store row indices of constraint matrix entries
   std::vector<double>& vals          // array to store values of constraint matrix entries
-) {
+) const {
   int i;
   int j;
 
@@ -1074,7 +1074,7 @@ RetCode LPSoplexInterface::GetRows(
   std::vector<int>& begin_cols,       // array to store start index of each row in indices- and vals-array
   std::vector<int>& indices,          // array to store column indices of constraint matrix entries
   std::vector<double>& vals              // array to store values of constraint matrix entries
-) {
+) const {
   int i;
   int j;
 
@@ -1129,7 +1129,7 @@ RetCode LPSoplexInterface::GetObjective(
   int first_col,         // first column to get objective coefficient for
   int last_col,          // last column to get objective coefficient for
   std::vector<double>& obj_coeffs // array to store objective coefficients
-) {
+) const {
   int i;
 
   MiniMIPdebugMessage("calling GetObjective()\n");
@@ -1148,7 +1148,7 @@ RetCode LPSoplexInterface::GetBounds(
   int last_col,             // last column to get bounds for
   std::vector<double>& lower_bounds, // array to store lower bound values
   std::vector<double>& upper_bounds  // array to store upper bound values
-) {
+) const {
   int i;
 
   MiniMIPdebugMessage("calling GetBounds()\n");
@@ -1169,7 +1169,7 @@ RetCode LPSoplexInterface::GetSides(
   int last_row,                // last row to get sides for
   std::vector<double>& left_hand_sides, // array to store left hand side values
   std::vector<double>& right_hand_sides // array to store right hand side values
-) {
+) const {
   int i;
 
   MiniMIPdebugMessage("calling GetSides()\n");
@@ -1188,7 +1188,7 @@ RetCode LPSoplexInterface::GetCoefficient(
   int row,   // row number of coefficient
   int col,   // column number of coefficient
   double& val // array to store the value of the coefficient
-) {
+) const {
   MiniMIPdebugMessage("calling GetCoefficients()\n");
 
   assert(0 <= col && col < spx_->numColsReal());
@@ -1367,14 +1367,14 @@ RetCode LPSoplexInterface::StrongbranchIntegerValues(
 // @{
 
 // returns whether a solve method was called after the last modification of the LP
-bool LPSoplexInterface::WasSolved() {
+bool LPSoplexInterface::IsSolved() const {
 
   return solved_;
 }
 
 // returns true iff LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
 // this does not necessarily meanthat the solver knows and can return the primal ray
-bool LPSoplexInterface::ExistsPrimalRay() {
+bool LPSoplexInterface::ExistsPrimalRay() const {
   MiniMIPdebugMessage("calling ExistsPrimalRay()\n");
 
   return (spx_->status() == SPxSolver::UNBOUNDED);
@@ -1382,14 +1382,14 @@ bool LPSoplexInterface::ExistsPrimalRay() {
 
 // returns true iff LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
 // and the solver knows and can return the primal ray
-bool LPSoplexInterface::HasPrimalRay() {
+bool LPSoplexInterface::HasPrimalRay() const {
   MiniMIPdebugMessage("calling HasPrimalRay()\n");
 
   return spx_->hasPrimalRay();
 }
 
 // returns true iff LP is proven to be primal unbounded
-bool LPSoplexInterface::IsPrimalUnbounded() {
+bool LPSoplexInterface::IsPrimalUnbounded() const {
   MiniMIPdebugMessage("calling IsPrimalUnbounded()\n");
 
   assert(spx_->status() != SPxSolver::UNBOUNDED || spx_->basisStatus() == SPxBasis::UNBOUNDED);
@@ -1400,14 +1400,14 @@ bool LPSoplexInterface::IsPrimalUnbounded() {
 }
 
 // returns true iff LP is proven to be primal infeasible
-bool LPSoplexInterface::IsPrimalInfeasible() {
+bool LPSoplexInterface::IsPrimalInfeasible() const {
   MiniMIPdebugMessage("calling IsPrimalInfeasible()\n");
 
   return (spx_->status() == SPxSolver::INFEASIBLE);
 }
 
 // returns true iff LP is proven to be primal feasible
-bool LPSoplexInterface::IsPrimalFeasible() {
+bool LPSoplexInterface::IsPrimalFeasible() const {
   MiniMIPdebugMessage("calling IsPrimalFeasible()\n");
 
   return spx_->basisStatus() == SPxBasis::OPTIMAL || spx_->basisStatus() == SPxBasis::PRIMAL;
@@ -1415,7 +1415,7 @@ bool LPSoplexInterface::IsPrimalFeasible() {
 
 // returns true iff LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
 //*  this does not necessarily meanthat the solver knows and can return the dual ray
-bool LPSoplexInterface::ExistsDualRay() {
+bool LPSoplexInterface::ExistsDualRay() const {
   MiniMIPdebugMessage("calling ExistsDualRay()\n");
 
   return (spx_->status() == SPxSolver::INFEASIBLE);
@@ -1423,35 +1423,35 @@ bool LPSoplexInterface::ExistsDualRay() {
 
 // returns true iff LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
 //*  and the solver knows and can return the dual ray
-bool LPSoplexInterface::HasDualRay() {
+bool LPSoplexInterface::HasDualRay() const {
   MiniMIPdebugMessage("calling HasDualRay()\n");
 
   return spx_->hasDualFarkas();
 }
 
 // returns true iff LP is proven to be dual unbounded
-bool LPSoplexInterface::IsDualUnbounded() {
+bool LPSoplexInterface::IsDualUnbounded() const {
   MiniMIPdebugMessage("calling IsDualUnbounded()\n");
 
   return spx_->status() == SPxSolver::INFEASIBLE && spx_->basisStatus() == SPxBasis::DUAL;
 }
 
 // returns true iff LP is proven to be dual infeasible
-bool LPSoplexInterface::IsDualInfeasible() {
+bool LPSoplexInterface::IsDualInfeasible() const {
   MiniMIPdebugMessage("calling IsDualInfeasible()\n");
 
   return (spx_->status() == SPxSolver::UNBOUNDED);
 }
 
 // returns true iff LP is proven to be dual feasible
-bool LPSoplexInterface::IsDualFeasible() {
+bool LPSoplexInterface::IsDualFeasible() const {
   MiniMIPdebugMessage("calling IsDualFeasible()\n");
 
   return (spx_->basisStatus() == SPxBasis::OPTIMAL) || spx_->basisStatus() == SPxBasis::DUAL;
 }
 
 // returns true iff LP was solved to optimality
-bool LPSoplexInterface::IsOptimal() {
+bool LPSoplexInterface::IsOptimal() const {
   MiniMIPdebugMessage("calling IsOptimal()\n");
 
   assert((spx_->basisStatus() == SPxBasis::OPTIMAL) == (IsPrimalFeasible() && IsDualFeasible()));
@@ -1465,7 +1465,7 @@ bool LPSoplexInterface::IsOptimal() {
 //*  infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
 //*  version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
 //*  MiniMIP::LPInterface.IsStable() should return false.
-bool LPSoplexInterface::IsStable() {
+bool LPSoplexInterface::IsStable() const {
   MiniMIPdebugMessage("calling IsStable()\n");
 
   if (spx_->status() == SPxSolver::ERROR || spx_->status() == SPxSolver::SINGULAR)
@@ -1476,22 +1476,22 @@ bool LPSoplexInterface::IsStable() {
 }
 
 // returns true iff the objective limit was reached
-bool LPSoplexInterface::IsObjectiveLimitExceeded() {
-  MiniMIPdebugMessage("calling IsObjectiveLimitExceeded()\n");
+bool LPSoplexInterface::ObjectiveLimitIsExceeded() const {
+  MiniMIPdebugMessage("calling ObjectiveLimitIsExceeded()\n");
 
   return (spx_->status() == SPxSolver::ABORT_VALUE);
 }
 
 // returns true iff the iteration limit was reached
-bool LPSoplexInterface::IsIterationLimitExceeded() {
-  MiniMIPdebugMessage("calling IsIterationLimitExceeded()\n");
+bool LPSoplexInterface::IterationLimitIsExceeded()  const {
+  MiniMIPdebugMessage("calling IterationLimitIsExceeded()\n");
 
   return (spx_->status() == SPxSolver::ABORT_ITER);
 }
 
 // returns true iff the time limit was reached
-bool LPSoplexInterface::IsTimeLimitExceeded() {
-  MiniMIPdebugMessage("calling IsTimeLimitExceeded()\n");
+bool LPSoplexInterface::TimeLimitIsExceeded() const {
+  MiniMIPdebugMessage("calling TimeLimitIsExceeded()\n");
 
   return (spx_->status() == SPxSolver::ABORT_TIME);
 }
@@ -1517,7 +1517,7 @@ RetCode LPSoplexInterface::GetSolution(
   std::vector<double>& dual_sol,    // dual solution vector
   std::vector<double>& activity,    // row activity vector
   std::vector<double>& reduced_cost // reduced cost vector
-) {
+) const {
   MiniMIPdebugMessage("calling GetSolution()\n");
   obj_val = spx_->objValueReal();
 
@@ -1551,7 +1551,7 @@ RetCode LPSoplexInterface::GetSolution(
 // gets primal ray for unbounded LPs
 RetCode LPSoplexInterface::GetPrimalRay(
   std::vector<double>& primal_ray // primal ray
-) {
+) const {
   MiniMIPdebugMessage("calling GetPrimalRay()\n");
 
   assert(spx_->hasPrimalRay());
@@ -1574,7 +1574,7 @@ RetCode LPSoplexInterface::GetPrimalRay(
 // gets dual Farkas proof for infeasibility
 RetCode LPSoplexInterface::GetDualFarkasMultiplier(
   std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
-) {
+) const {
   MiniMIPdebugMessage("calling GetDualFarkasMultiplier()\n");
 
   assert(spx_->hasDualFarkas());
@@ -1597,7 +1597,7 @@ RetCode LPSoplexInterface::GetDualFarkasMultiplier(
 // gets the number of LP iterations of the last solve call
 RetCode LPSoplexInterface::GetIterations(
   int& iterations // the number of iterations of the last solve call
-) {
+) const {
   MiniMIPdebugMessage("calling GetIterations()\n");
 
   iterations = spx_->numIterations();
@@ -1614,7 +1614,7 @@ RetCode LPSoplexInterface::GetIterations(
 RetCode LPSoplexInterface::GetBase(
   std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
   std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
-) {
+) const {
   int i;
 
   MiniMIPdebugMessage("calling GetBase()\n");
@@ -1772,7 +1772,7 @@ RetCode LPSoplexInterface::SetBase(
 // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
 RetCode LPSoplexInterface::GetBasisIndices(
   std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
-) {
+) const {
 
   MiniMIPdebugMessage("calling GetBasisInd()\n");
 
@@ -1793,7 +1793,7 @@ RetCode LPSoplexInterface::GetBInvertedRow(
   std::vector<double>& row_coeffs, // array to store the coefficients of the row
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
   MiniMIPdebugMessage("calling GetBInvertedRow()\n");
 
   assert(PreStrongBranchingBasisFreed());
@@ -1824,7 +1824,7 @@ RetCode LPSoplexInterface::GetBInvertedColumn(
   std::vector<double>& col_coeffs, // array to store the coefficients of the column
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
   MiniMIPdebugMessage("calling GetBInvertedColumn()\n");
 
   assert(PreStrongBranchingBasisFreed());
@@ -1850,7 +1850,7 @@ RetCode LPSoplexInterface::GetBInvertedARow(
   std::vector<double>& row_coeffs,           // array to store coefficients of the row
   std::vector<int>& indices,              // array to store the non-zero indices
   int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
 
   std::vector<double> buf;
   std::vector<double> binv;
@@ -1904,7 +1904,7 @@ RetCode LPSoplexInterface::GetBInvertedAColumn(
   std::vector<double>& col_coeffs, // array to store coefficients of the column
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) {
+) const {
   // create a new uninitialized full vector
   DVector col(spx_->numRowsReal());
 
@@ -1946,7 +1946,7 @@ RetCode LPSoplexInterface::GetBInvertedAColumn(
 RetCode LPSoplexInterface::GetIntegerParameter(
   LPParameter type, // parameter number
   int& param_val  // returns the parameter value
-) {
+) const {
   int scale_param;
 
   MiniMIPdebugMessage("calling GetIntegerParameter()\n");
@@ -2080,7 +2080,7 @@ RetCode LPSoplexInterface::SetIntegerParameter(
 RetCode LPSoplexInterface::GetRealParameter(
   LPParameter type,    // parameter number
   double& LPValue_val // returns the parameter value
-) {
+) const {
   MiniMIPdebugMessage("calling GetRealParameter()\n");
 
   switch (type) {
@@ -2161,16 +2161,16 @@ RetCode LPSoplexInterface::SetRealParameter(
 // @{
 
 // returns value treated as infinity in the LP solver
-double LPSoplexInterface::Infinity() {
+double LPSoplexInterface::Infinity() const {
   MiniMIPdebugMessage("calling Infinity()\n");
 
   return spx_->realParam(SoPlex::INFTY);
 }
 
 // checks if given value is treated as infinity in the LP solver
-bool LPSoplexInterface::IsInfinity(
+bool LPSoplexInterface::IsInfinity (
   double val // value to be checked for infinity
-) {
+) const {
   MiniMIPdebugMessage("calling IsInfinity()\n");
 
   return (val >= spx_->realParam(SoPlex::INFTY));
@@ -2179,7 +2179,7 @@ bool LPSoplexInterface::IsInfinity(
 // returns, whether the given file exists
 bool LPSoplexInterface::FileExists(
   const char* file_name // file name
-) {
+) const {
   FILE* file;
 
   file = fopen(file_name, "r");
@@ -2230,7 +2230,7 @@ RetCode LPSoplexInterface::ReadLP(
 // writes LP to a file
 RetCode LPSoplexInterface::WriteLP(
   const char* file_name // file name
-) {
+) const {
   MiniMIPdebugMessage("calling WriteLP()\n");
 
   assert(file_name != NULL);
