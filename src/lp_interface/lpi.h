@@ -368,14 +368,14 @@ class LPInterface : private messagehandler {
 
   // gets current basis status for columns and rows
   virtual RetCode GetBase(
-    LPBaseStatArray& column_basis_status, // array to store column basis status
-    LPBaseStatArray& row_basis_status     // array to store row basis status
+    std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
+    std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
     ) = 0;
 
   // sets current basis status for columns and rows
   virtual RetCode SetBase(
-    const LPBaseStatArray& column_basis_status, // array with column basis status
-    const LPBaseStatArray& row_basis_status     // array with row basis status
+    const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
+    const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
     ) = 0;
 
   // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m

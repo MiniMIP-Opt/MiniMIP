@@ -67,8 +67,8 @@ class SimpleTest : public ::testing::Test {
 
 // TESTS
 TEST_F(SimpleTest, BasicAssertions) {
-  LPBaseStatArray column_basis_status(1);
-  LPBaseStatArray row_basis_status(1);
+  std::vector<LPBasisStatus> column_basis_status(1);
+  std::vector<LPBasisStatus> row_basis_status(1);
 
   // use LP from setup:
   //   min x
@@ -80,13 +80,13 @@ TEST_F(SimpleTest, BasicAssertions) {
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), RetCode::kOkay);
 
     // the variable should be basic and the slack variable at the upper bound
-  ASSERT_EQ(column_basis_status[0], LPBaseStat::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBaseStat::kUpper);
+  ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kUpper);
 }
 
 TEST_F(SimpleTest, test2) {
-  LPBaseStatArray column_basis_status(1);
-  LPBaseStatArray row_basis_status(1);
+  std::vector<LPBasisStatus> column_basis_status(1);
+  std::vector<LPBasisStatus> row_basis_status(1);
 
   // modify LP to:
   //   min x
@@ -102,13 +102,13 @@ TEST_F(SimpleTest, test2) {
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), RetCode::kOkay);
 
   // the variable should be basic and the slack variable at the lower bound
-  ASSERT_EQ(column_basis_status[0], LPBaseStat::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBaseStat::kLower);
+  ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kLower);
 }
 
 TEST_F(SimpleTest, test3) {
-  LPBaseStatArray column_basis_status(1);
-  LPBaseStatArray row_basis_status(1);
+  std::vector<LPBasisStatus> column_basis_status(1);
+  std::vector<LPBasisStatus> row_basis_status(1);
   std::vector<double> left_hand_sides{1.0};
   std::vector<double> right_hand_sides(1.0);
   std::vector<int> indices{0};
@@ -131,13 +131,13 @@ TEST_F(SimpleTest, test3) {
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), RetCode::kOkay);
 
   // the variable should be basic and the slack variable at the lower bound
-  ASSERT_EQ(column_basis_status[0], LPBaseStat::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBaseStat::kLower);
+  ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kLower);
 }
 
 TEST_F(SimpleTest, test4) {
-  LPBaseStatArray column_basis_status(1);
-  LPBaseStatArray row_basis_status(1);
+  std::vector<LPBasisStatus> column_basis_status(1);
+  std::vector<LPBasisStatus> row_basis_status(1);
   std::vector<double> left_hand_sides(1.0);
   std::vector<double> right_hand_sides{1.0};
   std::vector<int> indices{0};
@@ -158,8 +158,8 @@ TEST_F(SimpleTest, test4) {
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), RetCode::kOkay);
 
   // the variable should be basic and the slack variable at the upper bound
-  ASSERT_EQ(column_basis_status[0], LPBaseStat::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBaseStat::kUpper);
+  ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kUpper);
 }
 
 // TEST SUITE COMPLEX
@@ -255,9 +255,9 @@ TEST_F(Complex, test1) {
   std::vector<double> coef(3);
   std::vector<double> coeftwo(3);
   double objval;
-  LPBaseStatArray cstats(3);
+  std::vector<LPBasisStatus> cstats(3);
   int nrows;
-  LPBaseStatArray rstats(3);
+  std::vector<LPBasisStatus> rstats(3);
   std::vector<int> basinds(3);
   std::vector<int> inds(3);
   int ninds;
@@ -281,13 +281,13 @@ TEST_F(Complex, test1) {
 
   // the optimal basis should be: {x2, x3, slack for second row}
   ASSERT_EQ(lp_interface_->GetBase(cstats, rstats), RetCode::kOkay);
-  ASSERT_TRUE(cstats[0] == LPBaseStat::kLower);
-  ASSERT_TRUE(cstats[1] == LPBaseStat::kBasic);
-  ASSERT_TRUE(cstats[2] == LPBaseStat::kBasic);
+  ASSERT_TRUE(cstats[0] == LPBasisStatus::kLower);
+  ASSERT_TRUE(cstats[1] == LPBasisStatus::kBasic);
+  ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
 
-  ASSERT_TRUE(rstats[0] == LPBaseStat::kLower);
-  ASSERT_TRUE(rstats[1] == LPBaseStat::kBasic);
-  ASSERT_TRUE(rstats[2] == LPBaseStat::kUpper);
+  ASSERT_TRUE(rstats[0] == LPBasisStatus::kLower);
+  ASSERT_TRUE(rstats[1] == LPBasisStatus::kBasic);
+  ASSERT_TRUE(rstats[2] == LPBasisStatus::kUpper);
 
   // get basis indices
   ASSERT_EQ(lp_interface_->GetBasisIndices(basinds), RetCode::kOkay);
@@ -480,8 +480,8 @@ class MoreVarsThanRows : public ::testing::Test {
 TEST_F(MoreVarsThanRows, test1) {
   std::vector<double> binvarow(4);
   double objval;
-  LPBaseStatArray cstats(4);
-  LPBaseStatArray rstats(3);
+  std::vector<LPBasisStatus> cstats(4);
+  std::vector<LPBasisStatus> rstats(3);
   std::vector<int> basinds(3);
   int basicvarpos;
 
@@ -494,14 +494,14 @@ TEST_F(MoreVarsThanRows, test1) {
 
   // the optimal basis should be: {x1, x3, s1 = slack for first row}
   ASSERT_EQ(lp_interface_->GetBase(cstats, rstats), RetCode::kOkay);
-  ASSERT_TRUE(cstats[0] == LPBaseStat::kBasic);
-  ASSERT_TRUE(cstats[1] == LPBaseStat::kLower);
-  ASSERT_TRUE(cstats[2] == LPBaseStat::kBasic);
-  ASSERT_TRUE(cstats[3] == LPBaseStat::kLower);
+  ASSERT_TRUE(cstats[0] == LPBasisStatus::kBasic);
+  ASSERT_TRUE(cstats[1] == LPBasisStatus::kLower);
+  ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
+  ASSERT_TRUE(cstats[3] == LPBasisStatus::kLower);
 
-  ASSERT_TRUE(rstats[0] == LPBaseStat::kBasic);
-  ASSERT_TRUE(rstats[1] == LPBaseStat::kLower);
-  ASSERT_TRUE(rstats[2] == LPBaseStat::kLower);
+  ASSERT_TRUE(rstats[0] == LPBasisStatus::kBasic);
+  ASSERT_TRUE(rstats[1] == LPBasisStatus::kLower);
+  ASSERT_TRUE(rstats[2] == LPBasisStatus::kLower);
 
   // binvarow should be
   //* 1.0   2.0  0.0   3.0  <- basic var x1

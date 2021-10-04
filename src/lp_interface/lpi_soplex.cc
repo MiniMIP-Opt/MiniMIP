@@ -1612,8 +1612,8 @@ RetCode LPSoplexInterface::GetIterations(
 
 // gets current basis status for columns and rows
 RetCode LPSoplexInterface::GetBase(
-  LPBaseStatArray& column_basis_status, // array to store column basis status
-  LPBaseStatArray& row_basis_status     // array to store row basis status
+  std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
+  std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
 ) {
   int i;
 
@@ -1624,14 +1624,15 @@ RetCode LPSoplexInterface::GetBase(
     for (i = 0; i < spx_->numRowsReal(); ++i) {
       switch (spx_->basisRowStatus(i)) {
         case SPxSolver::BASIC:
-          row_basis_status[i] = LPBaseStat::kBasic;
+          row_basis_status[i] = LPBasisStatus::kBasic;
           break;
         case SPxSolver::FIXED:
+          row_basis_status[i] = LPBasisStatus::kFixed;
         case SPxSolver::ON_LOWER:
-          row_basis_status[i] = LPBaseStat::kLower;
+          row_basis_status[i] = LPBasisStatus::kLower;
           break;
         case SPxSolver::ON_UPPER:
-          row_basis_status[i] = LPBaseStat::kUpper;
+          row_basis_status[i] = LPBasisStatus::kUpper;
           break;
         case SPxSolver::ZERO:
           MiniMIPerrorMessage("slack variable has basis status ZERO (should not occur)\n");
@@ -1650,7 +1651,7 @@ RetCode LPSoplexInterface::GetBase(
       //         double obj_coeffs = 0.0;
       switch (spx_->basisColStatus(i)) {
         case SPxSolver::BASIC:
-          column_basis_status[i] = LPBaseStat::kBasic;
+          column_basis_status[i] = LPBasisStatus::kBasic;
           break;
         case SPxSolver::FIXED:
           // Get reduced cost estimation. If the estimation is not correct this should not hurt:
@@ -1664,16 +1665,16 @@ RetCode LPSoplexInterface::GetBase(
           //             if( obj_coeffs < 0.0 )  // reduced costs < 0 => UPPER  else => LOWER
           //                column_basis_status[i] = BASESTAT_UPPER; 
           //             else
-          column_basis_status[i] = LPBaseStat::kLower;
+          column_basis_status[i] = LPBasisStatus::kLower;
           break;
         case SPxSolver::ON_LOWER:
-          column_basis_status[i] = LPBaseStat::kLower;
+          column_basis_status[i] = LPBasisStatus::kLower;
           break;
         case SPxSolver::ON_UPPER:
-          column_basis_status[i] = LPBaseStat::kUpper;
+          column_basis_status[i] = LPBasisStatus::kUpper;
           break;
         case SPxSolver::ZERO:
-          column_basis_status[i] = LPBaseStat::kZero;
+          column_basis_status[i] = LPBasisStatus::kFree;
           break;
         case SPxSolver::UNDEFINED:
         default:
@@ -1689,8 +1690,8 @@ RetCode LPSoplexInterface::GetBase(
 
 // sets current basis status for columns and rows
 RetCode LPSoplexInterface::SetBase(
-  const LPBaseStatArray& column_basis_status, // array with column basis status
-  const LPBaseStatArray& row_basis_status     // array with row basis status
+  const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
+  const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
 ) {
   int i;
 
@@ -1711,16 +1712,19 @@ RetCode LPSoplexInterface::SetBase(
   for (i = 0; i < num_rows; ++i) {
     switch (row_basis_status[i])
     {
-      case LPBaseStat::kLower:
-        _rowstat[i] = SPxSolver::ON_LOWER;
-        break;
-      case LPBaseStat::kBasic:
+      case LPBasisStatus::kBasic:
         _rowstat[i] = SPxSolver::BASIC;
         break;
-      case LPBaseStat::kUpper:
+      case LPBasisStatus::kLower:
+        _rowstat[i] = SPxSolver::ON_LOWER;
+        break;
+      case LPBasisStatus::kUpper:
         _rowstat[i] = SPxSolver::ON_UPPER;
         break;
-      case LPBaseStat::kZero:
+      case LPBasisStatus::kFixed:
+        _rowstat[i] = SPxSolver::FIXED;
+        break;
+      case LPBasisStatus::kFree:
         MiniMIPerrorMessage("slack variable has basis status ZERO (should not occur)\n");
         return RetCode::kLPError;
       default:
@@ -1736,16 +1740,19 @@ RetCode LPSoplexInterface::SetBase(
   for (i = 0; i < num_cols; ++i) {
     switch (column_basis_status[i])
     {
-      case LPBaseStat::kLower:
-        _colstat[i] = SPxSolver::ON_LOWER;
-        break;
-      case LPBaseStat::kBasic:
+      case LPBasisStatus::kBasic:
         _colstat[i] = SPxSolver::BASIC;
         break;
-      case LPBaseStat::kUpper:
+      case LPBasisStatus::kLower:
+        _colstat[i] = SPxSolver::ON_LOWER;
+        break;
+      case LPBasisStatus::kUpper:
         _colstat[i] = SPxSolver::ON_UPPER;
         break;
-      case LPBaseStat::kZero:
+        case LPBasisStatus::kFixed:
+        _colstat[i] = SPxSolver::FIXED;
+        break;
+      case LPBasisStatus::kFree:
         _colstat[i] = SPxSolver::ZERO;
         break;
       default:

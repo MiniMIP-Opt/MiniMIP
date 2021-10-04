@@ -735,10 +735,10 @@ TEST_F(Solve, test5) {
   val = {2, 1, 1, 3};
 
   double objval;
-  LPBaseStatArray cstat(2);
-  LPBaseStatArray rstat(2);
-  cstat = {LPBaseStat::kLower, LPBaseStat::kLower};
-  rstat = {LPBaseStat::kBasic, LPBaseStat::kBasic};
+  std::vector<LPBasisStatus> cstat(2);
+  std::vector<LPBasisStatus> rstat(2);
+  cstat = {LPBasisStatus::kLower, LPBasisStatus::kLower};
+  rstat = {LPBasisStatus::kBasic, LPBasisStatus::kBasic};
   double exp_objval = 5.0;
 
   // expected solutions

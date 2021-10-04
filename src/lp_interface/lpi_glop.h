@@ -120,27 +120,27 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // convert Glop variable basis status to MiniMIP status
-  LPBaseStat ConvertGlopVariableStatus(
+  LPBasisStatus ConvertGlopVariableStatus(
     VariableStatus status,  // variable status
     Fractional reduced_cost // reduced cost of variable
   );
 
   // convert Glop constraint basis status to MiniMIP status
-  LPBaseStat ConvertGlopConstraintStatus(
+  LPBasisStatus ConvertGlopConstraintStatus(
     ConstraintStatus status, // constraint status
     Fractional dual_value    // dual variable value
   );
 
   // Convert MiniMIP variable status to Glop status
   VariableStatus ConvertMiniMIPVariableStatus(
-    LPBaseStat status // MiniMIP variable status
+    LPBasisStatus status // MiniMIP variable status
   );
 
   // Convert a MiniMIP constraint status to its corresponding Glop slack VariableStatus.
   //
   // Note that we swap the upper/lower bounds.
   VariableStatus ConvertMiniMIPConstraintStatusToSlackStatus(
-    LPBaseStat status // MiniMIP constraint status
+    LPBasisStatus status // MiniMIP constraint status
   );
 
  public:
@@ -506,14 +506,14 @@ class LPGlopInterface : public LPInterface {
 
   // gets current basis status for columns and rows
   RetCode GetBase(
-    LPBaseStatArray& column_basis_status, // array to store column basis status
-    LPBaseStatArray& row_basis_status     // array to store row basis status
+    std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
+    std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
     ) override;
 
   // sets current basis status for columns and rows
   RetCode SetBase(
-    const LPBaseStatArray& column_basis_status, // array with column basis status
-    const LPBaseStatArray& row_basis_status     // array with row basis status
+    const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
+    const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
     ) override;
 
   // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m

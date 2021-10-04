@@ -1149,21 +1149,21 @@ RetCode LPGlopInterface::GetIterations(
 // @{
 
 // convert Glop variable basis status to MiniMIP status
-LPBaseStat LPGlopInterface::ConvertGlopVariableStatus(
+LPBasisStatus LPGlopInterface::ConvertGlopVariableStatus(
   VariableStatus status,  // variable status
   Fractional reduced_cost // reduced cost of variable
 ) {
   switch (status) {
     case VariableStatus::BASIC:
-      return LPBaseStat::kBasic;
+      return LPBasisStatus::kBasic;
     case VariableStatus::AT_UPPER_BOUND:
-      return LPBaseStat::kUpper;
+      return LPBasisStatus::kUpper;
     case VariableStatus::AT_LOWER_BOUND:
-      return LPBaseStat::kLower;
+      return LPBasisStatus::kLower;
     case VariableStatus::FREE:
-      return LPBaseStat::kZero;
+      return LPBasisStatus::kFree;
     case VariableStatus::FIXED_VALUE:
-      return reduced_cost > 0.0 ? LPBaseStat::kLower : LPBaseStat::kUpper;
+      return reduced_cost > 0.0 ? LPBasisStatus::kLower : LPBasisStatus::kUpper;
     default:
       MiniMIPerrorMessage("invalid Glop basis status.\n");
       std::abort();
@@ -1171,21 +1171,21 @@ LPBaseStat LPGlopInterface::ConvertGlopVariableStatus(
 }
 
 // convert Glop constraint basis status to MiniMIP status
-LPBaseStat LPGlopInterface::ConvertGlopConstraintStatus(
+LPBasisStatus LPGlopInterface::ConvertGlopConstraintStatus(
   ConstraintStatus status, // constraint status
   Fractional dual_value    // dual variable value
 ) {
   switch (status) {
     case ConstraintStatus::BASIC:
-      return LPBaseStat::kBasic;
+      return LPBasisStatus::kBasic;
     case ConstraintStatus::AT_UPPER_BOUND:
-      return LPBaseStat::kUpper;
+      return LPBasisStatus::kUpper;
     case ConstraintStatus::AT_LOWER_BOUND:
-      return LPBaseStat::kLower;
+      return LPBasisStatus::kLower;
     case ConstraintStatus::FREE:
-      return LPBaseStat::kZero;
+      return LPBasisStatus::kFree;
     case ConstraintStatus::FIXED_VALUE:
-      return dual_value > 0.0 ? LPBaseStat::kLower : LPBaseStat::kUpper;
+      return dual_value > 0.0 ? LPBasisStatus::kLower : LPBasisStatus::kUpper;
     default:
       MiniMIPerrorMessage("invalid Glop basis status.\n");
       std::abort();
@@ -1194,16 +1194,18 @@ LPBaseStat LPGlopInterface::ConvertGlopConstraintStatus(
 
 // Convert MiniMIP variable status to Glop status
 VariableStatus LPGlopInterface::ConvertMiniMIPVariableStatus(
-  LPBaseStat status // MiniMIP variable status
+  LPBasisStatus status // MiniMIP variable status
 ) {
   switch (status) {
-    case LPBaseStat::kBasic:
+    case LPBasisStatus::kBasic:
       return VariableStatus::BASIC;
-    case LPBaseStat::kUpper:
+    case LPBasisStatus::kUpper:
       return VariableStatus::AT_UPPER_BOUND;
-    case LPBaseStat::kLower:
+    case LPBasisStatus::kLower:
       return VariableStatus::AT_LOWER_BOUND;
-    case LPBaseStat::kZero:
+    case LPBasisStatus::kFixed:
+      return VariableStatus::FIXED_VALUE;
+    case LPBasisStatus::kFree:
       return VariableStatus::FREE;
     default:
       MiniMIPerrorMessage("invalid MiniMIP basis status.\n");
@@ -1215,16 +1217,18 @@ VariableStatus LPGlopInterface::ConvertMiniMIPVariableStatus(
 //
 // Note that we swap the upper/lower bounds.
 VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
-  LPBaseStat status // MiniMIP constraint status
+  LPBasisStatus status // MiniMIP constraint status
 ) {
   switch (status) {
-    case LPBaseStat::kBasic:
+    case LPBasisStatus::kBasic:
       return VariableStatus::BASIC;
-    case LPBaseStat::kUpper:
+    case LPBasisStatus::kUpper:
       return VariableStatus::AT_LOWER_BOUND;
-    case LPBaseStat::kLower:
+    case LPBasisStatus::kLower:
       return VariableStatus::AT_UPPER_BOUND;
-    case LPBaseStat::kZero:
+    case LPBasisStatus::kFixed:
+      return VariableStatus::FIXED_VALUE;
+    case LPBasisStatus::kFree:
       return VariableStatus::FREE;
     default:
       MiniMIPerrorMessage("invalid MiniMIP basis status.\n");
@@ -1234,8 +1238,8 @@ VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
 
 // gets current basis status for columns and rows
 RetCode LPGlopInterface::GetBase(
-  LPBaseStatArray& column_basis_status, // array to store column basis status, or NULL
-  LPBaseStatArray& row_basis_status     // array to store row basis status, or NULL
+  std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status, or NULL
+  std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status, or NULL
 ) {
   MiniMIPdebugMessage("GetBase\n");
 
@@ -1243,13 +1247,13 @@ RetCode LPGlopInterface::GetBase(
   const ColIndex num_cols = linear_program_.num_variables();
   for (ColIndex col(0); col < num_cols; ++col) {
     int i = col.value();
-    column_basis_status[i] = (LPBaseStat) ConvertGlopVariableStatus(solver_.GetVariableStatus(col), solver_.GetReducedCost(col));
+    column_basis_status[i] = (LPBasisStatus) ConvertGlopVariableStatus(solver_.GetVariableStatus(col), solver_.GetReducedCost(col));
   }
 
   const RowIndex num_rows = linear_program_.num_constraints();
   for (RowIndex row(0); row < num_rows; ++row) {
     int i = row.value();
-    row_basis_status[i] = (LPBaseStat) ConvertGlopConstraintStatus(solver_.GetConstraintStatus(row), solver_.GetDualValue(row));
+    row_basis_status[i] = (LPBasisStatus) ConvertGlopConstraintStatus(solver_.GetConstraintStatus(row), solver_.GetDualValue(row));
   }
 
   return RetCode::kOkay;
@@ -1257,8 +1261,8 @@ RetCode LPGlopInterface::GetBase(
 
 // sets current basis status for columns and rows
 RetCode LPGlopInterface::SetBase(
-  const LPBaseStatArray& column_basis_status, // array with column basis status
-  const LPBaseStatArray& row_basis_status     // array with row basis status
+  const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
+  const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
 ) {
 
   const ColIndex num_cols = linear_program_.num_variables();

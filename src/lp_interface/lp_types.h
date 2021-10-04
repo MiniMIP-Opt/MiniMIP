@@ -62,14 +62,13 @@ enum class LPPricing {
 };
 
 // LP basis status for columns and rows
-enum class LPBaseStat {
-  kLower = 0, // (slack) variable is at its lower bound
-  kBasic = 1, // (slack) variable is basic
+enum class LPBasisStatus {
+  kBasic = 0, // (slack) variable is basic
+  kLower = 1, // (slack) variable is at its lower bound
   kUpper = 2, // (slack) variable is at its upper bound
-  kZero = 3,  // free variable is non-basic and set to zero
+  kFixed = 3, // variable fixed to identical bounds
+  kFree = 4,  // free variable is non-basic and set to zero
 };
-
-typedef std::vector<LPBaseStat> LPBaseStatArray;
 
 } // namespace minimip
 #endif // MINIMIP_SRC_LP_INTERFACE_LP_TYPES_H_
