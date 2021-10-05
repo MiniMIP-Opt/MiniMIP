@@ -1,6 +1,8 @@
 #include "src/lp_interface/lpi_factory.h"
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
+
 #define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
                         // 1 = SoPlex Interface,
 
@@ -52,17 +54,17 @@ TEST_F(matrix, create_matrix) {
   int nnonz, nrows, ncols;
 
   // add one column
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay) << "hello";
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
 
   // add additional column
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
 
   // add one row
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), absl::OkStatus());
 
   // add one more row using a new variable
   ind[0] = 1;
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), absl::OkStatus());
 
   // ------------------------------------------------------------
 
@@ -73,7 +75,7 @@ TEST_F(matrix, create_matrix) {
   ASSERT_EQ(ncols, 2);
 
   // get rows
-  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind, matval), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind, matval), absl::OkStatus());
   ASSERT_EQ(nnonz, 2);
 
   // equal, to within 4 ULPs ( Unit in the last place)

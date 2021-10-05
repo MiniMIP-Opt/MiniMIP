@@ -51,7 +51,7 @@ LPGlopInterface::~LPGlopInterface() {
 // @{
 
 // copies LP data with column matrix into LP solver
-RetCode LPGlopInterface::LoadColumnLP(
+absl::Status LPGlopInterface::LoadColumnLP(
   LPObjectiveSense obj_sense,           // objective sense
   int num_cols,                       // number of columns
   const std::vector<double>& objective_values, // objective function values of columns
@@ -73,11 +73,11 @@ RetCode LPGlopInterface::LoadColumnLP(
   AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names, num_non_zeros, begin_cols, row_indices, vals);
   ChangeObjectiveSense(obj_sense);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // adds columns to the LP
-RetCode LPGlopInterface::AddColumns(
+absl::Status LPGlopInterface::AddColumns(
   int num_cols,                       // number of columns to be added
   const std::vector<double>& objective_values, // objective function values of new columns
   const std::vector<double>& lower_bounds,     // lower bounds of new columns
@@ -126,11 +126,11 @@ RetCode LPGlopInterface::AddColumns(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // deletes all columns in the given range from LP
-RetCode LPGlopInterface::DeleteColumns(
+absl::Status LPGlopInterface::DeleteColumns(
   int first_col, // first column to be deleted
   int last_col   // last column to be deleted
 ) {
@@ -146,11 +146,11 @@ RetCode LPGlopInterface::DeleteColumns(
   linear_program_.DeleteColumns(columns_to_delete);
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // deletes columns from MiniMIP_LP; the new position of a column must not be greater that its old position
-RetCode LPGlopInterface::DeleteColumnSet(
+absl::Status LPGlopInterface::DeleteColumnSet(
   std::vector<bool>& deletion_status // deletion status of columns
 ) {
 
@@ -171,11 +171,11 @@ RetCode LPGlopInterface::DeleteColumnSet(
   linear_program_.DeleteColumns(columns_to_delete);
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // adds rows to the LP
-RetCode LPGlopInterface::AddRows(
+absl::Status LPGlopInterface::AddRows(
   int num_rows,                       // number of rows to be added
   const std::vector<double>& left_hand_sides,  // left hand sides of new rows
   const std::vector<double>& right_hand_sides, // right hand sides of new rows
@@ -221,7 +221,7 @@ RetCode LPGlopInterface::AddRows(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // delete rows from LP and update the current basis
@@ -251,7 +251,7 @@ void LPGlopInterface::DeleteRowsAndUpdateCurrentBasis(
 }
 
 // deletes all rows in the given range from LP
-RetCode LPGlopInterface::DeleteRows(
+absl::Status LPGlopInterface::DeleteRows(
   int first_row, // first row to be deleted
   int last_row   // last row to be deleted
 ) {
@@ -265,11 +265,11 @@ RetCode LPGlopInterface::DeleteRows(
   MiniMIPdebugMessage("deleting rows %d to %d.\n", first_row, last_row);
   DeleteRowsAndUpdateCurrentBasis(rows_to_delete);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // deletes rows from LP; the new position of a row must not be greater that its old position
-RetCode LPGlopInterface::DeleteRowSet(
+absl::Status LPGlopInterface::DeleteRowSet(
   std::vector<bool>& deletion_status // deletion status of rows
 ) {
   const RowIndex num_rows = linear_program_.num_constraints();
@@ -289,30 +289,30 @@ RetCode LPGlopInterface::DeleteRowSet(
   MiniMIPdebugMessage("DeleteRowSet: deleting %d rows.\n", num_deleted_rows);
   DeleteRowsAndUpdateCurrentBasis(rows_to_delete);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // clears the whole LP
-RetCode LPGlopInterface::Clear() {
+absl::Status LPGlopInterface::Clear() {
 
   MiniMIPdebugMessage("Clear\n");
 
   linear_program_.Clear();
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // clears current LPi state (like basis information) of the solver
-RetCode LPGlopInterface::ClearState() {
+absl::Status LPGlopInterface::ClearState() {
 
   solver_.ClearStateForNextSolve();
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes lower and upper bounds of columns
-RetCode LPGlopInterface::ChangeBounds(
+absl::Status LPGlopInterface::ChangeBounds(
   int num_cols,                   // number of columns to change bounds for
   const std::vector<int>& indices,      // column indices
   const std::vector<double>& lower_bounds, // values for the new lower bounds
@@ -326,22 +326,22 @@ RetCode LPGlopInterface::ChangeBounds(
 
     if (IsInfinity(lower_bounds[i])) {
       MiniMIPerrorMessage("LP Error: fixing lower bound for variable %d to infinity.\n", indices[i]);
-      return RetCode::kLPError;
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
     }
     if (IsInfinity(-upper_bounds[i])) {
       MiniMIPerrorMessage("LP Error: fixing upper bound for variable %d to -infinity.\n", indices[i]);
-      return RetCode::kLPError;
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
     }
 
     linear_program_.SetVariableBounds(ColIndex(indices[i]), lower_bounds[i], upper_bounds[i]);
   }
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes left and right hand sides of rows
-RetCode LPGlopInterface::ChangeSides(
+absl::Status LPGlopInterface::ChangeSides(
   int num_rows,                      // number of rows to change sides for
   const std::vector<int>& indices,         // row indices
   const std::vector<double>& left_hand_sides, // new values for left hand sides
@@ -355,11 +355,11 @@ RetCode LPGlopInterface::ChangeSides(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes the objective sense
-RetCode LPGlopInterface::ChangeObjectiveSense(
+absl::Status LPGlopInterface::ChangeObjectiveSense(
   LPObjectiveSense obj_sense // new objective sense
 ) {
 
@@ -375,11 +375,11 @@ RetCode LPGlopInterface::ChangeObjectiveSense(
   }
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes objective values of columns in the LP
-RetCode LPGlopInterface::ChangeObjective(
+absl::Status LPGlopInterface::ChangeObjective(
   int num_cols,                  // number of columns to change objective value for
   const std::vector<int>& indices,     // column indices to change objective value for
   const std::vector<double>& new_obj_vals // new objective values for columns
@@ -392,7 +392,7 @@ RetCode LPGlopInterface::ChangeObjective(
 
   lp_modified_since_last_solve_ = true;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 
@@ -437,7 +437,7 @@ int LPGlopInterface::GetNumberOfNonZeros() const {
 //
 // Either both, lb and ub, have to be NULL, or both have to be non-NULL,
 // either num_non_zeros, begin_cols, indices, and val have to be NULL, or all of them have to be non-NULL.
-RetCode LPGlopInterface::GetColumns(
+absl::Status LPGlopInterface::GetColumns(
   int first_col,            // first column to get from LP
   int last_col,             // last column to get from LP
   std::vector<double>& lower_bounds, // array to store the lower bound vector
@@ -476,14 +476,14 @@ RetCode LPGlopInterface::GetColumns(
     }
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets rows from LP problem object
 //
 // Either both, left_hand_side and right_hand_side, have to be NULL, or both have to be non-NULL,
 // either num_non_zeros, begin_rows, indices, and val have to be NULL, or all of them have to be non-NULL.
-RetCode LPGlopInterface::GetRows(
+absl::Status LPGlopInterface::GetRows(
   int first_row,                // first row to get from LP
   int last_row,                 // last row to get from LP
   std::vector<double>& left_hand_sides,  // array to store left hand side vector
@@ -520,11 +520,11 @@ RetCode LPGlopInterface::GetRows(
     }
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets objective coefficients from LP problem object
-RetCode LPGlopInterface::GetObjective(
+absl::Status LPGlopInterface::GetObjective(
   int first_col,         // first column to get objective coefficient for
   int last_col,          // last column to get objective coefficient for
   std::vector<double>& obj_coeffs // array to store objective coefficients
@@ -539,11 +539,11 @@ RetCode LPGlopInterface::GetObjective(
     ++index;
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets current bounds from LP problem object
-RetCode LPGlopInterface::GetBounds(
+absl::Status LPGlopInterface::GetBounds(
   int first_col,            // first column to get bounds for
   int last_col,             // last column to get bounds for
   std::vector<double>& lower_bounds, // array to store lower bound values
@@ -562,11 +562,11 @@ RetCode LPGlopInterface::GetBounds(
     ++index;
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets current row sides from LP problem object
-RetCode LPGlopInterface::GetSides(
+absl::Status LPGlopInterface::GetSides(
   int first_row,               // first row to get sides for
   int last_row,                // last row to get sides for
   std::vector<double>& left_hand_sides, // array to store left hand side values
@@ -585,11 +585,11 @@ RetCode LPGlopInterface::GetSides(
     ++index;
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets a single coefficient
-RetCode LPGlopInterface::GetCoefficient(
+absl::Status LPGlopInterface::GetCoefficient(
   int row,         // row number of coefficient
   int col_index, // column number of coefficient
   double& val       // array to store the value of the coefficient
@@ -599,7 +599,7 @@ RetCode LPGlopInterface::GetCoefficient(
   const SparseMatrix& matrix = linear_program_.GetSparseMatrix();
   val = matrix.LookUpValue(RowIndex(row), ColIndex(col_index));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // @}
@@ -671,7 +671,7 @@ bool LPGlopInterface::checkUnscaledPrimalFeasibility() const {
 }
 
 // common function between the two LPI Solve() functions
-RetCode LPGlopInterface::SolveInternal(
+absl::Status LPGlopInterface::SolveInternal(
   bool recursive,                        // Is this a recursive call?
   std::unique_ptr<TimeLimit>& time_limit // time limit
 ) {
@@ -686,7 +686,7 @@ RetCode LPGlopInterface::SolveInternal(
     solver_.ClearStateForNextSolve();
 
   if (!solver_.Solve(scaled_lp_, time_limit.get()).ok()) {
-    return RetCode::kLPError;
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
   lp_time_limit_was_reached_ = time_limit->LimitReached();
   if (recursive)
@@ -712,11 +712,11 @@ RetCode LPGlopInterface::SolveInternal(
 
   lp_modified_since_last_solve_ = false;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // calls primal simplex to solve the LP
-RetCode LPGlopInterface::SolvePrimal() {
+absl::Status LPGlopInterface::SolvePrimal() {
 
   MiniMIPdebugMessage("SolvePrimal: %d rows, %d cols.\n", linear_program_.num_constraints().value(), linear_program_.num_variables().value());
   std::unique_ptr<TimeLimit> time_limit = TimeLimit::FromParameters(parameters_);
@@ -727,7 +727,7 @@ RetCode LPGlopInterface::SolvePrimal() {
 }
 
 // calls dual simplex to solve the LP
-RetCode LPGlopInterface::SolveDual() {
+absl::Status LPGlopInterface::SolveDual() {
 
   MiniMIPdebugMessage("SolveDual: %d rows, %d cols.\n", linear_program_.num_constraints().value(), linear_program_.num_variables().value());
   std::unique_ptr<TimeLimit> time_limit = TimeLimit::FromParameters(parameters_);
@@ -738,19 +738,19 @@ RetCode LPGlopInterface::SolveDual() {
 }
 
 // start strong branching
-RetCode LPGlopInterface::StartStrongbranch() { 
+absl::Status LPGlopInterface::StartStrongbranch() { 
 
   updateScaledLP();
 
   // @todo Save state and do all the branching from there.
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // end strong branching
-RetCode LPGlopInterface::EndStrongbranch() { 
+absl::Status LPGlopInterface::EndStrongbranch() { 
 
   // @todo Restore the saved state.
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 // determine whether the dual bound is valid
 bool LPGlopInterface::IsDualBoundValid(
@@ -760,7 +760,7 @@ bool LPGlopInterface::IsDualBoundValid(
 }
 
 // performs strong branching iterations
-RetCode LPGlopInterface::strongbranch(
+absl::Status LPGlopInterface::strongbranch(
   int col_index,               // column to apply strong branching on
   double primal_sol,              // fractional current primal solution value of column
   int iteration_limit,           // iteration limit for strong branchings
@@ -847,11 +847,11 @@ RetCode LPGlopInterface::strongbranch(
   if (iterations > 0)
     iterations = num_iterations;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // performs strong branching iterations on one @b fractional candidate
-RetCode LPGlopInterface::StrongbranchFractionalValue(
+absl::Status LPGlopInterface::StrongbranchFractionalValue(
   int col,                     // column to apply strong branching on
   double primal_sol,              // fractional current primal solution value of column
   int iteration_limit,           // iteration limit for strong branchings
@@ -866,11 +866,11 @@ RetCode LPGlopInterface::StrongbranchFractionalValue(
 
   MINIMIP_CALL(strongbranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // performs strong branching iterations on one candidate with @b integral value
-RetCode LPGlopInterface::StrongbranchIntegerValue(
+absl::Status LPGlopInterface::StrongbranchIntegerValue(
   int col,                     // column to apply strong branching on
   double primal_sol,              // current integral primal solution value of column
   int iteration_limit,           // iteration limit for strong branchings
@@ -886,7 +886,7 @@ RetCode LPGlopInterface::StrongbranchIntegerValue(
 
   MINIMIP_CALL(strongbranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // @}
@@ -1024,20 +1024,20 @@ bool LPGlopInterface::TimeLimitIsExceeded() const {
 }
 
 // gets objective value of solution
-RetCode LPGlopInterface::GetObjectiveValue(
+absl::Status LPGlopInterface::GetObjectiveValue(
   double& obj_val // stores the objective value
 ) {
 
   obj_val = solver_.GetObjectiveValue();
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets primal and dual solution vectors for feasible LPs
 //
 // Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
 // IsOptimal() returns true.
-RetCode LPGlopInterface::GetSolution(
+absl::Status LPGlopInterface::GetSolution(
   double& obj_val,          // stores the objective value
   std::vector<double>& primal_sol,  // primal solution vector
   std::vector<double>& dual_sol,    // dual solution vector
@@ -1066,11 +1066,11 @@ RetCode LPGlopInterface::GetSolution(
     activity[j] = scaler_.UnscaleConstraintActivity(row, solver_.GetConstraintActivity(row));
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets primal ray for unbounded LPs
-RetCode LPGlopInterface::GetPrimalRay(
+absl::Status LPGlopInterface::GetPrimalRay(
   std::vector<double>& primal_ray // primal ray
 ) const {
 
@@ -1081,11 +1081,11 @@ RetCode LPGlopInterface::GetPrimalRay(
   for (ColIndex col(0); col < num_cols; ++col)
     primal_ray[col.value()] = scaler_.UnscaleVariableValue(col, primal_ray_solver[col]);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets dual Farkas proof for infeasibility
-RetCode LPGlopInterface::GetDualFarkasMultiplier(
+absl::Status LPGlopInterface::GetDualFarkasMultiplier(
   std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
 ) const {
 
@@ -1096,17 +1096,17 @@ RetCode LPGlopInterface::GetDualFarkasMultiplier(
   for (RowIndex row(0); row < num_rows; ++row)
     dual_farkas_multiplier[row.value()] = -scaler_.UnscaleDualValue(row, dual_ray[row]); // reverse sign
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets the number of LP iterations of the last solve call
-RetCode LPGlopInterface::GetIterations(
+absl::Status LPGlopInterface::GetIterations(
   int& iterations // number of iterations of the last solve call
 ) const {
 
   iterations = static_cast<int>(niterations_);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // LP Basis Methods
@@ -1203,7 +1203,7 @@ VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
 }
 
 // gets current basis status for columns and rows
-RetCode LPGlopInterface::GetBase(
+absl::Status LPGlopInterface::GetBase(
   std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status, or NULL
   std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status, or NULL
 ) const {
@@ -1222,11 +1222,11 @@ RetCode LPGlopInterface::GetBase(
     row_basis_status[i] = (LPBasisStatus) ConvertGlopConstraintStatus(solver_.GetConstraintStatus(row), solver_.GetDualValue(row));
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // sets current basis status for columns and rows
-RetCode LPGlopInterface::SetBase(
+absl::Status LPGlopInterface::SetBase(
   const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
   const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
 ) {
@@ -1247,11 +1247,11 @@ RetCode LPGlopInterface::SetBase(
 
   solver_.LoadStateForNextSolve(state);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
-RetCode LPGlopInterface::GetBasisIndices(
+absl::Status LPGlopInterface::GetBasisIndices(
   std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
 ) const {
   MiniMIPdebugMessage("GetBasisIndices\n");
@@ -1269,7 +1269,7 @@ RetCode LPGlopInterface::GetBasisIndices(
     }
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // get row of inverse basis matrix B^-1
@@ -1277,7 +1277,7 @@ RetCode LPGlopInterface::GetBasisIndices(
 // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-RetCode LPGlopInterface::GetBInvertedRow(
+absl::Status LPGlopInterface::GetBInvertedRow(
   int row_number,         // row number
   std::vector<double>& row_coeffs, // array to store the coefficients of the row
   std::vector<int>& indices,    // array to store the non-zero indices
@@ -1316,7 +1316,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
         }
       }
     }
-    return RetCode::kOkay;
+    return absl::OkStatus();
   }
 
   // dense version
@@ -1326,7 +1326,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
   if (num_indices >= 0)
     num_indices = -1;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // get column of inverse basis matrix B^-1
@@ -1334,7 +1334,7 @@ RetCode LPGlopInterface::GetBInvertedRow(
 // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-RetCode LPGlopInterface::GetBInvertedColumn(
+absl::Status LPGlopInterface::GetBInvertedColumn(
   int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
                              // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
                              // B^-1 column numbers to the row and column numbers of the LP!
@@ -1364,7 +1364,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
         indices[(num_indices)++] = row;
       }
     }
-    return RetCode::kOkay;
+    return absl::OkStatus();
   }
 
   // dense version
@@ -1377,7 +1377,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
   if (num_indices >= 0)
     num_indices = -1;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -1385,7 +1385,7 @@ RetCode LPGlopInterface::GetBInvertedColumn(
 // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-RetCode LPGlopInterface::GetBInvertedARow(
+absl::Status LPGlopInterface::GetBInvertedARow(
   int row_number,                   // row number
   const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
   std::vector<double>& row_coeffs,           // array to store coefficients of the row
@@ -1411,7 +1411,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
         indices[num_indices++] = col.value();
       }
     }
-    return RetCode::kOkay;
+    return absl::OkStatus();
   }
 
   // dense version
@@ -1425,7 +1425,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
   }
   num_indices = -1;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -1433,7 +1433,7 @@ RetCode LPGlopInterface::GetBInvertedARow(
 // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-RetCode LPGlopInterface::GetBInvertedAColumn(
+absl::Status LPGlopInterface::GetBInvertedAColumn(
   int col_number,         // column number
   std::vector<double>& col_coeffs, // array to store coefficients of the column
   std::vector<int>& indices,    // array to store the non-zero indices
@@ -1469,7 +1469,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
         }
       }
     }
-    return RetCode::kOkay;
+    return absl::OkStatus();
   }
 
   // dense version
@@ -1479,7 +1479,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
   if (num_indices >= 0)
     num_indices = -1;
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // @}
@@ -1490,7 +1490,7 @@ RetCode LPGlopInterface::GetBInvertedAColumn(
 // @{
 
 // gets integer parameter of LP
-RetCode LPGlopInterface::GetIntegerParameter(
+absl::Status LPGlopInterface::GetIntegerParameter(
   LPParameter type, // parameter number
   int& param_val  // buffer to store the parameter value
 ) const {
@@ -1535,14 +1535,14 @@ RetCode LPGlopInterface::GetIntegerParameter(
       MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kRandomSeed = %d.\n", param_val);
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // sets integer parameter of LP
-RetCode LPGlopInterface::SetIntegerParameter(
+absl::Status LPGlopInterface::SetIntegerParameter(
   LPParameter type, // parameter number
   int param_val   // parameter value
 ) {
@@ -1589,7 +1589,7 @@ RetCode LPGlopInterface::SetIntegerParameter(
           parameters_.set_feasibility_rule(operations_research::glop::GlopParameters_PricingRule_DEVEX);
           break;
         default:
-          return RetCode::kParameterUnknown;
+          return absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown");
       }
       break;
 #ifndef NOSCALING
@@ -1620,14 +1620,14 @@ RetCode LPGlopInterface::SetIntegerParameter(
       parameters_.set_random_seed(param_val);
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets floating point parameter of LP
-RetCode LPGlopInterface::GetRealParameter(
+absl::Status LPGlopInterface::GetRealParameter(
   LPParameter type,  // parameter number
   double& param_val // buffer to store the parameter value
 ) const {
@@ -1657,14 +1657,14 @@ RetCode LPGlopInterface::GetRealParameter(
       break;
 
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // sets floating point parameter of LP
-RetCode LPGlopInterface::SetRealParameter(
+absl::Status LPGlopInterface::SetRealParameter(
   LPParameter type, // parameter number
   double param_val // parameter value
 ) {
@@ -1693,10 +1693,10 @@ RetCode LPGlopInterface::SetRealParameter(
         parameters_.set_max_deterministic_time(param_val);
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // @}
@@ -1726,7 +1726,7 @@ bool LPGlopInterface::IsInfinity(
 // @{
 
 // reads LP from a file
-RetCode LPGlopInterface::ReadLP(
+absl::Status LPGlopInterface::ReadLP(
   const char* file_name // file name
 ) {
   assert(file_name != nullptr);
@@ -1735,16 +1735,16 @@ RetCode LPGlopInterface::ReadLP(
   MPModelProto proto;
   if (!ReadFileToProto(filespec, &proto)) {
     MiniMIPerrorMessage("Could not read <%s>\n", file_name);
-    return RetCode::kReadError;
+    return absl::Status(absl::StatusCode::kInternal, "Read Errror");
   }
   linear_program_.Clear();
   MPModelProtoToLinearProgram(proto, &linear_program_);
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // writes LP to a file
-RetCode LPGlopInterface::WriteLP(
+absl::Status LPGlopInterface::WriteLP(
   const char* file_name // file name
 ) const {
   assert(file_name != nullptr);
@@ -1754,10 +1754,10 @@ RetCode LPGlopInterface::WriteLP(
   const char* filespec(file_name);
   if (!WriteProtoToFile(filespec, proto, operations_research::ProtoWriteFormat::kProtoText, true)) {
     MiniMIPerrorMessage("Could not write <%s>\n", file_name);
-    return RetCode::kReadError;
+    return absl::Status(absl::StatusCode::kInternal, "Write Errror");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 } // namespace minimip

@@ -5,6 +5,7 @@
 #include "src/messagehandler/message_handler.h"
 #include "src/messagehandler/message_macros.h"
 #include "src/lp_interface/lp_types.h"
+#include "absl/status/status.h"
 
 // #define MINIMIP_VERSION 000   // MiniMIP version number (multiplied by 100 to get integer number)
 //  #define MINIMIP_SUBVERSION               0 // MiniMIP sub version number
@@ -17,9 +18,9 @@
 
 #define MINIMIP_CALL(x)                                               \
   do {                                                                \
-    minimip::RetCode _restat_;                                         \
-    if ((_restat_ = (x)) != minimip::RetCode::kOkay) {                 \
-    MiniMIPerrorMessage("Error <%d> in function call\n", static_cast<int>(_restat_)); \
+    absl::Status _restat_;                                         \
+    if ((_restat_ = (x)) != absl::OkStatus()) {                 \
+    MiniMIPerrorMessage("Error <%d> in function call\n", _restat_); \
       return _restat_;                                                \
     }                                                                 \
   } while (false)

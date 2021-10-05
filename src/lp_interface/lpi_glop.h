@@ -90,7 +90,7 @@ class LPGlopInterface : public LPInterface {
   bool checkUnscaledPrimalFeasibility() const ;
 
   // common function between the two LPI Solve() functions
-  RetCode SolveInternal(
+  absl::Status SolveInternal(
     bool recursive,                        // Is this a recursive call?
     std::unique_ptr<TimeLimit>& time_limit // time limit
   );
@@ -101,7 +101,7 @@ class LPGlopInterface : public LPInterface {
   ) const ;
 
   // performs strong branching iterations
-  RetCode strongbranch(
+  absl::Status strongbranch(
     int col_index,               // column to apply strong branching on
     double primal_sol,              // fractional current primal solution value of column
     int iteration_limit,           // iteration limit for strong branchings
@@ -158,7 +158,7 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // copies LP data with column matrix into LP solver
-  RetCode LoadColumnLP(
+  absl::Status LoadColumnLP(
     LPObjectiveSense obj_sense,           // objective sense
     int num_cols,                       // number of columns
     const std::vector<double>& objective_values, // objective function values of columns
@@ -178,7 +178,7 @@ class LPGlopInterface : public LPInterface {
   // adds columns to the LP
   //
   //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
-  RetCode AddColumns(
+  absl::Status AddColumns(
     int num_cols,                       // number of columns to be added
     const std::vector<double>& objective_values, // objective function values of new columns
     const std::vector<double>& lower_bounds,     // lower bounds of new columns
@@ -191,20 +191,20 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // deletes all columns in the given range from LP
-  RetCode DeleteColumns(
+  absl::Status DeleteColumns(
     int first_col, // first column to be deleted
     int last_col   // last column to be deleted
     ) override;
 
   // deletes columns from LP; the new position of a column must not be greater than its old position
-  RetCode DeleteColumnSet(
+  absl::Status DeleteColumnSet(
     std::vector<bool>& deletion_status // deletion status of columns
     ) override;
 
   // adds rows to the LP
   //
   //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
-  RetCode AddRows(
+  absl::Status AddRows(
     int num_rows,                       // number of rows to be added
     const std::vector<double>& left_hand_sides,  // left hand sides of new rows
     const std::vector<double>& right_hand_sides, // right hand sides of new rows
@@ -216,24 +216,24 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // deletes all rows in the given range from LP
-  RetCode DeleteRows(
+  absl::Status DeleteRows(
     int first_row, // first row to be deleted
     int last_row   // last row to be deleted
     ) override;
 
   // deletes rows from LP; the new position of a row must not be greater that its old position
-  RetCode DeleteRowSet(
+  absl::Status DeleteRowSet(
     std::vector<bool>& deletion_status // deletion status of rows
     ) override;
 
   // clears the whole LP
-  RetCode Clear() override;
+  absl::Status Clear() override;
 
   // clears current LPInterface state (like basis information) of the solver
-  RetCode ClearState() override;
+  absl::Status ClearState() override;
 
   // changes lower and upper bounds of columns
-  RetCode ChangeBounds(
+  absl::Status ChangeBounds(
     int num_cols,                   // number of columns to change bounds for
     const std::vector<int>& indices,      // column indices
     const std::vector<double>& lower_bounds, // values for the new lower bounds
@@ -241,7 +241,7 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // changes left and right hand sides of rows
-  RetCode ChangeSides(
+  absl::Status ChangeSides(
     int num_rows,                      // number of rows to change sides for
     const std::vector<int>& indices,         // row indices
     const std::vector<double>& left_hand_sides, // new values for left hand sides
@@ -249,12 +249,12 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // changes the objective sense
-  RetCode ChangeObjectiveSense(
+  absl::Status ChangeObjectiveSense(
     LPObjectiveSense obj_sense // new objective sense
     ) override;
 
   // changes objective values of columns in the LP
-  RetCode ChangeObjective(
+  absl::Status ChangeObjective(
     int num_cols,                  // number of columns to change objective value for
     const std::vector<int>& indices,     // column indices to change objective value for
     const std::vector<double>& new_obj_vals // new objective values for columns
@@ -278,7 +278,7 @@ class LPGlopInterface : public LPInterface {
    LPObjectiveSense GetObjectiveSense() const override;
 
   // gets columns from LP problem object; the arrays have to be large enough to store all values;
-  RetCode GetColumns(
+  absl::Status GetColumns(
     int first_col,            // first column to get from LP
     int last_col,             // last column to get from LP
     std::vector<double>& lower_bounds, // array to store the lower bound vector
@@ -290,7 +290,7 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets rows from LP problem object; the arrays have to be large enough to store all values.
-  RetCode GetRows(
+  absl::Status GetRows(
     int first_row,                // first row to get from LP
     int last_row,                 // last row to get from LP
     std::vector<double>& left_hand_sides,  // array to store left hand side vector
@@ -302,14 +302,14 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets objective coefficients from LP problem object
-  RetCode GetObjective(
+  absl::Status GetObjective(
     int first_col,         // first column to get objective coefficient for
     int last_col,          // last column to get objective coefficient for
     std::vector<double>& obj_coeffs // array to store objective coefficients
     ) const override;
 
   // gets current bounds from LP problem object
-  RetCode GetBounds(
+  absl::Status GetBounds(
     int first_col,            // first column to get bounds for
     int last_col,             // last column to get bounds for
     std::vector<double>& lower_bounds, // array to store lower bound values
@@ -317,7 +317,7 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets current row sides from LP problem object
-  RetCode GetSides(
+  absl::Status GetSides(
     int first_row,               // first row to get sides for
     int last_row,                // last row to get sides for
     std::vector<double>& left_hand_sides, // array to store left hand side values
@@ -325,7 +325,7 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets a single coefficient
-  RetCode GetCoefficient(
+  absl::Status GetCoefficient(
     int row,   // row number of coefficient
     int col,   // column number of coefficient
     double& val // array to store the value of the coefficient
@@ -339,19 +339,19 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // calls primal simplex to solve the LP
-  RetCode SolvePrimal() override;
+  absl::Status SolvePrimal() override;
 
   // calls dual simplex to solve the LP
-  RetCode SolveDual() override;
+  absl::Status SolveDual() override;
 
   // start strong branching - call before any strong branching
-  RetCode StartStrongbranch() override;
+  absl::Status StartStrongbranch() override;
 
   // end strong branching - call after any strong branching
-  RetCode EndStrongbranch() override;
+  absl::Status EndStrongbranch() override;
 
   // performs strong branching iterations on one @b fractional candidate
-  RetCode StrongbranchFractionalValue(
+  absl::Status StrongbranchFractionalValue(
     int col,                 // column to apply strong branching on
     double primal_sol,              // fractional current primal solution value of column
     int iteration_limit,           // iteration limit for strong branchings
@@ -363,7 +363,7 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // performs strong branching iterations on one candidate with @b integral value
-  RetCode StrongbranchIntegerValue(
+  absl::Status StrongbranchIntegerValue(
     int col,                       // column to apply strong branching on
     double primal_sol,              // current integral primal solution value of column
     int iteration_limit,           // iteration limit for strong branchings
@@ -439,7 +439,7 @@ class LPGlopInterface : public LPInterface {
   bool TimeLimitIsExceeded() const override;
 
   // gets objective value of solution
-  RetCode GetObjectiveValue(
+  absl::Status GetObjectiveValue(
     double& obj_val // the objective value
     ) override;
 
@@ -447,7 +447,7 @@ class LPGlopInterface : public LPInterface {
   //
   // Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
   // MiniMIP::LPInterface.IsOptimal() returns true.
-  RetCode GetSolution(
+  absl::Status GetSolution(
     double& obj_val,          // stores the objective value
     std::vector<double>& primal_sol,  // primal solution vector
     std::vector<double>& dual_sol,    // dual solution vector
@@ -456,17 +456,17 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets primal ray for unbounded LPs
-  RetCode GetPrimalRay(
+  absl::Status GetPrimalRay(
     std::vector<double>& primal_ray // primal ray
     ) const override;
 
   // gets dual Farkas proof for infeasibility
-  RetCode GetDualFarkasMultiplier(
+  absl::Status GetDualFarkasMultiplier(
     std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
     ) const override;
 
   // gets the number of LP iterations of the last solve call
-  RetCode GetIterations(
+  absl::Status GetIterations(
     int& iterations // number of iterations of the last solve call
     ) const override;
 
@@ -476,19 +476,19 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // gets current basis status for columns and rows
-  RetCode GetBase(
+  absl::Status GetBase(
     std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
     std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
     ) const override;
 
   // sets current basis status for columns and rows
-  RetCode SetBase(
+  absl::Status SetBase(
     const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
     const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
     ) override;
 
   // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
-  RetCode GetBasisIndices(
+  absl::Status GetBasisIndices(
     std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
     ) const override;
 
@@ -497,7 +497,7 @@ class LPGlopInterface : public LPInterface {
   // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
-  RetCode GetBInvertedRow(
+  absl::Status GetBInvertedRow(
     int row_number,         // row number
     std::vector<double>& row_coeffs, // array to store the coefficients of the row
     std::vector<int>& indices,    // array to store the non-zero indices
@@ -508,7 +508,7 @@ class LPGlopInterface : public LPInterface {
   //
   // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated
-  RetCode GetBInvertedColumn(
+  absl::Status GetBInvertedColumn(
     int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
                                // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
                                // B^-1 column numbers to the row and column numbers of the LP!
@@ -524,7 +524,7 @@ class LPGlopInterface : public LPInterface {
   // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
-  RetCode GetBInvertedARow(
+  absl::Status GetBInvertedARow(
     int row_number,                   // row number
     const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
     std::vector<double>& row_coeffs,           // array to store coefficients of the row
@@ -537,7 +537,7 @@ class LPGlopInterface : public LPInterface {
   // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
-  RetCode GetBInvertedAColumn(
+  absl::Status GetBInvertedAColumn(
     int col_number,         // column number
     std::vector<double>& col_coeffs, // array to store coefficients of the column
     std::vector<int>& indices,    // array to store the non-zero indices
@@ -550,25 +550,25 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // gets integer parameter of LP
-  RetCode GetIntegerParameter(
+  absl::Status GetIntegerParameter(
     LPParameter type, // parameter number
     int& param_val  // returns the parameter value
     ) const override;
 
   // sets integer parameter of LP
-  RetCode SetIntegerParameter(
+  absl::Status SetIntegerParameter(
     LPParameter type, // parameter number
     int param_val   // parameter value
     ) override;
 
   // gets floating point parameter of LP
-  RetCode GetRealParameter(
+  absl::Status GetRealParameter(
     LPParameter type,  // parameter number
     double& param_val // returns the parameter value
     ) const override;
 
   // sets floating point parameter of LP
-  RetCode SetRealParameter(
+  absl::Status SetRealParameter(
     LPParameter type, // parameter number
     double param_val // parameter value
     ) override;
@@ -592,12 +592,12 @@ class LPGlopInterface : public LPInterface {
   // @{
 
   // reads LP from a file
-  RetCode ReadLP(
+  absl::Status ReadLP(
     const char* file_name // file name
     ) override;
 
   // writes LP to a file
-  RetCode WriteLP(
+  absl::Status WriteLP(
     const char* file_name // file name
     ) const override;
 

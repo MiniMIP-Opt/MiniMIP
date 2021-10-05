@@ -9,6 +9,7 @@
 
 #include "src/lp_interface/lpi_factory.h"
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 
 #define EPS 1e-6
 #define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
@@ -96,9 +97,9 @@ class Solve : public ::testing::Test {
 
     // solve problem
     if (solveprimal) {
-      ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
     } else {
-      ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->SolveDual(), absl::OkStatus());
     }
 
     // check status
@@ -198,7 +199,7 @@ class Solve : public ::testing::Test {
     // check solution
     if (exp_primalfeas == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), absl::OkStatus());
 
       for (j = 0; j < ncols; ++j) {
         ASSERT_FLOAT_EQ(primsol[j], exp_primsol[j]);// EPS, "Violation of primal solution %d: %g != %g\n", j, primsol[j], exp_primsol[j]);
@@ -209,7 +210,7 @@ class Solve : public ::testing::Test {
       if (lp_interface_->HasPrimalRay()) {
         double scalingfactor = 1.0;
 
-        ASSERT_EQ(lp_interface_->GetPrimalRay(primsol), RetCode::kOkay);
+        ASSERT_EQ(lp_interface_->GetPrimalRay(primsol), absl::OkStatus());
 
         // loop until scaling factor can be determined
         for (j = 0; j < ncols; ++j) {
@@ -230,7 +231,7 @@ class Solve : public ::testing::Test {
 
     if (exp_dualfeas == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), absl::OkStatus());
 
       for (i = 0; i < nrows; ++i) {
         ASSERT_FLOAT_EQ(dualsol[i], exp_dualsol[i]);  // EPS, "Violation of dual solution %d: %g != %g\n", i, dualsol[i], exp_dualsol[i]);
@@ -244,10 +245,10 @@ class Solve : public ::testing::Test {
         std::vector<double> rhs(nrows);
 
         // get lhs/rhs for check of dual ray
-        ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, lhs, rhs), RetCode::kOkay);
+        ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, lhs, rhs), absl::OkStatus());
 
         // get dual ray
-        ASSERT_EQ(lp_interface_->GetDualFarkasMultiplier(dualsol), RetCode::kOkay);
+        ASSERT_EQ(lp_interface_->GetDualFarkasMultiplier(dualsol), absl::OkStatus());
 
         // loop until scaling factor can be determined
         for (i = 0; i < nrows; ++i) {
@@ -293,7 +294,7 @@ class Solve : public ::testing::Test {
     std::vector<std::string> empty_names;
 
     // load problem
-    ASSERT_EQ(lp_interface_->LoadColumnLP(objsen, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->LoadColumnLP(objsen, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
 
     // solve problem
@@ -353,8 +354,8 @@ class Solve : public ::testing::Test {
     check_ind.reserve(check_nnonz);
 
     // get matrix data
-    ASSERT_EQ(lp_interface_->GetColumns(0, ncols - 1, check_lb, check_ub, check_nnonz2, check_beg, check_ind, check_val), RetCode::kOkay);
-    ASSERT_EQ(lp_interface_->GetObjective(0, ncols - 1, check_obj), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->GetColumns(0, ncols - 1, check_lb, check_ub, check_nnonz2, check_beg, check_ind, check_val), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->GetObjective(0, ncols - 1, check_obj), absl::OkStatus());
 
     // compare data
     for (j = 0; j < ncols; ++j) {
@@ -379,7 +380,7 @@ class Solve : public ::testing::Test {
     check_lhs.reserve(nrows);
     check_rhs.reserve(nrows);
 
-    ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, check_lhs, check_rhs), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, check_lhs, check_rhs), absl::OkStatus());
 
     for (i = 0; i < nrows; ++i) {
 
@@ -455,7 +456,7 @@ TEST_F(Solve, test1) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // solve problem with dual simplex
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
@@ -464,11 +465,11 @@ TEST_F(Solve, test1) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // change objective
   obj[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), absl::OkStatus());
 
   // change expected solution
   exp_primsol[0] = 3;
@@ -550,7 +551,7 @@ TEST_F(Solve, test2) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // solve problem with dual simplex
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::UNBOUNDED, LPFeasibilityStat::INFEASIBLE, exp_primray, empty_vals, empty_vals, empty_vals));
@@ -559,11 +560,11 @@ TEST_F(Solve, test2) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // change objective
   obj[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), absl::OkStatus());
 
   // solve with primal simplex
   ASSERT_NO_FATAL_FAILURE(solveTest(true, 2, 2, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
@@ -632,7 +633,7 @@ TEST_F(Solve, test3) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // check problem with dual simplex
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED, empty_vals, exp_dualray, empty_vals, empty_vals));
@@ -641,12 +642,12 @@ TEST_F(Solve, test3) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // change lhs/rhs
   lhs[0] = 1.0;
   rhs[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeSides(1, ind, lhs, rhs), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ChangeSides(1, ind, lhs, rhs), absl::OkStatus());
   ASSERT_NO_FATAL_FAILURE(solveTest(true, 2, 2, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE, exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   // check that data stored in lpi is still the same
@@ -757,18 +758,18 @@ TEST_F(Solve, test5) {
   std::vector<std::string> empty_names;
 
   // load problem
-  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMaximize, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMaximize, 2, obj, lb, ub, empty_names, 2, lhs, rhs, empty_names, 4, beg, ind, val), absl::OkStatus());
 
   // set objective limit
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 1) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 1) == RetCode::kParameterUnknown));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 0) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 0) == RetCode::kParameterUnknown));
-  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, 0.0), RetCode::kOkay);
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 1) == absl::OkStatus()) || (lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 1) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 0) == absl::OkStatus()) || (lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 0) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
+  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, 0.0), absl::OkStatus());
 
   // set basis
-  ASSERT_EQ(lp_interface_->SetBase(cstat, rstat), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SetBase(cstat, rstat), absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SolveDual(), absl::OkStatus());
 
   // check status
   ASSERT_TRUE(lp_interface_->IsSolved());
@@ -777,7 +778,7 @@ TEST_F(Solve, test5) {
   ASSERT_TRUE(!lp_interface_->TimeLimitIsExceeded());
 
   // the objective should be equal to the objective limit
-  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
   ASSERT_GE(objval, exp_objval);// << "Objective value not equal to objective limit: %g != %g\n", objval, exp_objval);
 
   // check that data stored in lpi is still the same
@@ -883,30 +884,30 @@ TEST_F(Solve, test6) {
   std::vector<std::string> empty_names;
 
   // load problem
-  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMinimize, 12, obj, lb, ub, empty_names, 8, lhs, rhs, empty_names, 30, beg, ind, val), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMinimize, 12, obj, lb, ub, empty_names, 8, lhs, rhs, empty_names, 30, beg, ind, val), absl::OkStatus());
 
   // set some parameters - simulate settings in MiniMIP
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 0) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 0) == RetCode::kParameterUnknown));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kScaling, 1) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kScaling, 1) == RetCode::kParameterUnknown));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 1) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 1) == RetCode::kParameterUnknown));
-  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPricing, 0) == RetCode::kOkay) || (lp_interface_->SetIntegerParameter(LPParameter::kPricing, 0) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 0) == absl::OkStatus()) || (lp_interface_->SetIntegerParameter(LPParameter::kFromScratch, 0) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kScaling, 1) == absl::OkStatus()) || (lp_interface_->SetIntegerParameter(LPParameter::kScaling, 1) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 1) == absl::OkStatus()) || (lp_interface_->SetIntegerParameter(LPParameter::kPresolving, 1) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
+  ASSERT_TRUE((lp_interface_->SetIntegerParameter(LPParameter::kPricing, 0) == absl::OkStatus()) || (lp_interface_->SetIntegerParameter(LPParameter::kPricing, 0) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
 
-  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::kFeasibilityTolerance, 1e-06) == RetCode::kOkay) || (lp_interface_->SetRealParameter(LPParameter::kFeasibilityTolerance, 1e-06) == RetCode::kParameterUnknown));
-  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::kDualFeasibilityTolerance, 1e-07) == RetCode::kOkay) || (lp_interface_->SetRealParameter(LPParameter::kDualFeasibilityTolerance, 1e-07) == RetCode::kParameterUnknown));
+  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::kFeasibilityTolerance, 1e-06) == absl::OkStatus()) || (lp_interface_->SetRealParameter(LPParameter::kFeasibilityTolerance, 1e-06) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
+  ASSERT_TRUE((lp_interface_->SetRealParameter(LPParameter::kDualFeasibilityTolerance, 1e-07) == absl::OkStatus()) || (lp_interface_->SetRealParameter(LPParameter::kDualFeasibilityTolerance, 1e-07) == absl::Status(absl::StatusCode::kInvalidArgument, "Parameter Unknown")));
 
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // set objlimit
-  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, 4.320412501), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, 4.320412501), absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SolveDual(), absl::OkStatus());
 
   // check status
   ASSERT_TRUE(lp_interface_->IsSolved());
 
   // the objective should be equal to the objective limit
-  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
   ASSERT_FLOAT_EQ(objval, exp_objval);
 
   // check that data stored in lpi is still the same
@@ -929,15 +930,15 @@ TEST_F(Solve, test6) {
   ub[10] = 1.750;
   lb[11] = 0.499951;
   ub[11] = 0.5;
-  ASSERT_EQ(lp_interface_->ChangeBounds(12, varind, lb, ub), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ChangeBounds(12, varind, lb, ub), absl::OkStatus());
 
   // set objlimit
-  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, -2.0625), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SetRealParameter(LPParameter::kObjectiveLimit, -2.0625), absl::OkStatus());
 
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveDual(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SolveDual(), absl::OkStatus());
 
   // check that data stored in lpi is still the same
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 12, obj, lb, ub, 8, lhs, rhs, 30, beg, ind, val));
@@ -1003,7 +1004,7 @@ TEST_F(Solve, test7) {
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
-  ASSERT_EQ(lp_interface_->ClearState(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // check problem with dual simplex
   ASSERT_NO_FATAL_FAILURE(solveTest(false, 2, 2, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED, empty_vals, exp_dualray, empty_vals, empty_vals));

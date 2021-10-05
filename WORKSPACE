@@ -80,7 +80,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 # provided in OR-Tools below.
 git_repository(
     name = "com_google_absl",
-    commit = "6f9d96a",  # release 20200923.3
+    commit = "278e0a0",  # release 20210324.2
     remote = "https://github.com/abseil/abseil-cpp.git",
 )
 

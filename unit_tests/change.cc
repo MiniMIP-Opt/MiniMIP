@@ -15,6 +15,7 @@
 #include "src/lp_interface/lpi_factory.h"
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 
 #define TEST_ERRORS 0   // if 0 then skip tests expected to fail.
 #define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
@@ -227,11 +228,11 @@ class Change : public ::testing::Test {
     std::vector<double> empty_vals;
     std::vector<int> empty_indices;
 
-    ASSERT_EQ(lp_interface_->ChangeObjectiveSense(objsen), RetCode::kOkay);
-    ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
-    ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->ChangeObjectiveSense(objsen), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
     ASSERT_TRUE(lp_interface_->IsSolved());
   }
 
@@ -255,9 +256,9 @@ class ChangeObjective : public Change,
   static void checkChgObj(int& lastcol, std::vector<int>& ind, std::vector<double>& setobj) {
     std::vector<double> obj(2);
     ASSERT_LE(lastcol, 2);
-    ASSERT_EQ(lp_interface_->ChangeObjective(lastcol, ind, setobj), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->ChangeObjective(lastcol, ind, setobj), absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetObjective(0, lastcol - 1, obj), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->GetObjective(0, lastcol - 1, obj), absl::OkStatus());
 
     for (size_t i; i < setobj.size(); i++) {
       ASSERT_EQ(obj[i], setobj[i]);
@@ -311,18 +312,18 @@ INSTANTIATE_TEST_SUITE_P(
 class ChangeBounds : public Change,
                      public ::testing::WithParamInterface<std::tuple<double, double, double, double, int>> {
  protected:
-  static void checkChgBounds(int& lastcol, std::vector<int>& ind, std::vector<double>& setlb, std::vector<double>& setub, RetCode error = RetCode::kOkay) {
+  static void checkChgBounds(int& lastcol, std::vector<int>& ind, std::vector<double>& setlb, std::vector<double>& setub, absl::Status error = absl::OkStatus()) {
     std::vector<double> ub(2);
     std::vector<double> lb(2);
 
     ASSERT_LE(lastcol, 2);
-    if (error != RetCode::kOkay) {
+    if (error != absl::OkStatus()) {
       ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), error);
       abort();
     } else
-      ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetBounds(0, lastcol - 1, lb, ub), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->GetBounds(0, lastcol - 1, lb, ub), absl::OkStatus());
 
     for (size_t i; i < setub.size(); i++) {
       ASSERT_EQ(ub[i], setub[i]);
@@ -367,7 +368,7 @@ TEST_P(ChangeBounds, checkChgBounds) {
   }
 
   if (deathflag)
-    ASSERT_DEATH(checkChgBounds(ncols, ind, setlb, setub, RetCode::kLPError), "");
+    ASSERT_DEATH(checkChgBounds(ncols, ind, setlb, setub, absl::Status(absl::StatusCode::kInternal, "LP Error")), "");
   else
     ASSERT_NO_FATAL_FAILURE(checkChgBounds(ncols, ind, setlb, setub));
 }
@@ -391,9 +392,9 @@ class ChangeSides : public Change,
     std::vector<double> rs(2);
 
     ASSERT_LE(lastcol, 2);
-    ASSERT_EQ(lp_interface_->ChangeSides(lastcol, ind, setls, setrs), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->ChangeSides(lastcol, ind, setls, setrs), absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs), absl::OkStatus());
 
     for (int i; i < setls.size(); i++) {
       ASSERT_EQ(ls[i], setls[i]);
@@ -468,7 +469,7 @@ TEST_P(ChangeObjectiveSense, ChgObjSen) {
 
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(newsense), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(newsense), absl::OkStatus());
   ASSERT_TRUE(!lp_interface_->IsSolved());
 
   probsense = lp_interface_->GetObjectiveSense();
@@ -510,7 +511,7 @@ TEST_F(Change, testrowmethods) {
   std::vector<int> empty_indices;
 
   // create original lp
-  ASSERT_EQ(lp_interface_->AddColumns(5, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddColumns(5, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
   ncolsbefore = lp_interface_->GetNumberOfColumns();
 
   for (i = 0; i < iterations; i++) {
@@ -525,7 +526,7 @@ TEST_F(Change, testrowmethods) {
     nrowsbefore = lp_interface_->GetNumberOfRows();
 
     if (nrows < 0) {
-      ASSERT_EQ(lp_interface_->DeleteRows(0, -(1 + nrows)), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->DeleteRows(0, -(1 + nrows)), absl::OkStatus());
     } else { // nrows >= 0
       std::vector<double> lhs(100);
       std::vector<double> rhs(100);
@@ -556,10 +557,10 @@ TEST_F(Change, testrowmethods) {
         ind[j] = indvals[j];
         val[j] = vals[j];
       }
-      ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->AddRows(nrows, lhs, rhs, empty_names, nnonz, beg, ind, val), absl::OkStatus());
 
       // checks
-      ASSERT_EQ(lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs, newrhs, newnnonz, newbeg, newind, newval), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs, newrhs, newnnonz, newbeg, newind, newval), absl::OkStatus());
       ASSERT_EQ(nnonz, newnnonz);
 
       for (j = 0; j < nrows; j++) {
@@ -617,7 +618,7 @@ TEST_F(Change, testrowmethods) {
       rows[(2 * j) + 1] = true;
 
     nrowsbefore = lp_interface_->GetNumberOfRows();
-    ASSERT_EQ(lp_interface_->DeleteRowSet(rows), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->DeleteRowSet(rows), absl::OkStatus());
 
     nrowsafter = lp_interface_->GetNumberOfRows();
     ASSERT_EQ(nrowsbefore - i, nrowsafter);
@@ -650,7 +651,7 @@ TEST_F(Change, testcolmethods) {
   std::vector<int> empty_indices;
 
   // create original lp
-  ASSERT_EQ(lp_interface_->AddRows(5, lhs, rhs, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddRows(5, lhs, rhs, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
   nrowsbefore = lp_interface_->GetNumberOfRows();
 
   for (int i = 0; i < iterations; i++) {
@@ -666,7 +667,7 @@ TEST_F(Change, testcolmethods) {
     ncolsbefore = lp_interface_->GetNumberOfColumns();
 
     if (k[i] < 0) {
-      ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + ncols)), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + ncols)), absl::OkStatus());
     } else { // ncols >= 0
       std::vector<double> lb(100);
       std::vector<double> ub(100);
@@ -696,10 +697,10 @@ TEST_F(Change, testcolmethods) {
         ind[j] = indvals[j];
         val[j] = vals[j];
       }
-      ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, nnonz, beg, ind, val), absl::OkStatus());
 
       // checks
-      ASSERT_EQ(lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb, newub, newnnonz, newbeg, newind, newval), RetCode::kOkay);
+      ASSERT_EQ(lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb, newub, newnnonz, newbeg, newind, newval), absl::OkStatus());
       ASSERT_EQ(nnonz, newnnonz);
 
       for (int j = 0; j < ncols; j++) {
@@ -735,7 +736,7 @@ TEST_F(Change, testcolmethods) {
       cols[(2 * j) + 1] = true;
 
     ncolsbefore = lp_interface_->GetNumberOfColumns();
-    ASSERT_EQ(lp_interface_->DeleteColumnSet(cols), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->DeleteColumnSet(cols), absl::OkStatus());
     ncolsafter = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(ncolsbefore - i, ncolsafter);
     // assert that the rows that are left are the ones I intended
@@ -768,7 +769,7 @@ TEST_F(Change, testzerosincols) {
 #endif
   // this test can only work in debug mode, so we make it pass in opt mode
 #ifdef NDEBUG
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, nnonz, beg, ind, val), absl::OkStatus());
   SUCCEED(); // return SIGABORT
 #endif
 }
@@ -798,7 +799,7 @@ TEST_F(Change, testzerosinrows) {
   ASSERT_DEATH(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), "");
 #else
   // this test can only work in debug mode, so we make it pass in opt mode
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, nnonz, beg, ind, val), absl::OkStatus());
   SUCCEED();
 #endif
 }
@@ -821,19 +822,19 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   // 2x2 problem
   ASSERT_NO_FATAL_FAILURE(initProb(5, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
-  ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost), absl::OkStatus());
 
-  ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"), RetCode::kOkay);
-  ASSERT_EQ(lp_interface_->Clear(), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->Clear(), absl::OkStatus());
 
   if (DEF_INTERFACE == 0)
-    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"), absl::OkStatus());
   else
-    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"), absl::OkStatus());
 
-  ASSERT_EQ(lp_interface_->SolvePrimal(), RetCode::kOkay);
-  ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2, redcost2), RetCode::kOkay);
+  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2, redcost2), absl::OkStatus());
   ASSERT_FLOAT_EQ(objval, objval2);
 
   ASSERT_EQ(primsol.size(), primsol2.size());
@@ -860,8 +861,8 @@ TEST_F(Change, testlpiwritereadlpmethods) {
     remove("lpi_change_test_problem.lp.gz");
     SUCCEED();
   } else {
-    ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem2.lp"), RetCode::kOkay);
-    ASSERT_EQ(lp_interface_->Clear(), RetCode::kOkay);
+    ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem2.lp"), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->Clear(), absl::OkStatus());
 
     std::ifstream t1("lpi_change_test_problem.lp");
     std::stringstream buffer1;
