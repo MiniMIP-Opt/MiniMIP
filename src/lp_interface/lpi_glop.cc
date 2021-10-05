@@ -28,7 +28,7 @@ using operations_research::glop::VariableStatusRow;
 
 // LP interface
 namespace minimip {
-// constructor
+
 LPGlopInterface::LPGlopInterface() : lp_modified_since_last_solve_(true),
                                      lp_time_limit_was_reached_(false),
                                      lp_info_(false),
@@ -40,15 +40,14 @@ LPGlopInterface::LPGlopInterface() : lp_modified_since_last_solve_(true),
                                      tmp_row_(new ScatteredRow()),
                                      tmp_column_(new ScatteredColumn()) {}
 
-// Destructor default
 LPGlopInterface::~LPGlopInterface() {
   MiniMIPdebugMessage("LPGLopInterface Free\n");
 }
 
-// Modification Methods
+// ==========================================================================
+// LP model setters.
+// ==========================================================================
 
-// @name Modification Methods
-// @{
 
 // copies LP data with column matrix into LP solver
 absl::Status LPGlopInterface::LoadColumnLP(
@@ -395,11 +394,9 @@ absl::Status LPGlopInterface::ChangeObjective(
   return absl::OkStatus();
 }
 
-
-// Data Accessing Methods
-
-// @name Data Accessing Methods
-// @{
+// ==========================================================================
+// LP model getters.
+// ==========================================================================
 
 // gets the number of rows in the LP
 int LPGlopInterface::GetNumberOfRows() const {
@@ -715,6 +712,10 @@ absl::Status LPGlopInterface::SolveInternal(
   return absl::OkStatus();
 }
 
+// ==========================================================================
+// Solving methods.
+// ==========================================================================
+
 // calls primal simplex to solve the LP
 absl::Status LPGlopInterface::SolvePrimal() {
 
@@ -889,12 +890,9 @@ absl::Status LPGlopInterface::StrongbranchIntegerValue(
   return absl::OkStatus();
 }
 
-// @}
-
-// Solution Information Methods
-
-// @name Solution Information Methods
-// @{
+// ==========================================================================
+// Solution information getters.
+// ==========================================================================
 
 // returns whether a solve method was called after the last modification of the LP
 bool LPGlopInterface::IsSolved() const {
@@ -1202,6 +1200,10 @@ VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
   }
 }
 
+// ==========================================================================
+// Getters and setters of the basis.
+// ==========================================================================
+
 // gets current basis status for columns and rows
 absl::Status LPGlopInterface::GetBase(
   std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status, or NULL
@@ -1272,9 +1274,13 @@ absl::Status LPGlopInterface::GetBasisIndices(
   return absl::OkStatus();
 }
 
+// ==========================================================================
+// Getters of vectors in the inverted basis matrix.
+// ==========================================================================
+
 // get row of inverse basis matrix B^-1
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPGlopInterface::GetBInvertedRow(
@@ -1309,9 +1315,9 @@ absl::Status LPGlopInterface::GetBInvertedRow(
       // use dense access to tmp_row_
       const Fractional eps = parameters_.primal_feasibility_tolerance();
       for (ColIndex col(0); col < size; ++col) {
-        double val = (*tmp_row_)[col];
-        if (fabs(val) >= eps) {
-          row_coeffs[col.value()] = val;
+        double value = (*tmp_row_)[col];
+        if (fabs(value) >= eps) {
+          row_coeffs[col.value()] = value;
           indices[(num_indices)++] = col.value();
         }
       }
@@ -1331,12 +1337,12 @@ absl::Status LPGlopInterface::GetBInvertedRow(
 
 // get column of inverse basis matrix B^-1
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPGlopInterface::GetBInvertedColumn(
   int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
-                             // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
+                             // you have to call minimip::LPInterface.GetBasisIndices() to get the array which links the
                              // B^-1 column numbers to the row and column numbers of the LP!
                              // c must be between 0 and num_rows-1, since the basis has the size
                              // num_rows * num_rows
@@ -1358,9 +1364,9 @@ absl::Status LPGlopInterface::GetBInvertedColumn(
       solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row), tmp_row_);
       scaler_.UnscaleUnitRowLeftSolve(solver_.GetBasis(RowIndex(row)), tmp_row_);
 
-      double val = (*tmp_row_)[col];
-      if (fabs(val) >= eps) {
-        col_coeffs[row] = val;
+      double value = (*tmp_row_)[col];
+      if (fabs(value) >= eps) {
+        col_coeffs[row] = value;
         indices[(num_indices)++] = row;
       }
     }
@@ -1382,12 +1388,12 @@ absl::Status LPGlopInterface::GetBInvertedColumn(
 
 // get row of inverse basis matrix times constraint matrix B^-1 * A
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPGlopInterface::GetBInvertedARow(
   int row_number,                   // row number
-  const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
+  const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to minimip::LPInterface.GetBInvRow()
   std::vector<double>& row_coeffs,           // array to store coefficients of the row
   std::vector<int>& indices,              // array to store the non-zero indices
   int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
@@ -1405,9 +1411,9 @@ absl::Status LPGlopInterface::GetBInvertedARow(
 
     num_indices = 0;
     for (ColIndex col(0); col < num_cols; ++col) {
-      double val = operations_research::glop::ScalarProduct(tmp_row_->values, linear_program_.GetSparseColumn(col));
-      if (fabs(val) >= eps) {
-        row_coeffs[col.value()] = val;
+      double value = operations_research::glop::ScalarProduct(tmp_row_->values, linear_program_.GetSparseColumn(col));
+      if (fabs(value) >= eps) {
+        row_coeffs[col.value()] = value;
         indices[num_indices++] = col.value();
       }
     }
@@ -1430,7 +1436,7 @@ absl::Status LPGlopInterface::GetBInvertedARow(
 
 // get column of inverse basis matrix times constraint matrix B^-1 * A
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPGlopInterface::GetBInvertedAColumn(
@@ -1462,9 +1468,9 @@ absl::Status LPGlopInterface::GetBInvertedAColumn(
       // use dense access to tmp_column_
       const Fractional eps = parameters_.primal_feasibility_tolerance();
       for (RowIndex row(0); row < num_rows; ++row) {
-        double val = (*tmp_column_)[row];
-        if (fabs(val) > eps) {
-          col_coeffs[row.value()] = val;
+        double value = (*tmp_column_)[row];
+        if (fabs(value) > eps) {
+          col_coeffs[row.value()] = value;
           indices[(num_indices)++] = row.value();
         }
       }
@@ -1482,12 +1488,9 @@ absl::Status LPGlopInterface::GetBInvertedAColumn(
   return absl::OkStatus();
 }
 
-// @}
-
-// Parameter Methods
-
-// @name Parameter Methods
-// @{
+// ==========================================================================
+// Getters and setters of the parameters.
+// ==========================================================================
 
 // gets integer parameter of LP
 absl::Status LPGlopInterface::GetIntegerParameter(
@@ -1699,12 +1702,9 @@ absl::Status LPGlopInterface::SetRealParameter(
   return absl::OkStatus();
 }
 
-// @}
-
-// Numerical Methods
-
-// @name Numerical Methods
-// @{
+// ==========================================================================
+// Numerical methods.
+// ==========================================================================
 
 // returns value treated as infinity in the LP solver
 double LPGlopInterface::Infinity() const {
@@ -1713,17 +1713,14 @@ double LPGlopInterface::Infinity() const {
 
 // checks if given value is treated as infinity in the LP solver
 bool LPGlopInterface::IsInfinity(
-  double val // value to be checked for infinity
+  double value // value to be checked for infinity
 ) const {
-  return val == std::numeric_limits<double>::infinity();
+  return value == std::numeric_limits<double>::infinity();
 }
 
-// @}
-
-// File Interface Methods
-
-// @name File Interface Methods
-// @{
+// ==========================================================================
+// File interface methods.
+// ==========================================================================
 
 // reads LP from a file
 absl::Status LPGlopInterface::ReadLP(

@@ -12,18 +12,17 @@
 
 namespace minimip {
 
-// LPInterface base class
-//
-// Just testing how the change appears.
+// LPInterface abstract class. This is used by MiniMIP to communicate with an
+// underlying LP solver.
 class LPInterface : private messagehandler {
 
  public:
-  // This is yet another change in a separate commit.
-  // Methods
   virtual ~LPInterface() = default;
 
-  // @name Modification Methods
-  // @{
+  // ==========================================================================
+  // LP model setters.
+  // ==========================================================================
+
   // copies LP data with column matrix into LP solver
   virtual absl::Status LoadColumnLP(
     LPObjectiveSense obj_sense,           // objective sense
@@ -44,7 +43,7 @@ class LPInterface : private messagehandler {
 
   // adds columns to the LP
   //
-  //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
+  // NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.
   virtual absl::Status AddColumns(
     int num_cols,                       // number of columns to be added
     const std::vector<double>& objective_values, // objective function values of new columns
@@ -70,7 +69,7 @@ class LPInterface : private messagehandler {
 
   // adds rows to the LP
   //
-  //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
+  // NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.
   virtual absl::Status AddRows(
     int num_rows,                       // number of rows to be added
     const std::vector<double>& left_hand_sides,  // left hand sides of new rows
@@ -127,10 +126,9 @@ class LPInterface : private messagehandler {
     const std::vector<double>& new_obj_vals // new objective values for columns
     ) = 0;
 
-  // @}
-
-  // @name Data Accessing Methods
-  // @{
+  // ==========================================================================
+  // LP model getters.
+  // ==========================================================================
 
   // gets the number of rows in the LP
   virtual int GetNumberOfRows() const = 0;
@@ -198,10 +196,9 @@ class LPInterface : private messagehandler {
     double& val // array to store the value of the coefficient
     ) const = 0;
 
-  // @}
-
-  // @name Solving Methods
-  // @{
+  // ==========================================================================
+  // Solving methods.
+  // ==========================================================================
 
   // calls primal simplex to solve the LP
   virtual absl::Status SolvePrimal() = 0;
@@ -241,10 +238,9 @@ class LPInterface : private messagehandler {
     int& iterations                // stores total number of strong branching iterations
     ) = 0;
 
-  // @}
-
-  // @name Solution Information Methods
-  // @{
+  // ==========================================================================
+  // Solution information getters.
+  // ==========================================================================
 
   // returns whether a solve method was called after the last modification of the LP
   virtual bool IsSolved() const = 0;
@@ -254,7 +250,7 @@ class LPInterface : private messagehandler {
   // This function should return true if the solution is reliable, i.e., feasible and optimal (or proven
   // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
   // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
-  // MiniMIP::LPInterface.IsStable() should return false.
+  // minimip::LPInterface.IsStable() should return false.
   virtual bool IsStable() const = 0;
 
   // returns true if LP was solved to optimality
@@ -311,7 +307,7 @@ class LPInterface : private messagehandler {
   // gets primal and dual solution vectors for feasible LPs
   //
   // Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
-  // MiniMIP::LPInterface.IsOptimal() returns true.
+  // minimip::LPInterface.IsOptimal() returns true.
   virtual absl::Status GetSolution(
     double& obj_val,          // stores the objective value
     std::vector<double>& primal_sol,  // primal solution vector
@@ -335,10 +331,9 @@ class LPInterface : private messagehandler {
     int& iterations // number of iterations of the last solve call
     ) const = 0;
 
-  // @}
-
-  // @name LP Basis Methods
-  // @{
+  // ==========================================================================
+  // Getters and setters of the basis.
+  // ==========================================================================
 
   // gets current basis status for columns and rows
   virtual absl::Status GetBase(
@@ -357,9 +352,14 @@ class LPInterface : private messagehandler {
     std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
     ) const = 0;
 
+
+  // ==========================================================================
+  // Getters of vectors in the inverted basis matrix.
+  // ==========================================================================
+
   // get row of inverse basis matrix B^-1
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
   virtual absl::Status GetBInvertedRow(
@@ -371,11 +371,11 @@ class LPInterface : private messagehandler {
 
   // get column of inverse basis matrix B^-1
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated
   virtual absl::Status GetBInvertedColumn(
     int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
-                               // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
+                               // you have to call minimip::LPInterface.GetBasisIndices() to get the array which links the
                                // B^-1 column numbers to the row and column numbers of the LP!
                                // c must be between 0 and num_rows-1, since the basis has the size
                                // num_rows * num_rows
@@ -386,12 +386,12 @@ class LPInterface : private messagehandler {
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
   virtual absl::Status GetBInvertedARow(
     int row_number,                   // row number
-    const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
+    const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to minimip::LPInterface.GetBInvRow()
     std::vector<double>& row_coeffs,           // array to store coefficients of the row
     std::vector<int>& indices,              // array to store the non-zero indices
     int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
@@ -399,7 +399,7 @@ class LPInterface : private messagehandler {
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
   virtual absl::Status GetBInvertedAColumn(
@@ -409,10 +409,10 @@ class LPInterface : private messagehandler {
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
     ) const = 0;
 
-  // @}
+  // ==========================================================================
+  // Getters and setters of the parameters.
+  // ==========================================================================
 
-  // @name Parameter Methods
-  // @{
 
   // gets integer parameter of LP
   virtual absl::Status GetIntegerParameter(
@@ -438,23 +438,21 @@ class LPInterface : private messagehandler {
     double param_val // parameter value
     ) = 0;
 
-  // @}
-
-  // @name Numerical Methods
-  // @{
+  // ==========================================================================
+  // Numerical methods.
+  // ==========================================================================
 
   // returns value treated as infinity in the LP solver
   virtual double Infinity() const = 0;
 
   // checks if given value is treated as infinity in the LP solver
   virtual bool IsInfinity(
-    double val // value to be checked for infinity
+    double value // value to be checked for infinity
     ) const = 0;
 
-  // @}
-
-  // @name File Interface Methods
-  // @{
+  // ==========================================================================
+  // File interface methods.
+  // ==========================================================================
 
   // reads LP from a file
   virtual absl::Status ReadLP(
@@ -466,7 +464,6 @@ class LPInterface : private messagehandler {
     const char* file_name // file name
     ) const = 0;
 
-  // @}
 };
 
 } // namespace minimip

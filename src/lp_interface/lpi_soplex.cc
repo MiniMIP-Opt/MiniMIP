@@ -71,7 +71,6 @@
 
 namespace minimip {
 
-// constructor
 LPSoplexInterface::LPSoplexInterface() : spx_(new soplex::SoPlex),
                                          pricing_(LPPricing::kDefault),
                                          solved_(false),
@@ -80,7 +79,6 @@ LPSoplexInterface::LPSoplexInterface() : spx_(new soplex::SoPlex),
                                          col_basis_status_(0),
                                          row_basis_status_(0) {}
 
-// destructor
 LPSoplexInterface::~LPSoplexInterface() {
   delete spx_;
 }
@@ -524,6 +522,10 @@ absl::Status LPSoplexInterface::StrongBranch(
   return absl::OkStatus();
 }
 
+// ==========================================================================
+// LP model setters.
+// ==========================================================================
+
 absl::Status LPSoplexInterface::LoadColumnLP(
   LPObjectiveSense obj_sense,           // objective sense
   int num_cols,                       // number of columns
@@ -581,7 +583,7 @@ absl::Status LPSoplexInterface::LoadColumnLP(
 
 // adds columns to the LP
 //
-// @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
+// NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.
 absl::Status LPSoplexInterface::AddColumns(
   int num_cols,                       // number of columns to be added
   const std::vector<double>& objective_values, // objective function values of new columns
@@ -688,7 +690,7 @@ absl::Status LPSoplexInterface::DeleteColumnSet(
 
 // adds rows to the LP
 //
-// @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
+// NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.
 absl::Status LPSoplexInterface::AddRows(
   int num_rows,                       // number of rows to be added
   const std::vector<double>& left_hand_sides,  // left hand sides of new rows
@@ -952,10 +954,9 @@ absl::Status LPSoplexInterface::ChangeObjective(
   return absl::OkStatus();
 }
 
-// @}
-
-// @name Data Accessing Methods
-// @{
+// ==========================================================================
+// LP model getters.
+// ==========================================================================
 
 // gets the number of rows in the LP
 int LPSoplexInterface::GetNumberOfRows() const {
@@ -1199,10 +1200,9 @@ absl::Status LPSoplexInterface::GetCoefficient(
   return absl::OkStatus();
 }
 
-// @}
-
-// @name Solving Methods
-// @{
+// ==========================================================================
+// Solving methods.
+// ==========================================================================
 
 // calls primal simplex to solve the LP
 absl::Status LPSoplexInterface::SolvePrimal() {
@@ -1397,7 +1397,7 @@ bool LPSoplexInterface::IsOptimal() const {
 //*  This function should return true if the solution is reliable, i.e., feasible and optimal (or proven
 //*  infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
 //*  version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
-//*  MiniMIP::LPInterface.IsStable() should return false.
+//*  minimip::LPInterface.IsStable() should return false.
 bool LPSoplexInterface::IsStable() const {
   MiniMIPdebugMessage("calling IsStable()\n");
 
@@ -1443,7 +1443,7 @@ absl::Status LPSoplexInterface::GetObjectiveValue(
 // gets primal and dual solution vectors for feasible LPs
 //*
 //*  Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
-//*  MiniMIP::LPInterface.IsOptimal() returns true.
+//*  minimip::LPInterface.IsOptimal() returns true.
 absl::Status LPSoplexInterface::GetSolution(
   double& obj_val,          // stores the objective value
   std::vector<double>& primal_sol,  // primal solution vector
@@ -1538,10 +1538,9 @@ absl::Status LPSoplexInterface::GetIterations(
   return absl::OkStatus();
 }
 
-// @}
-
-// @name LP Basis Methods
-// @{
+// ==========================================================================
+// Getters and setters of the basis.
+// ==========================================================================
 
 // gets current basis status for columns and rows
 absl::Status LPSoplexInterface::GetBase(
@@ -1716,9 +1715,13 @@ absl::Status LPSoplexInterface::GetBasisIndices(
   return absl::OkStatus();
 }
 
+// ==========================================================================
+// Getters of vectors in the inverted basis matrix.
+// ==========================================================================
+
 // get row of inverse basis matrix B^-1
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPSoplexInterface::GetBInvertedRow(
@@ -1745,12 +1748,12 @@ absl::Status LPSoplexInterface::GetBInvertedRow(
 
 // get column of inverse basis matrix B^-1
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPSoplexInterface::GetBInvertedColumn(
   int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
-                             // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
+                             // you have to call minimip::LPInterface.GetBasisIndices() to get the array which links the
                              // B^-1 column numbers to the row and column numbers of the LP!
                              // c must be between 0 and num_rows-1, since the basis has the size
                              // num_rows * num_rows
@@ -1774,12 +1777,12 @@ absl::Status LPSoplexInterface::GetBInvertedColumn(
 
 // get row of inverse basis matrix times constraint matrix B^-1 * A
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPSoplexInterface::GetBInvertedARow(
   int row_number,                   // row number
-  const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
+  const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to minimip::LPInterface.GetBInvRow()
   std::vector<double>& row_coeffs,           // array to store coefficients of the row
   std::vector<int>& indices,              // array to store the non-zero indices
   int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
@@ -1829,7 +1832,7 @@ absl::Status LPSoplexInterface::GetBInvertedARow(
 
 // get column of inverse basis matrix times constraint matrix B^-1 * A
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+// NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
 absl::Status LPSoplexInterface::GetBInvertedAColumn(
@@ -1870,10 +1873,9 @@ absl::Status LPSoplexInterface::GetBInvertedAColumn(
   return absl::OkStatus();
 }
 
-// @}
-
-// @name Parameter Methods
-// @{
+// ==========================================================================
+// Getters and setters of the parameters.
+// ==========================================================================
 
 // gets integer parameter of LP
 absl::Status LPSoplexInterface::GetIntegerParameter(
@@ -2088,10 +2090,9 @@ absl::Status LPSoplexInterface::SetRealParameter(
   return absl::OkStatus();
 }
 
-// @}
-
-// @name Numerical Methods
-// @{
+// ==========================================================================
+// Numerical methods.
+// ==========================================================================
 
 // returns value treated as infinity in the LP solver
 double LPSoplexInterface::Infinity() const {
@@ -2102,11 +2103,11 @@ double LPSoplexInterface::Infinity() const {
 
 // checks if given value is treated as infinity in the LP solver
 bool LPSoplexInterface::IsInfinity (
-  double val // value to be checked for infinity
+  double value // value to be checked for infinity
 ) const {
   MiniMIPdebugMessage("calling IsInfinity()\n");
 
-  return (val >= spx_->realParam(SoPlex::INFTY));
+  return (value >= spx_->realParam(SoPlex::INFTY));
 }
 
 // returns, whether the given file exists
@@ -2124,10 +2125,9 @@ bool LPSoplexInterface::FileExists(
   return true;
 }
 
-// @}
-
-// @name File Interface Methods
-// @{
+// ==========================================================================
+// File interface methods.
+// ==========================================================================
 
 // reads LP from a file
 absl::Status LPSoplexInterface::ReadLP(

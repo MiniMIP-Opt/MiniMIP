@@ -112,16 +112,15 @@ class LPSoplexInterface : public LPInterface {
   );
 
  public:
-  // Constructor
 
   LPSoplexInterface();
 
-  // Destructor
-
   ~LPSoplexInterface();
 
-  // @name Modification Methods
-  // @{
+  // ==========================================================================
+  // LP model setters.
+  // ==========================================================================
+
   // copies LP data with column matrix into LP solver
   absl::Status LoadColumnLP(
     LPObjectiveSense obj_sense,           // objective sense
@@ -142,7 +141,7 @@ class LPSoplexInterface : public LPInterface {
 
   // adds columns to the LP
   //
-  //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
+  // NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.
   absl::Status AddColumns(
     int num_cols,                       // number of columns to be added
     const std::vector<double>& objective_values, // objective function values of new columns
@@ -168,7 +167,7 @@ class LPSoplexInterface : public LPInterface {
 
   // adds rows to the LP
   //
-  //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
+  // NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.
   absl::Status AddRows(
     int num_rows,                       // number of rows to be added
     const std::vector<double>& left_hand_sides,  // left hand sides of new rows
@@ -225,22 +224,21 @@ class LPSoplexInterface : public LPInterface {
     const std::vector<double>& new_obj_vals // new objective values for columns
     ) override;
 
-  // @}
-
-  // @name Data Accessing Methods
-  // @{
+  // ==========================================================================
+  // LP model getters.
+  // ==========================================================================
 
   // gets the number of rows in the LP
-   int GetNumberOfRows() const override;
+  int GetNumberOfRows() const override;
 
   // gets the number of columns in the LP
-   int GetNumberOfColumns() const override;
+  int GetNumberOfColumns() const override;
 
   // gets the number of non-zero elements in the LP constraint matrix
-   int GetNumberOfNonZeros() const override;
+  int GetNumberOfNonZeros() const override;
 
   // gets the objective sense of the LP
-   LPObjectiveSense GetObjectiveSense() const override;
+  LPObjectiveSense GetObjectiveSense() const override;
 
   // gets columns from LP problem object
   absl::Status GetColumns(
@@ -296,10 +294,9 @@ class LPSoplexInterface : public LPInterface {
     double& val // array to store the value of the coefficient
     ) const override;
 
-  // @}
-
-  // @name Solving Methods
-  // @{
+  // ==========================================================================
+  // Solving methods.
+  // ==========================================================================
 
   // calls primal simplex to solve the LP
   absl::Status SolvePrimal() override;
@@ -333,19 +330,47 @@ class LPSoplexInterface : public LPInterface {
     double& dual_bound_down_branch, // stores dual bound after branching column down
     double& dual_bound_up_branch,   // stores dual bound after branching column up
     bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                     // otherwise, it can only be used as an estimate value
+                                     //     *   otherwise, it can only be used as an estimate value
     bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                     // otherwise, it can only be used as an estimate value
+                                     //     *   otherwise, it can only be used as an estimate value
     int& iterations                // stores total number of strong branching iterations
     ) override;
 
-  // @}
-
-  // @name Solution Information Methods
-  // @{
+  // ==========================================================================
+  // Solution information getters.
+  // ==========================================================================
 
   // returns whether a solve method was called after the last modification of the LP
   bool IsSolved() const override;
+
+  // returns true if current LP solution is stable
+  //
+  // This function should return true if the solution is reliable, i.e., feasible and optimal (or proven
+  // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
+  // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
+  // minimip::LPInterface.IsStable() should return false.
+  bool IsStable() const override;
+
+  // returns true if LP was solved to optimality
+  bool IsOptimal() const override;
+
+  // returns true if LP is proven to be primal feasible
+  bool IsPrimalFeasible() const override;
+
+  // returns true if LP is proven to be primal infeasible
+  bool IsPrimalInfeasible() const override;
+
+  // returns true if LP is proven to be primal unbounded
+  bool IsPrimalUnbounded() const override;
+
+  // returns true if LP is proven to be dual feasible
+  bool IsDualFeasible() const override;
+
+  // returns true if LP is proven to be dual infeasible
+  bool IsDualInfeasible() const override;
+
+  // returns true if LP is proven to be dual unbounded
+  bool IsDualUnbounded() const override;
 
   // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
   //  this does not necessarily mean that the solver knows and can return the primal ray
@@ -354,16 +379,7 @@ class LPSoplexInterface : public LPInterface {
   // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
   //  and the solver knows and can return the primal ray
   bool HasPrimalRay() const override;
-
-  // returns true if LP is proven to be primal unbounded
-  bool IsPrimalUnbounded() const override;
-
-  // returns true if LP is proven to be primal infeasible
-  bool IsPrimalInfeasible() const override;
-
-  // returns true if LP is proven to be primal feasible
-  bool IsPrimalFeasible() const override;
-
+  
   // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
   // this does not necessarily mean that the solver knows and can return the dual ray
   bool ExistsDualRay() const override;
@@ -371,26 +387,6 @@ class LPSoplexInterface : public LPInterface {
   // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
   // and the solver knows and can return the dual ray
   bool HasDualRay() const override;
-
-  // returns true if LP is proven to be dual unbounded
-  bool IsDualUnbounded() const override;
-
-  // returns true if LP is proven to be dual infeasible
-  bool IsDualInfeasible() const override;
-
-  // returns true if LP is proven to be dual feasible
-  bool IsDualFeasible() const override;
-
-  // returns true if LP was solved to optimality
-  bool IsOptimal() const override;
-
-  // returns true if current LP solution is stable
-  //
-  // This function should return true if the solution is reliable, i.e., feasible and optimal (or proven
-  // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
-  // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
-  // MiniMIP::LPInterface.IsStable() should return false.
-  bool IsStable() const override;
 
   // returns true if the objective limit was reached
   bool ObjectiveLimitIsExceeded() const override;
@@ -409,7 +405,7 @@ class LPSoplexInterface : public LPInterface {
   // gets primal and dual solution vectors for feasible LPs
   //
   // Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
-  // MiniMIP::LPInterface.IsOptimal() returns true.
+  // minimip::LPInterface.IsOptimal() returns true.
   absl::Status GetSolution(
     double& obj_val,          // stores the objective value
     std::vector<double>& primal_sol,  // primal solution vector
@@ -433,10 +429,9 @@ class LPSoplexInterface : public LPInterface {
     int& iterations // number of iterations of the last solve call
     ) const override;
 
-  // @}
-
-  // @name LP Basis Methods
-  // @{
+  // ==========================================================================
+  // Getters and setters of the basis.
+  // ==========================================================================
 
   // gets current basis status for columns and rows
   absl::Status GetBase(
@@ -455,9 +450,14 @@ class LPSoplexInterface : public LPInterface {
     std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
     ) const override;
 
+
+  // ==========================================================================
+  // Getters of vectors in the inverted basis matrix.
+  // ==========================================================================
+
   // get row of inverse basis matrix B^-1
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
   absl::Status GetBInvertedRow(
@@ -469,11 +469,11 @@ class LPSoplexInterface : public LPInterface {
 
   // get column of inverse basis matrix B^-1
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated
   absl::Status GetBInvertedColumn(
     int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
-                               // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
+                               // you have to call minimip::LPInterface.GetBasisIndices() to get the array which links the
                                // B^-1 column numbers to the row and column numbers of the LP!
                                // c must be between 0 and num_rows-1, since the basis has the size
                                // num_rows * num_rows
@@ -484,12 +484,12 @@ class LPSoplexInterface : public LPInterface {
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
   absl::Status GetBInvertedARow(
     int row_number,                   // row number
-    const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
+    const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to minimip::LPInterface.GetBInvRow()
     std::vector<double>& row_coeffs,           // array to store coefficients of the row
     std::vector<int>& indices,              // array to store the non-zero indices
     int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
@@ -497,7 +497,7 @@ class LPSoplexInterface : public LPInterface {
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
   absl::Status GetBInvertedAColumn(
@@ -507,10 +507,10 @@ class LPSoplexInterface : public LPInterface {
     int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
     ) const override;
 
-  // @}
+  // ==========================================================================
+  // Getters and setters of the parameters.
+  // ==========================================================================
 
-  // @name Parameter Methods
-  // @{
 
   // gets integer parameter of LP
   absl::Status GetIntegerParameter(
@@ -536,23 +536,22 @@ class LPSoplexInterface : public LPInterface {
     double param_val // parameter value
     ) override;
 
-  // @}
+  // ==========================================================================
+  // Numerical methods.
+  // ==========================================================================
 
-  // @name Numerical Methods
-  // @{
 
   // returns value treated as infinity in the LP solver
   double Infinity() const override;
 
   // checks if given value is treated as infinity in the LP solver
   bool IsInfinity(
-    double val // value to be checked for infinity
+    double value // value to be checked for infinity
     ) const override;
 
-  // @}
-
-  // @name File Interface Methods
-  // @{
+  // ==========================================================================
+  // File interface methods.
+  // ==========================================================================
 
   // reads LP from a file
   absl::Status ReadLP(
@@ -563,6 +562,7 @@ class LPSoplexInterface : public LPInterface {
   absl::Status WriteLP(
     const char* file_name // file name
     ) const override;
+
 };
 
 } // namespace minimip
