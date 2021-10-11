@@ -898,14 +898,14 @@ absl::Status LPSoplexInterface::SetObjectiveSense(
 }
 
 // changes objective values of columns in the LP
-absl::Status LPSoplexInterface::ChangeObjective(
+absl::Status LPSoplexInterface::SetObjectiveCoefficients(
   int num_cols,                  // number of columns to change objective value for
   const std::vector<int>& indices,     // column indices to change objective value for
-  const std::vector<double>& new_obj_vals // new objective values for columns
+  const std::vector<double>& objective_coefficients // new objective values for columns
 ) {
   int i;
 
-  MiniMIPdebugMessage("calling ChangeObjective()\n");
+  MiniMIPdebugMessage("calling SetObjectiveCoefficients()\n");
 
   InvalidateSolution();
 
@@ -914,7 +914,7 @@ absl::Status LPSoplexInterface::ChangeObjective(
   try {
     for (i = 0; i < num_cols; ++i) {
       assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
-      spx_->changeObjReal(indices[i], new_obj_vals[i]);
+      spx_->changeObjReal(indices[i], objective_coefficients[i]);
     }
   }
 #ifndef NDEBUG

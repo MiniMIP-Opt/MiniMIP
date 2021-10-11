@@ -547,7 +547,7 @@ TEST_F(Solve, test1) {
 
   // change objective
   obj[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(1, ind, obj), absl::OkStatus());
 
   // change expected solution
   exp_primsol[0]  = 3;
@@ -653,7 +653,7 @@ TEST_F(Solve, test2) {
 
   // change objective
   obj[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeObjective(1, ind, obj), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(1, ind, obj), absl::OkStatus());
 
   // solve with primal simplex
   ASSERT_NO_FATAL_FAILURE(solveTest(true, 2, 2, LPFeasibilityStat::FEASIBLE,

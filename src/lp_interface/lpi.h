@@ -115,10 +115,10 @@ class LPInterface : private messagehandler {
     ) = 0;
 
   // changes objective values of columns in the LP
-  virtual absl::Status ChangeObjective(
+  virtual absl::Status SetObjectiveCoefficients(
     int num_cols,                  // number of columns to change objective value for
     const std::vector<int>& indices,     // column indices to change objective value for
-    const std::vector<double>& new_obj_vals // new objective values for columns
+    const std::vector<double>& objective_coefficients // new objective values for columns
     ) = 0;
 
   // ==========================================================================
