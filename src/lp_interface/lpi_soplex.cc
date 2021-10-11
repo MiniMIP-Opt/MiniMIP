@@ -1179,16 +1179,16 @@ double LPSoplexInterface::GetMatrixCoefficient(
 // ==========================================================================
 
 // calls primal simplex to solve the LP
-absl::Status LPSoplexInterface::SolvePrimal() {
-  MiniMIPdebugMessage("calling SolvePrimal()\n");
+absl::Status LPSoplexInterface::SolveLpWithPrimalSimplex() {
+  MiniMIPdebugMessage("calling SolveLpWithPrimalSimplex()\n");
 
   static_cast<void>(spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_PRIMAL));
   return SoPlexSolve();
 }
 
 // calls dual simplex to solve the LP
-absl::Status LPSoplexInterface::SolveDual() {
-  MiniMIPdebugMessage("calling SolveDual()\n");
+absl::Status LPSoplexInterface::SolveLpWithDualSimplex() {
+  MiniMIPdebugMessage("calling SolveLpWithDualSimplex()\n");
 
   static_cast<void>(spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_DUAL));
   return SoPlexSolve();

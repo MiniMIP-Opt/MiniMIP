@@ -293,10 +293,10 @@ class LPSoplexInterface : public LPInterface {
   // ==========================================================================
 
   // calls primal simplex to solve the LP
-  absl::Status SolvePrimal() override;
+  absl::Status SolveLpWithPrimalSimplex() override;
 
   // calls dual simplex to solve the LP
-  absl::Status SolveDual() override;
+  absl::Status SolveLpWithDualSimplex() override;
 
   // start strong branching - call before any strong branching
   absl::Status StartStrongbranch() override;

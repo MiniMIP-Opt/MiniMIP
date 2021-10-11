@@ -690,7 +690,7 @@ absl::Status LPGlopInterface::SolveInternal(
 // ==========================================================================
 
 // calls primal simplex to solve the LP
-absl::Status LPGlopInterface::SolvePrimal() {
+absl::Status LPGlopInterface::SolveLpWithPrimalSimplex() {
 
   MiniMIPdebugMessage("SolvePrimal: %d rows, %d cols.\n", linear_program_.num_constraints().value(), linear_program_.num_variables().value());
   std::unique_ptr<TimeLimit> time_limit = TimeLimit::FromParameters(parameters_);
@@ -701,7 +701,7 @@ absl::Status LPGlopInterface::SolvePrimal() {
 }
 
 // calls dual simplex to solve the LP
-absl::Status LPGlopInterface::SolveDual() {
+absl::Status LPGlopInterface::SolveLpWithDualSimplex() {
 
   MiniMIPdebugMessage("SolveDual: %d rows, %d cols.\n", linear_program_.num_constraints().value(), linear_program_.num_variables().value());
   std::unique_ptr<TimeLimit> time_limit = TimeLimit::FromParameters(parameters_);

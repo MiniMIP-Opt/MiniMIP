@@ -195,10 +195,10 @@ class LPInterface : private messagehandler {
   // ==========================================================================
 
   // calls primal simplex to solve the LP
-  virtual absl::Status SolvePrimal() = 0;
+  virtual absl::Status SolveLpWithPrimalSimplex() = 0;
 
   // calls dual simplex to solve the LP
-  virtual absl::Status SolveDual() = 0;
+  virtual absl::Status SolveLpWithDualSimplex() = 0;
 
   // start strong branching - call before any strong branching
   virtual absl::Status StartStrongbranch() = 0;

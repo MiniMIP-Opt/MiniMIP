@@ -82,7 +82,7 @@ TEST_F(SimpleTest, BasicAssertions) {
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // solve problem
-  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
             absl::OkStatus());
@@ -105,7 +105,7 @@ TEST_F(SimpleTest, test2) {
             absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
@@ -138,7 +138,7 @@ TEST_F(SimpleTest, test3) {
       absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
@@ -168,7 +168,7 @@ TEST_F(SimpleTest, test4) {
       absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
@@ -305,7 +305,7 @@ TEST_F(Complex, test1) {
 
   // -------------------------------------
   // first solve problem
-  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
 
   ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
   ASSERT_FLOAT_EQ(objval, 14.0);
@@ -551,7 +551,7 @@ TEST_F(MoreVarsThanRows, test1) {
 
   // -------------------------------------
   // first solve problem
-  ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
 
   ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
   ASSERT_FLOAT_EQ(objval, 23.0);
