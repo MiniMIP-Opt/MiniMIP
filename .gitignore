@@ -25,7 +25,6 @@
 user.bazelrc
 
 #specific
-.clang-format
 .clwb/
 .idea/
 src/lp_interface/main/
