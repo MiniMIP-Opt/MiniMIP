@@ -20,7 +20,7 @@
 
 #define TEST_ERRORS 0  // if 0 then skip tests expected to fail.
 #define DEF_INTERFACE \
-  1  // 0 = Glop Interface (Default),
+  0  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
 
 namespace minimip {

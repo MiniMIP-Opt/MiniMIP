@@ -185,10 +185,9 @@ class LPInterface : private messagehandler {
     ) const = 0;
 
   // gets a single coefficient
-  virtual absl::Status GetCoefficient(
-    int row,   // row number of coefficient
+  virtual double GetMatrixCoefficient(
     int col,   // column number of coefficient
-    double& val // array to store the value of the coefficient
+    int row   // row number of coefficient
     ) const = 0;
 
   // ==========================================================================

@@ -315,10 +315,9 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets a single coefficient
-  absl::Status GetCoefficient(
-    int row,   // row number of coefficient
+  double GetMatrixCoefficient(
     int col,   // column number of coefficient
-    double& val // array to store the value of the coefficient
+    int row   // row number of coefficient
     ) const override;
 
   // ==========================================================================

@@ -561,17 +561,15 @@ absl::Status LPGlopInterface::GetSides(
 }
 
 // gets a single coefficient
-absl::Status LPGlopInterface::GetCoefficient(
-  int row,         // row number of coefficient
-  int col_index, // column number of coefficient
-  double& val       // array to store the value of the coefficient
+double LPGlopInterface::GetMatrixCoefficient(
+  int col, // column number of coefficient
+  int row         // row number of coefficient
 ) const {
 
   // quite slow method: possibly needs linear time if matrix is not sorted
   const SparseMatrix& matrix = linear_program_.GetSparseMatrix();
-  val = matrix.LookUpValue(RowIndex(row), ColIndex(col_index));
 
-  return absl::OkStatus();
+  return matrix.LookUpValue(RowIndex(row), ColIndex(col));
 }
 
 // @}

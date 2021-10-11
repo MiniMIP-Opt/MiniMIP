@@ -161,7 +161,7 @@ class LpInterface {
   // Gets a coefficient from the constaint matrix for `col` and `row` (`col` and
   // `row` must be between 0 and `num_cols()-1` and `num_rows()-1`,
   // respectively).
-  virtual double GetCoefficient(int col, int row) const = 0;
+  virtual double GetMatrixCoefficient(int col, int row) const = 0;
 
   // ==========================================================================
   // Solving methods.

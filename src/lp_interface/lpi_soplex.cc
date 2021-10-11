@@ -1159,20 +1159,19 @@ absl::Status LPSoplexInterface::GetSides(
   return absl::OkStatus();
 }
 
+
 // gets a single coefficient
-absl::Status LPSoplexInterface::GetCoefficient(
-  int row,   // row number of coefficient
-  int col,   // column number of coefficient
-  double& val // array to store the value of the coefficient
+double LPSoplexInterface::GetMatrixCoefficient(
+  int col, // column number of coefficient
+  int row         // row number of coefficient
 ) const {
+
   MiniMIPdebugMessage("calling GetCoefficients()\n");
 
   assert(0 <= col && col < spx_->numColsReal());
   assert(0 <= row && row < spx_->numRowsReal());
 
-  val = spx_->coefReal(row, col);
-
-  return absl::OkStatus();
+  return spx_->coefReal(row, col);
 }
 
 // ==========================================================================
