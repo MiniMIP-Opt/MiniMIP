@@ -224,7 +224,7 @@ class LPGlopInterface : public LPInterface {
   absl::Status ClearState() override;
 
   // changes lower and upper bounds of columns
-  absl::Status ChangeBounds(
+  absl::Status SetColumnBounds(
     int num_cols,                   // number of columns to change bounds for
     const std::vector<int>& indices,      // column indices
     const std::vector<double>& lower_bounds, // values for the new lower bounds
@@ -232,7 +232,7 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // changes left and right hand sides of rows
-  absl::Status ChangeSides(
+  absl::Status SetRowSides(
     int num_rows,                      // number of rows to change sides for
     const std::vector<int>& indices,         // row indices
     const std::vector<double>& left_hand_sides, // new values for left hand sides

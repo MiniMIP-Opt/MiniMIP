@@ -331,10 +331,10 @@ class ChangeBounds : public Change,
 
     ASSERT_LE(lastcol, 2);
     if (error != absl::OkStatus()) {
-      ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub), error);
+      ASSERT_EQ(lp_interface_->SetColumnBounds(lastcol, ind, setlb, setub), error);
       abort();
     } else {
-      ASSERT_EQ(lp_interface_->ChangeBounds(lastcol, ind, setlb, setub),
+      ASSERT_EQ(lp_interface_->SetColumnBounds(lastcol, ind, setlb, setub),
                 absl::OkStatus());
     }
     ASSERT_TRUE(!lp_interface_->IsSolved());
@@ -412,7 +412,7 @@ class ChangeSides : public Change,
     std::vector<double> rs(2);
 
     ASSERT_LE(lastcol, 2);
-    ASSERT_EQ(lp_interface_->ChangeSides(lastcol, ind, setls, setrs),
+    ASSERT_EQ(lp_interface_->SetRowSides(lastcol, ind, setls, setrs),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
     ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs),

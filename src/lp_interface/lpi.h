@@ -94,7 +94,7 @@ class LPInterface : private messagehandler {
   virtual absl::Status ClearState() = 0;
 
   // changes lower and upper bounds of columns
-  virtual absl::Status ChangeBounds(
+  virtual absl::Status SetColumnBounds(
     int num_cols,                   // number of columns to change bounds for
     const std::vector<int>& indices,      // column indices
     const std::vector<double>& lower_bounds, // values for the new lower bounds
@@ -102,7 +102,7 @@ class LPInterface : private messagehandler {
     ) = 0;
 
   // changes left and right hand sides of rows
-  virtual absl::Status ChangeSides(
+  virtual absl::Status SetRowSides(
     int num_rows,                      // number of rows to change sides for
     const std::vector<int>& indices,         // row indices
     const std::vector<double>& left_hand_sides, // new values for left hand sides

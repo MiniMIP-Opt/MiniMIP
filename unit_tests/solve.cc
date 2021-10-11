@@ -746,7 +746,7 @@ TEST_F(Solve, test3) {
   // change lhs/rhs
   lhs[0] = 1.0;
   rhs[0] = 1.0;
-  ASSERT_EQ(lp_interface_->ChangeSides(1, ind, lhs, rhs), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetRowSides(1, ind, lhs, rhs), absl::OkStatus());
   ASSERT_NO_FATAL_FAILURE(solveTest(true, 2, 2, LPFeasibilityStat::FEASIBLE,
                                     LPFeasibilityStat::FEASIBLE, exp_primsol,
                                     exp_dualsol, exp_activity, exp_redcost));
@@ -1090,7 +1090,7 @@ TEST_F(Solve, test6) {
   ub[10] = 1.750;
   lb[11] = 0.499951;
   ub[11] = 0.5;
-  ASSERT_EQ(lp_interface_->ChangeBounds(12, varind, lb, ub), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetColumnBounds(12, varind, lb, ub), absl::OkStatus());
 
   // set objlimit
   ASSERT_EQ(

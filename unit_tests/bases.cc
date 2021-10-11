@@ -134,7 +134,7 @@ TEST_F(SimpleTest, test3) {
   // change row side
   right_hand_sides[0] = lp_interface_->Infinity();
   ASSERT_EQ(
-      lp_interface_->ChangeSides(1, indices, left_hand_sides, right_hand_sides),
+      lp_interface_->SetRowSides(1, indices, left_hand_sides, right_hand_sides),
       absl::OkStatus());
 
   // solve problem
@@ -164,7 +164,7 @@ TEST_F(SimpleTest, test4) {
   // change row sides
   left_hand_sides[0] = -(lp_interface_->Infinity());
   ASSERT_EQ(
-      lp_interface_->ChangeSides(1, indices, left_hand_sides, right_hand_sides),
+      lp_interface_->SetRowSides(1, indices, left_hand_sides, right_hand_sides),
       absl::OkStatus());
 
   // solve problem

@@ -286,7 +286,7 @@ absl::Status LPGlopInterface::ClearState() {
 }
 
 // changes lower and upper bounds of columns
-absl::Status LPGlopInterface::ChangeBounds(
+absl::Status LPGlopInterface::SetColumnBounds(
   int num_cols,                   // number of columns to change bounds for
   const std::vector<int>& indices,      // column indices
   const std::vector<double>& lower_bounds, // values for the new lower bounds
@@ -315,7 +315,7 @@ absl::Status LPGlopInterface::ChangeBounds(
 }
 
 // changes left and right hand sides of rows
-absl::Status LPGlopInterface::ChangeSides(
+absl::Status LPGlopInterface::SetRowSides(
   int num_rows,                      // number of rows to change sides for
   const std::vector<int>& indices,         // row indices
   const std::vector<double>& left_hand_sides, // new values for left hand sides

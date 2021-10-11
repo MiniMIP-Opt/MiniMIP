@@ -803,7 +803,7 @@ absl::Status LPSoplexInterface::ClearState() {
 }
 
 // changes lower and upper bounds of columns
-absl::Status LPSoplexInterface::ChangeBounds(
+absl::Status LPSoplexInterface::SetColumnBounds(
   int num_cols,                   // number of columns to change bounds for
   const std::vector<int>& indices,      // column indices
   const std::vector<double>& lower_bounds, // values for the new lower bounds
@@ -811,7 +811,7 @@ absl::Status LPSoplexInterface::ChangeBounds(
 ) {
   int i;
 
-  MiniMIPdebugMessage("calling ChangeBounds()\n");
+  MiniMIPdebugMessage("calling SetColumnBounds()\n");
 
   InvalidateSolution();
 
@@ -846,7 +846,7 @@ absl::Status LPSoplexInterface::ChangeBounds(
 }
 
 // changes left and right hand sides of rows
-absl::Status LPSoplexInterface::ChangeSides(
+absl::Status LPSoplexInterface::SetRowSides(
   int num_rows,                      // number of rows to change sides for
   const std::vector<int>& indices,         // row indices
   const std::vector<double>& left_hand_sides, // new values for left hand sides
@@ -854,7 +854,7 @@ absl::Status LPSoplexInterface::ChangeSides(
 ) {
   int i;
 
-  MiniMIPdebugMessage("calling ChangeSides()\n");
+  MiniMIPdebugMessage("calling SetRowSides()\n");
 
   if (num_rows <= 0)
     return absl::OkStatus();

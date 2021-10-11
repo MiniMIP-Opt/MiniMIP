@@ -68,7 +68,7 @@ TEST_F(BoundChanges, SimpleBoundTest) {
   ub[0] = 2.0;
 
   // change bounds to some value
-  ASSERT_EQ(lp_interface_->ChangeBounds(1, ind, lb, ub), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetColumnBounds(1, ind, lb, ub), absl::OkStatus());
 
   // get bounds and compare
   ASSERT_EQ(lp_interface_->GetBounds(0, 0, lbnew, ubnew), absl::OkStatus());
@@ -81,7 +81,7 @@ TEST_F(BoundChanges, ChangeBoundBySmallValue) {
   // change bound to small value
   lb[0] = 1e-11;
   ub[0] = 1.0 - 1e-11;
-  ASSERT_EQ(lp_interface_->ChangeBounds(1, ind, lb, ub), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetColumnBounds(1, ind, lb, ub), absl::OkStatus());
 
   // get bounds and compare
   ASSERT_EQ(lp_interface_->GetBounds(0, 0, lbnew, ubnew), absl::OkStatus());
@@ -98,7 +98,7 @@ TEST_F(BoundChanges, FixToInfinity) {
   ub[0] = lp_interface_->Infinity();
 
   // calling should return an LPERROR
-  absl_code = lp_interface_->ChangeBounds(1, ind, lb, ub);
+  absl_code = lp_interface_->SetColumnBounds(1, ind, lb, ub);
 
   ASSERT_EQ(absl_code, absl::Status(absl::StatusCode::kInternal, "LP Error"))
       << "Fixing variables to infinity does not return an error.";
