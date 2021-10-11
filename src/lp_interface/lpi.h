@@ -110,7 +110,7 @@ class LPInterface : private messagehandler {
     ) = 0;
 
   // changes the objective sense
-  virtual absl::Status ChangeObjectiveSense(
+  virtual absl::Status SetObjectiveSense(
     LPObjectiveSense obj_sense // new objective sense
     ) = 0;
 

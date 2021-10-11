@@ -26,8 +26,8 @@ enum class RetCode {
 
 // LP objective sense
 enum class LPObjectiveSense {
-  kMaximize = -1, // maximize objective function
-  kMinimize = +1, // minimize objective function
+  kMaximization = -1, // maximize objective function
+  kMinimization = +1, // minimize objective function
 };
 
 // LP solver parameters

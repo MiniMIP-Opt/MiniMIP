@@ -32,7 +32,7 @@ class matrix : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
+    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
 
     obj.push_back(0.0);
     lb.push_back(0.0);

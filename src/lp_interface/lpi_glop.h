@@ -240,7 +240,7 @@ class LPGlopInterface : public LPInterface {
     ) override;
 
   // changes the objective sense
-  absl::Status ChangeObjectiveSense(
+  absl::Status SetObjectiveSense(
     LPObjectiveSense obj_sense // new objective sense
     ) override;
 

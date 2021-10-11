@@ -65,7 +65,7 @@ class Solve : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
+    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
   }
   // local functions
 
@@ -522,12 +522,12 @@ TEST_F(Solve, test1) {
   }
   // solve problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
-      true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
+      true, LPObjectiveSense::kMaximization, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
       val, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE,
       exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -539,7 +539,7 @@ TEST_F(Solve, test1) {
                                     exp_dualsol, exp_activity, exp_redcost));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -560,12 +560,12 @@ TEST_F(Solve, test1) {
 
   // check changed problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
-      true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
+      true, LPObjectiveSense::kMaximization, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
       val, LPFeasibilityStat::FEASIBLE, LPFeasibilityStat::FEASIBLE,
       exp_primsol, exp_dualsol, exp_activity, exp_redcost));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 }
 
@@ -628,12 +628,12 @@ TEST_F(Solve, test2) {
 
   // solve problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
-      true, LPObjectiveSense::kMaximize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
+      true, LPObjectiveSense::kMaximization, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
       val, LPFeasibilityStat::UNBOUNDED, LPFeasibilityStat::INFEASIBLE,
       exp_primray, empty_vals, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -645,7 +645,7 @@ TEST_F(Solve, test2) {
                                     empty_vals, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -661,7 +661,7 @@ TEST_F(Solve, test2) {
                                     exp_dualsol, exp_activity, exp_redcost));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 }
 
@@ -720,12 +720,12 @@ TEST_F(Solve, test3) {
 
   // check problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
-      true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
+      true, LPObjectiveSense::kMinimization, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
       val, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED,
       empty_vals, exp_dualray, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -737,7 +737,7 @@ TEST_F(Solve, test3) {
                                     exp_dualray, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -752,7 +752,7 @@ TEST_F(Solve, test3) {
                                     exp_dualsol, exp_activity, exp_redcost));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 }
 
@@ -795,12 +795,12 @@ TEST_F(Solve, test4) {
 
   // check problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
-      true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
+      true, LPObjectiveSense::kMinimization, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
       val, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::INFEASIBLE,
       empty_vals, empty_vals, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // check problem with dual simplex
@@ -809,7 +809,7 @@ TEST_F(Solve, test4) {
                                     empty_vals, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 }
 
@@ -867,7 +867,7 @@ TEST_F(Solve, test5) {
   std::vector<std::string> empty_names;
 
   // load problem
-  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMaximize, 2, obj, lb,
+  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMaximization, 2, obj, lb,
                                         ub, empty_names, 2, lhs, rhs,
                                         empty_names, 4, beg, ind, val),
             absl::OkStatus());
@@ -905,7 +905,7 @@ TEST_F(Solve, test5) {
                                   // limit: %g != %g\n", objval, exp_objval);
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMaximization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 }
 
@@ -1012,7 +1012,7 @@ TEST_F(Solve, test6) {
   std::vector<std::string> empty_names;
 
   // load problem
-  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMinimize, 12, obj,
+  ASSERT_EQ(lp_interface_->LoadColumnLP(LPObjectiveSense::kMinimization, 12, obj,
                                         lb, ub, empty_names, 8, lhs, rhs,
                                         empty_names, 30, beg, ind, val),
             absl::OkStatus());
@@ -1070,7 +1070,7 @@ TEST_F(Solve, test6) {
   ASSERT_FLOAT_EQ(objval, exp_objval);
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 12, obj, lb,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 12, obj, lb,
                                     ub, 8, lhs, rhs, 30, beg, ind, val));
 
   // change some bounds
@@ -1103,7 +1103,7 @@ TEST_F(Solve, test6) {
   ASSERT_EQ(lp_interface_->SolveDual(), absl::OkStatus());
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 12, obj, lb,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 12, obj, lb,
                                     ub, 8, lhs, rhs, 30, beg, ind, val));
 }
 
@@ -1162,12 +1162,12 @@ TEST_F(Solve, test7) {
 
   // check problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
-      true, LPObjectiveSense::kMinimize, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
+      true, LPObjectiveSense::kMinimization, 2, obj, lb, ub, 2, lhs, rhs, beg, ind,
       val, LPFeasibilityStat::INFEASIBLE, LPFeasibilityStat::UNBOUNDED,
       empty_vals, exp_dualray, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 
   // clear basis status
@@ -1179,7 +1179,7 @@ TEST_F(Solve, test7) {
                                     exp_dualray, empty_vals, empty_vals));
 
   // check that data stored in lpi is still the same
-  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimize, 2, obj, lb, ub,
+  ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 2, obj, lb, ub,
                                     2, lhs, rhs, 4, beg, ind, val));
 }
 }  // namespace minimip

@@ -559,7 +559,7 @@ absl::Status LPSoplexInterface::LoadColumnLP(
     spx_->clearLPReal();
 
     // set objective sense
-    static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
+    static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::kMinimization ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
 
     // create empty rows with given sides
     for (i = 0; i < num_rows; ++i)
@@ -883,16 +883,16 @@ absl::Status LPSoplexInterface::SetRowSides(
 }
 
 // changes the objective sense
-absl::Status LPSoplexInterface::ChangeObjectiveSense(
+absl::Status LPSoplexInterface::SetObjectiveSense(
   LPObjectiveSense obj_sense // new objective sense
 ) {
-  MiniMIPdebugMessage("calling ChangeObjectiveSense()\n");
+  MiniMIPdebugMessage("calling SetObjectiveSense()\n");
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
 
-  SOPLEX_TRY(static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
+  SOPLEX_TRY(static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, obj_sense == LPObjectiveSense::kMinimization ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
 
   return absl::OkStatus();
 }
@@ -971,7 +971,7 @@ int LPSoplexInterface::GetNumberOfNonZeros() const {
 LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
   MiniMIPdebugMessage("calling GetObjectiveSense()\n");
 
-  return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE) ? LPObjectiveSense::kMinimize : LPObjectiveSense::kMaximize;
+  return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE) ? LPObjectiveSense::kMinimization : LPObjectiveSense::kMaximization;
 }
 
 // gets columns from LP problem object

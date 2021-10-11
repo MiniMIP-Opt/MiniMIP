@@ -29,7 +29,7 @@ class SimpleTest : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
+    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
 
     // initialize program
     int num_rows;
@@ -101,7 +101,7 @@ TEST_F(SimpleTest, test2) {
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // change sense
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMinimize),
+  ASSERT_EQ(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMinimization),
             absl::OkStatus());
 
   // solve problem
@@ -128,7 +128,7 @@ TEST_F(SimpleTest, test3) {
   //       1 <= x       (linear constraint)
   //       0 <= x <= 3  (bounds)
   // change sense
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMinimize),
+  ASSERT_EQ(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMinimization),
             absl::OkStatus());
 
   // change row side
@@ -202,7 +202,7 @@ class Complex : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
+    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
 
     // initialize program
     int ncols;
@@ -451,7 +451,7 @@ class MoreVarsThanRows : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
+    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
 
     // initialize program
     int ncols;

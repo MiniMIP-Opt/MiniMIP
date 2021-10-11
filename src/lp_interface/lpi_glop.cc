@@ -70,7 +70,7 @@ absl::Status LPGlopInterface::LoadColumnLP(
   linear_program_.Clear();
   AddRows(num_rows, left_hand_sides, right_hand_sides, row_names, 0, std::vector<int>(), std::vector<int>(), std::vector<double>());
   AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names, num_non_zeros, begin_cols, row_indices, vals);
-  ChangeObjectiveSense(obj_sense);
+  SetObjectiveSense(obj_sense);
 
   return absl::OkStatus();
 }
@@ -333,16 +333,16 @@ absl::Status LPGlopInterface::SetRowSides(
 }
 
 // changes the objective sense
-absl::Status LPGlopInterface::ChangeObjectiveSense(
+absl::Status LPGlopInterface::SetObjectiveSense(
   LPObjectiveSense obj_sense // new objective sense
 ) {
 
   switch (obj_sense) {
-    case LPObjectiveSense::kMaximize:
+    case LPObjectiveSense::kMaximization:
       MiniMIPdebugMessage("changing objective sense to MAXIMIZE\n");
       linear_program_.SetMaximizationProblem(true);
       break;
-    case LPObjectiveSense::kMinimize:
+    case LPObjectiveSense::kMinimization:
       MiniMIPdebugMessage("changing objective sense to MINIMIZE\n");
       linear_program_.SetMaximizationProblem(false);
       break;
@@ -394,7 +394,7 @@ LPObjectiveSense LPGlopInterface::GetObjectiveSense() const {
 
   MiniMIPdebugMessage("getting objective sense.\n");
 
-  return linear_program_.IsMaximizationProblem() ? LPObjectiveSense::kMaximize : LPObjectiveSense::kMinimize;
+  return linear_program_.IsMaximizationProblem() ? LPObjectiveSense::kMaximization : LPObjectiveSense::kMinimization;
 }
 
 // gets the number of nonzero elements in the LP constraint matrix

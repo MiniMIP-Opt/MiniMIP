@@ -44,7 +44,7 @@ class Change : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
+    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
   }
 
   // write ncols, nrows and objsen into variables to check later
@@ -75,7 +75,7 @@ class Change : public ::testing::Test {
         ncols  = 1;
         nrows  = 1;
         nnonz  = 1;
-        objsen = LPObjectiveSense::kMaximize;
+        objsen = LPObjectiveSense::kMaximization;
         val[0] = -1.0;
         break;
 
@@ -91,7 +91,7 @@ class Change : public ::testing::Test {
         ncols  = 1;
         nrows  = 1;
         nnonz  = 1;
-        objsen = LPObjectiveSense::kMaximize;
+        objsen = LPObjectiveSense::kMaximization;
         rhs[0] = 0.0;
         break;
 
@@ -100,7 +100,7 @@ class Change : public ::testing::Test {
         ncols  = 1;
         nrows  = 1;
         nnonz  = 1;
-        objsen = LPObjectiveSense::kMinimize;
+        objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         lhs[0] = 1;
         val[0] = -1.0;
@@ -110,7 +110,7 @@ class Change : public ::testing::Test {
         ncols  = 1;
         nrows  = 1;
         nnonz  = 1;
-        objsen = LPObjectiveSense::kMinimize;
+        objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         lhs[0] = 1;
         obj[0] = 0.0;
@@ -135,7 +135,7 @@ class Change : public ::testing::Test {
         ncols  = 2;
         nrows  = 2;
         nnonz  = 2;
-        objsen = LPObjectiveSense::kMaximize;
+        objsen = LPObjectiveSense::kMaximization;
         val[0] = -1.0;
         val[1] = -1.0;
         break;
@@ -158,7 +158,7 @@ class Change : public ::testing::Test {
         ncols  = 2;
         nrows  = 2;
         nnonz  = 2;
-        objsen = LPObjectiveSense::kMaximize;
+        objsen = LPObjectiveSense::kMaximization;
         break;
 
       case 6:
@@ -179,7 +179,7 @@ class Change : public ::testing::Test {
         ncols  = 2;
         nrows  = 2;
         nnonz  = 2;
-        objsen = LPObjectiveSense::kMaximize;
+        objsen = LPObjectiveSense::kMaximization;
         rhs[0] = -1.0;
         rhs[1] = -1.0;
         val[0] = -1.0;
@@ -190,7 +190,7 @@ class Change : public ::testing::Test {
         ncols  = 2;
         nrows  = 2;
         nnonz  = 2;
-        objsen = LPObjectiveSense::kMinimize;
+        objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
         lhs[0] = 1.0;
@@ -203,7 +203,7 @@ class Change : public ::testing::Test {
         ncols  = 2;
         nrows  = 2;
         nnonz  = 2;
-        objsen = LPObjectiveSense::kMinimize;
+        objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
         lhs[0] = 1.0;
@@ -214,7 +214,7 @@ class Change : public ::testing::Test {
         ncols  = 2;
         nrows  = 2;
         nnonz  = 2;
-        objsen = LPObjectiveSense::kMinimize;
+        objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
         lhs[0] = 1.0;
@@ -232,7 +232,7 @@ class Change : public ::testing::Test {
     std::vector<double> empty_vals;
     std::vector<int> empty_indices;
 
-    ASSERT_EQ(lp_interface_->ChangeObjectiveSense(objsen), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->SetObjectiveSense(objsen), absl::OkStatus());
     ASSERT_EQ(
         lp_interface_->AddColumns(ncols, obj, lb, ub, empty_names, 0,
                                   empty_indices, empty_indices, empty_vals),
@@ -489,7 +489,7 @@ TEST_P(ChangeObjectiveSense, ChgObjSen) {
 
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(newsense), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetObjectiveSense(newsense), absl::OkStatus());
   ASSERT_TRUE(!lp_interface_->IsSolved());
 
   probsense = lp_interface_->GetObjectiveSense();
@@ -499,8 +499,8 @@ TEST_P(ChangeObjectiveSense, ChgObjSen) {
 
 INSTANTIATE_TEST_SUITE_P(
     ChangeObjectiveSenseCombinations, ChangeObjectiveSense,
-    ::testing::Combine(::testing::Values(LPObjectiveSense::kMaximize,
-                                         LPObjectiveSense::kMinimize),
+    ::testing::Combine(::testing::Values(LPObjectiveSense::kMaximization,
+                                         LPObjectiveSense::kMinimization),
                        ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
 // Test for AddRows, DeleteRowSet, DeleteRows
