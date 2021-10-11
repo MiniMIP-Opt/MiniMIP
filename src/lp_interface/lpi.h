@@ -62,11 +62,6 @@ class LPInterface : private messagehandler {
     int last_col   // last column to be deleted
     ) = 0;
 
-  // deletes columns from LP; the new position of a column must not be greater than its old position
-  virtual absl::Status DeleteColumnSet(
-    std::vector<bool>& deletion_status // deletion status of columns
-    ) = 0;
-
   // adds rows to the LP
   //
   // NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.

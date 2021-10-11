@@ -148,31 +148,6 @@ absl::Status LPGlopInterface::DeleteColumns(
   return absl::OkStatus();
 }
 
-// deletes columns from MiniMIP_LP; the new position of a column must not be greater that its old position
-absl::Status LPGlopInterface::DeleteColumnSet(
-  std::vector<bool>& deletion_status // deletion status of columns
-) {
-
-  const ColIndex num_cols = linear_program_.num_variables();
-  DenseBooleanRow columns_to_delete(num_cols, false);
-  int new_index = 0;
-  int num_deleted_columns = 0;
-  for (ColIndex col(0); col < num_cols; ++col) {
-    int i = col.value();
-    if (deletion_status[i] == 1) {
-      columns_to_delete[col] = true;
-      deletion_status[i] = -1;
-      ++num_deleted_columns;
-    } else
-      deletion_status[i] = new_index++;
-  }
-  MiniMIPdebugMessage("DeleteColumnset: deleting %d columns.\n", num_deleted_columns);
-  linear_program_.DeleteColumns(columns_to_delete);
-  lp_modified_since_last_solve_ = true;
-
-  return absl::OkStatus();
-}
-
 // adds rows to the LP
 absl::Status LPGlopInterface::AddRows(
   int num_rows,                       // number of rows to be added

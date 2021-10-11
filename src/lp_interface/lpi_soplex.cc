@@ -663,31 +663,6 @@ absl::Status LPSoplexInterface::DeleteColumns(
   return absl::OkStatus();
 }
 
-// deletes columns from LP; the new position of a column must not be greater than its old position
-absl::Status LPSoplexInterface::DeleteColumnSet(
-  std::vector<bool>& deletion_status // deletion status of columns
-) {
-  int num_cols;
-  int i;
-
-  MiniMIPdebugMessage("calling DeleteColumnSet()\n");
-
-  InvalidateSolution();
-
-  assert(PreStrongBranchingBasisFreed());
-
-  std::vector<int> int_deletion_status(deletion_status.begin(), deletion_status.end());
-  num_cols = spx_->numColsReal();
-
-  // SoPlex removeCols() method deletes the columns with deletion_status[i] < 0, so we have to negate the values
-  for (i = 0; i < num_cols; ++i)
-    int_deletion_status[i] *= -1;
-
-  SOPLEX_TRY(spx_->removeColsReal(int_deletion_status.data()));
-
-  return absl::OkStatus();
-}
-
 // adds rows to the LP
 //
 // NOTE: The indices array is not checked for duplicates, problems may appear if indices are added more than once.

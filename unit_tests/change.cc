@@ -660,7 +660,7 @@ TEST_F(Change, testrowmethods) {
   }
 }
 
-// Test for AddColumns, DeleteColumnSet, DeleteColumns
+// Test for AddColumns, DeleteColumns
 TEST_F(Change, testcolmethods) {
   // problem data
   std::vector<double> obj = {1.0, 1.0, 1.0, 1.0, 1.0};
@@ -772,22 +772,6 @@ TEST_F(Change, testcolmethods) {
     ASSERT_EQ(ncolsbefore + ncols, ncolsafter);
   }
 
-  // delete rowsets
-  // should have 8 rows now
-  ncolsbefore = lp_interface_->GetNumberOfColumns();
-  ASSERT_EQ(8, ncolsbefore);
-  for (int i = 3; i > 0; i--) {
-    std::vector<bool> cols = {false, false, false, false,
-                              false, false, false, false};
-
-    for (int j = 0; j < i; j++) cols[(2 * j) + 1] = true;
-
-    ncolsbefore = lp_interface_->GetNumberOfColumns();
-    ASSERT_EQ(lp_interface_->DeleteColumnSet(cols), absl::OkStatus());
-    ncolsafter = lp_interface_->GetNumberOfColumns();
-    ASSERT_EQ(ncolsbefore - i, ncolsafter);
-    // assert that the rows that are left are the ones I intended
-  }
 }
 
 // Test adding zero coeffs cols
