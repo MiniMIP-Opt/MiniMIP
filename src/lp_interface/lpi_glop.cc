@@ -1098,13 +1098,9 @@ absl::Status LPGlopInterface::GetDualFarkasMultiplier(
 }
 
 // gets the number of LP iterations of the last solve call
-absl::Status LPGlopInterface::GetIterations(
-  int& iterations // number of iterations of the last solve call
-) const {
-
-  iterations = static_cast<int>(niterations_);
-
-  return absl::OkStatus();
+int LPGlopInterface::GetIterations() const 
+{
+  return static_cast<int>(niterations_);
 }
 
 // LP Basis Methods

@@ -327,9 +327,7 @@ class LPInterface : private messagehandler {
     ) const = 0;
 
   // gets the number of LP iterations of the last solve call
-  virtual absl::Status GetIterations(
-    int& iterations // number of iterations of the last solve call
-    ) const = 0;
+  virtual int GetIterations() const = 0;
 
   // ==========================================================================
   // Getters and setters of the basis.

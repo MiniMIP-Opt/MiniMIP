@@ -425,9 +425,7 @@ class LPSoplexInterface : public LPInterface {
     ) const override;
 
   // gets the number of LP iterations of the last solve call
-  absl::Status GetIterations(
-    int& iterations // number of iterations of the last solve call
-    ) const override;
+  int GetIterations() const override;
 
   // ==========================================================================
   // Getters and setters of the basis.

@@ -3,19 +3,23 @@
 // @brief  unit test for checking bound changes
 //
 // We perform two tests:
-// - We change the bounds by a very small value and check whether this has an effect on the LP solver interface.
+// - We change the bounds by a very small value and check whether this has an
+// effect on the LP solver interface.
 // - We fix a variable to infinity.
 //
-// In both cases it is unclear what happens. Also LP-solvers might react differently.
+// In both cases it is unclear what happens. Also LP-solvers might react
+// differently.
 //
 // These tests can be used for debugging or checking the behavior of LP-solvers.
 
-#include "src/lp_interface/lpi_factory.h"
 #include <gtest/gtest.h>
-#include "absl/status/status.h"
 
-#define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
-                        // 1 = SoPlex Interface,
+#include "absl/status/status.h"
+#include "src/lp_interface/lpi_factory.h"
+
+#define DEF_INTERFACE \
+  1  // 0 = Glop Interface (Default),
+     // 1 = SoPlex Interface,
 
 namespace minimip {
 // TEST SUITE SIMPLE
@@ -51,7 +55,10 @@ class BoundChanges : public ::testing::Test {
     ubnew.reserve(1);
 
     // add one column
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
   }
 };
 
@@ -93,7 +100,8 @@ TEST_F(BoundChanges, FixToInfinity) {
   // calling should return an LPERROR
   absl_code = lp_interface_->ChangeBounds(1, ind, lb, ub);
 
-  ASSERT_EQ(absl_code, absl::Status(absl::StatusCode::kInternal, "LP Error")) << "Fixing variables to infinity does not return an error.";
+  ASSERT_EQ(absl_code, absl::Status(absl::StatusCode::kInternal, "LP Error"))
+      << "Fixing variables to infinity does not return an error.";
 }
 
-} //namespace minimip
+}  // namespace minimip

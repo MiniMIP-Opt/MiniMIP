@@ -1,9 +1,12 @@
-#include "src/lp_interface/lpi_factory.h"
 #include <gtest/gtest.h>
-#include "absl/status/status.h"
+#include <iostream>
 
-#define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
-                        // 1 = SoPlex Interface,
+#include "absl/status/status.h"
+#include "src/lp_interface/lpi_factory.h"
+
+#define DEF_INTERFACE \
+  1  // 0 = Glop Interface (Default),
+     // 1 = SoPlex Interface,
 
 namespace minimip {
 
@@ -14,7 +17,6 @@ class SimpleTest : public ::testing::Test {
  protected:
   // setup for test
   void SetUp() override {
-
     // build interface factory
     auto* interface_factory = new LPInterfaceFactory();
     InterfaceCode interface_code;
@@ -51,10 +53,15 @@ class SimpleTest : public ::testing::Test {
     //       1 <= x <= 2  (linear constraint)
     //       0 <= x <= 3  (bounds)
     // add one column
-    ASSERT_EQ(lp_interface_->AddColumns(1, objective_values, lower_bounds, upper_bounds, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->AddColumns(
+                  1, objective_values, lower_bounds, upper_bounds, empty_names,
+                  0, empty_indices, empty_indices, empty_vals),
+              absl::OkStatus());
 
     // add one row
-    ASSERT_EQ(lp_interface_->AddRows(1, left_hand_sides, right_hand_sides, empty_names, 1, begin_rows, indices, vals), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->AddRows(1, left_hand_sides, right_hand_sides,
+                                     empty_names, 1, begin_rows, indices, vals),
+              absl::OkStatus());
 
     // check size
     num_rows = lp_interface_->GetNumberOfRows();
@@ -64,7 +71,6 @@ class SimpleTest : public ::testing::Test {
   }
 };
 
-#include <iostream>
 
 // TESTS
 TEST_F(SimpleTest, BasicAssertions) {
@@ -78,9 +84,10 @@ TEST_F(SimpleTest, BasicAssertions) {
   // solve problem
   ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
+            absl::OkStatus());
 
-    // the variable should be basic and the slack variable at the upper bound
+  // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
   ASSERT_EQ(row_basis_status[0], LPBasisStatus::kUpper);
 }
@@ -94,13 +101,15 @@ TEST_F(SimpleTest, test2) {
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // change sense
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMinimize), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMinimize),
+            absl::OkStatus());
 
   // solve problem
   ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
 
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
+            absl::OkStatus());
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -119,17 +128,21 @@ TEST_F(SimpleTest, test3) {
   //       1 <= x       (linear constraint)
   //       0 <= x <= 3  (bounds)
   // change sense
-  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMinimize), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMinimize),
+            absl::OkStatus());
 
   // change row side
   right_hand_sides[0] = lp_interface_->Infinity();
-  ASSERT_EQ(lp_interface_->ChangeSides(1, indices, left_hand_sides, right_hand_sides), absl::OkStatus());
+  ASSERT_EQ(
+      lp_interface_->ChangeSides(1, indices, left_hand_sides, right_hand_sides),
+      absl::OkStatus());
 
   // solve problem
   ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
 
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
+            absl::OkStatus());
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -150,13 +163,16 @@ TEST_F(SimpleTest, test4) {
 
   // change row sides
   left_hand_sides[0] = -(lp_interface_->Infinity());
-  ASSERT_EQ(lp_interface_->ChangeSides(1, indices, left_hand_sides, right_hand_sides), absl::OkStatus());
+  ASSERT_EQ(
+      lp_interface_->ChangeSides(1, indices, left_hand_sides, right_hand_sides),
+      absl::OkStatus());
 
   // solve problem
   ASSERT_EQ(lp_interface_->SolvePrimal(), absl::OkStatus());
 
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
+            absl::OkStatus());
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -174,7 +190,6 @@ class Complex : public ::testing::Test {
 
   // setup for test
   void SetUp() override {
-
     // build interface factory
     auto* interface_factory = new LPInterfaceFactory();
     InterfaceCode interface_code;
@@ -208,38 +223,53 @@ class Complex : public ::testing::Test {
     //             x1 + 2 x2        <= 12
     //             x1,    x2,    x3 >= 0
     // add columns
-    lb[0] = 0.0;
-    ub[0] = lp_interface_->Infinity();
+    lb[0]  = 0.0;
+    ub[0]  = lp_interface_->Infinity();
     obj[0] = 1.0;
 
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
 
     // add rows
-    lhs[0] = -8.0;
-    rhs[0] = -1.0;
+    lhs[0]  = -8.0;
+    rhs[0]  = -1.0;
     inds[0] = 0;
     inds[1] = 2;
     vals[0] = -1.0;
     vals[1] = -1.0;
-    ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
+        absl::OkStatus());
 
-    lhs[0] = -7.0;
-    rhs[0] = -1.0;
+    lhs[0]  = -7.0;
+    rhs[0]  = -1.0;
     inds[0] = 0;
     inds[1] = 1;
     vals[0] = -1.0;
     vals[1] = -1.0;
-    ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
+        absl::OkStatus());
 
-    lhs[0] = -lp_interface_->Infinity();
-    rhs[0] = 12.0;
+    lhs[0]  = -lp_interface_->Infinity();
+    rhs[0]  = 12.0;
     inds[0] = 0;
     inds[1] = 1;
     vals[0] = 1.0;
     vals[1] = 2.0;
-    ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
+        absl::OkStatus());
 
     // check size
     nrows = lp_interface_->GetNumberOfRows();
@@ -296,14 +326,14 @@ TEST_F(Complex, test1) {
   // search for slack variable in basis
   nrows = lp_interface_->GetNumberOfRows();
   for (i = 0; i < nrows; ++i) {
-    if (basinds[i] < 0)
-      break;
+    if (basinds[i] < 0) break;
   }
   // assert that we found the slack variable in the basis
   ASSERT_LT(i, nrows);
 
   // check basis inverse for the row corresponding to the basic slack variable
-  ASSERT_EQ(lp_interface_->GetBInvertedRow(i, binvrow, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedRow(i, binvrow, empty_indices, null_int),
+            absl::OkStatus());
 
   // row of basis inverse should be (0, 1, 0.5)
   ASSERT_FLOAT_EQ(binvrow[0], 0.0);
@@ -311,9 +341,10 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(binvrow[2], 0.5);
 
   // check whether sparse version is available and the same
-  ASSERT_EQ(lp_interface_->GetBInvertedRow(i, coef, inds, ninds), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedRow(i, coef, inds, ninds),
+            absl::OkStatus());
   if (ninds >= 0) {
-    ASSERT_TRUE(ninds == 2);
+    ASSERT_EQ(ninds, 2);
     for (entry = 0; entry < ninds; ++entry) {
       idx = inds[entry];
       ASSERT_TRUE(0 <= idx && idx < 3);
@@ -322,15 +353,19 @@ TEST_F(Complex, test1) {
   }
 
   // check first column of basis inverse
-  ASSERT_EQ(lp_interface_->GetBInvertedColumn(0, binvcol, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(
+      lp_interface_->GetBInvertedColumn(0, binvcol, empty_indices, null_int),
+      absl::OkStatus());
 
   // The columns will be in the same order, however, the rows might be permuted.
-  //* For each row/entry we check that it corresponds to the value of the corresponding variable.
-  //* The correspondance variable to row/entry is given by basinds.
+  // For each row/entry we check that it corresponds to the value of the
+  // corresponding variable.
+  // The correspondance variable to row/entry is given by basinds.
   for (entry = 0; entry < nrows; entry++) {
     // for the given entry try each variable in exp_vars
     for (idx = 0; idx < nrows; idx++) {
-      // Check that the value is the expected one if the column corresponds to the current variable given in exp_vars.
+      // Check that the value is the expected one if the column corresponds to
+      // the current variable given in exp_vars.
       if (exp_vars[idx] == basinds[entry]) {
         ASSERT_FLOAT_EQ(binvcol[entry], exp_vals[idx]);
       }
@@ -338,12 +373,16 @@ TEST_F(Complex, test1) {
   }
 
   // check whether number of nonzeros fits
-  ASSERT_EQ(lp_interface_->GetBInvertedColumn(0, coef, inds, ninds), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedColumn(0, coef, inds, ninds),
+            absl::OkStatus());
   ASSERT_TRUE(ninds < 0 || ninds == 1);
 
-  // check basis inverse times nonbasic matrix for row corresponding to the basic slack variable
+  // check basis inverse times nonbasic matrix for row corresponding to the
+  // basic slack variable
   ASSERT_TRUE(0 <= i && i < nrows);
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(i, empty_vals, coef, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedARow(i, empty_vals, coef, empty_indices,
+                                            null_int),
+            absl::OkStatus());
 
   // row of basis inverse times nonbasic matrix should be (-0.5, 0, 0)
   ASSERT_FLOAT_EQ(coef[0], -0.5);
@@ -351,9 +390,11 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(coef[2], 0.0);
 
   // check nonzeros
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(i, empty_vals, coeftwo, inds, ninds), absl::OkStatus());
+  ASSERT_EQ(
+      lp_interface_->GetBInvertedARow(i, empty_vals, coeftwo, inds, ninds),
+      absl::OkStatus());
   if (ninds >= 0) {
-    ASSERT_TRUE(ninds == 1);
+    ASSERT_EQ(ninds, 1);
     for (entry = 0; entry < ninds; ++entry) {
       idx = inds[entry];
       ASSERT_TRUE(0 <= idx && idx < 3);
@@ -362,15 +403,19 @@ TEST_F(Complex, test1) {
   }
 
   // check first column of basis inverse times nonbasic matrix
-  ASSERT_EQ(lp_interface_->GetBInvertedAColumn(0, coef, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(
+      lp_interface_->GetBInvertedAColumn(0, coef, empty_indices, null_int),
+      absl::OkStatus());
 
   // The columns will be in the same order, however, the rows will be permuted.
-  //* For each row/entry we check that it corresponds to the value of the corresponding variable.
-  //* The correspondance variable to row/entry is given by basinds.
+  // For each row/entry we check that it corresponds to the value of the
+  // corresponding variable.
+  // The correspondance variable to row/entry is given by basinds.
   for (entry = 0; entry < nrows; entry++) {
     // for the given entry try each variable in exp_vars
     for (idx = 0; idx < nrows; idx++) {
-      // Check that the value is the expected one if the column corresponds to the current variable given in exp_vars.
+      // Check that the value is the expected one if the column corresponds to
+      // the current variable given in exp_vars.
       if (exp_vars[idx] == basinds[entry]) {
         ASSERT_FLOAT_EQ(coef[entry], exp_avals[idx]);
       }
@@ -378,7 +423,8 @@ TEST_F(Complex, test1) {
   }
 
   // check nonzeros
-  ASSERT_EQ(lp_interface_->GetBInvertedAColumn(0, coef, inds, ninds), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedAColumn(0, coef, inds, ninds),
+            absl::OkStatus());
   ASSERT_TRUE(ninds < 0 || ninds == 3);
 }
 
@@ -391,9 +437,8 @@ class MoreVarsThanRows : public ::testing::Test {
   std::vector<double> empty_vals;
   int null_int = 0;
 
-  //SetUp for Test
+  // SetUp for Test
   void SetUp() override {
-
     // Build Interface Factory
     auto* interface_factory = new LPInterfaceFactory();
     InterfaceCode interface_code;
@@ -427,28 +472,42 @@ class MoreVarsThanRows : public ::testing::Test {
     //      -x1 - 2 x2        - 3 x4 >= -12
     //       x1,    x2,    x3,    x4 >=   0
     // add columns
-    lb[0] = 0.0;
-    ub[0] = lp_interface_->Infinity();
+    lb[0]  = 0.0;
+    ub[0]  = lp_interface_->Infinity();
     obj[0] = 1.0;
 
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
-    ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
+                                  empty_indices, empty_vals),
+        absl::OkStatus());
 
     // add rows
-    lhs[0] = 1.0;
-    rhs[0] = lp_interface_->Infinity();
+    lhs[0]  = 1.0;
+    rhs[0]  = lp_interface_->Infinity();
     inds[0] = 0;
     inds[1] = 2;
     inds[2] = 3;
     vals[0] = 1.0;
     vals[1] = 1.0;
     vals[2] = 1.0;
-    ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 3, beg, inds, vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddRows(1, lhs, rhs, empty_names, 3, beg, inds, vals),
+        absl::OkStatus());
 
-    lhs[0] = 1.0;
-    rhs[0] = lp_interface_->Infinity();
+    lhs[0]  = 1.0;
+    rhs[0]  = lp_interface_->Infinity();
     inds[0] = 0;
     inds[1] = 1;
     inds[2] = 2;
@@ -457,17 +516,21 @@ class MoreVarsThanRows : public ::testing::Test {
     vals[1] = 1.0;
     vals[2] = -1.0;
     vals[3] = -1.0;
-    ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 4, beg, inds, vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddRows(1, lhs, rhs, empty_names, 4, beg, inds, vals),
+        absl::OkStatus());
 
-    lhs[0] = -12;
-    rhs[0] = lp_interface_->Infinity();
+    lhs[0]  = -12;
+    rhs[0]  = lp_interface_->Infinity();
     inds[0] = 0;
     inds[1] = 1;
     inds[2] = 3;
     vals[0] = -1.0;
     vals[1] = -2.0;
     vals[2] = -3.0;
-    ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 3, beg, inds, vals), absl::OkStatus());
+    ASSERT_EQ(
+        lp_interface_->AddRows(1, lhs, rhs, empty_names, 3, beg, inds, vals),
+        absl::OkStatus());
 
     // check size
     nrows = lp_interface_->GetNumberOfRows();
@@ -512,44 +575,50 @@ TEST_F(MoreVarsThanRows, test1) {
   // get basis indices
   ASSERT_EQ(lp_interface_->GetBasisIndices(basinds), absl::OkStatus());
 
-  // find position of x1 in basis indices; check binvarow of row where x1 is basic
+  // find position of x1 in basis indices; check binvarow of row where x1 is
+  // basic
   for (basicvarpos = 0; basicvarpos < 3; ++basicvarpos) {
-    if (basinds[basicvarpos] == 0)
-      break;
+    if (basinds[basicvarpos] == 0) break;
   }
-  ASSERT_TRUE(basicvarpos < 3); // assert that we found the variable
+  ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow,
+                                            empty_indices, null_int),
+            absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 1.0);
   ASSERT_FLOAT_EQ(binvarow[1], 2.0);
   ASSERT_FLOAT_EQ(binvarow[2], 0.0);
   ASSERT_FLOAT_EQ(binvarow[3], 3.0);
 
-  // find position of x3 in basis indices; check binvarow of row where x3 is basic
+  // find position of x3 in basis indices; check binvarow of row where x3 is
+  // basic
   for (basicvarpos = 0; basicvarpos < 3; ++basicvarpos) {
-    if (basinds[basicvarpos] == 2)
-      break;
+    if (basinds[basicvarpos] == 2) break;
   }
-  ASSERT_TRUE(basicvarpos < 3); // assert that we found the variable
+  ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow,
+                                            empty_indices, null_int),
+            absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
   ASSERT_FLOAT_EQ(binvarow[1], 1.0);
   ASSERT_FLOAT_EQ(binvarow[2], 1.0);
   ASSERT_FLOAT_EQ(binvarow[3], 4.0);
 
-  // find position of s1 in basis indices; check binvarow of row where s1 is basic
+  // find position of s1 in basis indices; check binvarow of row where s1 is
+  // basic
   for (basicvarpos = 0; basicvarpos < 3; ++basicvarpos) {
-    if (basinds[basicvarpos] == -1)
-      break;
+    if (basinds[basicvarpos] == -1) break;
   }
-  ASSERT_TRUE(basicvarpos < 3); // assert that we found the variable
+  ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow, empty_indices, null_int), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow,
+                                            empty_indices, null_int),
+            absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
   ASSERT_FLOAT_EQ(binvarow[1], -3.0);
   ASSERT_FLOAT_EQ(binvarow[2], 0.0);
   ASSERT_FLOAT_EQ(binvarow[3], -6.0);
 }
 
-} // namespace minimip
+}  // namespace minimip

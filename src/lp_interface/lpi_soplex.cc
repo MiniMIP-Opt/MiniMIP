@@ -1528,14 +1528,10 @@ absl::Status LPSoplexInterface::GetDualFarkasMultiplier(
 }
 
 // gets the number of LP iterations of the last solve call
-absl::Status LPSoplexInterface::GetIterations(
-  int& iterations // the number of iterations of the last solve call
-) const {
+int LPSoplexInterface::GetIterations() const {
   MiniMIPdebugMessage("calling GetIterations()\n");
 
-  iterations = spx_->numIterations();
-
-  return absl::OkStatus();
+  return spx_->numIterations();
 }
 
 // ==========================================================================
