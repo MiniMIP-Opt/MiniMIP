@@ -336,29 +336,15 @@ class LPGlopInterface : public LPInterface {
   // end strong branching - call after any strong branching
   absl::Status EndStrongbranch() override;
 
-  // performs strong branching iterations on one @b fractional candidate
-  absl::Status StrongbranchFractionalValue(
+  // performs strong branching iterations on one branching candidate
+  absl::Status StrongBranchValue(
     int col,                       // column to apply strong branching on
-    double primal_sol,              // fractional current primal solution value of column
+    double primal_sol,              // current primal solution value of column
     int iteration_limit,           // iteration limit for strong branchings
     double& dual_bound_down_branch, // stores dual bound after branching column down
     double& dual_bound_up_branch,   // stores dual bound after branching column up
     bool& down_valid,                // whether the returned down value is a valid dual bound; otherwise, it can only be used as an estimate value
     bool& up_valid,                  // whether the returned up value is a valid dual bound; otherwise, it can only be used as an estimate value
-    int& iterations                // stores total number of strong branching iterations
-    ) override;
-
-  // performs strong branching iterations on one candidate with @b integral value
-  absl::Status StrongbranchIntegerValue(
-    int col,                       // column to apply strong branching on
-    double primal_sol,              // current integral primal solution value of column
-    int iteration_limit,           // iteration limit for strong branchings
-    double& dual_bound_down_branch, // stores dual bound after branching column down
-    double& dual_bound_up_branch,   // stores dual bound after branching column up
-    bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                     //     *   otherwise, it can only be used as an estimate value
-    bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                     //     *   otherwise, it can only be used as an estimate value
     int& iterations                // stores total number of strong branching iterations
     ) override;
 

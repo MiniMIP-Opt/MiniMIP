@@ -1213,10 +1213,10 @@ absl::Status LPSoplexInterface::EndStrongbranch() {
   return absl::OkStatus();
 }
 
-// performs strong branching iterations on one @b fractional candidate
-absl::Status LPSoplexInterface::StrongbranchFractionalValue(
+  // performs strong branching iterations on one branching candidate
+absl::Status LPSoplexInterface::StrongBranchValue(
   int col,                       // column to apply strong branching on
-  double primal_sol,              // fractional current primal solution value of column
+  double primal_sol,              // current primal solution value of column
   int iteration_limit,           // iteration limit for strong branchings
   double& dual_bound_down_branch, // stores dual bound after branching column down
   double& dual_bound_up_branch,   // stores dual bound after branching column up
@@ -1240,38 +1240,10 @@ absl::Status LPSoplexInterface::StrongbranchFractionalValue(
   return absl::OkStatus();
 }
 
-// performs strong branching iterations on one candidate with @b integral value
-absl::Status LPSoplexInterface::StrongbranchIntegerValue(
-  int col,                       // column to apply strong branching on
-  double primal_sol,              // current integral primal solution value of column
-  int iteration_limit,           // iteration limit for strong branchings
-  double& dual_bound_down_branch, // stores dual bound after branching column down
-  double& dual_bound_up_branch,   // stores dual bound after branching column up
-  bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                   // otherwise, it can only be used as an estimate value
-  bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                   // otherwise, it can only be used as an estimate value
-  int& iterations                // stores total number of strong branching iterations
-) {
-  absl::Status absl_status_code;
+// ============================================================================
+// Solution information getters.
+// ============================================================================
 
-  // pass call on to StrongBranch()
-  absl_status_code = StrongBranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations);
-
-  // pass absl::Status(absl::StatusCode::kInternal, "LP Error") to MiniMIP without a back trace
-  if (absl_status_code == absl::Status(absl::StatusCode::kInternal, "LP Error"))
-    return absl::Status(absl::StatusCode::kInternal, "LP Error");
-
-  // evaluate absl_status_code
-  MINIMIP_CALL(absl_status_code);
-
-  return absl::OkStatus();
-}
-
-// @}
-
-// @name Solution Information Methods
-// @{
 
 // returns whether a solve method was called after the last modification of the LP
 bool LPSoplexInterface::IsSolved() const {

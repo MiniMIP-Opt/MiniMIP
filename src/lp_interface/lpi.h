@@ -206,29 +206,15 @@ class LPInterface : private messagehandler {
   // end strong branching - call after any strong branching
   virtual absl::Status EndStrongbranch() = 0;
 
-  // performs strong branching iterations on one @b fractional candidate
-  virtual absl::Status StrongbranchFractionalValue(
+  // performs strong branching iterations on one branching candidate
+  virtual absl::Status StrongBranchValue(
     int col,                       // column to apply strong branching on
-    double primal_sol,              // fractional current primal solution value of column
+    double primal_sol,              // current primal solution value of column
     int iteration_limit,           // iteration limit for strong branchings
     double& dual_bound_down_branch, // stores dual bound after branching column down
     double& dual_bound_up_branch,   // stores dual bound after branching column up
     bool& down_valid,                // whether the returned down value is a valid dual bound; otherwise, it can only be used as an estimate value
     bool& up_valid,                  // whether the returned up value is a valid dual bound; otherwise, it can only be used as an estimate value
-    int& iterations                // stores total number of strong branching iterations
-    ) = 0;
-
-  // performs strong branching iterations on one candidate with @b integral value
-  virtual absl::Status StrongbranchIntegerValue(
-    int col,                       // column to apply strong branching on
-    double primal_sol,              // current integral primal solution value of column
-    int iteration_limit,           // iteration limit for strong branchings
-    double& dual_bound_down_branch, // stores dual bound after branching column down
-    double& dual_bound_up_branch,   // stores dual bound after branching column up
-    bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                     //     *   otherwise, it can only be used as an estimate value
-    bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                     //     *   otherwise, it can only be used as an estimate value
     int& iterations                // stores total number of strong branching iterations
     ) = 0;
 
