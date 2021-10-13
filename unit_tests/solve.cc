@@ -283,7 +283,7 @@ class Solve : public ::testing::Test {
         std::vector<double> rhs(nrows);
 
         // get lhs/rhs for check of dual ray
-        ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, lhs, rhs),
+        ASSERT_EQ(lp_interface_->GetRowSides(0, nrows - 1, lhs, rhs),
                   absl::OkStatus());
 
         // get dual ray
@@ -420,7 +420,7 @@ class Solve : public ::testing::Test {
                                         check_nnonz2, check_beg, check_ind,
                                         check_val),
               absl::OkStatus());
-    ASSERT_EQ(lp_interface_->GetObjective(0, ncols - 1, check_obj),
+    ASSERT_EQ(lp_interface_->GetObjectiveCoefficients(0, ncols - 1, check_obj),
               absl::OkStatus());
 
     // compare data
@@ -450,7 +450,7 @@ class Solve : public ::testing::Test {
     check_lhs.reserve(nrows);
     check_rhs.reserve(nrows);
 
-    ASSERT_EQ(lp_interface_->GetSides(0, nrows - 1, check_lhs, check_rhs),
+    ASSERT_EQ(lp_interface_->GetRowSides(0, nrows - 1, check_lhs, check_rhs),
               absl::OkStatus());
 
     for (i = 0; i < nrows; ++i) {

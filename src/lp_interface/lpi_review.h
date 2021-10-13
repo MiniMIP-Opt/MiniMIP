@@ -177,8 +177,8 @@ class LpInterface {
 
   // These two functions should always be called before and after the underlying
   // LP solver is used to perform strong branching solves.
-  virtual absl::Status StartStrongBranchingMode() = 0;
-  virtual absl::Status EndStrongBranchingMode() = 0;
+  virtual absl::Status StartStrongBranchingingMode() = 0;
+  virtual absl::Status EndStrongBranchingingMode() = 0;
   
   // Executes strong branching probing of the up and down branch for the `col`
   // around `primal_value`. Note, `primal_value` may be integer in which case,

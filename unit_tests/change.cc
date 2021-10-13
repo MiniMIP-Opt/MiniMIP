@@ -270,7 +270,7 @@ class ChangeObjective
     ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(lastcol, ind, setobj),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetObjective(0, lastcol - 1, obj),
+    ASSERT_EQ(lp_interface_->GetObjectiveCoefficients(0, lastcol - 1, obj),
               absl::OkStatus());
 
     for (size_t i; i < setobj.size(); i++) {
@@ -338,7 +338,7 @@ class ChangeBounds : public Change,
                 absl::OkStatus());
     }
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetBounds(0, lastcol - 1, lb, ub),
+    ASSERT_EQ(lp_interface_->GetColumnBounds(0, lastcol - 1, lb, ub),
               absl::OkStatus());
 
     for (size_t i; i < setub.size(); i++) {
@@ -415,7 +415,7 @@ class ChangeSides : public Change,
     ASSERT_EQ(lp_interface_->SetRowSides(lastcol, ind, setls, setrs),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetSides(0, lastcol - 1, ls, rs),
+    ASSERT_EQ(lp_interface_->GetRowSides(0, lastcol - 1, ls, rs),
               absl::OkStatus());
 
     for (int i; i < setls.size(); i++) {

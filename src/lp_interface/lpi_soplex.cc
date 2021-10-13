@@ -1101,14 +1101,14 @@ absl::Status LPSoplexInterface::GetRows(
 }
 
 // gets objective coefficients from LP problem object
-absl::Status LPSoplexInterface::GetObjective(
+absl::Status LPSoplexInterface::GetObjectiveCoefficients(
   int first_col,         // first column to get objective coefficient for
   int last_col,          // last column to get objective coefficient for
   std::vector<double>& obj_coeffs // array to store objective coefficients
 ) const {
   int i;
 
-  MiniMIPdebugMessage("calling GetObjective()\n");
+  MiniMIPdebugMessage("calling GetObjectiveCoefficients()\n");
 
   assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
 
@@ -1119,7 +1119,7 @@ absl::Status LPSoplexInterface::GetObjective(
 }
 
 // gets current bounds from LP problem object
-absl::Status LPSoplexInterface::GetBounds(
+absl::Status LPSoplexInterface::GetColumnBounds(
   int first_col,            // first column to get bounds for
   int last_col,             // last column to get bounds for
   std::vector<double>& lower_bounds, // array to store lower bound values
@@ -1127,7 +1127,7 @@ absl::Status LPSoplexInterface::GetBounds(
 ) const {
   int i;
 
-  MiniMIPdebugMessage("calling GetBounds()\n");
+  MiniMIPdebugMessage("calling GetColumnBounds()\n");
 
   assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
 
@@ -1140,7 +1140,7 @@ absl::Status LPSoplexInterface::GetBounds(
 }
 
 // gets current row sides from LP problem object
-absl::Status LPSoplexInterface::GetSides(
+absl::Status LPSoplexInterface::GetRowSides(
   int first_row,               // first row to get sides for
   int last_row,                // last row to get sides for
   std::vector<double>& left_hand_sides, // array to store left hand side values
@@ -1148,7 +1148,7 @@ absl::Status LPSoplexInterface::GetSides(
 ) const {
   int i;
 
-  MiniMIPdebugMessage("calling GetSides()\n");
+  MiniMIPdebugMessage("calling GetRowSides()\n");
 
   assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
 
@@ -1195,7 +1195,7 @@ absl::Status LPSoplexInterface::SolveLpWithDualSimplex() {
 }
 
 // start strong branching - call before any strong branching
-absl::Status LPSoplexInterface::StartStrongbranch() {
+absl::Status LPSoplexInterface::StartStrongBranching() {
 
   assert(PreStrongBranchingBasisFreed());
   SavePreStrongbranchingBasis();
@@ -1204,7 +1204,7 @@ absl::Status LPSoplexInterface::StartStrongbranch() {
 }
 
 // end strong branching - call after any strong branching
-absl::Status LPSoplexInterface::EndStrongbranch() {
+absl::Status LPSoplexInterface::EndStrongBranching() {
 
   assert(!PreStrongBranchingBasisFreed());
   RestorePreStrongbranchingBasis();
@@ -1666,13 +1666,13 @@ absl::Status LPSoplexInterface::GetBasisIndices(
 // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-absl::Status LPSoplexInterface::GetBInvertedRow(
+absl::Status LPSoplexInterface::GetRowOfBInverted(
   int row_number,         // row number
   std::vector<double>& row_coeffs, // array to store the coefficients of the row
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
 ) const {
-  MiniMIPdebugMessage("calling GetBInvertedRow()\n");
+  MiniMIPdebugMessage("calling GetRowOfBInverted()\n");
 
   assert(PreStrongBranchingBasisFreed());
   assert(row_number >= 0);
@@ -1693,7 +1693,7 @@ absl::Status LPSoplexInterface::GetBInvertedRow(
 // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-absl::Status LPSoplexInterface::GetBInvertedColumn(
+absl::Status LPSoplexInterface::GetColumnOfBInverted(
   int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
                              // you have to call minimip::LPInterface.GetBasisIndices() to get the array which links the
                              // B^-1 column numbers to the row and column numbers of the LP!
@@ -1703,7 +1703,7 @@ absl::Status LPSoplexInterface::GetBInvertedColumn(
   std::vector<int>& indices,    // array to store the non-zero indices
   int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
 ) const {
-  MiniMIPdebugMessage("calling GetBInvertedColumn()\n");
+  MiniMIPdebugMessage("calling GetColumnOfBInverted()\n");
 
   assert(PreStrongBranchingBasisFreed());
 
@@ -1722,7 +1722,7 @@ absl::Status LPSoplexInterface::GetBInvertedColumn(
 // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-absl::Status LPSoplexInterface::GetBInvertedARow(
+absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
   int row_number,                   // row number
   const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to minimip::LPInterface.GetBInvRow()
   std::vector<double>& row_coeffs,           // array to store coefficients of the row
@@ -1736,7 +1736,7 @@ absl::Status LPSoplexInterface::GetBInvertedARow(
   int num_cols;
   int c;
 
-  MiniMIPdebugMessage("calling GetBInvertedARow()\n");
+  MiniMIPdebugMessage("calling GetRowOfBInvertedTimesA()\n");
 
   assert(PreStrongBranchingBasisFreed());
 
@@ -1747,7 +1747,7 @@ absl::Status LPSoplexInterface::GetBInvertedARow(
 
   // get (or calculate) the row in B^-1
   if (b_inverted_row.size() == 0) {
-    MINIMIP_CALL(GetBInvertedRow(row_number, buf, indices, num_indices));
+    MINIMIP_CALL(GetRowOfBInverted(row_number, buf, indices, num_indices));
     binv.assign(buf.begin(), buf.end());
   } else
     binv.assign(b_inverted_row.begin(), b_inverted_row.end());
@@ -1777,7 +1777,7 @@ absl::Status LPSoplexInterface::GetBInvertedARow(
 // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
 //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
 //       see also the explanation in lpi.h.
-absl::Status LPSoplexInterface::GetBInvertedAColumn(
+absl::Status LPSoplexInterface::GetColumnOfBInvertedTimesA(
   int col_number,         // column number
   std::vector<double>& col_coeffs, // array to store coefficients of the column
   std::vector<int>& indices,    // array to store the non-zero indices
@@ -1789,7 +1789,7 @@ absl::Status LPSoplexInterface::GetBInvertedAColumn(
   // temporary sparse vector used for unscaling (memory is automatically enlarged)
   DSVector colsparse;
 
-  MiniMIPdebugMessage("calling GetBInvertedAColumn()\n");
+  MiniMIPdebugMessage("calling GetColumnOfBInvertedTimesA()\n");
 
   assert(PreStrongBranchingBasisFreed());
 

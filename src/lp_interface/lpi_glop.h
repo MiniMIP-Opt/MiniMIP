@@ -292,14 +292,14 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets objective coefficients from LP problem object
-  absl::Status GetObjective(
+  absl::Status GetObjectiveCoefficients(
     int first_col,         // first column to get objective coefficient for
     int last_col,          // last column to get objective coefficient for
     std::vector<double>& obj_coeffs // array to store objective coefficients
     ) const override;
 
   // gets current bounds from LP problem object
-  absl::Status GetBounds(
+  absl::Status GetColumnBounds(
     int first_col,            // first column to get bounds for
     int last_col,             // last column to get bounds for
     std::vector<double>& lower_bounds, // array to store lower bound values
@@ -307,7 +307,7 @@ class LPGlopInterface : public LPInterface {
     ) const override;
 
   // gets current row sides from LP problem object
-  absl::Status GetSides(
+  absl::Status GetRowSides(
     int first_row,               // first row to get sides for
     int last_row,                // last row to get sides for
     std::vector<double>& left_hand_sides, // array to store left hand side values
@@ -331,10 +331,10 @@ class LPGlopInterface : public LPInterface {
   absl::Status SolveLpWithDualSimplex() override;
 
   // start strong branching - call before any strong branching
-  absl::Status StartStrongbranch() override;
+  absl::Status StartStrongBranching() override;
 
   // end strong branching - call after any strong branching
-  absl::Status EndStrongbranch() override;
+  absl::Status EndStrongBranching() override;
 
   // performs strong branching iterations on one branching candidate
   absl::Status StrongBranchValue(
@@ -470,7 +470,7 @@ class LPGlopInterface : public LPInterface {
   // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
-  absl::Status GetBInvertedRow(
+  absl::Status GetRowOfBInverted(
     int row_number,         // row number
     std::vector<double>& row_coeffs, // array to store the coefficients of the row
     std::vector<int>& indices,    // array to store the non-zero indices
@@ -481,7 +481,7 @@ class LPGlopInterface : public LPInterface {
   //
   // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated
-  absl::Status GetBInvertedColumn(
+  absl::Status GetColumnOfBInverted(
     int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
                                // you have to call minimip::LPInterface.GetBasisIndices() to get the array which links the
                                // B^-1 column numbers to the row and column numbers of the LP!
@@ -497,7 +497,7 @@ class LPGlopInterface : public LPInterface {
   // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
-  absl::Status GetBInvertedARow(
+  absl::Status GetRowOfBInvertedTimesA(
     int row_number,                   // row number
     const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to minimip::LPInterface.GetBInvRow()
     std::vector<double>& row_coeffs,           // array to store coefficients of the row
@@ -510,7 +510,7 @@ class LPGlopInterface : public LPInterface {
   // NOTE: The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
   //       see also the explanation in lpi.h.
-  absl::Status GetBInvertedAColumn(
+  absl::Status GetColumnOfBInvertedTimesA(
     int col_number,         // column number
     std::vector<double>& col_coeffs, // array to store coefficients of the column
     std::vector<int>& indices,    // array to store the non-zero indices

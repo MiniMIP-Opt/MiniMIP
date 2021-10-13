@@ -332,7 +332,7 @@ TEST_F(Complex, test1) {
   ASSERT_LT(i, nrows);
 
   // check basis inverse for the row corresponding to the basic slack variable
-  ASSERT_EQ(lp_interface_->GetBInvertedRow(i, binvrow, empty_indices, null_int),
+  ASSERT_EQ(lp_interface_->GetRowOfBInverted(i, binvrow, empty_indices, null_int),
             absl::OkStatus());
 
   // row of basis inverse should be (0, 1, 0.5)
@@ -341,7 +341,7 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(binvrow[2], 0.5);
 
   // check whether sparse version is available and the same
-  ASSERT_EQ(lp_interface_->GetBInvertedRow(i, coef, inds, ninds),
+  ASSERT_EQ(lp_interface_->GetRowOfBInverted(i, coef, inds, ninds),
             absl::OkStatus());
   if (ninds >= 0) {
     ASSERT_EQ(ninds, 2);
@@ -354,7 +354,7 @@ TEST_F(Complex, test1) {
 
   // check first column of basis inverse
   ASSERT_EQ(
-      lp_interface_->GetBInvertedColumn(0, binvcol, empty_indices, null_int),
+      lp_interface_->GetColumnOfBInverted(0, binvcol, empty_indices, null_int),
       absl::OkStatus());
 
   // The columns will be in the same order, however, the rows might be permuted.
@@ -373,14 +373,14 @@ TEST_F(Complex, test1) {
   }
 
   // check whether number of nonzeros fits
-  ASSERT_EQ(lp_interface_->GetBInvertedColumn(0, coef, inds, ninds),
+  ASSERT_EQ(lp_interface_->GetColumnOfBInverted(0, coef, inds, ninds),
             absl::OkStatus());
   ASSERT_TRUE(ninds < 0 || ninds == 1);
 
   // check basis inverse times nonbasic matrix for row corresponding to the
   // basic slack variable
   ASSERT_TRUE(0 <= i && i < nrows);
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(i, empty_vals, coef, empty_indices,
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coef, empty_indices,
                                             null_int),
             absl::OkStatus());
 
@@ -391,7 +391,7 @@ TEST_F(Complex, test1) {
 
   // check nonzeros
   ASSERT_EQ(
-      lp_interface_->GetBInvertedARow(i, empty_vals, coeftwo, inds, ninds),
+      lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coeftwo, inds, ninds),
       absl::OkStatus());
   if (ninds >= 0) {
     ASSERT_EQ(ninds, 1);
@@ -404,7 +404,7 @@ TEST_F(Complex, test1) {
 
   // check first column of basis inverse times nonbasic matrix
   ASSERT_EQ(
-      lp_interface_->GetBInvertedAColumn(0, coef, empty_indices, null_int),
+      lp_interface_->GetColumnOfBInvertedTimesA(0, coef, empty_indices, null_int),
       absl::OkStatus());
 
   // The columns will be in the same order, however, the rows will be permuted.
@@ -423,7 +423,7 @@ TEST_F(Complex, test1) {
   }
 
   // check nonzeros
-  ASSERT_EQ(lp_interface_->GetBInvertedAColumn(0, coef, inds, ninds),
+  ASSERT_EQ(lp_interface_->GetColumnOfBInvertedTimesA(0, coef, inds, ninds),
             absl::OkStatus());
   ASSERT_TRUE(ninds < 0 || ninds == 3);
 }
@@ -582,7 +582,7 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow,
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(basicvarpos, empty_vals, binvarow,
                                             empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 1.0);
@@ -597,7 +597,7 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow,
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(basicvarpos, empty_vals, binvarow,
                                             empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
@@ -612,7 +612,7 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetBInvertedARow(basicvarpos, empty_vals, binvarow,
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(basicvarpos, empty_vals, binvarow,
                                             empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
