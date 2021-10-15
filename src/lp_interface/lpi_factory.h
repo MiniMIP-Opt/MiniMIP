@@ -1,5 +1,5 @@
-#ifndef MINIMIP_SRC_FACTORIES_LPI_FACTORY_H_
-#define MINIMIP_SRC_FACTORIES_LPI_FACTORY_H_
+#ifndef SRC_LP_INTERFACE_LPI_FACTORY_H_
+#define SRC_LP_INTERFACE_LPI_FACTORY_H_
 
 #include "src/lp_interface/lpi_glop.h"
 #include "src/lp_interface/lpi_soplex.h"
@@ -23,5 +23,5 @@ class LPInterfaceFactory {
   }
 };
 
-} // namespace minimip
-#endif // MINIMIP_SRC_FACTORIES_LPI_FACTORY_H_
+}  // namespace minimip
+#endif  // SRC_LP_INTERFACE_LPI_FACTORY_H_

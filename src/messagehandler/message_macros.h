@@ -1,6 +1,6 @@
 
-#ifndef MINIMIP_SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
-#define MINIMIP_SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
+#ifndef SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
+#define SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
 
 #include "src/messagehandler/message_handler.h"
 
@@ -11,9 +11,8 @@
   messagehandler::PrintDebugMessage
 #else
 // prints a debugging message if MINIMIP_DEBUG flag is set
-#define MiniMIPdebugMessage      \
-  while (false)                  \
-  printf
+#define MiniMIPdebugMessage \
+  while (false) printf
 #endif
 
 #ifdef MINIMIP_DEBUG
@@ -22,10 +21,11 @@
   messagehandler::PrintErrorHeader(__FILENAME__, __LINE__); \
   messagehandler::PrintError
 #else
-// prints a debugging message if MINIMIP_DEBUG flag is set - also consider using MiniMIPdebugMsg/MiniMIPsetDebugMsg
-#define MiniMIPerrorMessage      \
-  while (false)                  \
-  printf
+// prints a debugging message if MINIMIP_DEBUG flag is set - also consider using
+// MiniMIPdebugMsg/MiniMIPsetDebugMsg
+#define MiniMIPerrorMessage \
+  while (false) printf
 #endif
 
-#endif // MINIMIP_SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
+#endif  // SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
+

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include <iostream>
 
 #include "absl/status/status.h"
@@ -70,7 +71,6 @@ class SimpleTest : public ::testing::Test {
     ASSERT_EQ(num_cols, 1);
   }
 };
-
 
 // TESTS
 TEST_F(SimpleTest, BasicAssertions) {
@@ -223,8 +223,8 @@ class Complex : public ::testing::Test {
     //             x1 + 2 x2        <= 12
     //             x1,    x2,    x3 >= 0
     // add columns
-    lb[0]  = 0.0;
-    ub[0]  = lp_interface_->Infinity();
+    lb[0] = 0.0;
+    ub[0] = lp_interface_->Infinity();
     obj[0] = 1.0;
 
     ASSERT_EQ(
@@ -241,8 +241,8 @@ class Complex : public ::testing::Test {
         absl::OkStatus());
 
     // add rows
-    lhs[0]  = -8.0;
-    rhs[0]  = -1.0;
+    lhs[0] = -8.0;
+    rhs[0] = -1.0;
     inds[0] = 0;
     inds[1] = 2;
     vals[0] = -1.0;
@@ -251,8 +251,8 @@ class Complex : public ::testing::Test {
         lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
         absl::OkStatus());
 
-    lhs[0]  = -7.0;
-    rhs[0]  = -1.0;
+    lhs[0] = -7.0;
+    rhs[0] = -1.0;
     inds[0] = 0;
     inds[1] = 1;
     vals[0] = -1.0;
@@ -261,8 +261,8 @@ class Complex : public ::testing::Test {
         lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
         absl::OkStatus());
 
-    lhs[0]  = -lp_interface_->Infinity();
-    rhs[0]  = 12.0;
+    lhs[0] = -lp_interface_->Infinity();
+    rhs[0] = 12.0;
     inds[0] = 0;
     inds[1] = 1;
     vals[0] = 1.0;
@@ -332,8 +332,9 @@ TEST_F(Complex, test1) {
   ASSERT_LT(i, nrows);
 
   // check basis inverse for the row corresponding to the basic slack variable
-  ASSERT_EQ(lp_interface_->GetRowOfBInverted(i, binvrow, empty_indices, null_int),
-            absl::OkStatus());
+  ASSERT_EQ(
+      lp_interface_->GetRowOfBInverted(i, binvrow, empty_indices, null_int),
+      absl::OkStatus());
 
   // row of basis inverse should be (0, 1, 0.5)
   ASSERT_FLOAT_EQ(binvrow[0], 0.0);
@@ -380,8 +381,8 @@ TEST_F(Complex, test1) {
   // check basis inverse times nonbasic matrix for row corresponding to the
   // basic slack variable
   ASSERT_TRUE(0 <= i && i < nrows);
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coef, empty_indices,
-                                            null_int),
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coef,
+                                                   empty_indices, null_int),
             absl::OkStatus());
 
   // row of basis inverse times nonbasic matrix should be (-0.5, 0, 0)
@@ -390,9 +391,9 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(coef[2], 0.0);
 
   // check nonzeros
-  ASSERT_EQ(
-      lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coeftwo, inds, ninds),
-      absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coeftwo, inds,
+                                                   ninds),
+            absl::OkStatus());
   if (ninds >= 0) {
     ASSERT_EQ(ninds, 1);
     for (entry = 0; entry < ninds; ++entry) {
@@ -403,9 +404,9 @@ TEST_F(Complex, test1) {
   }
 
   // check first column of basis inverse times nonbasic matrix
-  ASSERT_EQ(
-      lp_interface_->GetColumnOfBInvertedTimesA(0, coef, empty_indices, null_int),
-      absl::OkStatus());
+  ASSERT_EQ(lp_interface_->GetColumnOfBInvertedTimesA(0, coef, empty_indices,
+                                                      null_int),
+            absl::OkStatus());
 
   // The columns will be in the same order, however, the rows will be permuted.
   // For each row/entry we check that it corresponds to the value of the
@@ -472,8 +473,8 @@ class MoreVarsThanRows : public ::testing::Test {
     //      -x1 - 2 x2        - 3 x4 >= -12
     //       x1,    x2,    x3,    x4 >=   0
     // add columns
-    lb[0]  = 0.0;
-    ub[0]  = lp_interface_->Infinity();
+    lb[0] = 0.0;
+    ub[0] = lp_interface_->Infinity();
     obj[0] = 1.0;
 
     ASSERT_EQ(
@@ -494,8 +495,8 @@ class MoreVarsThanRows : public ::testing::Test {
         absl::OkStatus());
 
     // add rows
-    lhs[0]  = 1.0;
-    rhs[0]  = lp_interface_->Infinity();
+    lhs[0] = 1.0;
+    rhs[0] = lp_interface_->Infinity();
     inds[0] = 0;
     inds[1] = 2;
     inds[2] = 3;
@@ -506,8 +507,8 @@ class MoreVarsThanRows : public ::testing::Test {
         lp_interface_->AddRows(1, lhs, rhs, empty_names, 3, beg, inds, vals),
         absl::OkStatus());
 
-    lhs[0]  = 1.0;
-    rhs[0]  = lp_interface_->Infinity();
+    lhs[0] = 1.0;
+    rhs[0] = lp_interface_->Infinity();
     inds[0] = 0;
     inds[1] = 1;
     inds[2] = 2;
@@ -520,8 +521,8 @@ class MoreVarsThanRows : public ::testing::Test {
         lp_interface_->AddRows(1, lhs, rhs, empty_names, 4, beg, inds, vals),
         absl::OkStatus());
 
-    lhs[0]  = -12;
-    rhs[0]  = lp_interface_->Infinity();
+    lhs[0] = -12;
+    rhs[0] = lp_interface_->Infinity();
     inds[0] = 0;
     inds[1] = 1;
     inds[2] = 3;
@@ -582,8 +583,8 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(basicvarpos, empty_vals, binvarow,
-                                            empty_indices, null_int),
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(
+                basicvarpos, empty_vals, binvarow, empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 1.0);
   ASSERT_FLOAT_EQ(binvarow[1], 2.0);
@@ -597,8 +598,8 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(basicvarpos, empty_vals, binvarow,
-                                            empty_indices, null_int),
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(
+                basicvarpos, empty_vals, binvarow, empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
   ASSERT_FLOAT_EQ(binvarow[1], 1.0);
@@ -612,8 +613,8 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(basicvarpos, empty_vals, binvarow,
-                                            empty_indices, null_int),
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(
+                basicvarpos, empty_vals, binvarow, empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
   ASSERT_FLOAT_EQ(binvarow[1], -3.0);

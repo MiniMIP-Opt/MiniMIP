@@ -51,15 +51,15 @@ class Change : public ::testing::Test {
   static void initProb(int pos, int& ncols, int& nrows, int& nnonz,
                        LPObjectiveSense& objsen) {
     std::vector<double> obj = {1.0, 1.0};
-    std::vector<double> lb  = {0.0, 0.0};
-    std::vector<double> ub  = {lp_interface_->Infinity(),
+    std::vector<double> lb = {0.0, 0.0};
+    std::vector<double> ub = {lp_interface_->Infinity(),
                               lp_interface_->Infinity()};
     std::vector<double> lhs = {-lp_interface_->Infinity(),
                                -lp_interface_->Infinity()};
     std::vector<double> rhs = {1.0, 1.0};
     std::vector<double> val = {1.0, 1.0};
-    std::vector<int> beg    = {0, 1};
-    std::vector<int> ind    = {0, 1};
+    std::vector<int> beg = {0, 1};
+    std::vector<int> ind = {0, 1};
 
     // maximization problems, ncols is 1, nrows is 1
     switch (pos) {
@@ -72,9 +72,9 @@ class Change : public ::testing::Test {
         // (D):  min y
         // 1 <= -y (constr)
         // 0 <= y (bound)
-        ncols  = 1;
-        nrows  = 1;
-        nnonz  = 1;
+        ncols = 1;
+        nrows = 1;
+        nnonz = 1;
         objsen = LPObjectiveSense::kMaximization;
         val[0] = -1.0;
         break;
@@ -88,18 +88,18 @@ class Change : public ::testing::Test {
         // (D):  min 0
         // 1 <= y (constr)
         // 0 <= y (bound)
-        ncols  = 1;
-        nrows  = 1;
-        nnonz  = 1;
+        ncols = 1;
+        nrows = 1;
+        nnonz = 1;
         objsen = LPObjectiveSense::kMaximization;
         rhs[0] = 0.0;
         break;
 
       case 2:
         // minimization problems (duals of the above)
-        ncols  = 1;
-        nrows  = 1;
-        nnonz  = 1;
+        ncols = 1;
+        nrows = 1;
+        nnonz = 1;
         objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         lhs[0] = 1;
@@ -107,9 +107,9 @@ class Change : public ::testing::Test {
         break;
 
       case 3:
-        ncols  = 1;
-        nrows  = 1;
-        nnonz  = 1;
+        ncols = 1;
+        nrows = 1;
+        nnonz = 1;
         objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         lhs[0] = 1;
@@ -132,9 +132,9 @@ class Change : public ::testing::Test {
         //
         // 0 <= x (bound)
         // 0 <= y (bound)
-        ncols  = 2;
-        nrows  = 2;
-        nnonz  = 2;
+        ncols = 2;
+        nrows = 2;
+        nnonz = 2;
         objsen = LPObjectiveSense::kMaximization;
         val[0] = -1.0;
         val[1] = -1.0;
@@ -155,9 +155,9 @@ class Change : public ::testing::Test {
         //
         // 0 <= x (bound)
         // 0 <= y (bound)
-        ncols  = 2;
-        nrows  = 2;
-        nnonz  = 2;
+        ncols = 2;
+        nrows = 2;
+        nnonz = 2;
         objsen = LPObjectiveSense::kMaximization;
         break;
 
@@ -176,9 +176,9 @@ class Change : public ::testing::Test {
         //
         // 0 <= x (bound)
         // 0 <= y (bound)
-        ncols  = 2;
-        nrows  = 2;
-        nnonz  = 2;
+        ncols = 2;
+        nrows = 2;
+        nnonz = 2;
         objsen = LPObjectiveSense::kMaximization;
         rhs[0] = -1.0;
         rhs[1] = -1.0;
@@ -187,9 +187,9 @@ class Change : public ::testing::Test {
 
       case 7:
         // minimization problems (duals of the above)
-        ncols  = 2;
-        nrows  = 2;
-        nnonz  = 2;
+        ncols = 2;
+        nrows = 2;
+        nnonz = 2;
         objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
@@ -200,9 +200,9 @@ class Change : public ::testing::Test {
         break;
 
       case 8:
-        ncols  = 2;
-        nrows  = 2;
-        nnonz  = 2;
+        ncols = 2;
+        nrows = 2;
+        nnonz = 2;
         objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
@@ -211,9 +211,9 @@ class Change : public ::testing::Test {
         break;
 
       case 9:
-        ncols  = 2;
-        nrows  = 2;
-        nnonz  = 2;
+        ncols = 2;
+        nrows = 2;
+        nnonz = 2;
         objsen = LPObjectiveSense::kMinimization;
         rhs[0] = lp_interface_->Infinity();
         rhs[1] = lp_interface_->Infinity();
@@ -331,7 +331,8 @@ class ChangeBounds : public Change,
 
     ASSERT_LE(lastcol, 2);
     if (error != absl::OkStatus()) {
-      ASSERT_EQ(lp_interface_->SetColumnBounds(lastcol, ind, setlb, setub), error);
+      ASSERT_EQ(lp_interface_->SetColumnBounds(lastcol, ind, setlb, setub),
+                error);
       abort();
     } else {
       ASSERT_EQ(lp_interface_->SetColumnBounds(lastcol, ind, setlb, setub),
@@ -428,18 +429,18 @@ class ChangeSides : public Change,
 };
 
 TEST_P(ChangeSides, checkChgSides) {
-  double left1  = substituteInfinity(std::get<0>(GetParam()));
-  double left2  = substituteInfinity(std::get<1>(GetParam()));
+  double left1 = substituteInfinity(std::get<0>(GetParam()));
+  double left2 = substituteInfinity(std::get<1>(GetParam()));
   double right1 = substituteInfinity(std::get<2>(GetParam()));
   double right2 = substituteInfinity(std::get<3>(GetParam()));
-  int prob      = std::get<4>(GetParam());
+  int prob = std::get<4>(GetParam());
 
   int nrows, ncols, nnonz;
   std::vector<int> ind = {0, 1};
   LPObjectiveSense sense;
   std::vector<double> setlhs = {left1, left2};
   std::vector<double> setrhs = {right1, right2};
-  bool deathflag             = false;
+  bool deathflag = false;
 
   ASSERT_NO_FATAL_FAILURE(initProb(prob, ncols, nrows, nnonz, sense));
 
@@ -481,7 +482,7 @@ class ChangeObjectiveSense
 
 TEST_P(ChangeObjectiveSense, ChgObjSen) {
   LPObjectiveSense newsense = std::get<0>(GetParam());
-  int prob                  = std::get<1>(GetParam());
+  int prob = std::get<1>(GetParam());
 
   int nrows, ncols, nnonz;
   LPObjectiveSense sense;
@@ -507,9 +508,9 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_F(Change, testrowmethods) {
   // problem data
   std::vector<double> obj = {1.0, 1.0, 1.0, 1.0, 1.0};
-  std::vector<double> lb  = {-1.0, -lp_interface_->Infinity(), 0.0,
+  std::vector<double> lb = {-1.0, -lp_interface_->Infinity(), 0.0,
                             -lp_interface_->Infinity(), 0.0};
-  std::vector<double> ub  = {10.0, lp_interface_->Infinity(),
+  std::vector<double> ub = {10.0, lp_interface_->Infinity(),
                             lp_interface_->Infinity(), 29.0, 0.0};
   int ncolsbefore, ncolsafter;
   int nrowsbefore, nrowsafter;
@@ -517,14 +518,14 @@ TEST_F(Change, testrowmethods) {
       -lp_interface_->Infinity(), -1.0, -3e-10, 0.0, 1.0, 3e10};
   std::vector<double> rhsvals = {-1.0, -3e-10, 0.0,
                                  1.0,  3e10,   lp_interface_->Infinity()};
-  std::vector<int> nnonzs     = {1, 10, -1, 6, -1};
-  std::vector<int> begvals    = {0, 2, 3, 5, 8, 9};
-  std::vector<int> indvals    = {0, 1, 3, 2, 1, 1, 2, 4, 0, 3};
-  std::vector<double> vals    = {1.0, 5.0, -1.0, 3e5,  2.0,
+  std::vector<int> nnonzs = {1, 10, -1, 6, -1};
+  std::vector<int> begvals = {0, 2, 3, 5, 8, 9};
+  std::vector<int> indvals = {0, 1, 3, 2, 1, 1, 2, 4, 0, 3};
+  std::vector<double> vals = {1.0, 5.0, -1.0, 3e5,  2.0,
                               1.0, 20,  10,   -1.9, 1e-2};
 
-  int iterations              = 5;
-  std::vector<int> k          = {1, 6, -1, 4, -2};
+  int iterations = 5;
+  std::vector<int> k = {1, 6, -1, 4, -2};
   std::vector<int> nnonzsdiff = {1, 10, -1, 6, -3};
   int i;
   int j;
@@ -549,7 +550,7 @@ TEST_F(Change, testrowmethods) {
     nrows = k[i];
     // get data before modification
     nnonzsbefore = lp_interface_->GetNumberOfNonZeros();
-    nrowsbefore  = lp_interface_->GetNumberOfRows();
+    nrowsbefore = lp_interface_->GetNumberOfRows();
 
     if (nrows < 0) {
       ASSERT_EQ(lp_interface_->DeleteRows(0, -(1 + nrows)), absl::OkStatus());
@@ -597,7 +598,7 @@ TEST_F(Change, testrowmethods) {
       for (j = 0; j < nrows; j++) {
         ASSERT_EQ(beg[j], newbeg[j]);
       }
-      beg[nrows]    = nnonz;
+      beg[nrows] = nnonz;
       newbeg[nrows] = newnnonz;
 
       // check each row seperately
@@ -674,14 +675,14 @@ TEST_F(Change, testcolmethods) {
       -lp_interface_->Infinity(), -1.0, -3e-10, 0.0, 1.0, 3e10};
   std::vector<double> ubvals = {-1.0, -3e-10, 0.0,
                                 1.0,  3e10,   lp_interface_->Infinity()};
-  std::vector<double> vals   = {1.0, 5.0, -1.0, 3e5,  2.0,
+  std::vector<double> vals = {1.0, 5.0, -1.0, 3e5,  2.0,
                               1.0, 20,  10,   -1.9, 1e-2};
-  std::vector<int> nnonzs    = {1, 10, -1, 6, -1};
-  std::vector<int> begvals   = {0, 2, 3, 5, 8, 9};
-  std::vector<int> indvals   = {0, 1, 3, 2, 1, 1, 2, 4, 0, 3};
+  std::vector<int> nnonzs = {1, 10, -1, 6, -1};
+  std::vector<int> begvals = {0, 2, 3, 5, 8, 9};
+  std::vector<int> indvals = {0, 1, 3, 2, 1, 1, 2, 4, 0, 3};
 
-  int iterations              = 5;
-  std::vector<int> k          = {1, 6, -1, 4, -2};
+  int iterations = 5;
+  std::vector<int> k = {1, 6, -1, 4, -2};
   std::vector<int> nnonzsdiff = {1, 10, -1, 6, -3};
 
   // empty placeholders
@@ -705,7 +706,7 @@ TEST_F(Change, testcolmethods) {
 
     // get data before modification
     nnonzsbefore = lp_interface_->GetNumberOfNonZeros();
-    ncolsbefore  = lp_interface_->GetNumberOfColumns();
+    ncolsbefore = lp_interface_->GetNumberOfColumns();
 
     if (k[i] < 0) {
       ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + ncols)),
@@ -729,8 +730,8 @@ TEST_F(Change, testcolmethods) {
 
       ASSERT_LE(ncols, 100);
       for (int j = 0; j < ncols; j++) {
-        lb[j]  = lbvals[j];
-        ub[j]  = ubvals[j];
+        lb[j] = lbvals[j];
+        ub[j] = ubvals[j];
         beg[j] = begvals[j];
       }
 
@@ -771,7 +772,6 @@ TEST_F(Change, testcolmethods) {
     ncolsafter = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(ncolsbefore + ncols, ncolsafter);
   }
-
 }
 
 // Test adding zero coeffs cols
@@ -780,10 +780,10 @@ TEST_F(Change, testzerosincols) {
   int nrows;
   int nnonz = 2;
   LPObjectiveSense sense;
-  std::vector<double> lb  = {0};
-  std::vector<double> ub  = {20};
-  std::vector<int> beg    = {0};
-  std::vector<int> ind    = {0, 1};
+  std::vector<double> lb = {0};
+  std::vector<double> ub = {20};
+  std::vector<int> beg = {0};
+  std::vector<int> ind = {0, 1};
   std::vector<double> val = {0, 3};
   std::vector<double> obj = {1};
 
@@ -820,8 +820,8 @@ TEST_F(Change, testzerosinrows) {
   LPObjectiveSense sense;
   std::vector<double> lhs = {0};
   std::vector<double> rhs = {20};
-  std::vector<int> beg    = {0};
-  std::vector<int> ind    = {0, 1};
+  std::vector<int> beg = {0};
+  std::vector<int> ind = {0, 1};
   std::vector<double> val = {0, 3};
   // empty placeholders
   std::vector<std::string> empty_names;
