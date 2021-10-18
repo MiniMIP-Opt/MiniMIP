@@ -2,6 +2,8 @@
 #define SRC_LP_INTERFACE_LPI_H_
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
 #include "src/lp_interface/lp_types.h"
 #include "src/messagehandler/message_handler.h"
 // #include "absl/status/statusor.h"
