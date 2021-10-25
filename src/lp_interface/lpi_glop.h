@@ -39,7 +39,7 @@ using operations_research::glop::DenseBooleanColumn;
 using operations_research::glop::Fractional;
 using operations_research::glop::GlopParameters;
 using operations_research::glop::LinearProgram;
-using operations_research::glop::LpScalingHelper;
+using operations_research::glop::LPScalingHelper;
 using operations_research::glop::ProblemStatus;
 using operations_research::glop::RevisedSimplex;
 using operations_research::glop::ScatteredColumn;
@@ -56,7 +56,7 @@ class LPGlopInterface : public LPInterface {
   RevisedSimplex solver_;      // direct reference to the revised simplex, not
                                // passing through lp_solver
   GlopParameters parameters_;  // parameters
-  LpScalingHelper scaler_;     // scaler auxiliary class
+  LPScalingHelper scaler_;     // scaler auxiliary class
 
   // the following is used by IsSolved()
   bool lp_modified_since_last_solve_;
@@ -328,28 +328,33 @@ class LPGlopInterface : public LPInterface {
   ) const override;
 
   // gets objective coefficients from LP problem object
-  absl::Status GetObjectiveCoefficients(
+  std::vector<double> GetObjectiveCoefficients(
       int first_col,  // first column to get objective coefficient for
       int last_col,   // last column to get objective coefficient for
-      std::vector<double>& obj_coeffs  // array to store objective coefficients
   ) const override;
 
-  // gets current bounds from LP problem object
-  absl::Status GetColumnBounds(
-      int first_col,                      // first column to get bounds for
-      int last_col,                       // last column to get bounds for
-      std::vector<double>& lower_bounds,  // array to store lower bound values
-      std::vector<double>& upper_bounds   // array to store upper bound values
+  // gets current lower bounds from LP problem object
+  std::vector<double> GetLowerBounds(
+      int first_col,  // first column to get bounds for
+      int last_col,   // last column to get bounds for
   ) const override;
 
-  // gets current row sides from LP problem object
-  absl::Status GetRowSides(
+  // gets current upper bounds from LP problem object
+  virtual std::vector<double> GetUpperBounds(
+      int first_col,  // first column to get bounds for
+      int last_col,   // last column to get bounds for
+  ) const override;
+
+  // gets current left hand sides from LP problem object
+  virtual std::vector<double> GetLeftHandSides(
       int first_row,  // first row to get sides for
       int last_row,   // last row to get sides for
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side values
-      std::vector<double>&
-          right_hand_sides  // array to store right hand side values
+  ) const override;
+
+  // gets current right hand sides from LP problem object
+  virtual std::vector<double> GetRightHandSides(
+      int first_row,  // first row to get sides for
+      int last_row,   // last row to get sides for
   ) const override;
 
   // gets a single coefficient
@@ -362,10 +367,10 @@ class LPGlopInterface : public LPInterface {
   // ==========================================================================
 
   // calls primal simplex to solve the LP
-  absl::Status SolveLpWithPrimalSimplex() override;
+  absl::Status SolveLPWithPrimalSimplex() override;
 
   // calls dual simplex to solve the LP
-  absl::Status SolveLpWithDualSimplex() override;
+  absl::Status SolveLPWithDualSimplex() override;
 
   // start strong branching - call before any strong branching
   absl::Status StartStrongBranching() override;
@@ -566,9 +571,6 @@ class LPGlopInterface : public LPInterface {
   //       in lpi.h.
   absl::Status GetRowOfBInvertedTimesA(
       int row_number,  // row number
-      const std::vector<double>&
-          b_inverted_row,  // row in (A_B)^-1 from prior call to
-                           // minimip::LPInterface.GetBInvRow()
       std::vector<double>&
           row_coeffs,             // array to store coefficients of the row
       std::vector<int>& indices,  // array to store the non-zero indices

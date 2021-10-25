@@ -110,9 +110,9 @@ class Solve : public ::testing::Test {
 
     // solve problem
     if (solveprimal) {
-      ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+      ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
     } else {
-      ASSERT_EQ(lp_interface_->SolveLpWithDualSimplex(), absl::OkStatus());
+      ASSERT_EQ(lp_interface_->SolveLPWithDualSimplex(), absl::OkStatus());
     }
 
     // check status
@@ -892,7 +892,7 @@ TEST_F(Solve, test5) {
   ASSERT_EQ(lp_interface_->SetBase(cstat, rstat), absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithDualSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithDualSimplex(), absl::OkStatus());
 
   // check status
   ASSERT_TRUE(lp_interface_->IsSolved());
@@ -1062,7 +1062,7 @@ TEST_F(Solve, test6) {
             absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithDualSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithDualSimplex(), absl::OkStatus());
 
   // check status
   ASSERT_TRUE(lp_interface_->IsSolved());
@@ -1103,7 +1103,7 @@ TEST_F(Solve, test6) {
   ASSERT_EQ(lp_interface_->ClearState(), absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithDualSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithDualSimplex(), absl::OkStatus());
 
   // check that data stored in lpi is still the same
   ASSERT_NO_FATAL_FAILURE(checkData(LPObjectiveSense::kMinimization, 12, obj,

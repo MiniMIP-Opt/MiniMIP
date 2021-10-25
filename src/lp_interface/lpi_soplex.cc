@@ -1200,67 +1200,90 @@ absl::Status LPSoplexInterface::GetRows(
 }
 
 // gets objective coefficients from LP problem object
-absl::Status LPSoplexInterface::GetObjectiveCoefficients(
+std::vector<double> LPSoplexInterface::GetObjectiveCoefficients(
     int first_col,  // first column to get objective coefficient for
     int last_col,   // last column to get objective coefficient for
-    std::vector<double>& obj_coeffs  // array to store objective coefficients
 ) const {
-  int i;
-
   MiniMIPdebugMessage("calling GetObjectiveCoefficients()\n");
 
   assert(0 <= first_col && first_col <= last_col &&
          last_col < spx_->numColsReal());
 
-  for (i = first_col; i <= last_col; ++i)
-    obj_coeffs[i - first_col] = spx_->objReal(i);
+  std::vector<double> obj_coeffs;
+  for (int i = first_col; i <= last_col; ++i)
+    obj_coeffs.push_back(spx_->objReal(i));
 
-  return absl::OkStatus();
+  return obj_coeffs;
 }
 
-// gets current bounds from LP problem object
-absl::Status LPSoplexInterface::GetColumnBounds(
+// gets current lower bounds from LP problem object
+absl::Status LPSoplexInterface::GetLowerBounds(
     int first_col,                      // first column to get bounds for
     int last_col,                       // last column to get bounds for
-    std::vector<double>& lower_bounds,  // array to store lower bound values
-    std::vector<double>& upper_bounds   // array to store upper bound values
 ) const {
-  int i;
-
   MiniMIPdebugMessage("calling GetColumnBounds()\n");
 
   assert(0 <= first_col && first_col <= last_col &&
          last_col < spx_->numColsReal());
 
-  for (i = first_col; i <= last_col; ++i) {
-    lower_bounds[i - first_col] = spx_->lowerReal(i);
-    upper_bounds[i - first_col] = spx_->upperReal(i);
+  std::vector<double> lower_bounds;
+  for (int i = first_col; i <= last_col; ++i) {
+    lower_bounds.push_back(spx_->lowerReal(i));
   }
 
-  return absl::OkStatus();
+  return lower_bounds;
 }
 
-// gets current row sides from LP problem object
-absl::Status LPSoplexInterface::GetRowSides(
+// gets current upper bounds from LP problem object
+absl::Status LPSoplexInterface::GetUpperBounds(
+    int first_col,                      // first column to get bounds for
+    int last_col,                       // last column to get bounds for
+) const {
+  MiniMIPdebugMessage("calling GetColumnBounds()\n");
+
+  assert(0 <= first_col && first_col <= last_col &&
+         last_col < spx_->numColsReal());
+
+  std::vector<double> upper_bounds;
+  for (int i = first_col; i <= last_col; ++i) {
+    upper_bounds.push_back(spx_->upperReal(i));
+  }
+
+  return upper_bounds;
+}
+
+// gets current left hand sides from LP problem object
+std::vector<double> LPSoplexInterface::GetLeftHandSides(
     int first_row,  // first row to get sides for
     int last_row,   // last row to get sides for
-    std::vector<double>&
-        left_hand_sides,  // array to store left hand side values
-    std::vector<double>&
-        right_hand_sides  // array to store right hand side values
 ) const {
-  int i;
-
   MiniMIPdebugMessage("calling GetRowSides()\n");
 
   assert(0 <= first_row && first_row <= last_row &&
          last_row < spx_->numRowsReal());
 
-  for (i = first_row; i <= last_row; ++i) {
-    left_hand_sides[i - first_row]  = spx_->lhsReal(i);
-    right_hand_sides[i - first_row] = spx_->rhsReal(i);
+  std::vector<double> left_hand_sides;
+  for (int i = first_row; i <= last_row; ++i) {
+    left_hand_sides.push_back(spx_->lhsReal(i));
   }
-  return absl::OkStatus();
+  return left_hand_sides;
+}
+
+// gets current right hand sides from LP problem object
+std::vector<double> LPSoplexInterface::GetRightHandSides(
+    int first_row,  // first row to get sides for
+    int last_row,   // last row to get sides for
+) const {
+  MiniMIPdebugMessage("calling GetRowSides()\n");
+
+  assert(0 <= first_row && first_row <= last_row &&
+         last_row < spx_->numRowsReal());
+
+  std::vector<double> right_hand_sides;
+  for (int i = first_row; i <= last_row; ++i) {
+    right_hand_sides.push_back(spx_->rhsReal(i));
+  }
+  return right_hand_sides;
 }
 
 // gets a single coefficient
@@ -1281,8 +1304,8 @@ double LPSoplexInterface::GetMatrixCoefficient(
 // ==========================================================================
 
 // calls primal simplex to solve the LP
-absl::Status LPSoplexInterface::SolveLpWithPrimalSimplex() {
-  MiniMIPdebugMessage("calling SolveLpWithPrimalSimplex()\n");
+absl::Status LPSoplexInterface::SolveLPWithPrimalSimplex() {
+  MiniMIPdebugMessage("calling SolveLPWithPrimalSimplex()\n");
 
   static_cast<void>(
       spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_PRIMAL));
@@ -1290,8 +1313,8 @@ absl::Status LPSoplexInterface::SolveLpWithPrimalSimplex() {
 }
 
 // calls dual simplex to solve the LP
-absl::Status LPSoplexInterface::SolveLpWithDualSimplex() {
-  MiniMIPdebugMessage("calling SolveLpWithDualSimplex()\n");
+absl::Status LPSoplexInterface::SolveLPWithDualSimplex() {
+  MiniMIPdebugMessage("calling SolveLPWithDualSimplex()\n");
 
   static_cast<void>(
       spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_DUAL));
@@ -1876,9 +1899,6 @@ absl::Status LPSoplexInterface::GetColumnOfBInverted(
 //       lpi.h.
 absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
     int row_number,  // row number
-    const std::vector<double>&
-        b_inverted_row,               // row in (A_B)^-1 from prior call to
-                                      // minimip::LPInterface.GetBInvRow()
     std::vector<double>& row_coeffs,  // array to store coefficients of the row
     std::vector<int>& indices,        // array to store the non-zero indices
     int& num_indices  // thee number of non-zero indices (-1: if we do not store
@@ -1899,13 +1919,9 @@ absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
 
   buf.resize(num_rows);
 
-  // get (or calculate) the row in B^-1
-  if (b_inverted_row.size() == 0) {
-    MINIMIP_CALL(GetRowOfBInverted(row_number, buf, indices, num_indices));
-    binv.assign(buf.begin(), buf.end());
-  } else {
-    binv.assign(b_inverted_row.begin(), b_inverted_row.end());
-  }
+  // calculate the row in B^-1
+  MINIMIP_CALL(GetRowOfBInverted(row_number, buf, indices, num_indices));
+  binv.assign(buf.begin(), buf.end());
 
   assert(binv.size() == num_rows);
 

@@ -82,7 +82,7 @@ TEST_F(SimpleTest, BasicAssertions) {
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
             absl::OkStatus());
@@ -105,7 +105,7 @@ TEST_F(SimpleTest, test2) {
             absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
@@ -138,7 +138,7 @@ TEST_F(SimpleTest, test3) {
       absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
@@ -168,7 +168,7 @@ TEST_F(SimpleTest, test4) {
       absl::OkStatus());
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
   ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
@@ -305,7 +305,7 @@ TEST_F(Complex, test1) {
 
   // -------------------------------------
   // first solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
   ASSERT_FLOAT_EQ(objval, 14.0);
@@ -381,7 +381,7 @@ TEST_F(Complex, test1) {
   // check basis inverse times nonbasic matrix for row corresponding to the
   // basic slack variable
   ASSERT_TRUE(0 <= i && i < nrows);
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coef,
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, coef,
                                                    empty_indices, null_int),
             absl::OkStatus());
 
@@ -391,7 +391,7 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(coef[2], 0.0);
 
   // check nonzeros
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, empty_vals, coeftwo, inds,
+  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, coeftwo, inds,
                                                    ninds),
             absl::OkStatus());
   if (ninds >= 0) {
@@ -552,7 +552,7 @@ TEST_F(MoreVarsThanRows, test1) {
 
   // -------------------------------------
   // first solve problem
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
   ASSERT_FLOAT_EQ(objval, 23.0);
@@ -584,7 +584,7 @@ TEST_F(MoreVarsThanRows, test1) {
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
   ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(
-                basicvarpos, empty_vals, binvarow, empty_indices, null_int),
+                basicvarpos, binvarow, empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 1.0);
   ASSERT_FLOAT_EQ(binvarow[1], 2.0);
@@ -599,7 +599,7 @@ TEST_F(MoreVarsThanRows, test1) {
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
   ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(
-                basicvarpos, empty_vals, binvarow, empty_indices, null_int),
+                basicvarpos, binvarow, empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
   ASSERT_FLOAT_EQ(binvarow[1], 1.0);
@@ -614,7 +614,7 @@ TEST_F(MoreVarsThanRows, test1) {
   ASSERT_LT(basicvarpos, 3);  // assert that we found the variable
 
   ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(
-                basicvarpos, empty_vals, binvarow, empty_indices, null_int),
+                basicvarpos, binvarow, empty_indices, null_int),
             absl::OkStatus());
   ASSERT_FLOAT_EQ(binvarow[0], 0.0);
   ASSERT_FLOAT_EQ(binvarow[1], -3.0);

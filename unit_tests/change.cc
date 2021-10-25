@@ -241,7 +241,7 @@ class Change : public ::testing::Test {
                                      ind, val),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
     ASSERT_TRUE(lp_interface_->IsSolved());
   }
 
@@ -339,8 +339,8 @@ class ChangeBounds : public Change,
                 absl::OkStatus());
     }
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetColumnBounds(0, lastcol - 1, lb, ub),
-              absl::OkStatus());
+    lb = lp_interface_->GetLowerBounds(0, lastcol - 1);
+    ub = lp_interface_->GetUpperBounds(0, lastcol - 1);
 
     for (size_t i; i < setub.size(); i++) {
       ASSERT_EQ(ub[i], setub[i]);
@@ -862,7 +862,7 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   // 2x2 problem
   ASSERT_NO_FATAL_FAILURE(initProb(5, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
   ASSERT_EQ(
       lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost),
       absl::OkStatus());
@@ -878,7 +878,7 @@ TEST_F(Change, testlpiwritereadlpmethods) {
     ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"),
               absl::OkStatus());
 
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
   ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2,
                                        redcost2),
             absl::OkStatus());

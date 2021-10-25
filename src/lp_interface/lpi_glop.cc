@@ -539,71 +539,85 @@ absl::Status LPGlopInterface::GetRows(
 }
 
 // gets objective coefficients from LP problem object
-absl::Status LPGlopInterface::GetObjectiveCoefficients(
+std::vector<double> LPGlopInterface::GetObjectiveCoefficients(
     int first_col,  // first column to get objective coefficient for
     int last_col,   // last column to get objective coefficient for
     std::vector<double>& obj_coeffs  // array to store objective coefficients
 ) const {
   assert(first_col <= last_col);
-
   MiniMIPdebugMessage("getting objective values %d to %d\n", first_col,
                       last_col);
 
-  int index = 0;
+  std::vector<double> obj_coeffs;
   for (ColIndex col(first_col); col <= ColIndex(last_col); ++col) {
-    obj_coeffs[index] = linear_program_.objective_coefficients()[col];
-    ++index;
+    obj_coeffs.push_back(linear_program_.objective_coefficients()[col]);
   }
 
-  return absl::OkStatus();
+  return obj_coeffs;
 }
 
-// gets current bounds from LP problem object
-absl::Status LPGlopInterface::GetColumnBounds(
-    int first_col,                      // first column to get bounds for
-    int last_col,                       // last column to get bounds for
-    std::vector<double>& lower_bounds,  // array to store lower bound values
-    std::vector<double>& upper_bounds   // array to store upper bound values
+// gets current lower bounds from LP problem object
+std::vector<double> LPGlopInterface::GetLowerBounds(
+    int first_col,  // first column to get bounds for
+    int last_col,   // last column to get bounds for
 ) const {
   assert(first_col <= last_col);
-
   MiniMIPdebugMessage("getting bounds %d to %d\n", first_col, last_col);
 
-  int index = 0;
+  std::vector<double> lower_bounds;
   for (ColIndex col(first_col); col <= ColIndex(last_col); ++col) {
-    lower_bounds[index] = linear_program_.variable_lower_bounds()[col];
-
-    upper_bounds[index] = linear_program_.variable_upper_bounds()[col];
-
-    ++index;
+    lower_bounds.push_back(linear_program_.variable_lower_bounds()[col]);
   }
-
-  return absl::OkStatus();
+  return lower_bounds;
 }
 
-// gets current row sides from LP problem object
-absl::Status LPGlopInterface::GetRowSides(
+// gets current upper bounds from LP problem object
+std::vector<double> LPGlopInterface::GetUpperBounds(
+    int first_col,  // first column to get bounds for
+    int last_col,   // last column to get bounds for
+) const {
+  assert(first_col <= last_col);
+  MiniMIPdebugMessage("getting bounds %d to %d\n", first_col, last_col);
+
+  std::vector<double> upper_bounds;
+  for (ColIndex col(first_col); col <= ColIndex(last_col); ++col) {
+    upper_bounds.push_back(linear_program_.variable_upper_bounds()[col]);
+  }
+  return upper_bounds;
+}
+
+// gets current left hand sides from LP problem object
+absl::Status LPGlopInterface::GetLeftHandSides(
     int first_row,  // first row to get sides for
     int last_row,   // last row to get sides for
-    std::vector<double>&
-        left_hand_sides,  // array to store left hand side values
-    std::vector<double>&
-        right_hand_sides  // array to store right hand side values
 ) const {
   assert(first_row <= last_row);
 
   MiniMIPdebugMessage("getting row sides %d to %d\n", first_row, last_row);
 
-  int index = 0;
+  std::vector<double> left_hand_sides;
   for (RowIndex row(first_row); row <= RowIndex(last_row); ++row) {
-    left_hand_sides[index] = linear_program_.constraint_lower_bounds()[row];
-
-    right_hand_sides[index] = linear_program_.constraint_upper_bounds()[row];
-
-    ++index;
+    left_hand_sides.push_back(linear_program_.constraint_lower_bounds()[row]);
   }
 
-  return absl::OkStatus();
+  return left_hand_sides;
+}
+
+// gets current right hand sides from LP problem object
+absl::Status LPGlopInterface::GetRightHandSides(
+    int first_row,  // first row to get sides for
+    int last_row,   // last row to get sides for
+) const {
+  assert(first_row <= last_row);
+
+  MiniMIPdebugMessage("getting row sides %d to %d\n", first_row, last_row);
+
+  std::vector<double> right_hand_sides;
+  for (RowIndex row(first_row); row <= RowIndex(last_row); ++row) {
+    right_hand_sides.push_back(linear_program_.constraint_lower_bounds()[row]);
+  }
+
+  return right_hand_sides;
 }
 
 // gets a single coefficient
@@ -738,7 +752,7 @@ absl::Status LPGlopInterface::SolveInternal(
 // ==========================================================================
 
 // calls primal simplex to solve the LP
-absl::Status LPGlopInterface::SolveLpWithPrimalSimplex() {
+absl::Status LPGlopInterface::SolveLPWithPrimalSimplex() {
   MiniMIPdebugMessage("SolvePrimal: %d rows, %d cols.\n",
                       linear_program_.num_constraints().value(),
                       linear_program_.num_variables().value());
@@ -751,7 +765,7 @@ absl::Status LPGlopInterface::SolveLpWithPrimalSimplex() {
 }
 
 // calls dual simplex to solve the LP
-absl::Status LPGlopInterface::SolveLpWithDualSimplex() {
+absl::Status LPGlopInterface::SolveLPWithDualSimplex() {
   MiniMIPdebugMessage("SolveDual: %d rows, %d cols.\n",
                       linear_program_.num_constraints().value(),
                       linear_program_.num_variables().value());
@@ -1447,9 +1461,6 @@ absl::Status LPGlopInterface::GetColumnOfBInverted(
 //       lpi.h.
 absl::Status LPGlopInterface::GetRowOfBInvertedTimesA(
     int row_number,  // row number
-    const std::vector<double>&
-        b_inverted_row,               // row in (A_B)^-1 from prior call to
-                                      // minimip::LPInterface.GetBInvRow()
     std::vector<double>& row_coeffs,  // array to store coefficients of the row
     std::vector<int>& indices,        // array to store the non-zero indices
     int& num_indices  // thee number of non-zero indices (-1: if we do not store

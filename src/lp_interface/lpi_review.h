@@ -11,7 +11,7 @@ namespace minimip {
 
 // LPInterface abstract class. This is used my MiniMIP to communicate with an
 // underlying LP solver.
-class LpInterface {
+class LPInterface {
  public:
   virtual ~LPInterface() = default;
 
@@ -19,7 +19,7 @@ class LpInterface {
   // LP model setters.
   // ==========================================================================
 
-  struct LpColumnData {
+  struct LPColumnData {
     // This column has constraint coefficients equal to `coeffs[i]` at
     // constraint `rows[i]`. Both vectors must be of equal length. All row
     // indices must be numbers between 0 and `num_rows()`. All coeffs must be
@@ -41,7 +41,7 @@ class LpInterface {
     std::string name;
   };
 
-  struct LpRowData {
+  struct LPRowData {
     // This row has constraint coefficients equal to `coeffs[i]` for variable
     // `cols[i]`. Both vectors must be of equal length. All row indices must be
     // numbers between 0 and `num_rows()`. All coeffs must be finite, non-zero
@@ -63,17 +63,17 @@ class LpInterface {
   // All row indices inside elements from `cols` must be between 0 and
   // `rows.size() - 1`. All col indices inside elements from `rows` must be
   // between 0 and `cols.size() - 1`. The coefficient matrix is populated from
-  // `cols` (i.e., for all SparseLpRow from `rows`, their `cols` and `coeffs`
+  // `cols` (i.e., for all SparseLPRow from `rows`, their `cols` and `coeffs`
   // must be empty).
   // TODO(lpawel): Consider allowing to populate the LP from rows too.
   virtual absl::Status
   PopulateFromSparseColumns(bool is_minimization,
-                            const std::vector<LpColumnData>& cols,
-                            const std::vector<LpColumnData>& rows) = 0;
+                            const std::vector<LPColumnData>& cols,
+                            const std::vector<LPColumnData>& rows) = 0;
 
   // Appends a single column to the LP from the right side of the coefficient
   // matrix.
-  virtual absl::Status AddColumn(const LpColumnData& col) = 0;
+  virtual absl::Status AddColumn(const LPColumnData& col) = 0;
 
   // Deletes the column at index `col`, which must be a number between 0 and
   // `num_columns()`.
@@ -81,7 +81,7 @@ class LpInterface {
 
   // Appends a single row to the LP from the bottom side of the coefficient
   // matrix.
-  virtual absl::Status AddRow(const LpRowData& row) = 0;
+  virtual absl::Status AddRow(const LPRowData& row) = 0;
 
   // Deletes the row at index `row`, which must be a number between 0 and
   // `num_rows()`.
@@ -108,11 +108,11 @@ class LpInterface {
 
   // Removes all cols and rows (and associated coeffiecients, bounds, and
   // names).
-  virtual void ClearLpData() = 0;
+  virtual void ClearLPData() = 0;
 
   // Clears all information (e.g., basis) except for cols and rows (and the
   // associated coefficients, bounds, and names).
-  virtual void ClearLpState() = 0;
+  virtual void ClearLPState() = 0;
 
   // ==========================================================================
   // LP model getters.
@@ -134,13 +134,13 @@ class LpInterface {
   // `num_cols()`).
   // NOTE: We do not provide a bulk version for getting a row / column, because
   // both Glop and SoPLEX would need to iterate over the rows and cols anyway.
-  virtual LpColumnData GetColumnData(int col) const = 0;
+  virtual LPColumnData GetColumnData(int col) const = 0;
 
   // Gets the sparse row at `row` index (which must be between 0 and
   // `num_rows()-1`).
   // NOTE: We do not provide a bulk version for getting a row / column, because
   // both Glop and SoPLEX would need to iterate over the rows and cols anyway.
-  virtual LpRowData GetRowData(int row) const = 0;
+  virtual LPRowData GetRowData(int row) const = 0;
 
   // Gets the lower and upper bound for `col` (which must be between 0 and
   // `num_cols()-1`).
@@ -171,8 +171,8 @@ class LpInterface {
   // set its state, and the solve may continue from the currently set basis, if
   // the underlying solver supports that). It is the responsability of the
   // caller to reset the LP solver with a specific basis.
-  virtual absl::Status SolveLpWithPrimalSimplex() = 0;
-  virtual absl::Status SolveLpWithDualSimplex() = 0;
+  virtual absl::Status SolveLPWithPrimalSimplex() = 0;
+  virtual absl::Status SolveLPWithDualSimplex() = 0;
 
   // These two functions should always be called before and after the underlying
   // LP solver is used to perform strong branching solves.
@@ -190,6 +190,7 @@ class LpInterface {
     double dual_bound_on_up_branch;
     int num_simplex_iterations;
   };
+
   virtual absl::StatusOr<StronBranchResult> StrongBranchOnSingleColumn(
       int col, double primal_value, int iteration_limit) = 0;
 
@@ -253,12 +254,12 @@ class LpInterface {
   // `IsOptimal()` is true.
   // TODO(lpawel): This should not fail (why would it?). But, if the
   // underlying solver requires it, we could change the output type to
-  // `absl::StatusOr<DenseLpSolution>`.
-  struct DenseLpSolution {
+  // `absl::StatusOr<DenseLPSolution>`.
+  struct DenseLPSolution {
     std::vector<double> primal_values, std::vector<double> dual_values,
         std::vector<double> row_activities, std::vector<double> reduced_costs
   };
-  virtual DenseLpSolution GetSolution() const = 0;
+  virtual DenseLPSolution GetSolution() const = 0;
 
   // Returns the primal ray for unbounded LPs. Can only be called if
   // `HasPrimalRay()` is true.
@@ -284,12 +285,12 @@ class LpInterface {
   };
 
   // Gets and sets the LP basis status for all cols and rows.
-  struct LpBasis {
+  struct LPBasis {
     std::vector<BasisStatus> col_basis_status;
     std::vector<BasisStatus> row_basis_status;
   };
-  virtual absl::StatusOr<LpBasis> GetLpBasis() const = 0;
-  virtual absl::Status SetBasis(const LpBasis& basis) = 0;
+  virtual absl::StatusOr<LPBasis> GetLPBasis() const = 0;
+  virtual absl::Status SetBasis(const LPBasis& basis) = 0;
 
   // Returns the indices of the basic columns and rows. Basic column n is
   // indicated by value n. Basic row m is indicated by value -1-m.

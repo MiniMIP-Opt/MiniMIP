@@ -6,25 +6,6 @@
 
 namespace minimip {
 
-// return codes for MiniMIP methods: non-positive return codes are errors
-enum class RetCode {
-  kOkay = +1,        // normal termination
-  kError = 0,        // unspecified error
-  kNoMemory = -1,    // insufficient memory error
-  kReadError = -2,   // read error
-  kWriteError = -3,  // write error
-  kLPError = -4,     // error in LP solver
-  kNoProblem = -5,   // no problem exists
-  kInvalidCall =
-      -6,  // method cannot be called at this time in solution process
-  kInvalidData = -7,          // error in input data
-  kInvalidResult = -8,        // method returned an invalid result code
-  kParameterUnknown = -9,     // the parameter with the given name was not found
-  kParameterWrongType = -10,  // the parameter is not of the expected type
-  kParameterWrongValue = -11,  // the value is invalid for the given parameter
-  kNotImplemented = -12,       // function not implemented
-};
-
 // LP objective sense
 enum class LPObjectiveSense {
   kMaximization = -1,  // maximize objective function
@@ -69,8 +50,8 @@ enum class LPPricing {
 // LP basis status for columns and rows
 enum class LPBasisStatus {
   kBasic = 0,  // (slack) variable is basic
-  kLower = 1,  // (slack) variable is at its lower bound
-  kUpper = 2,  // (slack) variable is at its upper bound
+  kAtLowerBound = 1,  // (slack) variable is at its lower bound
+  kAtUpperBound = 2,  // (slack) variable is at its upper bound
   kFixed = 3,  // variable fixed to identical bounds
   kFree = 4,   // free variable is non-basic and set to zero
 };
