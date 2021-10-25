@@ -71,8 +71,8 @@ TEST_F(BoundChanges, SimpleBoundTest) {
   ASSERT_EQ(lp_interface_->SetColumnBounds(1, ind, lb, ub), absl::OkStatus());
 
   // get bounds and compare
-  lbnew = lp_interface_->GetLowerBounds(0, 0);
-  ubnew = lp_interface_->GetUpperBounds(0, 0);
+  lbnew[0] = lp_interface_->GetLowerBound(0);
+  ubnew[0] = lp_interface_->GetUpperBound(0);
 
   ASSERT_FLOAT_EQ(lb[0], lbnew[0]);
   ASSERT_FLOAT_EQ(ub[0], ubnew[0]);
@@ -85,8 +85,8 @@ TEST_F(BoundChanges, ChangeBoundBySmallValue) {
   ASSERT_EQ(lp_interface_->SetColumnBounds(1, ind, lb, ub), absl::OkStatus());
 
   // get bounds and compare
-  lbnew = lp_interface_->GetLowerBounds(0, 0);
-  ubnew = lp_interface_->GetUpperBounds(0, 0);
+  lbnew[0] = lp_interface_->GetLowerBound(0);
+  ubnew[0] = lp_interface_->GetUpperBound(0);
 
   ASSERT_FLOAT_EQ(lb[0], lbnew[0]);
   ASSERT_FLOAT_EQ(ub[0], ubnew[0]);

@@ -103,7 +103,7 @@ class LPGlopInterface : public LPInterface {
 
   // performs strong branching iterations
   absl::Status strongbranch(
-      int col_index,      // column to apply strong branching on
+      int col,      // column to apply strong branching on
       double primal_sol,  // fractional current primal solution value of column
       int iteration_limit,             // iteration limit for strong branchings
       double& dual_bound_down_branch,  // stores dual bound after branching
@@ -327,39 +327,24 @@ class LPGlopInterface : public LPInterface {
           vals  // array to store values of constraint matrix entries
   ) const override;
 
-  // gets objective coefficients from LP problem object
-  std::vector<double> GetObjectiveCoefficients(
-      int first_col,  // first column to get objective coefficient for
-      int last_col,   // last column to get objective coefficient for
-  ) const override;
+  // gets objective coefficient of column from LP problem object
+  virtual double GetObjectiveCoefficient(int col) const override;
 
-  // gets current lower bounds from LP problem object
-  std::vector<double> GetLowerBounds(
-      int first_col,  // first column to get bounds for
-      int last_col,   // last column to get bounds for
-  ) const override;
+  // gets current lower bound of column from LP problem object
+  virtual double GetLowerBound(int col) const override;
 
-  // gets current upper bounds from LP problem object
-  virtual std::vector<double> GetUpperBounds(
-      int first_col,  // first column to get bounds for
-      int last_col,   // last column to get bounds for
-  ) const override;
+  // gets current upper bound of column from LP problem object
+  virtual double GetUpperBound(int col) const override;
 
-  // gets current left hand sides from LP problem object
-  virtual std::vector<double> GetLeftHandSides(
-      int first_row,  // first row to get sides for
-      int last_row,   // last row to get sides for
-  ) const override;
+  // gets current left hand side of row from LP problem object
+  virtual double GetLeftHandSide(int row) const override;
 
-  // gets current right hand sides from LP problem object
-  virtual std::vector<double> GetRightHandSides(
-      int first_row,  // first row to get sides for
-      int last_row,   // last row to get sides for
-  ) const override;
+  // gets current right hand side of row from LP problem object
+  virtual double GetRightHandSide(int row) const override;
 
-  // gets a single coefficient
-  double GetMatrixCoefficient(int col,  // column number of coefficient
-                              int row   // row number of coefficient
+  // gets the matrix coefficient of column and row from LP problem object
+  virtual double GetMatrixCoefficient(int col,  // column number of coefficient
+                                      int row   // row number of coefficient
   ) const override;
 
   // ==========================================================================

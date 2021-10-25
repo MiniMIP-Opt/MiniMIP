@@ -1200,98 +1200,56 @@ absl::Status LPSoplexInterface::GetRows(
 }
 
 // gets objective coefficients from LP problem object
-std::vector<double> LPSoplexInterface::GetObjectiveCoefficients(
-    int first_col,  // first column to get objective coefficient for
-    int last_col,   // last column to get objective coefficient for
-) const {
-  MiniMIPdebugMessage("calling GetObjectiveCoefficients()\n");
+double LPSoplexInterface::GetObjectiveCoefficient(int col) const {
+  MiniMIPdebugMessage("calling GetObjectiveCoefficient()\n");
 
-  assert(0 <= first_col && first_col <= last_col &&
-         last_col < spx_->numColsReal());
+  assert(0 <= col && col < spx_->numColsReal());
 
-  std::vector<double> obj_coeffs;
-  for (int i = first_col; i <= last_col; ++i)
-    obj_coeffs.push_back(spx_->objReal(i));
-
-  return obj_coeffs;
+  return spx_->objReal(col);
 }
 
-// gets current lower bounds from LP problem object
-absl::Status LPSoplexInterface::GetLowerBounds(
-    int first_col,                      // first column to get bounds for
-    int last_col,                       // last column to get bounds for
-) const {
-  MiniMIPdebugMessage("calling GetColumnBounds()\n");
+// gets current lower bound of column from LP problem object
+double LPSoplexInterface::GetLowerBound(int col) const {
+  MiniMIPdebugMessage("calling GetLowerBound()\n");
 
-  assert(0 <= first_col && first_col <= last_col &&
-         last_col < spx_->numColsReal());
+  assert(0 <= col && col < spx_->numColsReal());
 
-  std::vector<double> lower_bounds;
-  for (int i = first_col; i <= last_col; ++i) {
-    lower_bounds.push_back(spx_->lowerReal(i));
-  }
-
-  return lower_bounds;
+  return spx_->lowerReal(col);
 }
 
-// gets current upper bounds from LP problem object
-absl::Status LPSoplexInterface::GetUpperBounds(
-    int first_col,                      // first column to get bounds for
-    int last_col,                       // last column to get bounds for
-) const {
-  MiniMIPdebugMessage("calling GetColumnBounds()\n");
+// gets current upper bound of column from LP problem object
+double LPSoplexInterface::GetUpperBound(int col) const {
+  MiniMIPdebugMessage("calling GetUpperBound()\n");
 
-  assert(0 <= first_col && first_col <= last_col &&
-         last_col < spx_->numColsReal());
+  assert(0 <= col && col < spx_->numColsReal());
 
-  std::vector<double> upper_bounds;
-  for (int i = first_col; i <= last_col; ++i) {
-    upper_bounds.push_back(spx_->upperReal(i));
-  }
-
-  return upper_bounds;
+  return spx_->upperReal(col);
 }
 
-// gets current left hand sides from LP problem object
-std::vector<double> LPSoplexInterface::GetLeftHandSides(
-    int first_row,  // first row to get sides for
-    int last_row,   // last row to get sides for
-) const {
-  MiniMIPdebugMessage("calling GetRowSides()\n");
+// gets current left hand sides of row from LP problem object
+double LPSoplexInterface::GetLeftHandSide(int row) const {
+  MiniMIPdebugMessage("calling GetLeftHandSide()\n");
 
-  assert(0 <= first_row && first_row <= last_row &&
-         last_row < spx_->numRowsReal());
+  assert(0 <= row && row < spx_->numRowsReal());
 
-  std::vector<double> left_hand_sides;
-  for (int i = first_row; i <= last_row; ++i) {
-    left_hand_sides.push_back(spx_->lhsReal(i));
-  }
-  return left_hand_sides;
+  return spx_->lhsReal(row);
 }
 
-// gets current right hand sides from LP problem object
-std::vector<double> LPSoplexInterface::GetRightHandSides(
-    int first_row,  // first row to get sides for
-    int last_row,   // last row to get sides for
-) const {
-  MiniMIPdebugMessage("calling GetRowSides()\n");
+// gets current right hand sides of row from LP problem object
+double LPSoplexInterface::GetRightHandSide(int row) const {
+  MiniMIPdebugMessage("calling GetRightHandSide()\n");
 
-  assert(0 <= first_row && first_row <= last_row &&
-         last_row < spx_->numRowsReal());
+  assert(0 <= row && row < spx_->numRowsReal());
 
-  std::vector<double> right_hand_sides;
-  for (int i = first_row; i <= last_row; ++i) {
-    right_hand_sides.push_back(spx_->rhsReal(i));
-  }
-  return right_hand_sides;
+  return spx_->rhsReal(row);
 }
 
-// gets a single coefficient
+// gets the matrix coefficient of column and row from LP problem object
 double LPSoplexInterface::GetMatrixCoefficient(
     int col,  // column number of coefficient
     int row   // row number of coefficient
 ) const {
-  MiniMIPdebugMessage("calling GetCoefficients()\n");
+  MiniMIPdebugMessage("calling GetMatrixCoefficient()\n");
 
   assert(0 <= col && col < spx_->numColsReal());
   assert(0 <= row && row < spx_->numRowsReal());

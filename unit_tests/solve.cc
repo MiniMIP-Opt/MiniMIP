@@ -283,8 +283,10 @@ class Solve : public ::testing::Test {
         std::vector<double> rhs(nrows);
 
         // get lhs/rhs for check of dual ray
-        ASSERT_EQ(lp_interface_->GetRowSides(0, nrows - 1, lhs, rhs),
-                  absl::OkStatus());
+        for (int i = 0; i < nrows; i++){
+          lhs.push_back(lp_interface_->GetLeftHandSide(0));
+          rhs.push_back(lp_interface_->GetRightHandSide(0));
+        }
 
         // get dual ray
         ASSERT_EQ(lp_interface_->GetDualFarkasMultiplier(dualsol),
@@ -420,6 +422,9 @@ class Solve : public ::testing::Test {
                                         check_nnonz2, check_beg, check_ind,
                                         check_val),
               absl::OkStatus());
+    for (int i = 0; i < ncols; i++){
+      check_obj = lp_interface_->GetObjectiveCoefficient(i);
+    }
     ASSERT_EQ(lp_interface_->GetObjectiveCoefficients(0, ncols - 1, check_obj),
               absl::OkStatus());
 
@@ -450,8 +455,10 @@ class Solve : public ::testing::Test {
     check_lhs.reserve(nrows);
     check_rhs.reserve(nrows);
 
-    ASSERT_EQ(lp_interface_->GetRowSides(0, nrows - 1, check_lhs, check_rhs),
-              absl::OkStatus());
+    for (int i = 0; i < nrows; i++){
+      check_lhs.push_back(lp_interface_->GetLeftHandSide(0));
+      check_rhs.push_back(lp_interface_->GetRightHandSide(0));
+    }
 
     for (i = 0; i < nrows; ++i) {
       if (fabs(check_lhs[i]) < 1e30 && fabs(lhs[i]) < 1e30) {

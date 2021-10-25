@@ -270,8 +270,9 @@ class ChangeObjective
     ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(lastcol, ind, setobj),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetObjectiveCoefficients(0, lastcol - 1, obj),
-              absl::OkStatus());
+    for (int i = 0; i < lastcol; i++){
+      obj = lp_interface_->GetObjectiveCoefficient(i)
+    }
 
     for (size_t i; i < setobj.size(); i++) {
       ASSERT_EQ(obj[i], setobj[i]);
@@ -339,8 +340,10 @@ class ChangeBounds : public Change,
                 absl::OkStatus());
     }
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    lb = lp_interface_->GetLowerBounds(0, lastcol - 1);
-    ub = lp_interface_->GetUpperBounds(0, lastcol - 1);
+    for(int i = 0; i < lastcol; i++) {
+      lb.push_back(lp_interface_->GetLowerBound(0));
+      ub.push_back(lp_interface_->GetUpperBound(0));
+    }
 
     for (size_t i; i < setub.size(); i++) {
       ASSERT_EQ(ub[i], setub[i]);
@@ -416,8 +419,11 @@ class ChangeSides : public Change,
     ASSERT_EQ(lp_interface_->SetRowSides(lastcol, ind, setls, setrs),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetRowSides(0, lastcol - 1, ls, rs),
-              absl::OkStatus());
+
+    for (int i = 0; i < lastcol; i++){
+      ls.push_back(lp_interface_->GetLeftHandSide(0));
+      rs.push_back(lp_interface_->GetRightHandSide(0));
+    }
 
     for (int i; i < setls.size(); i++) {
       ASSERT_EQ(ls[i], setls[i]);

@@ -191,37 +191,22 @@ class LPInterface : private messagehandler {
           vals  // array to store values of constraint matrix entries
   ) const = 0;
 
-  // gets objective coefficients from LP problem object
-  virtual std::vector<double> GetObjectiveCoefficients(
-      int first_col,  // first column to get objective coefficient for
-      int last_col,   // last column to get objective coefficient for
-  ) const = 0;
+  // gets objective coefficient of column from LP problem object
+  virtual double GetObjectiveCoefficient(int col) const = 0;
 
-  // gets current lower bounds from LP problem object
-  virtual std::vector<double> GetLowerBounds(
-      int first_col,  // first column to get bounds for
-      int last_col,   // last column to get bounds for
-  ) const = 0;
+  // gets current lower bound of column from LP problem object
+  virtual double GetLowerBound(int col) const = 0;
 
-  // gets current upper bounds from LP problem object
-  virtual std::vector<double> GetUpperBounds(
-      int first_col,  // first column to get bounds for
-      int last_col,   // last column to get bounds for
-  ) const = 0;
+  // gets current upper bound of column from LP problem object
+  virtual double GetUpperBound(int col) const = 0;
 
-  // gets current left hand sides from LP problem object
-  virtual std::vector<double> GetLeftHandSides(
-      int first_row,  // first row to get sides for
-      int last_row,   // last row to get sides for
-  ) const override;
+  // gets current left hand sides of row from LP problem object
+  virtual double GetLeftHandSide(int row) const = 0;
 
-  // gets current right hand sides from LP problem object
-  virtual std::vector<double> GetRightHandSides(
-      int first_row,  // first row to get sides for
-      int last_row,   // last row to get sides for
-  ) const override;
+  // gets current right hand sides of row from LP problem object
+  virtual double GetRightHandSide(int row) const = 0;
 
-  // gets a single coefficient
+  // gets the matrix coefficient of column and row from LP problem object
   virtual double GetMatrixCoefficient(int col,  // column number of coefficient
                                       int row   // row number of coefficient
   ) const = 0;
