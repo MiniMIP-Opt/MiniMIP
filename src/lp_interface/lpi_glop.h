@@ -472,14 +472,8 @@ class LPGlopInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::Status GetRowOfBInverted(
-      int row_number,  // row number
-      std::vector<double>&
-          row_coeffs,             // array to store the coefficients of the row
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInverted(
+      int row_number) const override;
 
   // get column of inverse basis matrix B^-1
   //
@@ -487,20 +481,16 @@ class LPGlopInterface : public LPInterface {
   // means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated
-  absl::Status GetColumnOfBInverted(
-      int col_number,  // column number of B^-1; this is NOT the number of the
-                       // column in the LP; you have to call
-                       // minimip::LPInterface.GetBasisIndices() to get the
-                       // array which links the B^-1 column numbers to the row
-                       // and column numbers of the LP! c must be between 0 and
-                       // num_rows-1, since the basis has the size num_rows *
-                       // num_rows
-      std::vector<double>&
-          col_coeffs,  // array to store the coefficients of the column
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  //
+  // column number of B^-1; this is NOT the number of the
+  // column in the LP; you have to call
+  // minimip::LPInterface.GetBasisIndices() to get the
+  // array which links the B^-1 column numbers to the row
+  // and column numbers of the LP! c must be between 0 and
+  // num_rows-1, since the basis has the size num_rows *
+  // num_rows
+  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(
+      int col_number) const override;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -509,14 +499,8 @@ class LPGlopInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::Status GetRowOfBInvertedTimesA(
-      int row_number,  // row number
-      std::vector<double>&
-          row_coeffs,             // array to store coefficients of the row
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // thee number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(
+      int row_number) const override;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -525,23 +509,15 @@ class LPGlopInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::Status GetColumnOfBInvertedTimesA(
-      int col_number,  // column number
-      std::vector<double>&
-          col_coeffs,             // array to store coefficients of the column
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(
+      int col_number) const override;
 
   // ==========================================================================
   // Getters and setters of the parameters.
   // ==========================================================================
 
   // gets integer parameter of LP
-  absl::Status GetIntegerParameter(
-      LPParameter type,  // parameter number
-      int& param_val     // returns the parameter value
+  absl::StatusOr<int> GetIntegerParameter(LPParameter type  // parameter number
   ) const override;
 
   // sets integer parameter of LP
@@ -550,9 +526,7 @@ class LPGlopInterface : public LPInterface {
                                    ) override;
 
   // gets floating point parameter of LP
-  absl::Status GetRealParameter(
-      LPParameter type,  // parameter number
-      double& param_val  // returns the parameter value
+  absl::StatusOr<double> GetRealParameter(LPParameter type  // parameter number
   ) const override;
 
   // sets floating point parameter of LP

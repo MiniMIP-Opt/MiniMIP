@@ -396,6 +396,17 @@ TEST_F(Complex, test1) {
   ASSERT_LT(i, nrows);
 
   // check basis inverse for the row corresponding to the basic slack variable
+  absl::StatusOr<LPInterface::SparseVector> absl_tmp_sparse;
+
+  absl_tmp_sparse = lp_interface_->GetSparseRowOfBInverted(i);
+  if(absl_tmp_sparse.ok()) {
+    coef = absl_tmp_sparse->values;
+    inds = absl_tmp_sparse->indices;
+    ninds = inds.size();
+  } else {
+    std::cout<<absl_tmp_sparse.status();
+  }
+  // TODO ALL BINVERTED
   ASSERT_EQ(
       lp_interface_->GetRowOfBInverted(i, binvrow, empty_indices, null_int),
       absl::OkStatus());

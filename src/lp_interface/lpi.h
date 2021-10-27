@@ -356,11 +356,9 @@ class LPInterface : private messagehandler {
   //       in lpi.h.
 
   // make only dense available
-  // virtual absl::StaturOr<const std::vector<double>&> GetRowOfBInverted(
+  // virtual absl::StaturOr<const std::vector<double>&> GetSparseRowOfBInverted(
 
-  virtual absl::StaturOr<std::vector<double>> GetRowOfBInverted(
-      int row_number,  // row number
-  ) const = 0;
+  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInverted(int row_number) const = 0;
 
   // get column of inverse basis matrix B^-1
   //
@@ -368,15 +366,15 @@ class LPInterface : private messagehandler {
   // means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated
-  virtual absl::StaturOr<std::vector<double>> GetColumnOfBInverted(
-      int col_number,  // column number of B^-1; this is NOT the number of the
-                       // column in the LP; you have to call
-                       // minimip::LPInterface.GetBasisIndices() to get the
-                       // array which links the B^-1 column numbers to the row
-                       // and column numbers of the LP! c must be between 0 and
-                       // num_rows-1, since the basis has the size num_rows *
-                       // num_rows
-  ) const = 0;
+  //
+  // column number of B^-1; this is NOT the number of the
+  // column in the LP; you have to call
+  // minimip::LPInterface.GetBasisIndices() to get the
+  // array which links the B^-1 column numbers to the row
+  // and column numbers of the LP! c must be between 0 and
+  // num_rows-1, since the basis has the size num_rows *
+  // num_rows
+  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(int col_number) const = 0;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -385,9 +383,7 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::StaturOr<std::vector<double>> GetRowOfBInvertedTimesA(
-      int row_number,  // row number
-  ) const = 0;
+  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(int row_number) const = 0;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -396,9 +392,7 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::StaturOr<std::vector<double>> GetColumnOfBInvertedTimesA(
-      int col_number,  // column number
-  ) const = 0;
+  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(int col_number) const = 0;
 
   // ==========================================================================
   // Getters and setters of the parameters.
@@ -406,7 +400,7 @@ class LPInterface : private messagehandler {
 
   // gets integer parameter of LP
   virtual absl::StatusOr<int> GetIntegerParameter(
-      LPParameter type,  // parameter number
+      LPParameter type  // parameter number
   ) const = 0;
 
   // sets integer parameter of LP
@@ -417,7 +411,7 @@ class LPInterface : private messagehandler {
 
   // gets floating point parameter of LP
   virtual absl::StatusOr<double> GetRealParameter(
-      LPParameter type,  // parameter number
+      LPParameter type  // parameter number
   ) const = 0;
 
   // sets floating point parameter of LP

@@ -442,7 +442,8 @@ int LPGlopInterface::GetNumberOfNonZeros() const {
 // Either both, lb and ub, have to be NULL, or both have to be non-NULL,
 // either num_non_zeros, begin_cols, indices, and val have to be NULL, or all of
 // them have to be non-NULL.
-LPGlopInterface::SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
+LPGlopInterface::SparseVector LPGlopInterface::GetSparseColumnCoefficients(
+    int col) const {
   assert(0 <= col && col < linear_program_.num_variables());
 
   SparseVector sparse_column;
@@ -462,7 +463,8 @@ LPGlopInterface::SparseVector LPGlopInterface::GetSparseColumnCoefficients(int c
 // Either both, left_hand_side and right_hand_side, have to be NULL, or both
 // have to be non-NULL, either num_non_zeros, begin_rows, indices, and val have
 // to be NULL, or all of them have to be non-NULL.
-LPGlopInterface::SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
+LPGlopInterface::SparseVector LPGlopInterface::GetSparseRowCoefficients(
+    int row) const {
   assert(0 <= row && row < linear_program_.num_constraints());
 
   const SparseMatrix& matrixtrans = linear_program_.GetTransposeSparseMatrix();
@@ -801,7 +803,8 @@ absl::Status LPGlopInterface::strongbranch(
 }
 
 // performs strong branching iterations on one @b fractional candidate
-absl::StatusOr<LPGlopInterface::StrongBranchResult> LPGlopInterface::StrongBranchValue(
+absl::StatusOr<LPGlopInterface::StrongBranchResult>
+LPGlopInterface::StrongBranchValue(
     int col,             // column to apply strong branching on
     double primal_sol,   // current primal solution value of column
     int iteration_limit  // iteration limit for strong branchings
@@ -1260,14 +1263,10 @@ std::vector<int> LPGlopInterface::GetBasisIndices() const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPGlopInterface::GetRowOfBInverted(
-    int row_number,  // row number
-    std::vector<double>&
-        row_coeffs,             // array to store the coefficients of the row
-    std::vector<int>& indices,  // array to store the non-zero indices
-    int& num_indices  // the number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+absl::StatusOr<LPInterface::SparseVector>
+LPGlopInterface::GetSparseRowOfBInverted(int row_number) const {
+  LPGlopInterface::SparseVector sparse_row;
+
   solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row_number),
                                                       tmp_row_);
   scaler_.UnscaleUnitRowLeftSolve(solver_.GetBasis(RowIndex(row_number)),
@@ -1276,43 +1275,21 @@ absl::Status LPGlopInterface::GetRowOfBInverted(
   const ColIndex size = tmp_row_->values.size();
   assert(size.value() == linear_program_.num_constraints());
 
-  // if we want a sparse vector
-  if (num_indices > 0 && !indices.empty()) {
-    num_indices = 0;
-    // Vectors in Glop might be stored in dense or sparse format dep
-    //
-    // ending on the values. If non_zeros are given, we
-    // can directly loop over the non_zeros, otherwise we have to collect the
-    // nonzeros.
-    if (!tmp_row_->non_zeros.empty()) {
-      ScatteredRowIterator end = tmp_row_->end();
-      for (ScatteredRowIterator iter = tmp_row_->begin(); iter != end; ++iter) {
-        int idx = (*iter).column().value();
-        assert(0 <= idx && idx < linear_program_.num_constraints());
-        row_coeffs[idx]          = (*iter).coefficient();
-        indices[(num_indices)++] = idx;
-      }
-    } else {
-      // use dense access to tmp_row_
-      const Fractional eps = parameters_.primal_feasibility_tolerance();
-      for (ColIndex col(0); col < size; ++col) {
-        double value = (*tmp_row_)[col];
-        if (fabs(value) >= eps) {
-          row_coeffs[col.value()]  = value;
-          indices[(num_indices)++] = col.value();
-        }
-      }
+  // Vectors in Glop might be stored in dense or sparse format dep
+  //
+  // ending on the values. If non_zeros are given, we
+  // can directly loop over the non_zeros, otherwise we have to collect the
+  // nonzeros.
+  if (!tmp_row_->non_zeros.empty()) {
+    ScatteredRowIterator end = tmp_row_->end();
+    for (ScatteredRowIterator iter = tmp_row_->begin(); iter != end; ++iter) {
+      int idx = (*iter).column().value();
+      assert(0 <= idx && idx < linear_program_.num_constraints());
+      sparse_row.values.push_back((*iter).coefficient());
+      sparse_row.indices.push_back(idx);
     }
-    return absl::OkStatus();
   }
-
-  // dense version
-  for (ColIndex col(0); col < size; ++col)
-    row_coeffs[col.value()] = (*tmp_row_)[col];
-
-  if (num_indices >= 0) num_indices = -1;
-
-  return absl::OkStatus();
+  return sparse_row;
 }
 
 // get column of inverse basis matrix B^-1
@@ -1322,56 +1299,36 @@ absl::Status LPGlopInterface::GetRowOfBInverted(
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPGlopInterface::GetColumnOfBInverted(
-    int col_number,  // column number of B^-1; this is NOT the number of the
-                     // column in the LP; you have to call
-                     // minimip::LPInterface.GetBasisIndices() to get the array
-                     // which links the B^-1 column numbers to the row and
-                     // column numbers of the LP! c must be between 0 and
-                     // num_rows-1, since the basis has the size num_rows *
-                     // num_rows
-    std::vector<double>&
-        col_coeffs,             // array to store the coefficients of the column
-    std::vector<int>& indices,  // array to store the non-zero indices
-    int& num_indices  // the number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+//
+// column number of B^-1; this is NOT the number of the
+// column in the LP; you have to call
+// minimip::LPInterface.GetBasisIndices() to get the array
+// which links the B^-1 column numbers to the row and
+// column numbers of the LP! c must be between 0 and
+// num_rows-1, since the basis has the size num_rows *
+// num_rows
+absl::StatusOr<LPInterface::SparseVector>
+LPGlopInterface::GetSparseColumnOfBInverted(int col_number) const {
+  LPGlopInterface::SparseVector sparse_column;
   // we need to loop through the rows to extract the values for column
   // col_number
   const ColIndex col(col_number);
   const RowIndex num_rows = linear_program_.num_constraints();
 
-  // if we want a sparse vector
-  if (num_indices > 0 && !indices.empty()) {
-    const Fractional eps = parameters_.primal_feasibility_tolerance();
+  const Fractional eps = parameters_.primal_feasibility_tolerance();
 
-    num_indices = 0;
-    for (int row = 0; row < num_rows; ++row) {
-      solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row),
-                                                          tmp_row_);
-      scaler_.UnscaleUnitRowLeftSolve(solver_.GetBasis(RowIndex(row)),
-                                      tmp_row_);
-
-      double value = (*tmp_row_)[col];
-      if (fabs(value) >= eps) {
-        col_coeffs[row]          = value;
-        indices[(num_indices)++] = row;
-      }
-    }
-    return absl::OkStatus();
-  }
-
-  // dense version
   for (int row = 0; row < num_rows; ++row) {
     solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row),
                                                         tmp_row_);
     scaler_.UnscaleUnitRowLeftSolve(solver_.GetBasis(RowIndex(row)), tmp_row_);
-    col_coeffs[row] = (*tmp_row_)[col];
+
+    double value = (*tmp_row_)[col];
+    if (fabs(value) >= eps) {
+      sparse_column.values.push_back(value);
+      sparse_column.indices.push_back(row);
+    }
   }
-
-  if (num_indices >= 0) num_indices = -1;
-
-  return absl::OkStatus();
+  return sparse_column;
 }
 
 // get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -1381,13 +1338,9 @@ absl::Status LPGlopInterface::GetColumnOfBInverted(
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPGlopInterface::GetRowOfBInvertedTimesA(
-    int row_number,                   // row number
-    std::vector<double>& row_coeffs,  // array to store coefficients of the row
-    std::vector<int>& indices,        // array to store the non-zero indices
-    int& num_indices  // thee number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+absl::StatusOr<LPInterface::SparseVector>
+LPGlopInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
+  LPGlopInterface::SparseVector sparse_row;
   // get row of basis inverse, loop through columns and muliply with matrix
   solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row_number),
                                                       tmp_row_);
@@ -1396,36 +1349,17 @@ absl::Status LPGlopInterface::GetRowOfBInvertedTimesA(
 
   const ColIndex num_cols = linear_program_.num_variables();
 
-  // if we want a sparse vector
-  if (num_indices > 0 && !indices.empty()) {
-    const Fractional eps = parameters_.primal_feasibility_tolerance();
+  const Fractional eps = parameters_.primal_feasibility_tolerance();
 
-    num_indices = 0;
-    for (ColIndex col(0); col < num_cols; ++col) {
-      double value = operations_research::glop::ScalarProduct(
-          tmp_row_->values, linear_program_.GetSparseColumn(col));
-      if (fabs(value) >= eps) {
-        row_coeffs[col.value()] = value;
-        indices[num_indices++]  = col.value();
-      }
-    }
-    return absl::OkStatus();
-  }
-
-  // dense version
   for (ColIndex col(0); col < num_cols; ++col) {
-    double check = operations_research::glop::ScalarProduct(
+    double value = operations_research::glop::ScalarProduct(
         tmp_row_->values, linear_program_.GetSparseColumn(col));
-    if (EPS <= fabs(check)) {
-      row_coeffs[col.value()] = operations_research::glop::ScalarProduct(
-          tmp_row_->values, linear_program_.GetSparseColumn(col));
-    } else {
-      row_coeffs[col.value()] = 0;
+    if (fabs(value) >= eps) {
+      sparse_row.values.push_back(value);
+      sparse_row.indices.push_back(col.value());
     }
   }
-  num_indices = -1;
-
-  return absl::OkStatus();
+  return sparse_row;
 }
 
 // get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -1435,14 +1369,9 @@ absl::Status LPGlopInterface::GetRowOfBInvertedTimesA(
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPGlopInterface::GetColumnOfBInvertedTimesA(
-    int col_number,  // column number
-    std::vector<double>&
-        col_coeffs,             // array to store coefficients of the column
-    std::vector<int>& indices,  // array to store the non-zero indices
-    int& num_indices  // the number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+absl::StatusOr<LPInterface::SparseVector>
+LPGlopInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
+  LPGlopInterface::SparseVector sparse_column;
   solver_.GetBasisFactorization().RightSolveForProblemColumn(
       ColIndex(col_number), tmp_column_);
   scaler_.UnscaleColumnRightSolve(solver_.GetBasisVector(),
@@ -1450,42 +1379,18 @@ absl::Status LPGlopInterface::GetColumnOfBInvertedTimesA(
 
   const RowIndex num_rows = tmp_column_->values.size();
 
-  // if we want a sparse vector
-  if (num_indices > 0 && !indices.empty()) {
-    num_indices = 0;
-    // Vectors in Glop might be stored in dense or sparse format depending on
-    // the values. If non_zeros are given, we can directly loop over the
-    // non_zeros, otherwise we have to collect the nonzeros.
-    if (!tmp_column_->non_zeros.empty()) {
-      ScatteredColumnIterator end = tmp_column_->end();
-      for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
-           ++iter) {
-        int idx = (*iter).row().value();
-        assert(0 <= idx && idx < num_rows);
-        col_coeffs[idx]          = (*iter).coefficient();
-        indices[(num_indices)++] = idx;
-      }
-    } else {
-      // use dense access to tmp_column_
-      const Fractional eps = parameters_.primal_feasibility_tolerance();
-      for (RowIndex row(0); row < num_rows; ++row) {
-        double value = (*tmp_column_)[row];
-        if (fabs(value) > eps) {
-          col_coeffs[row.value()]  = value;
-          indices[(num_indices)++] = row.value();
-        }
-      }
-    }
-    return absl::OkStatus();
+  // Vectors in Glop might be stored in dense or sparse format depending on
+  // the values. If non_zeros are given, we can directly loop over the
+  // non_zeros, otherwise we have to collect the nonzeros.
+  ScatteredColumnIterator end = tmp_column_->end();
+  for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
+       ++iter) {
+    int idx = (*iter).row().value();
+    assert(0 <= idx && idx < num_rows);
+    sparse_column.values.push_back((*iter).coefficient());
+    sparse_column.indices.push_back(idx);
   }
-
-  // dense version
-  for (RowIndex row(0); row < num_rows; ++row)
-    col_coeffs[row.value()] = (*tmp_column_)[row];
-
-  if (num_indices >= 0) num_indices = -1;
-
-  return absl::OkStatus();
+  return sparse_column;
 }
 
 // ==========================================================================
@@ -1493,10 +1398,10 @@ absl::Status LPGlopInterface::GetColumnOfBInvertedTimesA(
 // ==========================================================================
 
 // gets integer parameter of LP
-absl::Status LPGlopInterface::GetIntegerParameter(
-    LPParameter type,  // parameter number
-    int& param_val     // buffer to store the parameter value
+absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
+    LPParameter type  // parameter number
 ) const {
+  int param_val;
   switch (type) {
     case LPParameter::kFromScratch:
       param_val = (int)from_scratch_;
@@ -1551,7 +1456,7 @@ absl::Status LPGlopInterface::GetIntegerParameter(
                           "Parameter Unknown");
   }
 
-  return absl::OkStatus();
+  return param_val;
 }
 
 // sets integer parameter of LP
@@ -1655,10 +1560,11 @@ absl::Status LPGlopInterface::SetIntegerParameter(
 }
 
 // gets floating point parameter of LP
-absl::Status LPGlopInterface::GetRealParameter(
+absl::StatusOr<double> LPGlopInterface::GetRealParameter(
     LPParameter type,  // parameter number
-    double& param_val  // buffer to store the parameter value
 ) const {
+  double param_val;
+
   switch (type) {
     case LPParameter::kFeasibilityTolerance:
       param_val = parameters_.primal_feasibility_tolerance();
@@ -1693,8 +1599,7 @@ absl::Status LPGlopInterface::GetRealParameter(
       return absl::Status(absl::StatusCode::kInvalidArgument,
                           "Parameter Unknown");
   }
-
-  return absl::OkStatus();
+  return param_val;
 }
 
 // sets floating point parameter of LP

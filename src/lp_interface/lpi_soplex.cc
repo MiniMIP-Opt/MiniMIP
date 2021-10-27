@@ -1742,29 +1742,24 @@ std::vector<int> LPSoplexInterface::GetBasisIndices() const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPSoplexInterface::GetRowOfBInverted(
-    int row_number,  // row number
-    std::vector<double>&
-        row_coeffs,             // array to store the coefficients of the row
-    std::vector<int>& indices,  // array to store the non-zero indices
-    int& num_indices  // the number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
-  MiniMIPdebugMessage("calling GetRowOfBInverted()\n");
+absl::StatusOr<LPInterface::SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(int row_number) const {
+  LPInterface::SparseVector sparse_row;
+  int num_indices;
+  MiniMIPdebugMessage("calling GetSparseRowOfBInverted()\n");
 
   assert(PreStrongBranchingBasisFreed());
   assert(row_number >= 0);
   assert(row_number < spx_->numRowsReal());
 
-  std::vector<int> integer_indices(indices.begin(), indices.end());
+  std::vector<int> integer_indices(sparse_row.indices.begin(), sparse_row.indices.end());
 
-  if (!spx_->getBasisInverseRowReal(row_number, row_coeffs.data(),
+  if (!spx_->getBasisInverseRowReal(row_number, sparse_row.values.data(),
                                     integer_indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  indices.assign(integer_indices.begin(), integer_indices.end());
+  sparse_row.indices.assign(integer_indices.begin(), integer_indices.end());
 
-  return absl::OkStatus();
+  return sparse_row;
 }
 
 // get column of inverse basis matrix B^-1
@@ -1774,33 +1769,33 @@ absl::Status LPSoplexInterface::GetRowOfBInverted(
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPSoplexInterface::GetColumnOfBInverted(
-    int col_number,  // column number of B^-1; this is NOT the number of the
-                     // column in the LP; you have to call
-                     // minimip::LPInterface.GetBasisIndices() to get the array
-                     // which links the B^-1 column numbers to the row and
-                     // column numbers of the LP! c must be between 0 and
-                     // num_rows-1, since the basis has the size num_rows *
-                     // num_rows
-    std::vector<double>&
-        col_coeffs,             // array to store the coefficients of the column
-    std::vector<int>& indices,  // array to store the non-zero indices
-    int& num_indices  // the number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+//
+// column number of B^-1; this is NOT the number of the
+// column in the LP; you have to call
+// minimip::LPInterface.GetBasisIndices() to get the array
+// which links the B^-1 column numbers to the row and
+// column numbers of the LP! c must be between 0 and
+// num_rows-1, since the basis has the size num_rows *
+// num_rows
+
+absl::StatusOr<LPInterface::SparseVector>
+LPSoplexInterface::GetSparseRowOfBInverted(int col_number) const {
   MiniMIPdebugMessage("calling GetColumnOfBInverted()\n");
+
+  LPInterface::SparseVector sparse_column;
+  int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
 
-  std::vector<int> integer_indices(indices.begin(), indices.end());
+  std::vector<int> integer_indices;
 
-  if (!spx_->getBasisInverseColReal(col_number, col_coeffs.data(),
+  if (!spx_->getBasisInverseColReal(col_number, sparse_column.values.data(),
                                     integer_indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  indices.assign(integer_indices.begin(), integer_indices.end());
+  sparse_column.indices.assign(integer_indices.begin(), integer_indices.end());
 
-  return absl::OkStatus();
+  return sparse_column;
 }
 
 // get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -1810,20 +1805,17 @@ absl::Status LPSoplexInterface::GetColumnOfBInverted(
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
-    int row_number,                   // row number
-    std::vector<double>& row_coeffs,  // array to store coefficients of the row
-    std::vector<int>& indices,        // array to store the non-zero indices
-    int& num_indices  // thee number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+absl::StatusOr<LPInterface::SparseVector>
+LPSoplexInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
+  LPInterface::SparseVector sparse_row;
   std::vector<double> buf;
   std::vector<double> binv;
   int num_rows;
   int num_cols;
   int c;
+  int num_indices;
 
-  MiniMIPdebugMessage("calling GetRowOfBInvertedTimesA()\n");
+  MiniMIPdebugMessage("calling GetSparseRowOfBInvertedTimesA()\n");
 
   assert(PreStrongBranchingBasisFreed());
 
@@ -1833,7 +1825,8 @@ absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
   buf.resize(num_rows);
 
   // calculate the row in B^-1
-  MINIMIP_CALL(GetRowOfBInverted(row_number, buf, indices, num_indices));
+  MINIMIP_CALL(
+      GetSparseRowOfBInverted(row_number, buf, sparse_row.indices, &num_indices));
   binv.assign(buf.begin(), buf.end());
 
   assert(binv.size() == num_rows);
@@ -1850,10 +1843,10 @@ absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
 
   for (c = 0; c < num_cols; ++c) {
     spx_->getColVectorReal(c, acol);
-    row_coeffs[c] = binv_vec * acol;  // scalar product
+    sparse_row.values.push_back(binv_vec * acol);  // scalar product
   }
 
-  return absl::OkStatus();
+  return sparse_row;
 }
 
 // get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -1863,14 +1856,10 @@ absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::Status LPSoplexInterface::GetColumnOfBInvertedTimesA(
-    int col_number,  // column number
-    std::vector<double>&
-        col_coeffs,             // array to store coefficients of the column
-    std::vector<int>& indices,  // array to store the non-zero indices
-    int& num_indices  // the number of non-zero indices (-1: if we do not store
-                      // sparsity information)
-) const {
+absl::StatusOr<LPInterface::SparseVector>
+LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
+  LPInterface::SparseVector sparse_row;
+  int num_indices;
   // create a new uninitialized full vector
   DVector col(spx_->numRowsReal());
 
@@ -1898,10 +1887,10 @@ absl::Status LPSoplexInterface::GetColumnOfBInvertedTimesA(
   col = colsparse;
 
   // solve
-  if (!spx_->getBasisInverseTimesVecReal(col.get_ptr(), col_coeffs.data()))
+  if (!spx_->getBasisInverseTimesVecReal(col.get_ptr(), sparse_row.values.data()))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  return absl::OkStatus();
+  return sparse_row;
 }
 
 // ==========================================================================
@@ -1909,11 +1898,11 @@ absl::Status LPSoplexInterface::GetColumnOfBInvertedTimesA(
 // ==========================================================================
 
 // gets integer parameter of LP
-absl::Status LPSoplexInterface::GetIntegerParameter(
-    LPParameter type,  // parameter number
-    int& param_val     // returns the parameter value
+absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
+    LPParameter type  // parameter number
 ) const {
   int scale_param;
+  int param_val;
 
   MiniMIPdebugMessage("calling GetIntegerParameter()\n");
 
@@ -1960,7 +1949,7 @@ absl::Status LPSoplexInterface::GetIntegerParameter(
                           "Parameter Unknown");
   }
 
-  return absl::OkStatus();
+  return param_val;
 }
 
 // sets integer parameter of LP
@@ -2057,80 +2046,80 @@ absl::Status LPSoplexInterface::SetIntegerParameter(
 }
 
 // gets floating point parameter of LP
-absl::Status LPSoplexInterface::GetRealParameter(
-    LPParameter type,    // parameter number
-    double& LPValue_val  // returns the parameter value
+absl::StatusOr<double> LPSoplexInterface::GetRealParameter(
+    LPParameter type  // parameter number
 ) const {
+  double param_val;
   MiniMIPdebugMessage("calling GetRealParameter()\n");
 
   switch (type) {
     case LPParameter::kFeasibilityTolerance:
-      LPValue_val = FeasibilityTolerance();
+      param_val = FeasibilityTolerance();
       break;
     case LPParameter::kDualFeasibilityTolerance:
-      LPValue_val = OptimalityTolerance();
+      param_val = OptimalityTolerance();
       break;
     case LPParameter::kObjectiveLimit:
       if (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
-        LPValue_val = spx_->realParam(SoPlex::OBJLIMIT_UPPER);
+        param_val = spx_->realParam(SoPlex::OBJLIMIT_UPPER);
       else
-        LPValue_val = spx_->realParam(SoPlex::OBJLIMIT_LOWER);
+        param_val = spx_->realParam(SoPlex::OBJLIMIT_LOWER);
       break;
     case LPParameter::kLPTimeLimit:
-      LPValue_val = spx_->realParam(SoPlex::TIMELIMIT);
+      param_val = spx_->realParam(SoPlex::TIMELIMIT);
       break;
     case LPParameter::kMarkowitz:
-      LPValue_val = spx_->realParam(SoPlex::MIN_MARKOWITZ);
+      param_val = spx_->realParam(SoPlex::MIN_MARKOWITZ);
       break;
     default:
       return absl::Status(absl::StatusCode::kInvalidArgument,
                           "Parameter Unknown");
   }
 
-  return absl::OkStatus();
+  return param_val;
 }
 
 // sets floating point parameter of LP
 absl::Status LPSoplexInterface::SetRealParameter(
-    LPParameter type,   // parameter number
-    double LPValue_val  // parameter value
+    LPParameter type,  // parameter number
+    double param_val   // parameter value
 ) {
   MiniMIPdebugMessage("calling SetRealParameter()\n");
 
   switch (type) {
     case LPParameter::kFeasibilityTolerance:
-      // 0 < LPValue_val
-      assert(LPValue_val > 0.0);
-      SetFeasibilityTolerance(LPValue_val);
+      // 0 < param_val
+      assert(param_val > 0.0);
+      SetFeasibilityTolerance(param_val);
       break;
     case LPParameter::kDualFeasibilityTolerance:
-      // 0 < LPValue_val
-      assert(LPValue_val > 0.0);
-      SetOptimalityTolerance(LPValue_val);
+      // 0 < param_val
+      assert(param_val > 0.0);
+      SetOptimalityTolerance(param_val);
       break;
     case LPParameter::kObjectiveLimit:
-      // no restrictions on LPValue_val
+      // no restrictions on param_val
       if (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
         static_cast<void>(
-            spx_->setRealParam(SoPlex::OBJLIMIT_UPPER, LPValue_val));
+            spx_->setRealParam(SoPlex::OBJLIMIT_UPPER, param_val));
       else
         static_cast<void>(
-            spx_->setRealParam(SoPlex::OBJLIMIT_LOWER, LPValue_val));
+            spx_->setRealParam(SoPlex::OBJLIMIT_LOWER, param_val));
       break;
     case LPParameter::kLPTimeLimit:
-      assert(LPValue_val > 0.0);
-      // soplex requires 0 < LPValue_val < DEFAULT_INFINITY (= 1e100), -1 means
+      assert(param_val > 0.0);
+      // soplex requires 0 < param_val < DEFAULT_INFINITY (= 1e100), -1 means
       // unlimited
-      static_cast<void>(spx_->setRealParam(SoPlex::TIMELIMIT, LPValue_val));
+      static_cast<void>(spx_->setRealParam(SoPlex::TIMELIMIT, param_val));
       break;
     case LPParameter::kMarkowitz:
-      // 1e-4 <= LPValue_val <= 0.999
-      if (LPValue_val < 1e-4)
-        LPValue_val = 1e-4;
-      else if (LPValue_val > 0.9999)
-        LPValue_val = 0.9999;
+      // 1e-4 <= param_val <= 0.999
+      if (param_val < 1e-4)
+        param_val = 1e-4;
+      else if (param_val > 0.9999)
+        param_val = 0.9999;
 
-      static_cast<void>(spx_->setRealParam(SoPlex::MIN_MARKOWITZ, LPValue_val));
+      static_cast<void>(spx_->setRealParam(SoPlex::MIN_MARKOWITZ, param_val));
       break;
     default:
       return absl::Status(absl::StatusCode::kInvalidArgument,
