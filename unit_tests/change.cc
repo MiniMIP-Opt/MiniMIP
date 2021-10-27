@@ -895,9 +895,36 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   ASSERT_NO_FATAL_FAILURE(initProb(5, ncols, nrows, nnonz, sense));
 
   ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
-  ASSERT_EQ(
-      lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost),
-      absl::OkStatus());
+  objval = lp_interface_->GetObjectiveValue();
+  absl::StatusOr<std::vector<double>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetPrimalSolution();
+  if(absl_tmp.ok())
+    primsol = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetRowActivity();
+  if(absl_tmp.ok())
+    activity = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetDualSolution();
+  if(absl_tmp.ok())
+    dualsol = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetReducedCost();
+  if(absl_tmp.ok())
+    redcost = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
 
   ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"),
             absl::OkStatus());
@@ -911,9 +938,35 @@ TEST_F(Change, testlpiwritereadlpmethods) {
               absl::OkStatus());
 
   ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
-  ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2,
-                                       redcost2),
-            absl::OkStatus());
+  objval2 = lp_interface_->GetObjectiveValue();
+  absl_tmp = lp_interface_->GetPrimalSolution();
+  if(absl_tmp.ok())
+    primsol2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetRowActivity();
+  if(absl_tmp.ok())
+    activity2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetDualSolution();
+  if(absl_tmp.ok())
+    dualsol2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetReducedCost();
+  if(absl_tmp.ok())
+    redcost2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status(); //@TODO: should break for all absl_tmp.status() return
+  }
+
   ASSERT_FLOAT_EQ(objval, objval2);
 
   ASSERT_EQ(primsol.size(), primsol2.size());

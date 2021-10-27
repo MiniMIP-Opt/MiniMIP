@@ -215,9 +215,37 @@ class Solve : public ::testing::Test {
     // check solution
     if (exp_primalfeas == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity,
-                                           redcost),
-                absl::OkStatus());
+      objval = lp_interface_->GetObjectiveValue();
+      absl::StatusOr<std::vector<double>> absl_tmp;
+
+      absl_tmp = lp_interface_->GetPrimalSolution();
+      if(absl_tmp.ok())
+        primsol = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
+      absl_tmp = lp_interface_->GetRowActivity();
+      if(absl_tmp.ok())
+        activity = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
+      absl_tmp = lp_interface_->GetDualSolution();
+      if(absl_tmp.ok())
+        dualsol = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
+      absl_tmp = lp_interface_->GetReducedCost();
+      if(absl_tmp.ok())
+        redcost = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
 
       for (j = 0; j < ncols; ++j) {
         ASSERT_FLOAT_EQ(
@@ -233,8 +261,14 @@ class Solve : public ::testing::Test {
       if (lp_interface_->HasPrimalRay()) {
         double scalingfactor = 1.0;
 
-        ASSERT_EQ(lp_interface_->GetPrimalRay(primsol), absl::OkStatus());
+        absl::StatusOr<std::vector<double>> absl_tmp;
 
+        absl_tmp = lp_interface_->GetPrimalRay();;
+        if(absl_tmp.ok())
+          primsol = *absl_tmp;
+        else {
+          std::cout<<absl_tmp.status();
+        }
         // loop until scaling factor can be determined
         for (j = 0; j < ncols; ++j) {
           if (REALABS(exp_primsol[j]) < EPS) {
@@ -262,9 +296,36 @@ class Solve : public ::testing::Test {
 
     if (exp_dualfeas == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      ASSERT_EQ(lp_interface_->GetSolution(objval, primsol, dualsol, activity,
-                                           redcost),
-                absl::OkStatus());
+      objval = lp_interface_->GetObjectiveValue();
+      absl::StatusOr<std::vector<double>> absl_tmp;
+
+      absl_tmp = lp_interface_->GetPrimalSolution();
+      if(absl_tmp.ok())
+        primsol = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
+      absl_tmp = lp_interface_->GetRowActivity();
+      if(absl_tmp.ok())
+        activity = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
+      absl_tmp = lp_interface_->GetDualSolution();
+      if(absl_tmp.ok())
+        dualsol = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
+
+      absl_tmp = lp_interface_->GetReducedCost();
+      if(absl_tmp.ok())
+        redcost = *absl_tmp;
+      else {
+        std::cout<<absl_tmp.status();
+      }
 
       for (i = 0; i < nrows; ++i) {
         ASSERT_FLOAT_EQ(
@@ -289,8 +350,14 @@ class Solve : public ::testing::Test {
         }
 
         // get dual ray
-        ASSERT_EQ(lp_interface_->GetDualFarkasMultiplier(dualsol),
-                  absl::OkStatus());
+        absl::StatusOr<std::vector<double>> absl_tmp;
+
+        absl_tmp = lp_interface_->GetDualFarkasMultiplier();
+        if(absl_tmp.ok())
+          dualsol = *absl_tmp;
+        else {
+          std::cout<<absl_tmp.status();
+        }
 
         // loop until scaling factor can be determined
         for (i = 0; i < nrows; ++i) {

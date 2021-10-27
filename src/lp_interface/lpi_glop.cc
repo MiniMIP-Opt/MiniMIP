@@ -962,80 +962,104 @@ bool LPGlopInterface::TimeLimitIsExceeded() const {
 }
 
 // gets objective value of solution
-absl::Status LPGlopInterface::GetObjectiveValue(
-    double& obj_val  // stores the objective value
-) {
-  obj_val = solver_.GetObjectiveValue();
-
-  return absl::OkStatus();
+double LPGlopInterface::GetObjectiveValue() {
+  return solver_.GetObjectiveValue();
 }
 
-// gets primal and dual solution vectors for feasible LPs
-//
 // Before calling this function, the caller must ensure that the LP has been
 // solved to optimality, i.e., that IsOptimal() returns true.
-absl::Status LPGlopInterface::GetSolution(
-    double& obj_val,                   // stores the objective value
-    std::vector<double>& primal_sol,   // primal solution vector
-    std::vector<double>& dual_sol,     // dual solution vector
-    std::vector<double>& activity,     // row activity vector
-    std::vector<double>& reduced_cost  // reduced cost vector
-) const {
-  MiniMIPdebugMessage("GetSolution\n");
-  obj_val = solver_.GetObjectiveValue();
+
+// gets primal solution vector
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetPrimalSolution() const {
+  MiniMIPdebugMessage("GetPrimalSolution\n");
+  std::vector<double> primal_sol;
 
   const ColIndex num_cols = linear_program_.num_variables();
   for (ColIndex col(0); col < num_cols; ++col) {
-    int i = col.value();
-
-    primal_sol[i] =
-        scaler_.UnscaleVariableValue(col, solver_.GetVariableValue(col));
-
-    reduced_cost[i] =
-        scaler_.UnscaleReducedCost(col, solver_.GetReducedCost(col));
+    primal_sol.push_back(
+        scaler_.UnscaleVariableValue(col, solver_.GetVariableValue(col)));
   }
+
+  return primal_sol;
+}
+
+// Before calling this function, the caller must ensure that the LP has been
+// solved to optimality, i.e., that IsOptimal() returns true.
+
+// gets dual solution vector
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetDualSolution() const {
+  MiniMIPdebugMessage("GetDualSolution\n");
+  std::vector<double> dual_sol;
 
   const RowIndex num_rows = linear_program_.num_constraints();
   for (RowIndex row(0); row < num_rows; ++row) {
-    int j = row.value();
-
-    dual_sol[j] = scaler_.UnscaleDualValue(row, solver_.GetDualValue(row));
-
-    activity[j] = scaler_.UnscaleConstraintActivity(
-        row, solver_.GetConstraintActivity(row));
+    dual_sol.push_back(
+        scaler_.UnscaleDualValue(row, solver_.GetDualValue(row)));
   }
 
-  return absl::OkStatus();
+  return dual_sol;
+}
+
+// Before calling this function, the caller must ensure that the LP has been
+// solved to optimality, i.e., that IsOptimal() returns true.
+
+// gets row activity vector
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetRowActivity() const {
+  MiniMIPdebugMessage("GetRowActivity\n");
+  std::vector<double> activity;
+
+  const RowIndex num_rows = linear_program_.num_constraints();
+  for (RowIndex row(0); row < num_rows; ++row) {
+    activity.push_back(scaler_.UnscaleConstraintActivity(
+        row, solver_.GetConstraintActivity(row)));
+  }
+
+  return activity;
+}
+
+// Before calling this function, the caller must ensure that the LP has been
+// solved to optimality, i.e., that IsOptimal() returns true.
+
+// gets reduced cost vector
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetReducedCost() const {
+  MiniMIPdebugMessage("GetReducedCost\n");
+  std::vector<double> reduced_cost;
+
+  const ColIndex num_cols = linear_program_.num_variables();
+  for (ColIndex col(0); col < num_cols; ++col) {
+    reduced_cost.push_back(
+        scaler_.UnscaleReducedCost(col, solver_.GetReducedCost(col)));
+  }
+
+  return reduced_cost;
 }
 
 // gets primal ray for unbounded LPs
-absl::Status LPGlopInterface::GetPrimalRay(
-    std::vector<double>& primal_ray  // primal ray
-) const {
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetPrimalRay() const {
   MiniMIPdebugMessage("GetPrimalRay\n");
+  std::vector<double> primal_ray;
 
-  const ColIndex num_cols           = linear_program_.num_variables();
+  const ColIndex num_cols = linear_program_.num_variables();
   const DenseRow& primal_ray_solver = solver_.GetPrimalRay();
   for (ColIndex col(0); col < num_cols; ++col)
-    primal_ray[col.value()] =
-        scaler_.UnscaleVariableValue(col, primal_ray_solver[col]);
+    primal_ray.push_back(
+        scaler_.UnscaleVariableValue(col, primal_ray_solver[col]));
 
-  return absl::OkStatus();
+  return primal_ray;
 }
 
 // gets dual Farkas proof for infeasibility
-absl::Status LPGlopInterface::GetDualFarkasMultiplier(
-    std::vector<double>& dual_farkas_multiplier  // dual Farkas row multipliers
-) const {
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetDualFarkasMultiplier() const {
   MiniMIPdebugMessage("GetDualFarkasMultiplier\n");
+  std::vector<double> dual_farkas_multiplier;
 
-  const RowIndex num_rows     = linear_program_.num_constraints();
+  const RowIndex num_rows = linear_program_.num_constraints();
   const DenseColumn& dual_ray = solver_.GetDualRay();
   for (RowIndex row(0); row < num_rows; ++row)
-    dual_farkas_multiplier[row.value()] =
-        -scaler_.UnscaleDualValue(row, dual_ray[row]);  // reverse sign
+    dual_farkas_multiplier.push_back(
+        -scaler_.UnscaleDualValue(row, dual_ray[row]));  // reverse sign
 
-  return absl::OkStatus();
+  return dual_farkas_multiplier;
 }
 
 // gets the number of LP iterations of the last solve call

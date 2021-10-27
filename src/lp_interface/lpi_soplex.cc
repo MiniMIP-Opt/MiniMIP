@@ -1390,14 +1390,10 @@ bool LPSoplexInterface::TimeLimitIsExceeded() const {
 }
 
 // gets objective value of solution
-absl::Status LPSoplexInterface::GetObjectiveValue(
-    double& obj_val  // the objective value
-) {
+double LPSoplexInterface::GetObjectiveValue() {
   MiniMIPdebugMessage("calling GetObjectiveValue()\n");
 
-  obj_val = spx_->objValueReal();
-
-  return absl::OkStatus();
+  return spx_->objValueReal();
 }
 
 // gets primal and dual solution vectors for feasible LPs
@@ -1405,33 +1401,14 @@ absl::Status LPSoplexInterface::GetObjectiveValue(
 //*  Before calling this function, the caller must ensure that the LP has been
 // solved to optimality, i.e., that
 //*  minimip::LPInterface.IsOptimal() returns true.
-absl::Status LPSoplexInterface::GetSolution(
-    double& obj_val,                   // stores the objective value
-    std::vector<double>& primal_sol,   // primal solution vector
-    std::vector<double>& dual_sol,     // dual solution vector
-    std::vector<double>& activity,     // row activity vector
-    std::vector<double>& reduced_cost  // reduced cost vector
-) const {
-  MiniMIPdebugMessage("calling GetSolution()\n");
-  obj_val = spx_->objValueReal();
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalSolution() const {
+  MiniMIPdebugMessage("calling GetPrimalSolution()\n");
+  std::vector<double> primal_sol;
 
   try {
-    //    if (primal_sol != 0) {
     static_cast<void>(
         spx_->getPrimalReal(primal_sol.data(), spx_->numColsReal()));
-    //    }
-    // if (dual_sol.size() != 0) {
-    static_cast<void>(spx_->getDualReal(dual_sol.data(), spx_->numRowsReal()));
-    //    }
-    // if (activity.size() != 0) {
-    static_cast<void>(spx_->getSlacksReal(
-        activity.data(),
-        spx_->numRowsReal()));  // in SoPlex, the activities are called "slacks"
-                                //    }
-    // if (reduced_cost.size() != 0) {
-    static_cast<void>(
-        spx_->getRedCostReal(reduced_cost.data(), spx_->numColsReal()));
-    //    }
   }
 #ifndef NDEBUG
   catch (const SPxException& x) {
@@ -1444,14 +1421,79 @@ absl::Status LPSoplexInterface::GetSolution(
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
 
-  return absl::OkStatus();
+  return primal_sol;
+}
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualSolution() const {
+  MiniMIPdebugMessage("calling GetDualSolution()\n");
+  std::vector<double> dual_sol;
+
+  try {
+    static_cast<void>(spx_->getDualReal(dual_sol.data(), spx_->numRowsReal()));
+  }
+#ifndef NDEBUG
+  catch (const SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return dual_sol;
+}
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetRowActivity() const {
+  MiniMIPdebugMessage("calling GetRowActivity()\n");
+  std::vector<double> activity;
+
+  try {
+    static_cast<void>(spx_->getSlacksReal(
+        activity.data(),spx_->numRowsReal()));  // in SoPlex, the activities are called "slacks"
+  }
+
+#ifndef NDEBUG
+  catch (const SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return activity;
+}
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetReducedCost() const {
+  MiniMIPdebugMessage("calling GetReducedCost()\n");
+  std::vector<double> reduced_cost;
+  try {
+    static_cast<void>(
+        spx_->getRedCostReal(reduced_cost.data(), spx_->numColsReal()));
+  }
+
+#ifndef NDEBUG
+  catch (const SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return reduced_cost;
 }
 
 // gets primal ray for unbounded LPs
-absl::Status LPSoplexInterface::GetPrimalRay(
-    std::vector<double>& primal_ray  // primal ray
-) const {
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalRay() const {
   MiniMIPdebugMessage("calling GetPrimalRay()\n");
+  std::vector<double> primal_ray;
 
   assert(spx_->hasPrimalRay());
 
@@ -1469,14 +1511,13 @@ absl::Status LPSoplexInterface::GetPrimalRay(
 #endif
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return absl::OkStatus();
+  return primal_ray;
 }
 
 // gets dual Farkas proof for infeasibility
-absl::Status LPSoplexInterface::GetDualFarkasMultiplier(
-    std::vector<double>& dual_farkas_multiplier  // dual Farkas row multipliers
-) const {
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualFarkasMultiplier() const {
   MiniMIPdebugMessage("calling GetDualFarkasMultiplier()\n");
+  std::vector<double> dual_farkas_multiplier;
 
   assert(spx_->hasDualFarkas());
 
@@ -1494,7 +1535,7 @@ absl::Status LPSoplexInterface::GetDualFarkasMultiplier(
 #endif
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return absl::OkStatus();
+  return dual_farkas_multiplier;
 }
 
 // gets the number of LP iterations of the last solve call

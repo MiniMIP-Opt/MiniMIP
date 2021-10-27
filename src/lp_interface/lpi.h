@@ -219,9 +219,9 @@ class LPInterface : private messagehandler {
   };
 
   virtual absl::StatusOr<StrongBranchResult> StrongBranchValue(
-      int col,              // column to apply strong branching on
-      double primal_sol,    // current primal solution value of column
-      int iteration_limit,  // iteration limit for strong branchings
+      int col,             // column to apply strong branching on
+      double primal_sol,   // current primal solution value of column
+      int iteration_limit  // iteration limit for strong branchings
       ) = 0;
 
   // ==========================================================================
@@ -298,23 +298,27 @@ class LPInterface : private messagehandler {
 
   // gets primal and dual solution vectors for feasible LPs
   //
-  // Before calling this function, the caller must ensure that the LP has been
+  // Before calling these functions, the caller must ensure that the LP has been
   // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
   // true.
 
-  virtual absl::Status GetSolution(
-      std::vector<double> primal_sol;    // primal solution vector
-      std::vector<double> dual_sol;      // dual solution vector
-      std::vector<double> activity;      // row activity vector
-      std::vector<double> reduced_cost;  // reduced cost vector
-      ) const = 0;
+  // gets primal solution vector
+  virtual absl::StatusOr<std::vector<double>> GetPrimalSolution() const = 0;
+
+  // gets row activity vector
+  virtual absl::StatusOr<std::vector<double>> GetRowActivity() const = 0;
+
+  // gets dual solution vector
+  virtual absl::StatusOr<std::vector<double>> GetDualSolution() const = 0;
+
+  // gets reduced cost vector
+  virtual absl::StatusOr<std::vector<double>> GetReducedCost() const = 0;
 
   // gets primal ray for unbounded LPs
   virtual absl::StatusOr<std::vector<double>> GetPrimalRay() const = 0;
 
   // gets dual Farkas proof for infeasibility
-  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier()
-      const = 0;
+  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier() const = 0;
 
   // gets the number of LP iterations of the last solve call
   virtual int GetIterations() const = 0;
@@ -330,10 +334,10 @@ class LPInterface : private messagehandler {
     std::vector<LPBasisStatus>
         row_basis_status;  // array to store row basis status
   };
-  virtual statusOr<std::vector<LPBasisStatus>>getcolumnbasisstatus()
-  virtual absl::StatusOr<LPBasis> GetBase(
+  virtual statusOr<std::vector<LPBasisStatus>>
+  getcolumnbasisstatus() virtual absl::StatusOr<LPBasis> GetBase(
 
-      ) const = 0;
+  ) const = 0;
 
   // sets current basis status for columns and rows
   virtual absl::Status SetBase(const LPBasis& basis) = 0;
@@ -354,11 +358,8 @@ class LPInterface : private messagehandler {
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
 
-
-
-
-// make only dense available
-// virtual absl::StaturOr<const std::vector<double>&> GetRowOfBInverted(
+  // make only dense available
+  // virtual absl::StaturOr<const std::vector<double>&> GetRowOfBInverted(
 
   virtual absl::StaturOr<std::vector<double>> GetRowOfBInverted(
       int row_number,  // row number

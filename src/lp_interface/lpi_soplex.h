@@ -371,31 +371,31 @@ class LPSoplexInterface : public LPInterface {
   bool TimeLimitIsExceeded() const override;
 
   // gets objective value of solution
-  absl::Status GetObjectiveValue(double& obj_val  // the objective value
-                                 ) override;
+  double GetObjectiveValue() override;
 
   // gets primal and dual solution vectors for feasible LPs
   //
   // Before calling this function, the caller must ensure that the LP has been
   // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
   // true.
-  absl::Status GetSolution(
-      double& obj_val,                   // stores the objective value
-      std::vector<double>& primal_sol,   // primal solution vector
-      std::vector<double>& dual_sol,     // dual solution vector
-      std::vector<double>& activity,     // row activity vector
-      std::vector<double>& reduced_cost  // reduced cost vector
-  ) const override;
+  // gets primal solution vector
+
+  absl::StatusOr<std::vector<double>> GetPrimalSolution() const override;
+
+  // gets row activity vector
+  absl::StatusOr<std::vector<double>> GetRowActivity() const override;
+
+  // gets dual solution vector
+  absl::StatusOr<std::vector<double>> GetDualSolution() const override;
+
+  // gets reduced cost vector
+  absl::StatusOr<std::vector<double>> GetReducedCost() const override;
 
   // gets primal ray for unbounded LPs
-  absl::Status GetPrimalRay(std::vector<double>& primal_ray  // primal ray
-  ) const override;
+  absl::StatusOr<std::vector<double>> GetPrimalRay() const override;
 
   // gets dual Farkas proof for infeasibility
-  absl::Status GetDualFarkasMultiplier(
-      std::vector<double>&
-          dual_farkas_multiplier  // dual Farkas row multipliers
-  ) const override;
+  absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier() const override;
 
   // gets the number of LP iterations of the last solve call
   int GetIterations() const override;
