@@ -442,7 +442,7 @@ int LPGlopInterface::GetNumberOfNonZeros() const {
 // Either both, lb and ub, have to be NULL, or both have to be non-NULL,
 // either num_non_zeros, begin_cols, indices, and val have to be NULL, or all of
 // them have to be non-NULL.
-SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
+LPGlopInterface::SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
   assert(0 <= col && col < linear_program_.num_variables());
 
   SparseVector sparse_column;
@@ -462,7 +462,7 @@ SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
 // Either both, left_hand_side and right_hand_side, have to be NULL, or both
 // have to be non-NULL, either num_non_zeros, begin_rows, indices, and val have
 // to be NULL, or all of them have to be non-NULL.
-SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
+LPGlopInterface::SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
   assert(0 <= row && row < linear_program_.num_constraints());
 
   const SparseMatrix& matrixtrans = linear_program_.GetTransposeSparseMatrix();
@@ -473,7 +473,7 @@ SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
   for (const SparseColumn::Entry& entry : column) {
     const RowIndex rowidx = entry.row();
     sparse_row.indices.push_back(rowidx.value());
-    sparse_row.vals.push_back(entry.coefficient());
+    sparse_row.values.push_back(entry.coefficient());
   }
 
   return sparse_row;
@@ -508,7 +508,7 @@ double LPGlopInterface::GetLeftHandSide(int row) const {
 }
 
 // gets current right hand side of row from LP problem object
-absl::Status LPGlopInterface::GetRightHandSide(int row) const {
+double LPGlopInterface::GetRightHandSide(int row) const {
   MiniMIPdebugMessage("getting right hand side of row %d\n", row);
 
   return linear_program_.constraint_upper_bounds()[RowIndex(row)];
@@ -801,7 +801,7 @@ absl::Status LPGlopInterface::strongbranch(
 }
 
 // performs strong branching iterations on one @b fractional candidate
-absl::StatusOr<StrongBranchResult> LPGlopInterface::StrongBranchValue(
+absl::StatusOr<LPGlopInterface::StrongBranchResult> LPGlopInterface::StrongBranchValue(
     int col,             // column to apply strong branching on
     double primal_sol,   // current primal solution value of column
     int iteration_limit  // iteration limit for strong branchings
@@ -820,7 +820,7 @@ absl::StatusOr<StrongBranchResult> LPGlopInterface::StrongBranchValue(
       strong_branch_result.down_valid, strong_branch_result.up_valid,
       strong_branch_result.iterations);
 
-  if (error != absl::OkStatus())
+  if (absl_status_code != absl::OkStatus())
     return absl::Status(absl::StatusCode::kInternal, "This will never happen");
   else
     return strong_branch_result;
@@ -1039,7 +1039,7 @@ absl::StatusOr<std::vector<double>> LPGlopInterface::GetPrimalRay() const {
   MiniMIPdebugMessage("GetPrimalRay\n");
   std::vector<double> primal_ray;
 
-  const ColIndex num_cols = linear_program_.num_variables();
+  const ColIndex num_cols           = linear_program_.num_variables();
   const DenseRow& primal_ray_solver = solver_.GetPrimalRay();
   for (ColIndex col(0); col < num_cols; ++col)
     primal_ray.push_back(
@@ -1049,11 +1049,12 @@ absl::StatusOr<std::vector<double>> LPGlopInterface::GetPrimalRay() const {
 }
 
 // gets dual Farkas proof for infeasibility
-absl::StatusOr<std::vector<double>> LPGlopInterface::GetDualFarkasMultiplier() const {
+absl::StatusOr<std::vector<double>> LPGlopInterface::GetDualFarkasMultiplier()
+    const {
   MiniMIPdebugMessage("GetDualFarkasMultiplier\n");
   std::vector<double> dual_farkas_multiplier;
 
-  const RowIndex num_rows = linear_program_.num_constraints();
+  const RowIndex num_rows     = linear_program_.num_constraints();
   const DenseColumn& dual_ray = solver_.GetDualRay();
   for (RowIndex row(0); row < num_rows; ++row)
     dual_farkas_multiplier.push_back(
@@ -1168,30 +1169,32 @@ VariableStatus LPGlopInterface::ConvertMiniMIPConstraintStatusToSlackStatus(
 // ==========================================================================
 
 // gets current basis status for columns and rows
-absl::Status LPGlopInterface::GetBase(
-    std::vector<LPBasisStatus>&
-        column_basis_status,  // array to store column basis status, or NULL
-    std::vector<LPBasisStatus>&
-        row_basis_status  // array to store row basis status, or NULL
-) const {
-  MiniMIPdebugMessage("GetBase\n");
+absl::StatusOr<std::vector<LPBasisStatus>>
+LPGlopInterface::GetColumnBasisStatus() const {
+  MiniMIPdebugMessage("GetColumnBasisStatus\n");
+  std::vector<LPBasisStatus> column_basis_status;
 
   assert(solver_.GetProblemStatus() == ProblemStatus::OPTIMAL);
   const ColIndex num_cols = linear_program_.num_variables();
   for (ColIndex col(0); col < num_cols; ++col) {
-    int i                  = col.value();
-    column_basis_status[i] = (LPBasisStatus)ConvertGlopVariableStatus(
-        solver_.GetVariableStatus(col), solver_.GetReducedCost(col));
+    column_basis_status.push_back((LPBasisStatus)ConvertGlopVariableStatus(
+        solver_.GetVariableStatus(col), solver_.GetReducedCost(col)));
   }
+  return column_basis_status;
+}
+// gets current basis status for columns and rows
+absl::StatusOr<std::vector<LPBasisStatus>> LPGlopInterface::GetRowBasisStatus()
+    const {
+  MiniMIPdebugMessage("GetRowBasisStatus\n");
+  std::vector<LPBasisStatus> row_basis_status;
 
   const RowIndex num_rows = linear_program_.num_constraints();
   for (RowIndex row(0); row < num_rows; ++row) {
-    int i               = row.value();
-    row_basis_status[i] = (LPBasisStatus)ConvertGlopConstraintStatus(
-        solver_.GetConstraintStatus(row), solver_.GetDualValue(row));
+    row_basis_status.push_back((LPBasisStatus)ConvertGlopConstraintStatus(
+        solver_.GetConstraintStatus(row), solver_.GetDualValue(row)));
   }
 
-  return absl::OkStatus();
+  return row_basis_status;
 }
 
 // sets current basis status for columns and rows
@@ -1225,10 +1228,9 @@ absl::Status LPGlopInterface::SetBase(
 
 // returns the indices of the basic columns and rows; basic column n gives value
 // n, basic row m gives value -1-m
-absl::Status LPGlopInterface::GetBasisIndices(
-    std::vector<int>& basis_indices  // array to store basis indices ready to
-                                     // keep number of rows entries
-) const {
+std::vector<int> LPGlopInterface::GetBasisIndices() const {
+  std::vector<int> basis_indices;
+
   MiniMIPdebugMessage("GetBasisIndices\n");
 
   // the order is important!
@@ -1244,7 +1246,7 @@ absl::Status LPGlopInterface::GetBasisIndices(
     }
   }
 
-  return absl::OkStatus();
+  return basis_indices;
 }
 
 // ==========================================================================

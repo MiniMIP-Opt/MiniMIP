@@ -405,27 +405,18 @@ class LPSoplexInterface : public LPInterface {
   // ==========================================================================
 
   // gets current basis status for columns and rows
-  absl::Status GetBase(
-      std::vector<LPBasisStatus>&
-          column_basis_status,  // array to store column basis status
-      std::vector<LPBasisStatus>&
-          row_basis_status  // array to store row basis status
-  ) const override;
+  absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
+      const override;
+  absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus() const override;
 
   // sets current basis status for columns and rows
   absl::Status SetBase(
-      const std::vector<LPBasisStatus>&
-          column_basis_status,  // array with column basis status
-      const std::vector<LPBasisStatus>&
-          row_basis_status  // array with row basis status
-      ) override;
+      const std::vector<LPBasisStatus>& column_basis_status,
+      const std::vector<LPBasisStatus>& row_basis_status) override;
 
   // returns the indices of the basic columns and rows; basic column n gives
   // value n, basic row m gives value -1-m
-  absl::Status GetBasisIndices(
-      std::vector<int>& basis_indices  // array to store basis indices ready to
-                                       // keep number of rows entries
-  ) const override;
+  std::vector<int> GetBasisIndices() const override;
 
   // ==========================================================================
   // Getters of vectors in the inverted basis matrix.

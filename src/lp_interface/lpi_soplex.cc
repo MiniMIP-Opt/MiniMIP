@@ -1402,7 +1402,8 @@ double LPSoplexInterface::GetObjectiveValue() {
 // solved to optimality, i.e., that
 //*  minimip::LPInterface.IsOptimal() returns true.
 
-absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalSolution() const {
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalSolution()
+    const {
   MiniMIPdebugMessage("calling GetPrimalSolution()\n");
   std::vector<double> primal_sol;
 
@@ -1451,9 +1452,9 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetRowActivity() const {
 
   try {
     static_cast<void>(spx_->getSlacksReal(
-        activity.data(),spx_->numRowsReal()));  // in SoPlex, the activities are called "slacks"
+        activity.data(),
+        spx_->numRowsReal()));  // in SoPlex, the activities are called "slacks"
   }
-
 #ifndef NDEBUG
   catch (const SPxException& x) {
     std::string s = x.what();
@@ -1475,7 +1476,6 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetReducedCost() const {
     static_cast<void>(
         spx_->getRedCostReal(reduced_cost.data(), spx_->numColsReal()));
   }
-
 #ifndef NDEBUG
   catch (const SPxException& x) {
     std::string s = x.what();
@@ -1515,7 +1515,8 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalRay() const {
 }
 
 // gets dual Farkas proof for infeasibility
-absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualFarkasMultiplier() const {
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualFarkasMultiplier()
+    const {
   MiniMIPdebugMessage("calling GetDualFarkasMultiplier()\n");
   std::vector<double> dual_farkas_multiplier;
 
@@ -1550,30 +1551,76 @@ int LPSoplexInterface::GetIterations() const {
 // ==========================================================================
 
 // gets current basis status for columns and rows
-absl::Status LPSoplexInterface::GetBase(
-    std::vector<LPBasisStatus>&
-        column_basis_status,  // array to store column basis status
-    std::vector<LPBasisStatus>&
-        row_basis_status  // array to store row basis status
-) const {
-  int i;
+absl::StatusOr<std::vector<LPBasisStatus>>
+LPSoplexInterface::GetColumnBasisStatus() const {
+  std::vector<LPBasisStatus> column_basis_status;
+  MiniMIPdebugMessage("calling GetColumnBasisStatus()\n");
+  assert(PreStrongBranchingBasisFreed());
 
-  MiniMIPdebugMessage("calling GetBase()\n");
+  if (column_basis_status.size() != 0) {
+    for (int i = 0; i < spx_->numColsReal(); ++i) {
+      //         double obj_coeffs = 0.0;
+      switch (spx_->basisColStatus(i)) {
+        case SPxSolver::BASIC:
+          column_basis_status.push_back(LPBasisStatus::kBasic);
+          break;
+        case SPxSolver::FIXED:
+          // Get reduced cost estimation. If the estimation is not correct this
+          // should not hurt: If the basis is loaded into SoPlex again, the
+          // status is converted to FIXED again; in this case there is no
+          // problem at all. If the basis is saved and/or used in some other
+          // solver, it usually is very cheap to perform the pivots necessary to
+          // get an optimal basis.
+          // @todo implement getRedCostEst()
+          //
+          // MINIMIP_CALL( getRedCostEst(spx_, i, &obj_coeffs) );
+          //             if( obj_coeffs < 0.0 )  // reduced costs < 0 => UPPER
+          //             else => LOWER
+          //                column_basis_status.push_back(BASESTAT_UPPER;
+          //             else
+          column_basis_status.push_back(LPBasisStatus::kAtLowerBound);
+          break;
+        case SPxSolver::ON_LOWER:
+          column_basis_status.push_back(LPBasisStatus::kAtLowerBound);
+          break;
+        case SPxSolver::ON_UPPER:
+          column_basis_status.push_back(LPBasisStatus::kAtUpperBound);
+          break;
+        case SPxSolver::ZERO:
+          column_basis_status.push_back(LPBasisStatus::kFree);
+          break;
+        case SPxSolver::UNDEFINED:
+        default:
+          MiniMIPerrorMessage("invalid basis status\n");
+          // MINIMIP_ABORT();
+          assert(false);
+          return absl::Status(absl::StatusCode::kInvalidArgument,
+                              "Invalid Data");
+      }
+    }
+  }
+  return column_basis_status;
+}
+
+absl::StatusOr<std::vector<LPBasisStatus>>
+LPSoplexInterface::GetRowBasisStatus() const {
+  std::vector<LPBasisStatus> row_basis_status;
+  MiniMIPdebugMessage("calling GetRowBasisStatus()\n");
   assert(PreStrongBranchingBasisFreed());
 
   if (row_basis_status.size() != 0) {
-    for (i = 0; i < spx_->numRowsReal(); ++i) {
+    for (int i = 0; i < spx_->numRowsReal(); ++i) {
       switch (spx_->basisRowStatus(i)) {
         case SPxSolver::BASIC:
-          row_basis_status[i] = LPBasisStatus::kBasic;
+          row_basis_status.push_back(LPBasisStatus::kBasic);
           break;
         case SPxSolver::FIXED:
-          row_basis_status[i] = LPBasisStatus::kFixed;
+          row_basis_status.push_back(LPBasisStatus::kFixed);
         case SPxSolver::ON_LOWER:
-          row_basis_status[i] = LPBasisStatus::kAtLowerBound;
+          row_basis_status.push_back(LPBasisStatus::kAtLowerBound);
           break;
         case SPxSolver::ON_UPPER:
-          row_basis_status[i] = LPBasisStatus::kAtUpperBound;
+          row_basis_status.push_back(LPBasisStatus::kAtUpperBound);
           break;
         case SPxSolver::ZERO:
           MiniMIPerrorMessage(
@@ -1588,50 +1635,7 @@ absl::Status LPSoplexInterface::GetBase(
       }
     }
   }
-
-  if (column_basis_status.size() != 0) {
-    for (i = 0; i < spx_->numColsReal(); ++i) {
-      //         double obj_coeffs = 0.0;
-      switch (spx_->basisColStatus(i)) {
-        case SPxSolver::BASIC:
-          column_basis_status[i] = LPBasisStatus::kBasic;
-          break;
-        case SPxSolver::FIXED:
-          // Get reduced cost estimation. If the estimation is not correct this
-          // should not hurt: If the basis is loaded into SoPlex again, the
-          // status is converted to FIXED again; in this case there is no
-          // problem at all. If the basis is saved and/or used in some other
-          // solver, it usually is very cheap to perform the pivots necessary to
-          // get an optimal basis.
-          // @todo implement getRedCostEst()
-          //
-          // MINIMIP_CALL( getRedCostEst(spx_, i, &obj_coeffs) );
-          //             if( obj_coeffs < 0.0 )  // reduced costs < 0 => UPPER
-          //             else => LOWER
-          //                column_basis_status[i] = BASESTAT_UPPER;
-          //             else
-          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
-          break;
-        case SPxSolver::ON_LOWER:
-          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
-          break;
-        case SPxSolver::ON_UPPER:
-          column_basis_status[i] = LPBasisStatus::kAtUpperBound;
-          break;
-        case SPxSolver::ZERO:
-          column_basis_status[i] = LPBasisStatus::kFree;
-          break;
-        case SPxSolver::UNDEFINED:
-        default:
-          MiniMIPerrorMessage("invalid basis status\n");
-          // MINIMIP_ABORT();
-          assert(false);
-          return absl::Status(absl::StatusCode::kInvalidArgument,
-                              "Invalid Data");
-      }
-    }
-  }
-  return absl::OkStatus();
+  return row_basis_status;
 }
 
 // sets current basis status for columns and rows
@@ -1641,8 +1645,6 @@ absl::Status LPSoplexInterface::SetBase(
     const std::vector<LPBasisStatus>&
         row_basis_status  // array with row basis status
 ) {
-  int i;
-
   MiniMIPdebugMessage("calling SetBase()\n");
 
   int num_cols = GetNumberOfColumns();
@@ -1657,7 +1659,7 @@ absl::Status LPSoplexInterface::SetBase(
   _colstat.reSize(num_cols);
   _rowstat.reSize(num_rows);
 
-  for (i = 0; i < num_rows; ++i) {
+  for (int i = 0; i < num_rows; ++i) {
     switch (row_basis_status[i]) {
       case LPBasisStatus::kBasic:
         _rowstat[i] = SPxSolver::BASIC;
@@ -1685,7 +1687,7 @@ absl::Status LPSoplexInterface::SetBase(
     }
   }
 
-  for (i = 0; i < num_cols; ++i) {
+  for (int i = 0; i < num_cols; ++i) {
     switch (column_basis_status[i]) {
       case LPBasisStatus::kBasic:
         _colstat[i] = SPxSolver::BASIC;
@@ -1718,17 +1720,15 @@ absl::Status LPSoplexInterface::SetBase(
 
 // returns the indices of the basic columns and rows; basic column n gives value
 // n, basic row m gives value -1-m
-absl::Status LPSoplexInterface::GetBasisIndices(
-    std::vector<int>& basis_indices  // array to store basis indices ready to
-                                     // keep number of rows entries
-) const {
+std::vector<int> LPSoplexInterface::GetBasisIndices() const {
+  std::vector<int> basis_indices;
   MiniMIPdebugMessage("calling GetBasisInd()\n");
 
   assert(PreStrongBranchingBasisFreed());
 
   spx_->getBasisInd(basis_indices.data());
 
-  return absl::OkStatus();
+  return basis_indices;
 }
 
 // ==========================================================================

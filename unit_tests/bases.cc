@@ -83,9 +83,22 @@ TEST_F(SimpleTest, BasicAssertions) {
   //       0 <= x <= 3  (bounds)
   // solve problem
   ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
-            absl::OkStatus());
+  absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetColumnBasisStatus();
+  if(absl_tmp.ok())
+    column_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+  absl_tmp = lp_interface_->GetRowBasisStatus();
+  if(absl_tmp.ok())
+    row_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -108,8 +121,20 @@ TEST_F(SimpleTest, test2) {
   ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
-            absl::OkStatus());
+  absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetColumnBasisStatus();
+  if(absl_tmp.ok())
+    column_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+  absl_tmp = lp_interface_->GetRowBasisStatus();
+  if(absl_tmp.ok())
+    row_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -141,8 +166,20 @@ TEST_F(SimpleTest, test3) {
   ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
-            absl::OkStatus());
+  absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetColumnBasisStatus();
+  if(absl_tmp.ok())
+    column_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+  absl_tmp = lp_interface_->GetRowBasisStatus();
+  if(absl_tmp.ok())
+    row_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -171,8 +208,20 @@ TEST_F(SimpleTest, test4) {
   ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
 
   // get basis
-  ASSERT_EQ(lp_interface_->GetBase(column_basis_status, row_basis_status),
-            absl::OkStatus());
+  absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetColumnBasisStatus();
+  if(absl_tmp.ok())
+    column_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+  absl_tmp = lp_interface_->GetRowBasisStatus();
+  if(absl_tmp.ok())
+    row_basis_status = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -311,7 +360,22 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(objval, 14.0);
 
   // the optimal basis should be: {x2, x3, slack for second row}
-  ASSERT_EQ(lp_interface_->GetBase(cstats, rstats), absl::OkStatus());
+  // get basis
+  absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetColumnBasisStatus();
+  if(absl_tmp.ok())
+    cstats = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+  absl_tmp = lp_interface_->GetRowBasisStatus();
+  if(absl_tmp.ok())
+    rstats = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
   ASSERT_TRUE(cstats[0] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(cstats[1] == LPBasisStatus::kBasic);
   ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
@@ -321,7 +385,7 @@ TEST_F(Complex, test1) {
   ASSERT_TRUE(rstats[2] == LPBasisStatus::kAtUpperBound);
 
   // get basis indices
-  ASSERT_EQ(lp_interface_->GetBasisIndices(basinds), absl::OkStatus());
+  basinds = lp_interface_->GetBasisIndices();
 
   // search for slack variable in basis
   nrows = lp_interface_->GetNumberOfRows();
@@ -558,7 +622,21 @@ TEST_F(MoreVarsThanRows, test1) {
   ASSERT_FLOAT_EQ(objval, 23.0);
 
   // the optimal basis should be: {x1, x3, s1 = slack for first row}
-  ASSERT_EQ(lp_interface_->GetBase(cstats, rstats), absl::OkStatus());
+  // get basis
+  absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetColumnBasisStatus();
+  if(absl_tmp.ok())
+    cstats = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+  absl_tmp = lp_interface_->GetRowBasisStatus();
+  if(absl_tmp.ok())
+    rstats = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
   ASSERT_TRUE(cstats[0] == LPBasisStatus::kBasic);
   ASSERT_TRUE(cstats[1] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
@@ -574,7 +652,7 @@ TEST_F(MoreVarsThanRows, test1) {
   //* 0.0  -3.0  0.0  -6.0  <- basic var s1
 
   // get basis indices
-  ASSERT_EQ(lp_interface_->GetBasisIndices(basinds), absl::OkStatus());
+  basinds = lp_interface_->GetBasisIndices();
 
   // find position of x1 in basis indices; check binvarow of row where x1 is
   // basic

@@ -318,7 +318,8 @@ class LPInterface : private messagehandler {
   virtual absl::StatusOr<std::vector<double>> GetPrimalRay() const = 0;
 
   // gets dual Farkas proof for infeasibility
-  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier() const = 0;
+  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier()
+      const = 0;
 
   // gets the number of LP iterations of the last solve call
   virtual int GetIterations() const = 0;
@@ -328,23 +329,19 @@ class LPInterface : private messagehandler {
   // ==========================================================================
 
   // gets current basis status for columns and rows
-  struct LPBasis {
-    std::vector<LPBasisStatus>
-        column_basis_status;  // array to store column basis status
-    std::vector<LPBasisStatus>
-        row_basis_status;  // array to store row basis status
-  };
-  virtual statusOr<std::vector<LPBasisStatus>>
-  getcolumnbasisstatus() virtual absl::StatusOr<LPBasis> GetBase(
-
-  ) const = 0;
+  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
+      const = 0;
+  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus()
+      const = 0;
 
   // sets current basis status for columns and rows
-  virtual absl::Status SetBase(const LPBasis& basis) = 0;
+  virtual absl::Status SetBase(
+      const std::vector<LPBasisStatus>& column_basis_status,
+      const std::vector<LPBasisStatus>& row_basis_status) = 0;
 
   // returns the indices of the basic columns and rows; basic column n gives
   // value n, basic row m gives value -1-m
-  virtual absl::StatusOr<std::vector<int>> GetBasisIndices() const = 0;
+  virtual std::vector<int> GetBasisIndices() const = 0;
 
   // ==========================================================================
   // Getters of vectors in the inverted basis matrix.
