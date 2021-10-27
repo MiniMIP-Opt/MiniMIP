@@ -19,12 +19,12 @@
 #define REALABS(x) (fabs(x))
 
 #define MINIMIP_CALL(x)                                               \
-  do {                                                                \
+  {                                                                   \
     absl::Status _restat_ = (x);                                      \
     if (!_restat_.ok()) {                                             \
-      MiniMIPerrorMessage("Error <%d> in function call\n", _restat_); \
+      MiniMIPerrorMessage("Error <%d> in function call\n", _restat_.code()); \
       return _restat_;                                                \
     }                                                                 \
-  } while (false)
+  }
 
 #endif  // SRC_MINIMIP_MINIMIP_DEF_H_
