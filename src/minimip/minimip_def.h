@@ -11,7 +11,7 @@
 // get integer number)
 //  #define MINIMIP_SUBVERSION               0 // MiniMIP sub version number
 //  #define MINIMIP_APIVERSION              00 // MiniMIP API version number
-//  #define MINIMIP_COPYRIGHT   // PLACEHOLDER:"~~Copyright (C) 2002-2020
+//  #define MINIMIP_COPYRIGHT   // PLACEHOLDER:"~~Copyright (C) 2021
 //  Konrad-Zuse-Zentrum fuer Informationstechnik Berlin (ZIB)~~"
 
 #define EPSCEIL(x, eps) (ceil((x) - (eps)))
@@ -19,12 +19,12 @@
 #define REALABS(x) (fabs(x))
 
 #define MINIMIP_CALL(x)                                               \
-  do {                                                                \
-    absl::Status _restat_;                                            \
-    if ((_restat_ = (x)) != absl::OkStatus()) {                       \
-      MiniMIPerrorMessage("Error <%d> in function call\n", _restat_); \
+  {                                                                   \
+    absl::Status _restat_ = (x);                                      \
+    if (!_restat_.ok()) {                                             \
+      MiniMIPerrorMessage("Error <%d> in function call\n", _restat_.code()); \
       return _restat_;                                                \
     }                                                                 \
-  } while (false)
+  }
 
 #endif  // SRC_MINIMIP_MINIMIP_DEF_H_
