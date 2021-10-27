@@ -418,15 +418,23 @@ class Solve : public ::testing::Test {
     check_ind.reserve(check_nnonz);
 
     // get matrix data
-    ASSERT_EQ(lp_interface_->GetColumns(0, ncols - 1, check_lb, check_ub,
-                                        check_nnonz2, check_beg, check_ind,
-                                        check_val),
-              absl::OkStatus());
+    std::vector<LPInterface::SparseVector> sparse_columns;
+
     for (int i = 0; i < ncols; i++){
-      check_obj = lp_interface_->GetObjectiveCoefficient(i);
+      check_lb.push_back(lp_interface_->GetLowerBound(i));
+      check_ub.push_back(lp_interface_->GetUpperBound(i));
+
+      sparse_columns.push_back(lp_interface_->GetSparseColumnCoefficients(i));
+
+      for(int j = 0; j < sparse_columns[i].indices.size(); j++){
+        check_ind.push_back(sparse_columns[i].indices[j]);
+        check_val.push_back(sparse_columns[i].values[j]);
+      }
     }
-    ASSERT_EQ(lp_interface_->GetObjectiveCoefficients(0, ncols - 1, check_obj),
-              absl::OkStatus());
+
+    for (int i = 0; i < ncols; i++){
+      check_obj.push_back(lp_interface_->GetObjectiveCoefficient(i));
+    }
 
     // compare data
     for (j = 0; j < ncols; ++j) {
@@ -440,13 +448,11 @@ class Solve : public ::testing::Test {
       ASSERT_FLOAT_EQ(check_obj[j],
                       obj[j]);  // EPS, "Violation of objective coefficient %d:
                                 // %g != %g\n", j, check_obj[j], obj[j]);
-
-      ASSERT_EQ(check_beg[j], beg[j]);
     }
 
     // compare matrix
     for (j = 0; j < nnonz; ++j) {
-      ASSERT_EQ(check_ind[j], ind[j]);
+      ASSERT_EQ(check_ind, ind[j]);
       ASSERT_FLOAT_EQ(check_val[j],
                       val[j]);  // EPS, "Violation of matrix entry (%d, %d): %g
                                 // != %g\n", ind[j], j, check_val[j], val[j]);
@@ -856,7 +862,7 @@ TEST_F(Solve, test5) {
   double objval;
   std::vector<LPBasisStatus> cstat(2);
   std::vector<LPBasisStatus> rstat(2);
-  cstat = {LPBasisStatus::kLower, LPBasisStatus::kLower};
+  cstat = {LPBasisStatus::kAtLowerBound, LPBasisStatus::kAtLowerBound};
   rstat = {LPBasisStatus::kBasic, LPBasisStatus::kBasic};
   double exp_objval = 5.0;
 

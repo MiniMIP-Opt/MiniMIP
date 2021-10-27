@@ -83,9 +83,23 @@ TEST_F(matrix, create_matrix) {
   ASSERT_EQ(ncols, 2);
 
   // get rows
-  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind,
-                                   matval),
-            absl::OkStatus());
+  std::vector<LPInterface::SparseVector> sparse_rows;
+  nnonz = 0;
+
+  for (int i = 0; i < 1 + nrows; i++){
+    matlhs.push_back(lp_interface_->GetLeftHandSide(i));
+    matrhs.push_back(lp_interface_->GetRightHandSide(i));
+
+    sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
+    int entries = static_cast<int>(sparse_rows[i].indices.size());
+    for(int j = 0; j < entries; j++){
+      matind.push_back(sparse_rows[i].indices[j]);
+      matval.push_back(sparse_rows[i].values[j]);
+    }
+    matbeg.push_back(entries);
+    nnonz += entries;
+  }
+
   ASSERT_EQ(nnonz, 2);
 
   // equal, to within 4 ULPs ( Unit in the last place)

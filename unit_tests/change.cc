@@ -9,7 +9,7 @@
 // ChangeSides, GetSides,
 // ChangeObjectiveSense, GetObjectiveSense,
 // GetNumberOfColumns, GetNumberOfRows, GetNumberOfNonZeros,
-// GetColumns, GetRows,
+// GetSparseColumnCoefficients, GetSparseRowCoefficients,
 // ClearState,
 // WriteLP, ReadLP, Clear
 
@@ -595,10 +595,23 @@ TEST_F(Change, testrowmethods) {
                 absl::OkStatus());
 
       // checks
-      ASSERT_EQ(
-          lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs,
-                                 newrhs, newnnonz, newbeg, newind, newval),
-          absl::OkStatus());
+      std::vector<LPInterface::SparseVector> sparse_rows;
+      newnnonz = 0;
+
+      for (int i = nrowsbefore; i < nrowsbefore + nrows; i++){
+        newlhs.push_back(lp_interface_->GetLeftHandSide(i));
+        newrhs.push_back(lp_interface_->GetRightHandSide(i));
+
+        sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
+        int entries = static_cast<int>(sparse_rows[i].indices.size());
+        for(int j = 0; j < entries; j++){
+          newind.push_back(sparse_rows[i].indices[j]);
+          newval.push_back(sparse_rows[i].values[j]);
+        }
+        newbeg.push_back(entries);
+        newnnonz += entries;
+      }
+
       ASSERT_EQ(nnonz, newnnonz);
 
       for (j = 0; j < nrows; j++) {
@@ -751,10 +764,23 @@ TEST_F(Change, testcolmethods) {
                 absl::OkStatus());
 
       // checks
-      ASSERT_EQ(
-          lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb,
-                                    newub, newnnonz, newbeg, newind, newval),
-          absl::OkStatus());
+      std::vector<LPInterface::SparseVector> sparse_columns;
+      newnnonz = 0;
+
+      for (int i = 0; i < ncolsbefore; i++){
+        newlb.push_back(lp_interface_->GetLowerBound(i));
+        newub.push_back(lp_interface_->GetUpperBound(i));
+
+        sparse_columns.push_back(lp_interface_->GetSparseColumnCoefficients(i));
+        int entries = static_cast<int>(sparse_columns[i].indices.size());
+        for(int j = 0; j < entries; j++){
+          newind.push_back(sparse_columns[i].indices[j]);
+          newval.push_back(sparse_columns[i].values[j]);
+        }
+        newbeg.push_back(entries);
+        newnnonz += entries;
+      }
+
       ASSERT_EQ(nnonz, newnnonz);
 
       for (int j = 0; j < ncols; j++) {

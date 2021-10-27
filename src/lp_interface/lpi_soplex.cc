@@ -1066,67 +1066,29 @@ LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
 // Either both, lower_bound and upper_bound, have to be 0, or both have to be
 // non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0,
 // or all of them have to be non-0.
-absl::Status LPSoplexInterface::GetColumns(
-    int first_col,                      // first column to get from LP
-    int last_col,                       // last column to get from LP
-    std::vector<double>& lower_bounds,  // array to store the lower bound vector
-    std::vector<double>& upper_bounds,  // array to store the upper bound vector
-    int& num_non_zeros,                 // store the number of non-zero elements
-    std::vector<int>& begin_cols,  // array to store start index of each column
-                                   // in indices- and vals-array
-    std::vector<int>&
-        indices,  // array to store row indices of constraint matrix entries
-    std::vector<double>&
-        vals  // array to store values of constraint matrix entries
-) const {
-  int i;
-  int j;
+LPInterface::SparseVector LPSoplexInterface::GetSparseColumnCoefficients(
+    int col) const {
+  MiniMIPdebugMessage("calling GetSparseColumnCoefficients()\n");
 
-  MiniMIPdebugMessage("calling GetColumns()\n");
+  assert(0 <= col && col < spx_->numColsReal());
 
-  assert(0 <= first_col && first_col <= last_col &&
-         last_col < spx_->numColsReal());
+  LPInterface::SparseVector sparse_column;
 
   if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-    DVector tmp_lower_bound(spx_->numColsReal());
-    DVector tmp_upper_bound(spx_->numColsReal());
-    spx_->getLowerReal(tmp_lower_bound);
-    spx_->getUpperReal(tmp_upper_bound);
-    for (i = first_col; i <= last_col; ++i) {
-      lower_bounds[i - first_col] = tmp_lower_bound[i];
-      upper_bounds[i - first_col] = tmp_upper_bound[i];
+    DSVector cvec;
+    spx_->getColVectorReal(col, cvec);
+    for (int j = 0; j < cvec.size(); ++j) {
+      sparse_column.indices.push_back(cvec.index(j));
+      sparse_column.values.push_back(cvec.value(j));
     }
   } else {
-    const Vector& tmp_lower_bound = spx_->lowerRealInternal();
-    const Vector& tmp_upper_bound = spx_->upperRealInternal();
-    for (i = first_col; i <= last_col; ++i) {
-      lower_bounds[i - first_col] = tmp_lower_bound[i];
-      upper_bounds[i - first_col] = tmp_upper_bound[i];
+    const SVector& cvec = spx_->colVectorRealInternal(col);
+    for (int j = 0; j < cvec.size(); ++j) {
+      sparse_column.indices.push_back(cvec.index(j));
+      sparse_column.values.push_back(cvec.value(j));
     }
   }
-
-  num_non_zeros = 0;
-  for (i = first_col; i <= last_col; ++i) {
-    begin_cols[i - first_col] = num_non_zeros;
-
-    if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-      DSVector cvec;
-      spx_->getColVectorReal(i, cvec);
-      for (j = 0; j < cvec.size(); ++j) {
-        indices[num_non_zeros] = cvec.index(j);
-        vals[num_non_zeros]    = cvec.value(j);
-        num_non_zeros++;
-      }
-    } else {
-      const SVector& cvec = spx_->colVectorRealInternal(i);
-      for (j = 0; j < cvec.size(); ++j) {
-        indices[num_non_zeros] = cvec.index(j);
-        vals[num_non_zeros]    = cvec.value(j);
-        num_non_zeros++;
-      }
-    }
-  }
-  return absl::OkStatus();
+  return sparse_column;
 }
 
 // gets rows from LP problem object
@@ -1134,69 +1096,29 @@ absl::Status LPSoplexInterface::GetColumns(
 // Either both, left_hand_side and right_hand_side, have to be 0, or both have
 // to be non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to
 // be 0, or all of them have to be non-0.
-absl::Status LPSoplexInterface::GetRows(
-    int first_row,  // first row to get from LP
-    int last_row,   // last row to get from LP
-    std::vector<double>&
-        left_hand_sides,  // array to store left hand side vector
-    std::vector<double>&
-        right_hand_sides,          // array to store right hand side vector
-    int& num_non_zeros,            // store the number of non-zero elements
-    std::vector<int>& begin_cols,  // array to store start index of each row in
-                                   // indices- and vals-array
-    std::vector<int>&
-        indices,  // array to store column indices of constraint matrix entries
-    std::vector<double>&
-        vals  // array to store values of constraint matrix entries
-) const {
-  int i;
-  int j;
+LPInterface::SparseVector LPSoplexInterface::GetSparseRowCoefficients(
+    int row) const {
+  MiniMIPdebugMessage("calling GetSparseRowCoefficients()\n");
 
-  MiniMIPdebugMessage("calling GetRows()\n");
+  assert(0 <= row && row < spx_->numRowsReal());
 
-  assert(0 <= first_row && first_row <= last_row &&
-         last_row < spx_->numRowsReal());
+  LPInterface::SparseVector sparse_row;
 
   if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-    DVector lhsvec(spx_->numRowsReal());
-    DVector rhsvec(spx_->numRowsReal());
-    spx_->getLhsReal(lhsvec);
-    spx_->getRhsReal(rhsvec);
-    for (i = first_row; i <= last_row; ++i) {
-      left_hand_sides[i - first_row]  = lhsvec[i];
-      right_hand_sides[i - first_row] = rhsvec[i];
+    DSVector rvec;
+    spx_->getRowVectorReal(row, rvec);
+    for (int j = 0; j < rvec.size(); ++j) {
+      sparse_row.indices.push_back(rvec.index(j));
+      sparse_row.values.push_back(rvec.value(j));
     }
   } else {
-    const Vector& lhsvec = spx_->lhsRealInternal();
-    const Vector& rhsvec = spx_->rhsRealInternal();
-    for (i = first_row; i <= last_row; ++i) {
-      left_hand_sides[i - first_row]  = lhsvec[i];
-      right_hand_sides[i - first_row] = rhsvec[i];
+    const SVector& rvec = spx_->rowVectorRealInternal(row);
+    for (int j = 0; j < rvec.size(); ++j) {
+      sparse_row.indices.push_back(rvec.index(j));
+      sparse_row.values.push_back(rvec.value(j));
     }
   }
-
-  num_non_zeros = 0;
-  for (i = first_row; i <= last_row; ++i) {
-    begin_cols[i - first_row] = num_non_zeros;
-
-    if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-      DSVector rvec;
-      spx_->getRowVectorReal(i, rvec);
-      for (j = 0; j < rvec.size(); ++j) {
-        indices[num_non_zeros] = rvec.index(j);
-        vals[num_non_zeros]    = rvec.value(j);
-        num_non_zeros++;
-      }
-    } else {
-      const SVector& rvec = spx_->rowVectorRealInternal(i);
-      for (j = 0; j < rvec.size(); ++j) {
-        indices[num_non_zeros] = rvec.index(j);
-        vals[num_non_zeros]    = rvec.value(j);
-        num_non_zeros++;
-      }
-    }
-  }
-  return absl::OkStatus();
+  return sparse_row;
 }
 
 // gets objective coefficients from LP problem object
@@ -1297,36 +1219,28 @@ absl::Status LPSoplexInterface::EndStrongBranching() {
 }
 
 // performs strong branching iterations on one branching candidate
-absl::Status LPSoplexInterface::StrongBranchValue(
-    int col,                         // column to apply strong branching on
-    double primal_sol,               // current primal solution value of column
-    int iteration_limit,             // iteration limit for strong branchings
-    double& dual_bound_down_branch,  // stores dual bound after branching column
-                                     // down
-    double&
-        dual_bound_up_branch,  // stores dual bound after branching column up
-    bool& down_valid,  // whether the returned down value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-    bool& up_valid,    // whether the returned up value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-    int& iterations    // stores total number of strong branching iterations
+absl::StatusOr<LPInterface::StrongBranchResult>
+LPSoplexInterface::StrongBranchValue(
+    int col,             // column to apply strong branching on
+    double primal_sol,   // current primal solution value of column
+    int iteration_limit  // iteration limit for strong branchings
 ) {
-  absl::Status absl_status_code;
-
+  StrongBranchResult strong_branch_result;
   // pass call on to StrongBranch()
-  absl_status_code =
-      StrongBranch(col, primal_sol, iteration_limit, dual_bound_down_branch,
-                   dual_bound_up_branch, down_valid, up_valid, iterations);
+  absl::Status absl_status_code = StrongBranch(
+      col, primal_sol, iteration_limit,
+      strong_branch_result.dual_bound_down_branch,
+      strong_branch_result.dual_bound_up_branch,
+      strong_branch_result.down_valid, strong_branch_result.up_valid,
+      strong_branch_result.iterations);
 
   // pass absl::Status(absl::StatusCode::kInternal, "LP Error") to MiniMIP
   // without a back trace
-  if (absl_status_code == absl::Status(absl::StatusCode::kInternal, "LP Error"))
+  //@TODO: look into possible statuscode returns.
+  if (absl_status_code != absl::OkStatus())
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
-
-  // evaluate absl_status_code
-  MINIMIP_CALL(absl_status_code);
-
-  return absl::OkStatus();
+  else
+    return strong_branch_result;
 }
 
 // ============================================================================
@@ -1615,10 +1529,10 @@ absl::Status LPSoplexInterface::GetBase(
         case SPxSolver::FIXED:
           row_basis_status[i] = LPBasisStatus::kFixed;
         case SPxSolver::ON_LOWER:
-          row_basis_status[i] = LPBasisStatus::kLower;
+          row_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
         case SPxSolver::ON_UPPER:
-          row_basis_status[i] = LPBasisStatus::kUpper;
+          row_basis_status[i] = LPBasisStatus::kAtUpperBound;
           break;
         case SPxSolver::ZERO:
           MiniMIPerrorMessage(
@@ -1655,13 +1569,13 @@ absl::Status LPSoplexInterface::GetBase(
           //             else => LOWER
           //                column_basis_status[i] = BASESTAT_UPPER;
           //             else
-          column_basis_status[i] = LPBasisStatus::kLower;
+          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
         case SPxSolver::ON_LOWER:
-          column_basis_status[i] = LPBasisStatus::kLower;
+          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
         case SPxSolver::ON_UPPER:
-          column_basis_status[i] = LPBasisStatus::kUpper;
+          column_basis_status[i] = LPBasisStatus::kAtUpperBound;
           break;
         case SPxSolver::ZERO:
           column_basis_status[i] = LPBasisStatus::kFree;
@@ -1707,10 +1621,10 @@ absl::Status LPSoplexInterface::SetBase(
       case LPBasisStatus::kBasic:
         _rowstat[i] = SPxSolver::BASIC;
         break;
-      case LPBasisStatus::kLower:
+      case LPBasisStatus::kAtLowerBound:
         _rowstat[i] = SPxSolver::ON_LOWER;
         break;
-      case LPBasisStatus::kUpper:
+      case LPBasisStatus::kAtUpperBound:
         _rowstat[i] = SPxSolver::ON_UPPER;
         break;
       case LPBasisStatus::kFixed:
@@ -1735,10 +1649,10 @@ absl::Status LPSoplexInterface::SetBase(
       case LPBasisStatus::kBasic:
         _colstat[i] = SPxSolver::BASIC;
         break;
-      case LPBasisStatus::kLower:
+      case LPBasisStatus::kAtLowerBound:
         _colstat[i] = SPxSolver::ON_LOWER;
         break;
-      case LPBasisStatus::kUpper:
+      case LPBasisStatus::kAtUpperBound:
         _colstat[i] = SPxSolver::ON_UPPER;
         break;
       case LPBasisStatus::kFixed:
@@ -1856,7 +1770,7 @@ absl::Status LPSoplexInterface::GetColumnOfBInverted(
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
 absl::Status LPSoplexInterface::GetRowOfBInvertedTimesA(
-    int row_number,  // row number
+    int row_number,                   // row number
     std::vector<double>& row_coeffs,  // array to store coefficients of the row
     std::vector<int>& indices,        // array to store the non-zero indices
     int& num_indices  // thee number of non-zero indices (-1: if we do not store

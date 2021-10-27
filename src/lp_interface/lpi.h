@@ -157,39 +157,16 @@ class LPInterface : private messagehandler {
   // gets the objective sense of the LP
   virtual LPObjectiveSense GetObjectiveSense() const = 0;
 
+  struct SparseVector {
+    std::vector<int> indices;
+    std::vector<double> values;
+  };
+
   // gets columns from LP problem object
-  virtual absl::Status GetColumns(
-      int first_col,  // first column to get from LP
-      int last_col,   // last column to get from LP
-      std::vector<double>&
-          lower_bounds,  // array to store the lower bound vector
-      std::vector<double>&
-          upper_bounds,              // array to store the upper bound vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_cols,  // array to store start index of each
-                                     // column in indices- and vals-array
-      std::vector<int>&
-          indices,  // array to store row indices of constraint matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const = 0;
+  virtual SparseVector GetSparseColumnCoefficients(int col) const = 0;
 
   // gets rows from LP problem object
-  virtual absl::Status GetRows(
-      int first_row,  // first row to get from LP
-      int last_row,   // last row to get from LP
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side vector
-      std::vector<double>&
-          right_hand_sides,          // array to store right hand side vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_rows,  // array to store start index of each row
-                                     // in indices- and vals-array
-      std::vector<int>& indices,  // array to store column indices of constraint
-                                  // matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const = 0;
+  virtual SparseVector GetSparseRowCoefficients(int row) const = 0;
 
   // gets objective coefficient of column from LP problem object
   virtual double GetObjectiveCoefficient(int col) const = 0;

@@ -89,7 +89,7 @@ TEST_F(SimpleTest, BasicAssertions) {
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kUpper);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kAtUpperBound);
 }
 
 TEST_F(SimpleTest, test2) {
@@ -113,7 +113,7 @@ TEST_F(SimpleTest, test2) {
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kLower);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kAtLowerBound);
 }
 
 TEST_F(SimpleTest, test3) {
@@ -146,7 +146,7 @@ TEST_F(SimpleTest, test3) {
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kLower);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kAtLowerBound);
 }
 
 TEST_F(SimpleTest, test4) {
@@ -176,7 +176,7 @@ TEST_F(SimpleTest, test4) {
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
-  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kUpper);
+  ASSERT_EQ(row_basis_status[0], LPBasisStatus::kAtUpperBound);
 }
 
 // TEST SUITE COMPLEX
@@ -312,13 +312,13 @@ TEST_F(Complex, test1) {
 
   // the optimal basis should be: {x2, x3, slack for second row}
   ASSERT_EQ(lp_interface_->GetBase(cstats, rstats), absl::OkStatus());
-  ASSERT_TRUE(cstats[0] == LPBasisStatus::kLower);
+  ASSERT_TRUE(cstats[0] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(cstats[1] == LPBasisStatus::kBasic);
   ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
 
-  ASSERT_TRUE(rstats[0] == LPBasisStatus::kLower);
+  ASSERT_TRUE(rstats[0] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(rstats[1] == LPBasisStatus::kBasic);
-  ASSERT_TRUE(rstats[2] == LPBasisStatus::kUpper);
+  ASSERT_TRUE(rstats[2] == LPBasisStatus::kAtUpperBound);
 
   // get basis indices
   ASSERT_EQ(lp_interface_->GetBasisIndices(basinds), absl::OkStatus());
@@ -560,13 +560,13 @@ TEST_F(MoreVarsThanRows, test1) {
   // the optimal basis should be: {x1, x3, s1 = slack for first row}
   ASSERT_EQ(lp_interface_->GetBase(cstats, rstats), absl::OkStatus());
   ASSERT_TRUE(cstats[0] == LPBasisStatus::kBasic);
-  ASSERT_TRUE(cstats[1] == LPBasisStatus::kLower);
+  ASSERT_TRUE(cstats[1] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
-  ASSERT_TRUE(cstats[3] == LPBasisStatus::kLower);
+  ASSERT_TRUE(cstats[3] == LPBasisStatus::kAtLowerBound);
 
   ASSERT_TRUE(rstats[0] == LPBasisStatus::kBasic);
-  ASSERT_TRUE(rstats[1] == LPBasisStatus::kLower);
-  ASSERT_TRUE(rstats[2] == LPBasisStatus::kLower);
+  ASSERT_TRUE(rstats[1] == LPBasisStatus::kAtLowerBound);
+  ASSERT_TRUE(rstats[2] == LPBasisStatus::kAtLowerBound);
 
   // binvarow should be
   //* 1.0   2.0  0.0   3.0  <- basic var x1

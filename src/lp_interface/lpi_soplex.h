@@ -252,58 +252,30 @@ class LPSoplexInterface : public LPInterface {
   // gets the objective sense of the LP
   LPObjectiveSense GetObjectiveSense() const override;
 
-  // gets columns from LP problem object
-  absl::Status GetColumns(
-      int first_col,  // first column to get from LP
-      int last_col,   // last column to get from LP
-      std::vector<double>&
-          lower_bounds,  // array to store the lower bound vector
-      std::vector<double>&
-          upper_bounds,              // array to store the upper bound vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_cols,  // array to store start index of each
-                                     // column in indices- and vals-array
-      std::vector<int>&
-          indices,  // array to store row indices of constraint matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const override;
+  // gets the sparse coefficients of the column from LP problem object
+  SparseVector GetSparseColumnCoefficients(int col) const override;
 
-  // gets rows from LP problem object
-  absl::Status GetRows(
-      int first_row,  // first row to get from LP
-      int last_row,   // last row to get from LP
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side vector
-      std::vector<double>&
-          right_hand_sides,          // array to store right hand side vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_rows,  // array to store start index of each row
-                                     // in indices- and vals-array
-      std::vector<int>& indices,  // array to store column indices of constraint
-                                  // matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const override;
+  // gets the sparse coefficients of the row from LP problem object
+  SparseVector GetSparseRowCoefficients(int row) const override;
 
   // gets objective coefficient of column from LP problem object
-  virtual double GetObjectiveCoefficient(int col) const override;
+  double GetObjectiveCoefficient(int col) const override;
 
   // gets current lower bound of column from LP problem object
-  virtual double GetLowerBound(int col) const override;
+  double GetLowerBound(int col) const override;
 
   // gets current upper bound of column from LP problem object
-  virtual double GetUpperBound(int col) const override;
+  double GetUpperBound(int col) const override;
 
   // gets current left hand sides of row from LP problem object
-  virtual double GetLeftHandSide(int row) const override;
+  double GetLeftHandSide(int row) const override;
 
   // gets current right hand sides of row from LP problem object
-  virtual double GetRightHandSide(int row) const override;
+  double GetRightHandSide(int row) const override;
 
   // gets the matrix coefficient of column and row from LP problem object
-  virtual double GetMatrixCoefficient(int col,  // column number of coefficient
-                                      int row   // row number of coefficient
+  double GetMatrixCoefficient(int col,  // column number of coefficient
+                              int row   // row number of coefficient
   ) const override;
 
   // ==========================================================================
@@ -323,20 +295,10 @@ class LPSoplexInterface : public LPInterface {
   absl::Status EndStrongBranching() override;
 
   // performs strong branching iterations on one branching candidate
-  absl::Status StrongBranchValue(
-      int col,              // column to apply strong branching on
-      double primal_sol,    // current primal solution value of column
-      int iteration_limit,  // iteration limit for strong branchings
-      double& dual_bound_down_branch,  // stores dual bound after branching
-                                       // column down
-      double&
-          dual_bound_up_branch,  // stores dual bound after branching column up
-      bool&
-          down_valid,  // whether the returned down value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-      bool& up_valid,  // whether the returned up value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-      int& iterations  // stores total number of strong branching iterations
+  absl::StatusOr<StrongBranchResult> StrongBranchValue(
+      int col,             // column to apply strong branching on
+      double primal_sol,   // current primal solution value of column
+      int iteration_limit  // iteration limit for strong branchings
       ) override;
 
   // ==========================================================================
