@@ -252,66 +252,28 @@ class LPSoplexInterface : public LPInterface {
   // gets the objective sense of the LP
   LPObjectiveSense GetObjectiveSense() const override;
 
-  // gets columns from LP problem object
-  absl::Status GetColumns(
-      int first_col,  // first column to get from LP
-      int last_col,   // last column to get from LP
-      std::vector<double>&
-          lower_bounds,  // array to store the lower bound vector
-      std::vector<double>&
-          upper_bounds,              // array to store the upper bound vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_cols,  // array to store start index of each
-                                     // column in indices- and vals-array
-      std::vector<int>&
-          indices,  // array to store row indices of constraint matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const override;
+  // gets the sparse coefficients of the column from LP problem object
+  SparseVector GetSparseColumnCoefficients(int col) const override;
 
-  // gets rows from LP problem object
-  absl::Status GetRows(
-      int first_row,  // first row to get from LP
-      int last_row,   // last row to get from LP
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side vector
-      std::vector<double>&
-          right_hand_sides,          // array to store right hand side vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_rows,  // array to store start index of each row
-                                     // in indices- and vals-array
-      std::vector<int>& indices,  // array to store column indices of constraint
-                                  // matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const override;
+  // gets the sparse coefficients of the row from LP problem object
+  SparseVector GetSparseRowCoefficients(int row) const override;
 
-  // gets objective coefficients from LP problem object
-  absl::Status GetObjectiveCoefficients(
-      int first_col,  // first column to get objective coefficient for
-      int last_col,   // last column to get objective coefficient for
-      std::vector<double>& obj_coeffs  // array to store objective coefficients
-  ) const override;
+  // gets objective coefficient of column from LP problem object
+  double GetObjectiveCoefficient(int col) const override;
 
-  // gets current bounds from LP problem object
-  absl::Status GetColumnBounds(
-      int first_col,                      // first column to get bounds for
-      int last_col,                       // last column to get bounds for
-      std::vector<double>& lower_bounds,  // array to store lower bound values
-      std::vector<double>& upper_bounds   // array to store upper bound values
-  ) const override;
+  // gets current lower bound of column from LP problem object
+  double GetLowerBound(int col) const override;
 
-  // gets current row sides from LP problem object
-  absl::Status GetRowSides(
-      int first_row,  // first row to get sides for
-      int last_row,   // last row to get sides for
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side values
-      std::vector<double>&
-          right_hand_sides  // array to store right hand side values
-  ) const override;
+  // gets current upper bound of column from LP problem object
+  double GetUpperBound(int col) const override;
 
-  // gets a single coefficient
+  // gets current left hand sides of row from LP problem object
+  double GetLeftHandSide(int row) const override;
+
+  // gets current right hand sides of row from LP problem object
+  double GetRightHandSide(int row) const override;
+
+  // gets the matrix coefficient of column and row from LP problem object
   double GetMatrixCoefficient(int col,  // column number of coefficient
                               int row   // row number of coefficient
   ) const override;
@@ -321,10 +283,10 @@ class LPSoplexInterface : public LPInterface {
   // ==========================================================================
 
   // calls primal simplex to solve the LP
-  absl::Status SolveLpWithPrimalSimplex() override;
+  absl::Status SolveLPWithPrimalSimplex() override;
 
   // calls dual simplex to solve the LP
-  absl::Status SolveLpWithDualSimplex() override;
+  absl::Status SolveLPWithDualSimplex() override;
 
   // start strong branching - call before any strong branching
   absl::Status StartStrongBranching() override;
@@ -333,20 +295,10 @@ class LPSoplexInterface : public LPInterface {
   absl::Status EndStrongBranching() override;
 
   // performs strong branching iterations on one branching candidate
-  absl::Status StrongBranchValue(
-      int col,              // column to apply strong branching on
-      double primal_sol,    // current primal solution value of column
-      int iteration_limit,  // iteration limit for strong branchings
-      double& dual_bound_down_branch,  // stores dual bound after branching
-                                       // column down
-      double&
-          dual_bound_up_branch,  // stores dual bound after branching column up
-      bool&
-          down_valid,  // whether the returned down value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-      bool& up_valid,  // whether the returned up value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-      int& iterations  // stores total number of strong branching iterations
+  absl::StatusOr<StrongBranchResult> StrongBranchValue(
+      int col,             // column to apply strong branching on
+      double primal_sol,   // current primal solution value of column
+      int iteration_limit  // iteration limit for strong branchings
       ) override;
 
   // ==========================================================================
@@ -419,31 +371,31 @@ class LPSoplexInterface : public LPInterface {
   bool TimeLimitIsExceeded() const override;
 
   // gets objective value of solution
-  absl::Status GetObjectiveValue(double& obj_val  // the objective value
-                                 ) override;
+  double GetObjectiveValue() override;
 
   // gets primal and dual solution vectors for feasible LPs
   //
   // Before calling this function, the caller must ensure that the LP has been
   // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
   // true.
-  absl::Status GetSolution(
-      double& obj_val,                   // stores the objective value
-      std::vector<double>& primal_sol,   // primal solution vector
-      std::vector<double>& dual_sol,     // dual solution vector
-      std::vector<double>& activity,     // row activity vector
-      std::vector<double>& reduced_cost  // reduced cost vector
-  ) const override;
+  // gets primal solution vector
+
+  absl::StatusOr<std::vector<double>> GetPrimalSolution() const override;
+
+  // gets row activity vector
+  absl::StatusOr<std::vector<double>> GetRowActivity() const override;
+
+  // gets dual solution vector
+  absl::StatusOr<std::vector<double>> GetDualSolution() const override;
+
+  // gets reduced cost vector
+  absl::StatusOr<std::vector<double>> GetReducedCost() const override;
 
   // gets primal ray for unbounded LPs
-  absl::Status GetPrimalRay(std::vector<double>& primal_ray  // primal ray
-  ) const override;
+  absl::StatusOr<std::vector<double>> GetPrimalRay() const override;
 
   // gets dual Farkas proof for infeasibility
-  absl::Status GetDualFarkasMultiplier(
-      std::vector<double>&
-          dual_farkas_multiplier  // dual Farkas row multipliers
-  ) const override;
+  absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier() const override;
 
   // gets the number of LP iterations of the last solve call
   int GetIterations() const override;
@@ -453,27 +405,18 @@ class LPSoplexInterface : public LPInterface {
   // ==========================================================================
 
   // gets current basis status for columns and rows
-  absl::Status GetBase(
-      std::vector<LPBasisStatus>&
-          column_basis_status,  // array to store column basis status
-      std::vector<LPBasisStatus>&
-          row_basis_status  // array to store row basis status
-  ) const override;
+  absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
+      const override;
+  absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus() const override;
 
   // sets current basis status for columns and rows
   absl::Status SetBase(
-      const std::vector<LPBasisStatus>&
-          column_basis_status,  // array with column basis status
-      const std::vector<LPBasisStatus>&
-          row_basis_status  // array with row basis status
-      ) override;
+      const std::vector<LPBasisStatus>& column_basis_status,
+      const std::vector<LPBasisStatus>& row_basis_status) override;
 
   // returns the indices of the basic columns and rows; basic column n gives
   // value n, basic row m gives value -1-m
-  absl::Status GetBasisIndices(
-      std::vector<int>& basis_indices  // array to store basis indices ready to
-                                       // keep number of rows entries
-  ) const override;
+  std::vector<int> GetBasisIndices() const override;
 
   // ==========================================================================
   // Getters of vectors in the inverted basis matrix.
@@ -486,14 +429,8 @@ class LPSoplexInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::Status GetRowOfBInverted(
-      int row_number,  // row number
-      std::vector<double>&
-          row_coeffs,             // array to store the coefficients of the row
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInverted(
+      int row_number) const override;
 
   // get column of inverse basis matrix B^-1
   //
@@ -501,20 +438,8 @@ class LPSoplexInterface : public LPInterface {
   // means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated
-  absl::Status GetColumnOfBInverted(
-      int col_number,  // column number of B^-1; this is NOT the number of the
-                       // column in the LP; you have to call
-                       // minimip::LPInterface.GetBasisIndices() to get the
-                       // array which links the B^-1 column numbers to the row
-                       // and column numbers of the LP! c must be between 0 and
-                       // num_rows-1, since the basis has the size num_rows *
-                       // num_rows
-      std::vector<double>&
-          col_coeffs,  // array to store the coefficients of the column
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(
+      int col_number) const override;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -523,17 +448,8 @@ class LPSoplexInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::Status GetRowOfBInvertedTimesA(
-      int row_number,  // row number
-      const std::vector<double>&
-          b_inverted_row,  // row in (A_B)^-1 from prior call to
-                           // minimip::LPInterface.GetBInvRow()
-      std::vector<double>&
-          row_coeffs,             // array to store coefficients of the row
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // thee number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(
+      int row_number) const override;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -542,23 +458,15 @@ class LPSoplexInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::Status GetColumnOfBInvertedTimesA(
-      int col_number,  // column number
-      std::vector<double>&
-          col_coeffs,             // array to store coefficients of the column
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const override;
+  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(
+      int col_number) const override;
 
   // ==========================================================================
   // Getters and setters of the parameters.
   // ==========================================================================
 
   // gets integer parameter of LP
-  absl::Status GetIntegerParameter(
-      LPParameter type,  // parameter number
-      int& param_val     // returns the parameter value
+  absl::StatusOr<int> GetIntegerParameter(LPParameter type  // parameter number
   ) const override;
 
   // sets integer parameter of LP
@@ -567,9 +475,7 @@ class LPSoplexInterface : public LPInterface {
                                    ) override;
 
   // gets floating point parameter of LP
-  absl::Status GetRealParameter(
-      LPParameter type,  // parameter number
-      double& param_val  // returns the parameter value
+  absl::StatusOr<double> GetRealParameter(LPParameter type  // parameter number
   ) const override;
 
   // sets floating point parameter of LP

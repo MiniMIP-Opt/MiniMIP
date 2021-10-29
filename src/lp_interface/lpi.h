@@ -3,7 +3,6 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
 #include "src/lp_interface/lp_types.h"
 #include "src/messagehandler/message_handler.h"
 // #include "absl/status/statusor.h"
@@ -158,66 +157,33 @@ class LPInterface : private messagehandler {
   // gets the objective sense of the LP
   virtual LPObjectiveSense GetObjectiveSense() const = 0;
 
+  struct SparseVector {
+    std::vector<int> indices;
+    std::vector<double> values;
+  };
+
   // gets columns from LP problem object
-  virtual absl::Status GetColumns(
-      int first_col,  // first column to get from LP
-      int last_col,   // last column to get from LP
-      std::vector<double>&
-          lower_bounds,  // array to store the lower bound vector
-      std::vector<double>&
-          upper_bounds,              // array to store the upper bound vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_cols,  // array to store start index of each
-                                     // column in indices- and vals-array
-      std::vector<int>&
-          indices,  // array to store row indices of constraint matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const = 0;
+  virtual SparseVector GetSparseColumnCoefficients(int col) const = 0;
 
   // gets rows from LP problem object
-  virtual absl::Status GetRows(
-      int first_row,  // first row to get from LP
-      int last_row,   // last row to get from LP
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side vector
-      std::vector<double>&
-          right_hand_sides,          // array to store right hand side vector
-      int& num_non_zeros,            // store the number of non-zero elements
-      std::vector<int>& begin_rows,  // array to store start index of each row
-                                     // in indices- and vals-array
-      std::vector<int>& indices,  // array to store column indices of constraint
-                                  // matrix entries
-      std::vector<double>&
-          vals  // array to store values of constraint matrix entries
-  ) const = 0;
+  virtual SparseVector GetSparseRowCoefficients(int row) const = 0;
 
-  // gets objective coefficients from LP problem object
-  virtual absl::Status GetObjectiveCoefficients(
-      int first_col,  // first column to get objective coefficient for
-      int last_col,   // last column to get objective coefficient for
-      std::vector<double>& obj_coeffs  // array to store objective coefficients
-  ) const = 0;
+  // gets objective coefficient of column from LP problem object
+  virtual double GetObjectiveCoefficient(int col) const = 0;
 
-  // gets current bounds from LP problem object
-  virtual absl::Status GetColumnBounds(
-      int first_col,                      // first column to get bounds for
-      int last_col,                       // last column to get bounds for
-      std::vector<double>& lower_bounds,  // array to store lower bound values
-      std::vector<double>& upper_bounds   // array to store upper bound values
-  ) const = 0;
+  // gets current lower bound of column from LP problem object
+  virtual double GetLowerBound(int col) const = 0;
 
-  // gets current row sides from LP problem object
-  virtual absl::Status GetRowSides(
-      int first_row,  // first row to get sides for
-      int last_row,   // last row to get sides for
-      std::vector<double>&
-          left_hand_sides,  // array to store left hand side values
-      std::vector<double>&
-          right_hand_sides  // array to store right hand side values
-  ) const = 0;
+  // gets current upper bound of column from LP problem object
+  virtual double GetUpperBound(int col) const = 0;
 
-  // gets a single coefficient
+  // gets current left hand sides of row from LP problem object
+  virtual double GetLeftHandSide(int row) const = 0;
+
+  // gets current right hand sides of row from LP problem object
+  virtual double GetRightHandSide(int row) const = 0;
+
+  // gets the matrix coefficient of column and row from LP problem object
   virtual double GetMatrixCoefficient(int col,  // column number of coefficient
                                       int row   // row number of coefficient
   ) const = 0;
@@ -227,10 +193,10 @@ class LPInterface : private messagehandler {
   // ==========================================================================
 
   // calls primal simplex to solve the LP
-  virtual absl::Status SolveLpWithPrimalSimplex() = 0;
+  virtual absl::Status SolveLPWithPrimalSimplex() = 0;
 
   // calls dual simplex to solve the LP
-  virtual absl::Status SolveLpWithDualSimplex() = 0;
+  virtual absl::Status SolveLPWithDualSimplex() = 0;
 
   // start strong branching - call before any strong branching
   virtual absl::Status StartStrongBranching() = 0;
@@ -239,20 +205,23 @@ class LPInterface : private messagehandler {
   virtual absl::Status EndStrongBranching() = 0;
 
   // performs strong branching iterations on one branching candidate
-  virtual absl::Status StrongBranchValue(
-      int col,              // column to apply strong branching on
-      double primal_sol,    // current primal solution value of column
-      int iteration_limit,  // iteration limit for strong branchings
-      double& dual_bound_down_branch,  // stores dual bound after branching
-                                       // column down
-      double&
-          dual_bound_up_branch,  // stores dual bound after branching column up
-      bool&
-          down_valid,  // whether the returned down value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-      bool& up_valid,  // whether the returned up value is a valid dual bound;
-                       // otherwise, it can only be used as an estimate value
-      int& iterations  // stores total number of strong branching iterations
+  struct StrongBranchResult {
+    double dual_bound_down_branch;  // stores dual bound after branching
+                                    // column down
+    double dual_bound_up_branch;    // stores dual bound after branching
+                                    // column up
+    bool down_valid;  // whether the returned down value is a valid dual
+                      // bound; otherwise, it can only be used as an
+                      // estimate value
+    bool up_valid;    // whether the returned up value is a valid dual bound;
+                      // otherwise, it can only be used as an estimate value
+    int iterations;   // stores total number of strong branching iterations
+  };
+
+  virtual absl::StatusOr<StrongBranchResult> StrongBranchValue(
+      int col,             // column to apply strong branching on
+      double primal_sol,   // current primal solution value of column
+      int iteration_limit  // iteration limit for strong branchings
       ) = 0;
 
   // ==========================================================================
@@ -325,32 +294,32 @@ class LPInterface : private messagehandler {
   virtual bool TimeLimitIsExceeded() const = 0;
 
   // gets objective value of solution
-  virtual absl::Status GetObjectiveValue(double& obj_val  // the objective value
-                                         ) = 0;
+  virtual double GetObjectiveValue() = 0;
 
   // gets primal and dual solution vectors for feasible LPs
   //
-  // Before calling this function, the caller must ensure that the LP has been
+  // Before calling these functions, the caller must ensure that the LP has been
   // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
   // true.
-  virtual absl::Status GetSolution(
-      double& obj_val,                   // stores the objective value
-      std::vector<double>& primal_sol,   // primal solution vector
-      std::vector<double>& dual_sol,     // dual solution vector
-      std::vector<double>& activity,     // row activity vector
-      std::vector<double>& reduced_cost  // reduced cost vector
-  ) const = 0;
+
+  // gets primal solution vector
+  virtual absl::StatusOr<std::vector<double>> GetPrimalSolution() const = 0;
+
+  // gets row activity vector
+  virtual absl::StatusOr<std::vector<double>> GetRowActivity() const = 0;
+
+  // gets dual solution vector
+  virtual absl::StatusOr<std::vector<double>> GetDualSolution() const = 0;
+
+  // gets reduced cost vector
+  virtual absl::StatusOr<std::vector<double>> GetReducedCost() const = 0;
 
   // gets primal ray for unbounded LPs
-  virtual absl::Status GetPrimalRay(
-      std::vector<double>& primal_ray  // primal ray
-  ) const = 0;
+  virtual absl::StatusOr<std::vector<double>> GetPrimalRay() const = 0;
 
   // gets dual Farkas proof for infeasibility
-  virtual absl::Status GetDualFarkasMultiplier(
-      std::vector<double>&
-          dual_farkas_multiplier  // dual Farkas row multipliers
-  ) const = 0;
+  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier()
+      const = 0;
 
   // gets the number of LP iterations of the last solve call
   virtual int GetIterations() const = 0;
@@ -360,27 +329,19 @@ class LPInterface : private messagehandler {
   // ==========================================================================
 
   // gets current basis status for columns and rows
-  virtual absl::Status GetBase(
-      std::vector<LPBasisStatus>&
-          column_basis_status,  // array to store column basis status
-      std::vector<LPBasisStatus>&
-          row_basis_status  // array to store row basis status
-  ) const = 0;
+  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
+      const = 0;
+  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus()
+      const = 0;
 
   // sets current basis status for columns and rows
   virtual absl::Status SetBase(
-      const std::vector<LPBasisStatus>&
-          column_basis_status,  // array with column basis status
-      const std::vector<LPBasisStatus>&
-          row_basis_status  // array with row basis status
-      ) = 0;
+      const std::vector<LPBasisStatus>& column_basis_status,
+      const std::vector<LPBasisStatus>& row_basis_status) = 0;
 
   // returns the indices of the basic columns and rows; basic column n gives
   // value n, basic row m gives value -1-m
-  virtual absl::Status GetBasisIndices(
-      std::vector<int>& basis_indices  // array to store basis indices ready to
-                                       // keep number of rows entries
-  ) const = 0;
+  virtual std::vector<int> GetBasisIndices() const = 0;
 
   // ==========================================================================
   // Getters of vectors in the inverted basis matrix.
@@ -393,14 +354,11 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::Status GetRowOfBInverted(
-      int row_number,  // row number
-      std::vector<double>&
-          row_coeffs,             // array to store the coefficients of the row
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const = 0;
+
+  // make only dense available
+  // virtual absl::StaturOr<const std::vector<double>&> GetSparseRowOfBInverted(
+
+  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInverted(int row_number) const = 0;
 
   // get column of inverse basis matrix B^-1
   //
@@ -408,20 +366,15 @@ class LPInterface : private messagehandler {
   // means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated
-  virtual absl::Status GetColumnOfBInverted(
-      int col_number,  // column number of B^-1; this is NOT the number of the
-                       // column in the LP; you have to call
-                       // minimip::LPInterface.GetBasisIndices() to get the
-                       // array which links the B^-1 column numbers to the row
-                       // and column numbers of the LP! c must be between 0 and
-                       // num_rows-1, since the basis has the size num_rows *
-                       // num_rows
-      std::vector<double>&
-          col_coeffs,  // array to store the coefficients of the column
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const = 0;
+  //
+  // column number of B^-1; this is NOT the number of the
+  // column in the LP; you have to call
+  // minimip::LPInterface.GetBasisIndices() to get the
+  // array which links the B^-1 column numbers to the row
+  // and column numbers of the LP! c must be between 0 and
+  // num_rows-1, since the basis has the size num_rows *
+  // num_rows
+  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(int col_number) const = 0;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -430,17 +383,7 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::Status GetRowOfBInvertedTimesA(
-      int row_number,  // row number
-      const std::vector<double>&
-          b_inverted_row,  // row in (A_B)^-1 from prior call to
-                           // minimip::LPInterface.GetBInvRow()
-      std::vector<double>&
-          row_coeffs,             // array to store coefficients of the row
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // thee number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const = 0;
+  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(int row_number) const = 0;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -449,23 +392,15 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::Status GetColumnOfBInvertedTimesA(
-      int col_number,  // column number
-      std::vector<double>&
-          col_coeffs,             // array to store coefficients of the column
-      std::vector<int>& indices,  // array to store the non-zero indices
-      int& num_indices  // the number of non-zero indices (-1: if we do not
-                        // store sparsity information)
-  ) const = 0;
+  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(int col_number) const = 0;
 
   // ==========================================================================
   // Getters and setters of the parameters.
   // ==========================================================================
 
   // gets integer parameter of LP
-  virtual absl::Status GetIntegerParameter(
-      LPParameter type,  // parameter number
-      int& param_val     // returns the parameter value
+  virtual absl::StatusOr<int> GetIntegerParameter(
+      LPParameter type  // parameter number
   ) const = 0;
 
   // sets integer parameter of LP
@@ -475,9 +410,8 @@ class LPInterface : private messagehandler {
       ) = 0;
 
   // gets floating point parameter of LP
-  virtual absl::Status GetRealParameter(
-      LPParameter type,  // parameter number
-      double& param_val  // returns the parameter value
+  virtual absl::StatusOr<double> GetRealParameter(
+      LPParameter type  // parameter number
   ) const = 0;
 
   // sets floating point parameter of LP

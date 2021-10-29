@@ -9,7 +9,7 @@
 // ChangeSides, GetSides,
 // ChangeObjectiveSense, GetObjectiveSense,
 // GetNumberOfColumns, GetNumberOfRows, GetNumberOfNonZeros,
-// GetColumns, GetRows,
+// GetSparseColumnCoefficients, GetSparseRowCoefficients,
 // ClearState,
 // WriteLP, ReadLP, Clear
 
@@ -241,7 +241,7 @@ class Change : public ::testing::Test {
                                      ind, val),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
+    ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
     ASSERT_TRUE(lp_interface_->IsSolved());
   }
 
@@ -270,8 +270,9 @@ class ChangeObjective
     ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(lastcol, ind, setobj),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetObjectiveCoefficients(0, lastcol - 1, obj),
-              absl::OkStatus());
+    for (int i = 0; i < lastcol; i++){
+      obj = lp_interface_->GetObjectiveCoefficient(i)
+    }
 
     for (size_t i; i < setobj.size(); i++) {
       ASSERT_EQ(obj[i], setobj[i]);
@@ -339,8 +340,10 @@ class ChangeBounds : public Change,
                 absl::OkStatus());
     }
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetColumnBounds(0, lastcol - 1, lb, ub),
-              absl::OkStatus());
+    for(int i = 0; i < lastcol; i++) {
+      lb.push_back(lp_interface_->GetLowerBound(0));
+      ub.push_back(lp_interface_->GetUpperBound(0));
+    }
 
     for (size_t i; i < setub.size(); i++) {
       ASSERT_EQ(ub[i], setub[i]);
@@ -416,8 +419,11 @@ class ChangeSides : public Change,
     ASSERT_EQ(lp_interface_->SetRowSides(lastcol, ind, setls, setrs),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
-    ASSERT_EQ(lp_interface_->GetRowSides(0, lastcol - 1, ls, rs),
-              absl::OkStatus());
+
+    for (int i = 0; i < lastcol; i++){
+      ls.push_back(lp_interface_->GetLeftHandSide(0));
+      rs.push_back(lp_interface_->GetRightHandSide(0));
+    }
 
     for (int i; i < setls.size(); i++) {
       ASSERT_EQ(ls[i], setls[i]);
@@ -589,10 +595,23 @@ TEST_F(Change, testrowmethods) {
                 absl::OkStatus());
 
       // checks
-      ASSERT_EQ(
-          lp_interface_->GetRows(nrowsbefore, nrowsbefore - 1 + nrows, newlhs,
-                                 newrhs, newnnonz, newbeg, newind, newval),
-          absl::OkStatus());
+      std::vector<LPInterface::SparseVector> sparse_rows;
+      newnnonz = 0;
+
+      for (int i = nrowsbefore; i < nrowsbefore + nrows; i++){
+        newlhs.push_back(lp_interface_->GetLeftHandSide(i));
+        newrhs.push_back(lp_interface_->GetRightHandSide(i));
+
+        sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
+        int entries = static_cast<int>(sparse_rows[i].indices.size());
+        for(int j = 0; j < entries; j++){
+          newind.push_back(sparse_rows[i].indices[j]);
+          newval.push_back(sparse_rows[i].values[j]);
+        }
+        newbeg.push_back(entries);
+        newnnonz += entries;
+      }
+
       ASSERT_EQ(nnonz, newnnonz);
 
       for (j = 0; j < nrows; j++) {
@@ -745,10 +764,23 @@ TEST_F(Change, testcolmethods) {
                 absl::OkStatus());
 
       // checks
-      ASSERT_EQ(
-          lp_interface_->GetColumns(ncolsbefore, ncolsbefore - 1 + ncols, newlb,
-                                    newub, newnnonz, newbeg, newind, newval),
-          absl::OkStatus());
+      std::vector<LPInterface::SparseVector> sparse_columns;
+      newnnonz = 0;
+
+      for (int i = 0; i < ncolsbefore; i++){
+        newlb.push_back(lp_interface_->GetLowerBound(i));
+        newub.push_back(lp_interface_->GetUpperBound(i));
+
+        sparse_columns.push_back(lp_interface_->GetSparseColumnCoefficients(i));
+        int entries = static_cast<int>(sparse_columns[i].indices.size());
+        for(int j = 0; j < entries; j++){
+          newind.push_back(sparse_columns[i].indices[j]);
+          newval.push_back(sparse_columns[i].values[j]);
+        }
+        newbeg.push_back(entries);
+        newnnonz += entries;
+      }
+
       ASSERT_EQ(nnonz, newnnonz);
 
       for (int j = 0; j < ncols; j++) {
@@ -862,10 +894,37 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   // 2x2 problem
   ASSERT_NO_FATAL_FAILURE(initProb(5, ncols, nrows, nnonz, sense));
 
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
-  ASSERT_EQ(
-      lp_interface_->GetSolution(objval, primsol, dualsol, activity, redcost),
-      absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  objval = lp_interface_->GetObjectiveValue();
+  absl::StatusOr<std::vector<double>> absl_tmp;
+
+  absl_tmp = lp_interface_->GetPrimalSolution();
+  if(absl_tmp.ok())
+    primsol = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetRowActivity();
+  if(absl_tmp.ok())
+    activity = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetDualSolution();
+  if(absl_tmp.ok())
+    dualsol = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetReducedCost();
+  if(absl_tmp.ok())
+    redcost = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
 
   ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"),
             absl::OkStatus());
@@ -878,10 +937,36 @@ TEST_F(Change, testlpiwritereadlpmethods) {
     ASSERT_EQ(lp_interface_->ReadLP("lpi_change_test_problem.lp"),
               absl::OkStatus());
 
-  ASSERT_EQ(lp_interface_->SolveLpWithPrimalSimplex(), absl::OkStatus());
-  ASSERT_EQ(lp_interface_->GetSolution(objval2, primsol2, dualsol2, activity2,
-                                       redcost2),
-            absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  objval2 = lp_interface_->GetObjectiveValue();
+  absl_tmp = lp_interface_->GetPrimalSolution();
+  if(absl_tmp.ok())
+    primsol2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetRowActivity();
+  if(absl_tmp.ok())
+    activity2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetDualSolution();
+  if(absl_tmp.ok())
+    dualsol2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status();
+  }
+
+  absl_tmp = lp_interface_->GetReducedCost();
+  if(absl_tmp.ok())
+    redcost2 = *absl_tmp;
+  else {
+    std::cout<<absl_tmp.status(); //@TODO: should break for all absl_tmp.status() return
+  }
+
   ASSERT_FLOAT_EQ(objval, objval2);
 
   ASSERT_EQ(primsol.size(), primsol2.size());
