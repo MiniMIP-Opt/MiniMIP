@@ -1,34 +1,34 @@
 #include "src/lp_interface/lpi_factory.h"
 
 #include <gtest/gtest.h>
-#define DEF_INTERFACE 1 /** 0 = Glop Interface (Default),
-                          * 1 = SoPlex Interface, **/
+#define DEF_INTERFACE 1 // 0 = Glop Interface (Default),
+                        // 1 = SoPlex Interface,
 
 namespace minimip {
-/*** TEST SUITE SIMPLE ***/
+// TEST SUITE SIMPLE
 
 static LPInterface* lp_interface_ = nullptr;
 
 class matrix : public ::testing::Test {
  protected:
-  LPValueArray obj, lb, ub, lhs, rhs, val, matval, matlhs, matrhs, row1, row2, empty_vals;
-  LPIndexArray matbeg, matind, beg, ind, empty_indices;
-  StringArray empty_names;
+  std::vector<double> obj, lb, ub, lhs, rhs, val, matval, matlhs, matrhs, row1, row2, empty_vals;
+  std::vector<int> matbeg, matind, beg, ind, empty_indices;
+  std::vector<std::string> empty_names;
 
   void SetUp() override {
-    /* build interface factory */
+    // build interface factory
     auto* interface_factory = new LPInterfaceFactory();
     InterfaceCode interface_code;
     switch (DEF_INTERFACE) {
       case 1:
-        interface_code = InterfaceCode::SOPLEX;
+        interface_code = InterfaceCode::kSoplex;
         break;
       default:
-        interface_code = InterfaceCode::GLOP;
+        interface_code = InterfaceCode::kGlop;
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::OBJ_SENSE_MAXIMIZE);
+    lp_interface_->ChangeObjectiveSense(LPObjectiveSense::kMaximize);
 
     obj.push_back(0.0);
     lb.push_back(0.0);
@@ -49,34 +49,34 @@ class matrix : public ::testing::Test {
 };
 
 TEST_F(matrix, create_matrix) {
-  LPNum nnonz, nrows, ncols;
+  int nnonz, nrows, ncols;
 
-  /* add one column */
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY) << "hello";
+  // add one column
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay) << "hello";
 
-  /* add additional column */
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::OKAY);
+  // add additional column
+  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices, empty_indices, empty_vals), RetCode::kOkay);
 
-  /* add one row */
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::OKAY);
+  // add one row
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::kOkay);
 
-  /* add one more row using a new variable */
+  // add one more row using a new variable
   ind[0] = 1;
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::OKAY);
+  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val), RetCode::kOkay);
 
-  /* ------------------------------------------------------------ */
+  // ------------------------------------------------------------
 
-  /* check size */
+  // check size
   nrows = lp_interface_->GetNumberOfRows();
   ncols = lp_interface_->GetNumberOfColumns();
   ASSERT_EQ(nrows, 2);
   ASSERT_EQ(ncols, 2);
 
-  /* get rows */
-  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind, matval), RetCode::OKAY);
+  // get rows
+  ASSERT_EQ(lp_interface_->GetRows(0, 1, matlhs, matrhs, nnonz, matbeg, matind, matval), RetCode::kOkay);
   ASSERT_EQ(nnonz, 2);
 
-  /* equal, to within 4 ULPs ( Unit in the last place) */
+  // equal, to within 4 ULPs ( Unit in the last place)
   ASSERT_FLOAT_EQ(matlhs[0], 1.0);
   ASSERT_FLOAT_EQ(matlhs[1], 1.0);
 
@@ -92,4 +92,4 @@ TEST_F(matrix, create_matrix) {
   ASSERT_FLOAT_EQ(matval[0], 1.0);
   ASSERT_FLOAT_EQ(matval[1], 1.0);
 }
-} /* namespace minimip */
+} // namespace minimip
