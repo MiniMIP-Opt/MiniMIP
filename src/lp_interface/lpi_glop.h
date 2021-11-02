@@ -39,7 +39,7 @@ using operations_research::glop::DenseBooleanColumn;
 using operations_research::glop::Fractional;
 using operations_research::glop::GlopParameters;
 using operations_research::glop::LinearProgram;
-using operations_research::glop::LPScalingHelper;
+using operations_research::glop::LpScalingHelper;
 using operations_research::glop::ProblemStatus;
 using operations_research::glop::RevisedSimplex;
 using operations_research::glop::ScatteredColumn;
@@ -56,7 +56,7 @@ class LPGlopInterface : public LPInterface {
   RevisedSimplex solver_;      // direct reference to the revised simplex, not
                                // passing through lp_solver
   GlopParameters parameters_;  // parameters
-  LPScalingHelper scaler_;     // scaler auxiliary class
+  LpScalingHelper scaler_;     // scaler auxiliary class
 
   // the following is used by IsSolved()
   bool lp_modified_since_last_solve_;
@@ -270,7 +270,6 @@ class LPGlopInterface : public LPInterface {
 
   // changes objective values of columns in the LP
   absl::Status SetObjectiveCoefficients(
-      int num_cols,  // number of columns to change objective value for
       const std::vector<int>&
           indices,  // column indices to change objective value for
       const std::vector<double>&

@@ -267,7 +267,7 @@ class ChangeObjective
                           std::vector<double>& setobj) {
     std::vector<double> obj(2);
     ASSERT_LE(lastcol, 2);
-    ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(lastcol, ind, setobj),
+    ASSERT_EQ(lp_interface_->SetObjectiveCoefficients(ind, setobj),
               absl::OkStatus());
     ASSERT_TRUE(!lp_interface_->IsSolved());
     for (int i = 0; i < lastcol; i++){

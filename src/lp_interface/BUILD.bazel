@@ -19,6 +19,7 @@ cmake(
 
 cc_library(
      name = "lpi",
+    srcs = ["lpi.cc"],
      hdrs = ["lpi.h"],
      deps = [
          "//src/lp_interface:lp_types",

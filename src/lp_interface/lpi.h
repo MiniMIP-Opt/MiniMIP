@@ -5,7 +5,6 @@
 #include "absl/status/statusor.h"
 #include "src/lp_interface/lp_types.h"
 #include "src/messagehandler/message_handler.h"
-// #include "absl/status/statusor.h"
 
 #include <string>
 #include <vector>
@@ -132,15 +131,19 @@ class LPInterface : private messagehandler {
       LPObjectiveSense obj_sense  // new objective sense
       ) = 0;
 
-  // changes objective values of columns in the LP
+  // changes a single objective value of a column in the LP
+  virtual absl::Status SetObjectiveCoefficient(
+      int index,  // column index to change objective value for
+      double objective_coefficient  // new objective value
+      ) = 0;
+
+  // changes multiple objective values of columns in the LP
   virtual absl::Status SetObjectiveCoefficients(
-      int num_cols,  // number of columns to change objective value for
       const std::vector<int>&
           indices,  // column indices to change objective value for
       const std::vector<double>&
           objective_coefficients  // new objective values for columns
-      ) = 0;
-
+    );
   // ==========================================================================
   // LP model getters.
   // ==========================================================================

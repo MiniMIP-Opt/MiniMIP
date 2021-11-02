@@ -980,13 +980,12 @@ absl::Status LPSoplexInterface::SetObjectiveSense(
 
 // changes objective values of columns in the LP
 absl::Status LPSoplexInterface::SetObjectiveCoefficients(
-    int num_cols,  // number of columns to change objective value for
     const std::vector<int>&
         indices,  // column indices to change objective value for
     const std::vector<double>&
         objective_coefficients  // new objective values for columns
 ) {
-  int i;
+  size_t i;
 
   MiniMIPdebugMessage("calling SetObjectiveCoefficients()\n");
 
@@ -995,7 +994,7 @@ absl::Status LPSoplexInterface::SetObjectiveCoefficients(
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    for (i = 0; i < num_cols; ++i) {
+    for (i = 0; i < indices.size(); ++i) {
       assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
       spx_->changeObjReal(indices[i], objective_coefficients[i]);
     }

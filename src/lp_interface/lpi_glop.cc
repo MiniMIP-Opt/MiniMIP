@@ -386,15 +386,14 @@ absl::Status LPGlopInterface::SetObjectiveSense(
 
 // changes objective values of columns in the LP
 absl::Status LPGlopInterface::SetObjectiveCoefficients(
-    int num_cols,  // number of columns to change objective value for
     const std::vector<int>&
         indices,  // column indices to change objective value for
     const std::vector<double>&
         objective_coefficients  // new objective values for columns
 ) {
-  MiniMIPdebugMessage("changing %d objective values\n", num_cols);
+  MiniMIPdebugMessage("changing %d objective values\n", indices.size());
 
-  for (int i = 0; i < num_cols; ++i)
+  for (int i = 0; i < indices.size(); ++i)
     linear_program_.SetObjectiveCoefficient(ColIndex(indices[i]),
                                             objective_coefficients[i]);
 
@@ -1374,7 +1373,7 @@ LPGlopInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
   LPGlopInterface::SparseVector sparse_column;
   solver_.GetBasisFactorization().RightSolveForProblemColumn(
       ColIndex(col_number), tmp_column_);
-  scaler_.UnscaleColumnRightSolve(solver_.GetBasisVector(),
+  this->scaler_.UnscaleColumnRightSolve(solver_.GetBasisVector(),
                                   ColIndex(col_number), tmp_column_);
 
   const RowIndex num_rows = tmp_column_->values.size();
@@ -1561,7 +1560,7 @@ absl::Status LPGlopInterface::SetIntegerParameter(
 
 // gets floating point parameter of LP
 absl::StatusOr<double> LPGlopInterface::GetRealParameter(
-    LPParameter type,  // parameter number
+    LPParameter type  // parameter number
 ) const {
   double param_val;
 
