@@ -1,6 +1,6 @@
 
 #ifndef SRC_MINIMIP_MINIMIP_DEF_H_
-#define SRC_MINIMIP_MINIMIP_DEF_
+#define SRC_MINIMIP_MINIMIP_DEF_H_
 
 #include "absl/status/status.h"
 #include "src/lp_interface/lp_types.h"

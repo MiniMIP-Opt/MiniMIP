@@ -133,8 +133,8 @@ absl::Status LPGlopInterface::AddColumns(
     std::vector<std::string>& col_names  // column names
 ) {
   for (size_t j = 0; j <= cols.size(); j++) {
-    AddColumn(cols[j], lower_bounds[j], upper_bounds[j], objective_values[j],
-              col_names[j]);
+    MINIMIP_CALL(AddColumn(cols[j], lower_bounds[j], upper_bounds[j], objective_values[j],
+              col_names[j]));
   }
   return absl::OkStatus();
 }

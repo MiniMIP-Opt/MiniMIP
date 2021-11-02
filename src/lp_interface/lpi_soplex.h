@@ -23,9 +23,9 @@ class LPSoplexInterface : public LPInterface {
   int solved_;           // was the current LP solved?
   bool lp_info_;
   bool from_scratch_;
-  DataArray<SPxSolver::VarStatus>
+  soplex::DataArray<SPxSolver::VarStatus>
       col_basis_status_;  // column basis status used for strong branching
-  DataArray<SPxSolver::VarStatus>
+  soplex::DataArray<SPxSolver::VarStatus>
       row_basis_status_;  // row basis status used for strong branching
 
   // return feastol set by SoPlex
@@ -75,10 +75,10 @@ class LPSoplexInterface : public LPInterface {
   ) const;
 
   // provides access for temporary storage of basis status of rows
-  DataArray<SPxSolver::VarStatus>& RowsBasisStatus();
+  soplex::DataArray<SPxSolver::VarStatus>& RowsBasisStatus();
 
   // provides access for temporary storage of basis status or columns
-  DataArray<SPxSolver::VarStatus>& ColumnsBasisStatus();
+  soplex::DataArray<SPxSolver::VarStatus>& ColumnsBasisStatus();
 
   void SetFromScratch(bool from_scratch);
 
