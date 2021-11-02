@@ -22,7 +22,7 @@
   {                                                                   \
     absl::Status _restat_ = (x);                                      \
     if (!_restat_.ok()) {                                             \
-      MiniMIPerrorMessage("Error <%d> in function call\n", _restat_.code()); \
+      MiniMIPerrorMessage("Error <%d> in function call\n", (int) _restat_.code()); \
       return _restat_;                                                \
     }                                                                 \
   }

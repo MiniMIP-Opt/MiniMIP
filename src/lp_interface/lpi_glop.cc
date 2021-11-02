@@ -73,11 +73,11 @@ absl::Status LPGlopInterface::LoadColumnLP(
     const std::vector<double>& vals  // values of constraint matrix entries
 ) {
   linear_program_.Clear();
-  AddRows(num_rows, left_hand_sides, right_hand_sides, row_names, 0,
-          std::vector<int>(), std::vector<int>(), std::vector<double>());
-  AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names,
-             num_non_zeros, begin_cols, row_indices, vals);
-  SetObjectiveSense(obj_sense);
+  MINIMIP_CALL(AddRows(num_rows, left_hand_sides, right_hand_sides, row_names, 0,
+          std::vector<int>(), std::vector<int>(), std::vector<double>()));
+  MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names,
+             num_non_zeros, begin_cols, row_indices, vals));
+  MINIMIP_CALL(SetObjectiveSense(obj_sense));
 
   return absl::OkStatus();
 }
@@ -591,9 +591,9 @@ absl::Status LPGlopInterface::SolveInternal(
   }
   lp_time_limit_was_reached_ = time_limit->LimitReached();
   if (recursive)
-    niterations_ += (long long)solver_.GetNumberOfIterations();
+    niterations_ += (std::int64_t)solver_.GetNumberOfIterations();
   else
-    niterations_ = (long long)solver_.GetNumberOfIterations();
+    niterations_ = (std::int64_t)solver_.GetNumberOfIterations();
 
   MiniMIPdebugMessage(
       "status=%s  obj=%f  iterations=%ld.\n",
@@ -612,9 +612,9 @@ absl::Status LPGlopInterface::SolveInternal(
       // Re-solve without scaling to try to fix the infeasibility.
       parameters_.set_use_scaling(false);
       lp_modified_since_last_solve_ = true;
-      SolveInternal(
-          true, time_limit);  // inherit time limit, so used time is not reset;
-                              // do not change iteration limit for resolve
+      // inherit time limit, so used time is not reset;
+      // do not change iteration limit for resolve
+      MINIMIP_CALL(SolveInternal(true, time_limit));
       parameters_.set_use_scaling(true);
     }
   }
