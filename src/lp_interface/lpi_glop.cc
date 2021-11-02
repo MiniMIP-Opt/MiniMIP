@@ -374,14 +374,13 @@ absl::Status LPGlopInterface::ClearState() {
 
 // changes lower and upper bounds of columns
 absl::Status LPGlopInterface::SetColumnBounds(
-    int num_cols,                     // number of columns to change bounds for
     const std::vector<int>& indices,  // column indices
     const std::vector<double>& lower_bounds,  // values for the new lower bounds
     const std::vector<double>& upper_bounds   // values for the new upper bounds
 ) {
-  MiniMIPdebugMessage("changing %d bounds.\n", num_cols);
+  MiniMIPdebugMessage("changing %ld bounds.\n", indices.size());
 
-  for (int i = 0; i < num_cols; ++i) {
+  for (size_t i = 0; i < indices.size(); ++i) {
     MiniMIPdebugMessage("  col %d: [%g,%g]\n", indices[i], lower_bounds[i],
                         upper_bounds[i]);
 
@@ -408,16 +407,15 @@ absl::Status LPGlopInterface::SetColumnBounds(
 
 // changes left and right hand sides of rows
 absl::Status LPGlopInterface::SetRowSides(
-    int num_rows,                     // number of rows to change sides for
     const std::vector<int>& indices,  // row indices
     const std::vector<double>&
         left_hand_sides,  // new values for left hand sides
     const std::vector<double>&
         right_hand_sides  // new values for right hand sides
 ) {
-  MiniMIPdebugMessage("changing %d sides\n", num_rows);
+  MiniMIPdebugMessage("changing %ld sides\n", indices.size());
 
-  for (int i = 0; i < num_rows; ++i)
+  for (size_t i = 0; i < indices.size(); ++i)
     linear_program_.SetConstraintBounds(
         RowIndex(indices[i]), left_hand_sides[i], right_hand_sides[i]);
 
