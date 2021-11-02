@@ -133,7 +133,7 @@ class LPInterface : private messagehandler {
 
   // changes a single objective value of a column in the LP
   virtual absl::Status SetObjectiveCoefficient(
-      int index,  // column index to change objective value for
+      int col,  // column index to change objective value for
       double objective_coefficient  // new objective value
       ) = 0;
 

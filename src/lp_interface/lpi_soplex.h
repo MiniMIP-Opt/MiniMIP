@@ -227,6 +227,12 @@ class LPSoplexInterface : public LPInterface {
       LPObjectiveSense obj_sense  // new objective sense
       ) override;
 
+  // changes objective value of column in the LP
+  absl::Status SetObjectiveCoefficient(
+      int col,
+      double objective_coefficient
+      ) override;
+
   // changes objective values of columns in the LP
   absl::Status SetObjectiveCoefficients(
       const std::vector<int>&

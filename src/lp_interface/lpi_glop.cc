@@ -384,6 +384,17 @@ absl::Status LPGlopInterface::SetObjectiveSense(
   return absl::OkStatus();
 }
 
+// changes objective value of column in the LP
+absl::Status LPGlopInterface::SetObjectiveCoefficient(
+    int col,
+    double objective_coefficient
+    ) {
+  linear_program_.SetObjectiveCoefficient(ColIndex(col),
+                                          objective_coefficient);
+  lp_modified_since_last_solve_ = true;
+  return absl::OkStatus();
+}
+
 // ==========================================================================
 // LP model getters.
 // ==========================================================================

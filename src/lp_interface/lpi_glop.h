@@ -268,6 +268,12 @@ class LPGlopInterface : public LPInterface {
       LPObjectiveSense obj_sense  // new objective sense
       ) override;
 
+  // changes objective value of column in the LP
+  absl::Status SetObjectiveCoefficient(
+      int col,
+      double objective_coefficient
+      ) override;
+
   // ==========================================================================
   // LP model getters.
   // ==========================================================================

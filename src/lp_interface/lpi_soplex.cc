@@ -979,6 +979,15 @@ absl::Status LPSoplexInterface::SetObjectiveSense(
 }
 
 // changes objective values of columns in the LP
+absl::Status LPSoplexInterface::SetObjectiveCoefficient(
+    const int col, // column index to change objective value for
+    const double objective_coefficient // new objective values for column
+) {
+  spx_->changeObjReal(col, objective_coefficient);
+  return absl::OkStatus();
+}
+
+// changes objective values of columns in the LP
 absl::Status LPSoplexInterface::SetObjectiveCoefficients(
     const std::vector<int>&
         indices,  // column indices to change objective value for
