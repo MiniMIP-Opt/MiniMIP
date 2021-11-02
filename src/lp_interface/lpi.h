@@ -8,6 +8,7 @@
 #include "absl/status/statusor.h"
 #include "src/lp_interface/lp_types.h"
 #include "src/messagehandler/message_handler.h"
+#include "src/minimip/minimip_def.h"
 
 namespace minimip {
 
@@ -47,7 +48,7 @@ class LPInterface : private messagehandler {
   virtual absl::Status AddColumn(
       const SparseVector& col,      // column to be added
       const double lower_bound,     // lower bound of new column
-      const double upper_bound,     // upper bounds of new columns
+      const double upper_bound,     // upper bound of new column
       const double objective_value  // objective function value of new columns
       ) = 0;
 
@@ -114,7 +115,6 @@ class LPInterface : private messagehandler {
 
   // changes lower and upper bounds of columns
   virtual absl::Status SetColumnBounds(
-      int num_cols,  // number of columns to change bounds for
       const std::vector<int>& indices,  // column indices
       const std::vector<double>&
           lower_bounds,  // values for the new lower bounds
@@ -124,7 +124,6 @@ class LPInterface : private messagehandler {
 
   // changes left and right hand sides of rows
   virtual absl::Status SetRowSides(
-      int num_rows,                     // number of rows to change sides for
       const std::vector<int>& indices,  // row indices
       const std::vector<double>&
           left_hand_sides,  // new values for left hand sides

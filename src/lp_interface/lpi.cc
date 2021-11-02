@@ -11,15 +11,11 @@ absl::Status LPInterface::SetObjectiveCoefficients(
     const std::vector<double>&
         objective_coefficients  // new objective values for columns
 ) {
-  absl::Status status = absl::OkStatus();
   for (size_t idx = 0; idx < indices.size(); ++idx) {
-    status = this->SetObjectiveCoefficient(indices[idx],
-                                           objective_coefficients[idx]);
-    if (status != absl::OkStatus()) {
-      return status;
-    }
+    MINIMIP_CALL(this->SetObjectiveCoefficient(indices[idx],
+                                           objective_coefficients[idx]));
   }
-  return status;
+  return absl::OkStatus();
 }
 
 }  // namespace minimip

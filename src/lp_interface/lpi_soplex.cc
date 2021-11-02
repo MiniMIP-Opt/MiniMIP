@@ -918,12 +918,10 @@ absl::Status LPSoplexInterface::ClearState() {
 
 // changes lower and upper bounds of columns
 absl::Status LPSoplexInterface::SetColumnBounds(
-    int num_cols,                     // number of columns to change bounds for
     const std::vector<int>& indices,  // column indices
     const std::vector<double>& lower_bounds,  // values for the new lower bounds
     const std::vector<double>& upper_bounds   // values for the new upper bounds
 ) {
-  int i;
 
   MiniMIPdebugMessage("calling SetColumnBounds()\n");
 
@@ -932,7 +930,7 @@ absl::Status LPSoplexInterface::SetColumnBounds(
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    for (i = 0; i < num_cols; ++i) {
+    for (size_t i = 0; i < indices.size(); ++i) {
       assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
 
       if (IsInfinity(lower_bounds[i])) {
@@ -968,25 +966,23 @@ absl::Status LPSoplexInterface::SetColumnBounds(
 
 // changes left and right hand sides of rows
 absl::Status LPSoplexInterface::SetRowSides(
-    int num_rows,                     // number of rows to change sides for
     const std::vector<int>& indices,  // row indices
     const std::vector<double>&
         left_hand_sides,  // new values for left hand sides
     const std::vector<double>&
         right_hand_sides  // new values for right hand sides
 ) {
-  int i;
 
   MiniMIPdebugMessage("calling SetRowSides()\n");
 
-  if (num_rows <= 0) return absl::OkStatus();
+  if (indices.size() == 0) return absl::OkStatus();
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    for (i = 0; i < num_rows; ++i) {
+    for (size_t i = 0; i < indices.size(); ++i) {
       assert(0 <= indices[i] && indices[i] < spx_->numRowsReal());
       spx_->changeRangeReal(indices[i], left_hand_sides[i],
                             right_hand_sides[i]);

@@ -24,6 +24,7 @@ cc_library(
      deps = [
          "//src/lp_interface:lp_types",
          "//src/messagehandler:message_handler",
+        "//src/minimip:minimip_def",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
      ],
