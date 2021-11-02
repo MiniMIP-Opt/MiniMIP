@@ -1820,7 +1820,7 @@ LPSoplexInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
   LPInterface::SparseVector sparse_row;
   std::vector<double> buf;
   std::vector<double> binv;
-  int num_rows;
+  size_t num_rows;
   int num_cols;
   int c;
 

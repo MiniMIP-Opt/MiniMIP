@@ -1,6 +1,7 @@
 #ifndef SRC_LP_INTERFACE_LPI_GLOP_H_
 #define SRC_LP_INTERFACE_LPI_GLOP_H_
 
+#include <cstdint>
 #include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
 #include "src/minimip/minimip_def.h"
@@ -32,6 +33,7 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <inttypes.h>
 
 using operations_research::TimeLimit;
 using operations_research::glop::ConstraintStatus;
@@ -70,7 +72,7 @@ class LPGlopInterface : public LPInterface {
   int timing_;         // type of timer (1 - cpu, 2 - wallclock, 0 - off)
 
   // other data
-  long long niterations_;  // number of iterations used
+  std::int64_t niterations_;  // number of iterations used
 
   // Temporary vectors allocated here for speed. This gain is non-negligible
   // because in many situations, only a few entries of these vectors are
