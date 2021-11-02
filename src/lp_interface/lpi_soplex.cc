@@ -630,6 +630,53 @@ absl::Status LPSoplexInterface::LoadColumnLP(
   return absl::OkStatus();
 }
 
+// adds column to the LP
+absl::Status LPSoplexInterface::AddColumn(
+    const SparseVector& col,      // column to be added
+    const double lower_bound,     // lower bound of new column
+    const double upper_bound,     // upper bounds of new columns
+    const double objective_value  // objective function value of new columns
+) {
+  MiniMIPdebugMessage("Calling AddColumn()\n");
+  InvalidateSolution();
+
+  assert(PreStrongBranchingBasisFreed());
+
+#ifndef NDEBUG
+  // perform check that no new rows are added - this is likely to be a mistake
+  int num_rows = spx_->numRowsReal();
+  for (size_t j = 0; j < col.indices.size(); ++j) {
+    assert(0 <= col.indices[j] && col.indices[j] < num_rows);
+    assert(col.values[j] != 0.0);
+  }
+#endif
+  try {
+    std::vector<int> integer_indices(col.indices.begin(), col.indices.end());
+
+    DSVector col_Vector(1);
+    LPColSet cols(1);
+
+    // create column vector with coefficients and bounds
+    col_Vector.clear();
+    if (col.indices.size() > 0) {
+      col_Vector.add(col.indices.size(), &integer_indices[0], &col.values[0]);
+    }
+    cols.add(objective_value, lower_bound, col_Vector, upper_bound);
+    spx_->addColsReal(cols);
+  }
+#ifndef NDEBUG
+  catch (const SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return absl::OkStatus();
+}
 // adds columns to the LP
 //
 // NOTE: The indices array is not checked for duplicates, problems may appear if
@@ -980,8 +1027,8 @@ absl::Status LPSoplexInterface::SetObjectiveSense(
 
 // changes objective values of columns in the LP
 absl::Status LPSoplexInterface::SetObjectiveCoefficient(
-    const int col, // column index to change objective value for
-    const double objective_coefficient // new objective values for column
+    const int col,  // column index to change objective value for
+    const double objective_coefficient  // new objective values for column
 ) {
   spx_->changeObjReal(col, objective_coefficient);
   return absl::OkStatus();
@@ -1074,13 +1121,12 @@ LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
 // Either both, lower_bound and upper_bound, have to be 0, or both have to be
 // non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0,
 // or all of them have to be non-0.
-LPInterface::SparseVector LPSoplexInterface::GetSparseColumnCoefficients(
-    int col) const {
+SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
   MiniMIPdebugMessage("calling GetSparseColumnCoefficients()\n");
 
   assert(0 <= col && col < spx_->numColsReal());
 
-  LPInterface::SparseVector sparse_column;
+  SparseVector sparse_column;
 
   if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
     DSVector cvec;
@@ -1104,13 +1150,12 @@ LPInterface::SparseVector LPSoplexInterface::GetSparseColumnCoefficients(
 // Either both, left_hand_side and right_hand_side, have to be 0, or both have
 // to be non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to
 // be 0, or all of them have to be non-0.
-LPInterface::SparseVector LPSoplexInterface::GetSparseRowCoefficients(
-    int row) const {
+SparseVector LPSoplexInterface::GetSparseRowCoefficients(int row) const {
   MiniMIPdebugMessage("calling GetSparseRowCoefficients()\n");
 
   assert(0 <= row && row < spx_->numRowsReal());
 
-  LPInterface::SparseVector sparse_row;
+  SparseVector sparse_row;
 
   if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
     DSVector rvec;
@@ -1750,9 +1795,9 @@ std::vector<int> LPSoplexInterface::GetBasisIndices() const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::StatusOr<LPInterface::SparseVector>
-LPSoplexInterface::GetSparseRowOfBInverted(int row_number) const {
-  LPInterface::SparseVector sparse_row;
+absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
+    int row_number) const {
+  SparseVector sparse_row;
   int num_indices;
   MiniMIPdebugMessage("calling GetSparseRowOfBInverted()\n");
 
@@ -1788,11 +1833,11 @@ LPSoplexInterface::GetSparseRowOfBInverted(int row_number) const {
 // num_rows-1, since the basis has the size num_rows *
 // num_rows
 
-absl::StatusOr<LPInterface::SparseVector>
-LPSoplexInterface::GetSparseColumnOfBInverted(int col_number) const {
+absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
+    int col_number) const {
   MiniMIPdebugMessage("calling GetColumnOfBInverted()\n");
 
-  LPInterface::SparseVector sparse_column;
+  SparseVector sparse_column;
   int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
@@ -1815,9 +1860,9 @@ LPSoplexInterface::GetSparseColumnOfBInverted(int col_number) const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::StatusOr<LPInterface::SparseVector>
-LPSoplexInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
-  LPInterface::SparseVector sparse_row;
+absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
+    int row_number) const {
+  SparseVector sparse_row;
   std::vector<double> buf;
   std::vector<double> binv;
   size_t num_rows;
@@ -1834,7 +1879,7 @@ LPSoplexInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
   buf.resize(num_rows);
 
   // calculate the row in B^-1
-  absl::StatusOr<LPInterface::SparseVector> absl_tmp_row =
+  absl::StatusOr<SparseVector> absl_tmp_row =
       GetSparseRowOfBInverted(row_number);
   if (absl_tmp_row.ok()) {
     buf                = absl_tmp_row->values;
@@ -1869,9 +1914,9 @@ LPSoplexInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::StatusOr<LPInterface::SparseVector>
+absl::StatusOr<SparseVector>
 LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
-  LPInterface::SparseVector sparse_row;
+  SparseVector sparse_row;
   // create a new uninitialized full vector
   DVector col(spx_->numRowsReal());
 

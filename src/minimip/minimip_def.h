@@ -18,13 +18,14 @@
 #define EPSFLOOR(x, eps) (floor((x) + (eps)))
 #define REALABS(x) (fabs(x))
 
-#define MINIMIP_CALL(x)                                               \
-  {                                                                   \
-    absl::Status _restat_ = (x);                                      \
-    if (!_restat_.ok()) {                                             \
-      MiniMIPerrorMessage("Error <%d> in function call\n", (int) _restat_.code()); \
-      return _restat_;                                                \
-    }                                                                 \
+#define MINIMIP_CALL(x)                                    \
+  {                                                        \
+    absl::Status _restat_ = (x);                           \
+    if (!_restat_.ok()) {                                  \
+      MiniMIPerrorMessage("Error <%d> in function call\n", \
+                          (int)_restat_.code());           \
+      return _restat_;                                     \
+    }                                                      \
   }
 
 #endif  // SRC_MINIMIP_MINIMIP_DEF_H_

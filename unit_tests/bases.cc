@@ -396,7 +396,7 @@ TEST_F(Complex, test1) {
   ASSERT_LT(i, nrows);
 
   // check basis inverse for the row corresponding to the basic slack variable
-  absl::StatusOr<LPInterface::SparseVector> absl_tmp_sparse;
+  absl::StatusOr<SparseVector> absl_tmp_sparse;
 
   absl_tmp_sparse = lp_interface_->GetSparseRowOfBInverted(i);
   if(absl_tmp_sparse.ok()) {

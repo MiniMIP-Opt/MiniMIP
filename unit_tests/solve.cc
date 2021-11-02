@@ -485,7 +485,7 @@ class Solve : public ::testing::Test {
     check_ind.reserve(check_nnonz);
 
     // get matrix data
-    std::vector<LPInterface::SparseVector> sparse_columns;
+    std::vector<SparseVector> sparse_columns;
 
     for (int i = 0; i < ncols; i++){
       check_lb.push_back(lp_interface_->GetLowerBound(i));

@@ -1,13 +1,13 @@
 #ifndef SRC_LP_INTERFACE_LPI_H_
 #define SRC_LP_INTERFACE_LPI_H_
 
+#include <string>
+#include <vector>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/lp_interface/lp_types.h"
 #include "src/messagehandler/message_handler.h"
-
-#include <string>
-#include <vector>
 
 namespace minimip {
 
@@ -44,7 +44,13 @@ class LPInterface : private messagehandler {
       ) = 0;
 
   // adds columns to the LP
-  //
+  virtual absl::Status AddColumn(
+      const SparseVector& col,      // column to be added
+      const double lower_bound,     // lower bound of new column
+      const double upper_bound,     // upper bounds of new columns
+      const double objective_value  // objective function value of new columns
+      ) = 0;
+
   // NOTE: The indices array is not checked for duplicates, problems may appear
   // if indices are added more than once.
   virtual absl::Status AddColumns(
@@ -143,7 +149,7 @@ class LPInterface : private messagehandler {
           indices,  // column indices to change objective value for
       const std::vector<double>&
           objective_coefficients  // new objective values for columns
-    );
+  );
   // ==========================================================================
   // LP model getters.
   // ==========================================================================
@@ -159,11 +165,6 @@ class LPInterface : private messagehandler {
 
   // gets the objective sense of the LP
   virtual LPObjectiveSense GetObjectiveSense() const = 0;
-
-  struct SparseVector {
-    std::vector<int> indices;
-    std::vector<double> values;
-  };
 
   // gets columns from LP problem object
   virtual SparseVector GetSparseColumnCoefficients(int col) const = 0;
@@ -361,7 +362,8 @@ class LPInterface : private messagehandler {
   // make only dense available
   // virtual absl::StaturOr<const std::vector<double>&> GetSparseRowOfBInverted(
 
-  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInverted(int row_number) const = 0;
+  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInverted(
+      int row_number) const = 0;
 
   // get column of inverse basis matrix B^-1
   //
@@ -377,7 +379,8 @@ class LPInterface : private messagehandler {
   // and column numbers of the LP! c must be between 0 and
   // num_rows-1, since the basis has the size num_rows *
   // num_rows
-  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(int col_number) const = 0;
+  virtual absl::StatusOr<SparseVector> GetSparseColumnOfBInverted(
+      int col_number) const = 0;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -386,7 +389,8 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(int row_number) const = 0;
+  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInvertedTimesA(
+      int row_number) const = 0;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
@@ -395,7 +399,8 @@ class LPInterface : private messagehandler {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  virtual absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(int col_number) const = 0;
+  virtual absl::StatusOr<SparseVector> GetSparseColumnOfBInvertedTimesA(
+      int col_number) const = 0;
 
   // ==========================================================================
   // Getters and setters of the parameters.

@@ -595,7 +595,7 @@ TEST_F(Change, testrowmethods) {
                 absl::OkStatus());
 
       // checks
-      std::vector<LPInterface::SparseVector> sparse_rows;
+      std::vector<SparseVector> sparse_rows;
       newnnonz = 0;
 
       for (int i = nrowsbefore; i < nrowsbefore + nrows; i++){
@@ -764,7 +764,7 @@ TEST_F(Change, testcolmethods) {
                 absl::OkStatus());
 
       // checks
-      std::vector<LPInterface::SparseVector> sparse_columns;
+      std::vector<SparseVector> sparse_columns;
       newnnonz = 0;
 
       for (int i = 0; i < ncolsbefore; i++){

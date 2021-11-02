@@ -83,7 +83,7 @@ TEST_F(matrix, create_matrix) {
   ASSERT_EQ(ncols, 2);
 
   // get rows
-  std::vector<LPInterface::SparseVector> sparse_rows;
+  std::vector<SparseVector> sparse_rows;
   nnonz = 0;
 
   for (int i = 0; i < 1 + nrows; i++){

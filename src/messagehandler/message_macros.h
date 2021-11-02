@@ -28,4 +28,3 @@
 #endif
 
 #endif  // SRC_MESSAGEHANDLER_MESSAGE_MACROS_H_
-

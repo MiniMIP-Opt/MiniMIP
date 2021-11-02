@@ -2,6 +2,7 @@
 #define SRC_LP_INTERFACE_LPI_GLOP_H_
 
 #include <cstdint>
+
 #include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
 #include "src/minimip/minimip_def.h"
@@ -30,10 +31,11 @@
 #pragma GCC diagnostic warning "-Wctor-dtor-privacy"
 #pragma GCC diagnostic warning "-Woverflow"
 
+#include <cinttypes>
+
 #include <cassert>
 #include <string>
 #include <vector>
-#include <inttypes.h>
 
 using operations_research::TimeLimit;
 using operations_research::glop::ConstraintStatus;
@@ -183,7 +185,15 @@ class LPGlopInterface : public LPInterface {
       const std::vector<double>& vals  // values of constraint matrix entries
       ) override;
 
-  // adds columns to the LP
+  // adds column to the LP
+  absl::Status AddColumn(
+      const SparseVector& col,      // column to be added
+      const double lower_bound,     // lower bound of new column
+      const double upper_bound,     // upper bounds of new columns
+      const double objective_value  // objective function value of new columns
+      ) override;
+
+  // deprecated: adds columns to the LP
   //
   // NOTE: The indices array is not checked for duplicates, problems may appear
   // if indices are added more than once.
@@ -271,10 +281,8 @@ class LPGlopInterface : public LPInterface {
       ) override;
 
   // changes objective value of column in the LP
-  absl::Status SetObjectiveCoefficient(
-      int col,
-      double objective_coefficient
-      ) override;
+  absl::Status SetObjectiveCoefficient(int col,
+                                       double objective_coefficient) override;
 
   // ==========================================================================
   // LP model getters.
@@ -471,7 +479,7 @@ class LPGlopInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInverted(
+  absl::StatusOr<SparseVector> GetSparseRowOfBInverted(
       int row_number) const override;
 
   // get column of inverse basis matrix B^-1
@@ -488,7 +496,7 @@ class LPGlopInterface : public LPInterface {
   // and column numbers of the LP! c must be between 0 and
   // num_rows-1, since the basis has the size num_rows *
   // num_rows
-  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(
+  absl::StatusOr<SparseVector> GetSparseColumnOfBInverted(
       int col_number) const override;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -498,7 +506,7 @@ class LPGlopInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(
+  absl::StatusOr<SparseVector> GetSparseRowOfBInvertedTimesA(
       int row_number) const override;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -508,7 +516,7 @@ class LPGlopInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(
+  absl::StatusOr<SparseVector> GetSparseColumnOfBInvertedTimesA(
       int col_number) const override;
 
   // ==========================================================================

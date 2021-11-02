@@ -128,8 +128,8 @@ class LPSoplexInterface : public LPInterface {
       const std::vector<double>& upper_bounds,      // upper bounds of columns
       std::vector<std::string>& col_names,          // column names
       int num_rows,                                 // number of rows
-      const std::vector<double>& left_hand_sides,   // left hand sides of rows
-      const std::vector<double>& right_hand_sides,  // right hand sides of rows
+      const std::vector<double>& left_hand_sides,   // left-hand sides of rows
+      const std::vector<double>& right_hand_sides,  // right-hand sides of rows
       std::vector<std::string>& row_names,          // row names
       int num_non_zeros,  // number of non-zero elements in the constraint
                           // matrix
@@ -138,6 +138,14 @@ class LPSoplexInterface : public LPInterface {
       const std::vector<int>&
           row_indices,  // row indices of constraint matrix entries
       const std::vector<double>& vals  // values of constraint matrix entries
+      ) override;
+
+  // adds column to the LP
+  absl::Status AddColumn(
+      const SparseVector& col,      // column to be added
+      const double lower_bound,     // lower bound of new column
+      const double upper_bound,     // upper bounds of new columns
+      const double objective_value  // objective function value of new columns
       ) override;
 
   // adds columns to the LP
@@ -165,16 +173,16 @@ class LPSoplexInterface : public LPInterface {
                              int last_col    // last column to be deleted
                              ) override;
 
-  // adds rows to the LP
+  // Add rows to the LP
   //
   // NOTE: The indices array is not checked for duplicates, problems may appear
   // if indices are added more than once.
   absl::Status AddRows(
       int num_rows,  // number of rows to be added
       const std::vector<double>&
-          left_hand_sides,  // left hand sides of new rows
+          left_hand_sides,  // left-hand sides of new rows
       const std::vector<double>&
-          right_hand_sides,                 // right hand sides of new rows
+          right_hand_sides,                 // right-hand sides of new rows
       std::vector<std::string>& row_names,  // row names
       int num_non_zeros,  // number of non-zero elements to be added to the
                           // constraint matrix
@@ -190,7 +198,7 @@ class LPSoplexInterface : public LPInterface {
                           int last_row    // last row to be deleted
                           ) override;
 
-  // deletes rows from LP; the new position of a row must not be greater that
+  // Delete rows from LP; the new position of a row must not be greater that
   // its old position
   absl::Status DeleteRowSet(
       std::vector<bool>& deletion_status  // deletion status of rows
@@ -212,14 +220,14 @@ class LPSoplexInterface : public LPInterface {
           upper_bounds  // values for the new upper bounds
       ) override;
 
-  // changes left and right hand sides of rows
+  // changes left and right-hand sides of rows
   absl::Status SetRowSides(
       int num_rows,                     // number of rows to change sides for
       const std::vector<int>& indices,  // row indices
       const std::vector<double>&
-          left_hand_sides,  // new values for left hand sides
+          left_hand_sides,  // new values for left-hand sides
       const std::vector<double>&
-          right_hand_sides  // new values for right hand sides
+          right_hand_sides  // new values for right-hand sides
       ) override;
 
   // changes the objective sense
@@ -228,10 +236,8 @@ class LPSoplexInterface : public LPInterface {
       ) override;
 
   // changes objective value of column in the LP
-  absl::Status SetObjectiveCoefficient(
-      int col,
-      double objective_coefficient
-      ) override;
+  absl::Status SetObjectiveCoefficient(int col,
+                                       double objective_coefficient) override;
 
   // changes objective values of columns in the LP
   absl::Status SetObjectiveCoefficients(
@@ -272,10 +278,10 @@ class LPSoplexInterface : public LPInterface {
   // gets current upper bound of column from LP problem object
   double GetUpperBound(int col) const override;
 
-  // gets current left hand sides of row from LP problem object
+  // gets current left-hand sides of row from LP problem object
   double GetLeftHandSide(int row) const override;
 
-  // gets current right hand sides of row from LP problem object
+  // gets current right-hand sides of row from LP problem object
   double GetRightHandSide(int row) const override;
 
   // gets the matrix coefficient of column and row from LP problem object
@@ -434,7 +440,7 @@ class LPSoplexInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInverted(
+  absl::StatusOr<SparseVector> GetSparseRowOfBInverted(
       int row_number) const override;
 
   // get column of inverse basis matrix B^-1
@@ -443,7 +449,7 @@ class LPSoplexInterface : public LPInterface {
   // means that if, internally, the LP solver
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated
-  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInverted(
+  absl::StatusOr<SparseVector> GetSparseColumnOfBInverted(
       int col_number) const override;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
@@ -453,7 +459,7 @@ class LPSoplexInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::StatusOr<LPInterface::SparseVector> GetSparseRowOfBInvertedTimesA(
+  absl::StatusOr<SparseVector> GetSparseRowOfBInvertedTimesA(
       int row_number) const override;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
@@ -463,7 +469,7 @@ class LPSoplexInterface : public LPInterface {
   //       uses a -1 coefficient, then rows associated with slacks variables
   //       whose coefficient is -1, should be negated; see also the explanation
   //       in lpi.h.
-  absl::StatusOr<LPInterface::SparseVector> GetSparseColumnOfBInvertedTimesA(
+  absl::StatusOr<SparseVector> GetSparseColumnOfBInvertedTimesA(
       int col_number) const override;
 
   // ==========================================================================

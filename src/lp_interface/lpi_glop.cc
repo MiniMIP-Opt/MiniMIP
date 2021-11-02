@@ -73,16 +73,55 @@ absl::Status LPGlopInterface::LoadColumnLP(
     const std::vector<double>& vals  // values of constraint matrix entries
 ) {
   linear_program_.Clear();
-  MINIMIP_CALL(AddRows(num_rows, left_hand_sides, right_hand_sides, row_names, 0,
-          std::vector<int>(), std::vector<int>(), std::vector<double>()));
-  MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names,
-             num_non_zeros, begin_cols, row_indices, vals));
+  MINIMIP_CALL(AddRows(num_rows, left_hand_sides, right_hand_sides, row_names,
+                       0, std::vector<int>(), std::vector<int>(),
+                       std::vector<double>()));
+  MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds,
+                          upper_bounds, col_names, num_non_zeros, begin_cols,
+                          row_indices, vals));
   MINIMIP_CALL(SetObjectiveSense(obj_sense));
 
   return absl::OkStatus();
 }
 
-// adds columns to the LP
+// adds column to the LP
+absl::Status LPGlopInterface::AddColumn(
+    const SparseVector& col,      // column to be added
+    const double lower_bound,     // lower bound of new column
+    const double upper_bound,     // upper bounds of new columns
+    const double objective_value  // objective function value of new columns
+) {
+  MiniMIPdebugMessage("add column.\n");
+
+  if (!col.indices.empty()) {
+#ifndef NDEBUG
+    // perform check that no new rows are added
+    RowIndex num_rows = linear_program_.num_constraints();
+    for (size_t j = 0; j < col.indices.size(); ++j) {
+      assert(0 <= col.indices[j] && col.indices[j] < num_rows.value());
+      assert(col.values[j] != 0.0);
+    }
+#endif
+
+    const ColIndex column = linear_program_.CreateNewVariable();
+    linear_program_.SetVariableBounds(column, lower_bound, upper_bound);
+    linear_program_.SetObjectiveCoefficient(column, objective_value);
+
+    for (size_t j = 0; j < col.indices.size(); ++j) {
+      linear_program_.SetCoefficient(RowIndex(col.indices[j]), column,
+                                     col.values[j]);
+    }
+  } else {
+    const ColIndex column = linear_program_.CreateNewVariable();
+    linear_program_.SetVariableBounds(column, lower_bound, upper_bound);
+    linear_program_.SetObjectiveCoefficient(column, objective_value);
+  }
+  lp_modified_since_last_solve_ = true;
+
+  return absl::OkStatus();
+}
+
+// deprecated: adds columns to the LP
 absl::Status LPGlopInterface::AddColumns(
     int num_cols,  // number of columns to be added
     const std::vector<double>&
@@ -386,11 +425,8 @@ absl::Status LPGlopInterface::SetObjectiveSense(
 
 // changes objective value of column in the LP
 absl::Status LPGlopInterface::SetObjectiveCoefficient(
-    int col,
-    double objective_coefficient
-    ) {
-  linear_program_.SetObjectiveCoefficient(ColIndex(col),
-                                          objective_coefficient);
+    int col, double objective_coefficient) {
+  linear_program_.SetObjectiveCoefficient(ColIndex(col), objective_coefficient);
   lp_modified_since_last_solve_ = true;
   return absl::OkStatus();
 }
@@ -434,8 +470,7 @@ int LPGlopInterface::GetNumberOfNonZeros() const {
 // Either both, lb and ub, have to be NULL, or both have to be non-NULL,
 // either num_non_zeros, begin_cols, indices, and val have to be NULL, or all of
 // them have to be non-NULL.
-LPGlopInterface::SparseVector LPGlopInterface::GetSparseColumnCoefficients(
-    int col) const {
+SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
   assert(0 <= col && col < linear_program_.num_variables());
 
   SparseVector sparse_column;
@@ -455,8 +490,7 @@ LPGlopInterface::SparseVector LPGlopInterface::GetSparseColumnCoefficients(
 // Either both, left_hand_side and right_hand_side, have to be NULL, or both
 // have to be non-NULL, either num_non_zeros, begin_rows, indices, and val have
 // to be NULL, or all of them have to be non-NULL.
-LPGlopInterface::SparseVector LPGlopInterface::GetSparseRowCoefficients(
-    int row) const {
+SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
   assert(0 <= row && row < linear_program_.num_constraints());
 
   const SparseMatrix& matrixtrans = linear_program_.GetTransposeSparseMatrix();
@@ -805,7 +839,7 @@ LPGlopInterface::StrongBranchValue(
       "calling strong branching on variable %d (%d iterations)\n", col,
       iteration_limit);
 
-  StrongBranchResult strong_branch_result;
+  LPInterface::StrongBranchResult strong_branch_result;
 
   //@TODO: strongbranch() always returns absl::OkStatus() currently
   absl::Status absl_status_code = strongbranch(
@@ -1255,9 +1289,9 @@ std::vector<int> LPGlopInterface::GetBasisIndices() const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::StatusOr<LPInterface::SparseVector>
-LPGlopInterface::GetSparseRowOfBInverted(int row_number) const {
-  LPGlopInterface::SparseVector sparse_row;
+absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
+    int row_number) const {
+  SparseVector sparse_row;
 
   solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row_number),
                                                       tmp_row_);
@@ -1299,9 +1333,9 @@ LPGlopInterface::GetSparseRowOfBInverted(int row_number) const {
 // column numbers of the LP! c must be between 0 and
 // num_rows-1, since the basis has the size num_rows *
 // num_rows
-absl::StatusOr<LPInterface::SparseVector>
-LPGlopInterface::GetSparseColumnOfBInverted(int col_number) const {
-  LPGlopInterface::SparseVector sparse_column;
+absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInverted(
+    int col_number) const {
+  SparseVector sparse_column;
   // we need to loop through the rows to extract the values for column
   // col_number
   const ColIndex col(col_number);
@@ -1330,9 +1364,9 @@ LPGlopInterface::GetSparseColumnOfBInverted(int col_number) const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::StatusOr<LPInterface::SparseVector>
-LPGlopInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
-  LPGlopInterface::SparseVector sparse_row;
+absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInvertedTimesA(
+    int row_number) const {
+  SparseVector sparse_row;
   // get row of basis inverse, loop through columns and muliply with matrix
   solver_.GetBasisFactorization().LeftSolveForUnitRow(ColIndex(row_number),
                                                       tmp_row_);
@@ -1361,13 +1395,13 @@ LPGlopInterface::GetSparseRowOfBInvertedTimesA(int row_number) const {
 //       uses a -1 coefficient, then rows associated with slacks variables whose
 //       coefficient is -1, should be negated; see also the explanation in
 //       lpi.h.
-absl::StatusOr<LPInterface::SparseVector>
-LPGlopInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
-  LPGlopInterface::SparseVector sparse_column;
+absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
+    int col_number) const {
+  SparseVector sparse_column;
   solver_.GetBasisFactorization().RightSolveForProblemColumn(
       ColIndex(col_number), tmp_column_);
   this->scaler_.UnscaleColumnRightSolve(solver_.GetBasisVector(),
-                                  ColIndex(col_number), tmp_column_);
+                                        ColIndex(col_number), tmp_column_);
 
   const RowIndex num_rows = tmp_column_->values.size();
 

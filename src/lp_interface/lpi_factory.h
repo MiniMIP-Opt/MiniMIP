@@ -7,7 +7,7 @@
 namespace minimip {
 
 enum class InterfaceCode {
-  kGlop = 0,
+  kGlop   = 0,
   kSoplex = 1,
 };
 

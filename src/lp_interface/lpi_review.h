@@ -93,7 +93,7 @@ class LPInterface {
   virtual absl::Status SetColumnBounds(int col, double lower_bound,
                                        double upper_bound) = 0;
   virtual absl::Status SetRowBounds(int row, double lower_bound,
-                                    double upper_bound) = 0;
+                                    double upper_bound)    = 0;
 
   // Sets the objective sense (i.e., direction of optimization).
   // NOTE: For the purpose of LP solving, MiniMIP assumes the objective
@@ -121,9 +121,9 @@ class LPInterface {
   // Simple getters.
   // TODO(lpawel): Style guide allows for simple getters to be in the lower
   // case format. For consistency though, always use camel format?
-  virtual int num_rows() const = 0;
-  virtual int num_columns() const = 0;
-  virtual int num_non_zeros() const = 0;
+  virtual int num_rows() const         = 0;
+  virtual int num_columns() const      = 0;
+  virtual int num_non_zeros() const    = 0;
   virtual bool is_maximization() const = 0;
 
   // Gets the objective coefficient for `col` (which must be between 0 and
@@ -172,12 +172,12 @@ class LPInterface {
   // the underlying solver supports that). It is the responsability of the
   // caller to reset the LP solver with a specific basis.
   virtual absl::Status SolveLPWithPrimalSimplex() = 0;
-  virtual absl::Status SolveLPWithDualSimplex() = 0;
+  virtual absl::Status SolveLPWithDualSimplex()   = 0;
 
   // These two functions should always be called before and after the underlying
   // LP solver is used to perform strong branching solves.
   virtual absl::Status StartStrongBranchingingMode() = 0;
-  virtual absl::Status EndStrongBranchingingMode() = 0;
+  virtual absl::Status EndStrongBranchingingMode()   = 0;
 
   // Executes strong branching probing of the up and down branch for the `col`
   // around `primal_value`. Note, `primal_value` may be integer in which case,
@@ -211,13 +211,13 @@ class LPInterface {
   virtual bool IsStable() const = 0;
 
   // Getters of the status of the computed solution.
-  virtual bool IsOptimal() const = 0;
-  virtual bool IsPrimalFeasible() const = 0;
+  virtual bool IsOptimal() const          = 0;
+  virtual bool IsPrimalFeasible() const   = 0;
   virtual bool IsPrimalInfeasible() const = 0;
-  virtual bool IsPrimalUnbounded() const = 0;
-  virtual bool IsDualFeasible() const = 0;
-  virtual bool IsDualInfeasible() const = 0;
-  virtual bool IsDualUnbounded() const = 0;
+  virtual bool IsPrimalUnbounded() const  = 0;
+  virtual bool IsDualFeasible() const     = 0;
+  virtual bool IsDualInfeasible() const   = 0;
+  virtual bool IsDualUnbounded() const    = 0;
 
   // Whether LP was proven to have a primal unbounded ray (but not necessary
   // a primal feasible point). This does not mean that the solver knows and can
@@ -241,7 +241,7 @@ class LPInterface {
   // TODO(lpawel): Add support for a "deterministic effort" counter and limit.
   virtual bool ObjectiveLimitIsExceeded() const = 0;
   virtual bool IterationLimitIsExceeded() const = 0;
-  virtual bool TimeLimitIsExceeded() const = 0;
+  virtual bool TimeLimitIsExceeded() const      = 0;
 
   // The number of simplex iterations of the call of primal or dual solve.
   virtual int num_iterations_of_last_solve() const = 0;
@@ -277,11 +277,11 @@ class LPInterface {
   // Basis statuses of the model variables (if used for cols) or of the slack
   // variables (if used for rows).
   enum class BasisStatus {
-    kBasic = 0,
+    kBasic        = 0,
     kAtLowerBound = 1,
     kAtUpperBound = 2,
-    kFixed = 3,
-    kFree = 4,
+    kFixed        = 3,
+    kFree         = 4,
   };
 
   // Gets and sets the LP basis status for all cols and rows.
@@ -289,7 +289,7 @@ class LPInterface {
     std::vector<BasisStatus> col_basis_status;
     std::vector<BasisStatus> row_basis_status;
   };
-  virtual absl::StatusOr<LPBasis> GetLPBasis() const = 0;
+  virtual absl::StatusOr<LPBasis> GetLPBasis() const  = 0;
   virtual absl::Status SetBasis(const LPBasis& basis) = 0;
 
   // Returns the indices of the basic columns and rows. Basic column n is
@@ -402,8 +402,8 @@ class LPInterface {
   };
 
   // `Options` are very small, thus it's perfectly fine to pass them by copy.
-  virtual Options GetDefaultOptions() const = 0;
-  virtual Options GetCurrentOptions() const = 0;
+  virtual Options GetDefaultOptions() const               = 0;
+  virtual Options GetCurrentOptions() const               = 0;
   virtual absl::Status SetOptions(const Options& options) = 0;
 
   // ==========================================================================
