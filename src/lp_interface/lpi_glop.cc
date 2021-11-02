@@ -384,24 +384,6 @@ absl::Status LPGlopInterface::SetObjectiveSense(
   return absl::OkStatus();
 }
 
-// changes objective values of columns in the LP
-absl::Status LPGlopInterface::SetObjectiveCoefficients(
-    const std::vector<int>&
-        indices,  // column indices to change objective value for
-    const std::vector<double>&
-        objective_coefficients  // new objective values for columns
-) {
-  MiniMIPdebugMessage("changing %d objective values\n", indices.size());
-
-  for (int i = 0; i < indices.size(); ++i)
-    linear_program_.SetObjectiveCoefficient(ColIndex(indices[i]),
-                                            objective_coefficients[i]);
-
-  lp_modified_since_last_solve_ = true;
-
-  return absl::OkStatus();
-}
-
 // ==========================================================================
 // LP model getters.
 // ==========================================================================

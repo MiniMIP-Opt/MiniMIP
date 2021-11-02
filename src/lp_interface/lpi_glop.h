@@ -268,14 +268,6 @@ class LPGlopInterface : public LPInterface {
       LPObjectiveSense obj_sense  // new objective sense
       ) override;
 
-  // changes objective values of columns in the LP
-  absl::Status SetObjectiveCoefficients(
-      const std::vector<int>&
-          indices,  // column indices to change objective value for
-      const std::vector<double>&
-          objective_coefficients  // new objective values for columns
-      ) override;
-
   // ==========================================================================
   // LP model getters.
   // ==========================================================================
