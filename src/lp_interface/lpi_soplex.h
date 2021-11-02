@@ -144,9 +144,10 @@ class LPSoplexInterface : public LPInterface {
   absl::Status AddColumn(
       const SparseVector& col,  // column to be added
       double lower_bound,       // lower bound of new column
-      double upper_bound,       // upper bounds of new columns
-      double objective_value,   // objective function value of new columns
-      std::string col_name) override;
+      double upper_bound,       // upper bound of new column
+      double objective_value,   // objective function value of new column
+      std::string col_name      // column name
+      ) override;
 
   // adds columns to the LP
   absl::Status AddColumns(

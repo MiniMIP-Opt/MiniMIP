@@ -634,8 +634,8 @@ absl::Status LPSoplexInterface::LoadColumnLP(
 absl::Status LPSoplexInterface::AddColumn(
     const SparseVector& col,  // column to be added
     double lower_bound,       // lower bound of new column
-    double upper_bound,       // upper bounds of new columns
-    double objective_value,   // objective function value of new columns
+    double upper_bound,       // upper bound of new column
+    double objective_value,   // objective function value of new column
     std::string col_name      // column name
 ) {
   MiniMIPdebugMessage("Calling AddColumn()\n");
@@ -981,11 +981,10 @@ absl::Status LPSoplexInterface::ClearState() {
 
 // changes lower and upper bounds of columns
 absl::Status LPSoplexInterface::SetColumnBounds(
-    const std::vector<int>& indices,  // column indices
+    const std::vector<int>& indices,          // column indices
     const std::vector<double>& lower_bounds,  // values for the new lower bounds
     const std::vector<double>& upper_bounds   // values for the new upper bounds
 ) {
-
   MiniMIPdebugMessage("calling SetColumnBounds()\n");
 
   InvalidateSolution();
@@ -1035,7 +1034,6 @@ absl::Status LPSoplexInterface::SetRowSides(
     const std::vector<double>&
         right_hand_sides  // new values for right hand sides
 ) {
-
   MiniMIPdebugMessage("calling SetRowSides()\n");
 
   if (indices.size() == 0) return absl::OkStatus();

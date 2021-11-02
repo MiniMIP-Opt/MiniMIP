@@ -47,9 +47,10 @@ class LPInterface : private messagehandler {
   virtual absl::Status AddColumn(
       const SparseVector& col,       // column to be added
       const double lower_bound,      // lower bound of new column
-      const double upper_bound,      // upper bounds of new columns
-      const double objective_value,  // objective function value of new columns
-      std::string col_name) = 0;
+      const double upper_bound,      // upper bound of new column
+      const double objective_value,  // objective function value of new column
+      std::string col_name           // column name
+      ) = 0;
 
   // add columns to the LP
   virtual absl::Status AddColumns(
@@ -125,7 +126,6 @@ class LPInterface : private messagehandler {
 
   // changes lower and upper bounds of columns
   virtual absl::Status SetColumnBounds(
-      int num_cols,  // number of columns to change bounds for
       const std::vector<int>& indices,  // column indices
       const std::vector<double>&
           lower_bounds,  // values for the new lower bounds
@@ -135,7 +135,6 @@ class LPInterface : private messagehandler {
 
   // changes left and right hand sides of rows
   virtual absl::Status SetRowSides(
-      int num_rows,                     // number of rows to change sides for
       const std::vector<int>& indices,  // row indices
       const std::vector<double>&
           left_hand_sides,  // new values for left hand sides

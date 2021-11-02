@@ -2,6 +2,7 @@
 #define SRC_LP_INTERFACE_LPI_C_
 
 #include "src/lp_interface/lpi.h"
+#include "src/minimip/minimip_def.h"
 
 namespace minimip {
 

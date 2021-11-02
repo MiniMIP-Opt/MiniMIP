@@ -88,7 +88,7 @@ absl::Status LPGlopInterface::LoadColumnLP(
 absl::Status LPGlopInterface::AddColumn(
     const SparseVector& col,  // column to be added
     double lower_bound,       // lower bound of new column
-    double upper_bound,       // upper bounds of new columns
+    double upper_bound,       // upper bound of new column
     double objective_value,   // objective function value of new columns
     std::string col_name      // column name
 ) {
@@ -374,7 +374,7 @@ absl::Status LPGlopInterface::ClearState() {
 
 // changes lower and upper bounds of columns
 absl::Status LPGlopInterface::SetColumnBounds(
-    const std::vector<int>& indices,  // column indices
+    const std::vector<int>& indices,          // column indices
     const std::vector<double>& lower_bounds,  // values for the new lower bounds
     const std::vector<double>& upper_bounds   // values for the new upper bounds
 ) {
