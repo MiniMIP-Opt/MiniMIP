@@ -1752,13 +1752,13 @@ LPSoplexInterface::GetRowBasisStatus() const {
 }
 
 // sets current basis status for columns and rows
-absl::Status LPSoplexInterface::SetBase(
+absl::Status LPSoplexInterface::SetBasisStatus(
     const std::vector<LPBasisStatus>&
         column_basis_status,  // array with column basis status
     const std::vector<LPBasisStatus>&
         row_basis_status  // array with row basis status
 ) {
-  MiniMIPdebugMessage("calling SetBase()\n");
+  MiniMIPdebugMessage("calling SetBasisStatus()\n");
 
   int num_cols = GetNumberOfColumns();
   int num_rows = GetNumberOfRows();

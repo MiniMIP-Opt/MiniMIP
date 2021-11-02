@@ -349,7 +349,7 @@ class LPInterface : private messagehandler {
       const = 0;
 
   // sets current basis status for columns and rows
-  virtual absl::Status SetBase(
+  virtual absl::Status SetBasisStatus(
       const std::vector<LPBasisStatus>& column_basis_status,
       const std::vector<LPBasisStatus>& row_basis_status) = 0;
 

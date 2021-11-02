@@ -1249,7 +1249,7 @@ absl::StatusOr<std::vector<LPBasisStatus>> LPGlopInterface::GetRowBasisStatus()
 }
 
 // sets current basis status for columns and rows
-absl::Status LPGlopInterface::SetBase(
+absl::Status LPGlopInterface::SetBasisStatus(
     const std::vector<LPBasisStatus>&
         column_basis_status,  // array with column basis status
     const std::vector<LPBasisStatus>&
@@ -1258,7 +1258,7 @@ absl::Status LPGlopInterface::SetBase(
   const ColIndex num_cols = linear_program_.num_variables();
   const RowIndex num_rows = linear_program_.num_constraints();
 
-  MiniMIPdebugMessage("SetBase\n");
+  MiniMIPdebugMessage("SetBasisStatus\n");
 
   BasisState state;
   state.statuses.reserve(ColIndex(num_cols.value() + num_rows.value()));

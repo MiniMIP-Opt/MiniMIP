@@ -469,7 +469,7 @@ class LPGlopInterface : public LPInterface {
   absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus() const override;
 
   // sets current basis status for columns and rows
-  absl::Status SetBase(
+  absl::Status SetBasisStatus(
       const std::vector<LPBasisStatus>& column_basis_status,
       const std::vector<LPBasisStatus>& row_basis_status) override;
 

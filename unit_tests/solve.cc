@@ -969,7 +969,7 @@ TEST_F(Solve, test5) {
             absl::OkStatus());
 
   // set basis
-  ASSERT_EQ(lp_interface_->SetBase(cstat, rstat), absl::OkStatus());
+  ASSERT_EQ(lp_interface_->SetBasisStatus(cstat, rstat), absl::OkStatus());
 
   // solve problem
   ASSERT_EQ(lp_interface_->SolveLPWithDualSimplex(), absl::OkStatus());
