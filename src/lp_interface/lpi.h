@@ -273,12 +273,12 @@ class LPInterface : private messagehandler {
   virtual bool ExistsPrimalRay() const = 0;
 
   // returns true if LP is proven to have a primal unbounded ray (but not
-  // necessary a primal feasible point),
+  // necessarily a primal feasible point),
   //  and the solver knows and can return the primal ray
   virtual bool HasPrimalRay() const = 0;
 
   // returns true if LP is proven to have a dual unbounded ray (but not
-  // necessary a dual feasible point); this does not necessarily mean that the
+  // necessarily a dual feasible point); this does not necessarily mean that the
   // solver knows and can return the dual ray
   virtual bool ExistsDualRay() const = 0;
 
