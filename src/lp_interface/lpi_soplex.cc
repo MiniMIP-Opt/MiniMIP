@@ -613,9 +613,9 @@ absl::Status LPSoplexInterface::LoadColumnLP(
     spx_->addRowsReal(rows);
 
     // create column vectors with coefficients and bounds
-    MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds,
-                            upper_bounds, col_names, num_non_zeros, begin_cols,
-                            row_indices, vals));
+    //    MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds,
+    //                            upper_bounds, col_names, num_non_zeros,
+    //                            begin_cols, row_indices, vals));
   }
 #ifndef NDEBUG
   catch (const SPxException& x) {
@@ -632,10 +632,11 @@ absl::Status LPSoplexInterface::LoadColumnLP(
 
 // adds column to the LP
 absl::Status LPSoplexInterface::AddColumn(
-    const SparseVector& col,      // column to be added
-    const double lower_bound,     // lower bound of new column
-    const double upper_bound,     // upper bounds of new columns
-    const double objective_value  // objective function value of new columns
+    const SparseVector& col,  // column to be added
+    double lower_bound,       // lower bound of new column
+    double upper_bound,       // upper bounds of new columns
+    double objective_value,   // objective function value of new columns
+    std::string col_name      // column name
 ) {
   MiniMIPdebugMessage("Calling AddColumn()\n");
   InvalidateSolution();
@@ -654,15 +655,15 @@ absl::Status LPSoplexInterface::AddColumn(
     std::vector<int> integer_indices(col.indices.begin(), col.indices.end());
 
     DSVector col_Vector(1);
-    LPColSet cols(1);
+    LPColSet column(1);
 
     // create column vector with coefficients and bounds
     col_Vector.clear();
-    if (col.indices.size() > 0) {
+    if (!col.indices.empty()) {
       col_Vector.add(col.indices.size(), &integer_indices[0], &col.values[0]);
     }
-    cols.add(objective_value, lower_bound, col_Vector, upper_bound);
-    spx_->addColsReal(cols);
+    column.add(objective_value, lower_bound, col_Vector, upper_bound);
+    spx_->addColsReal(column);
   }
 #ifndef NDEBUG
   catch (const SPxException& x) {
@@ -677,24 +678,15 @@ absl::Status LPSoplexInterface::AddColumn(
 
   return absl::OkStatus();
 }
+
 // adds columns to the LP
-//
-// NOTE: The indices array is not checked for duplicates, problems may appear if
-// indices are added more than once.
 absl::Status LPSoplexInterface::AddColumns(
-    int num_cols,  // number of columns to be added
-    const std::vector<double>&
-        objective_values,  // objective function values of new columns
+    const std::vector<SparseVector>& cols,    // column to be added
     const std::vector<double>& lower_bounds,  // lower bounds of new columns
     const std::vector<double>& upper_bounds,  // upper bounds of new columns
-    std::vector<std::string>& col_names,      // column names
-    int num_non_zeros,  // number of non-zero elements to be added to the
-                        // constraint matrix
-    const std::vector<int>&
-        begin_cols,  // start index of each column in indices- and vals-array
-    const std::vector<int>&
-        indices,                     // row indices of constraint matrix entries
-    const std::vector<double>& vals  // values of constraint matrix entries
+    const std::vector<double>&
+        objective_values,  // objective function values of new columns
+    std::vector<std::string>& col_names  // column names
 ) {
   MiniMIPdebugMessage("calling AddColumns()\n");
 
@@ -703,36 +695,34 @@ absl::Status LPSoplexInterface::AddColumns(
   assert(PreStrongBranchingBasisFreed());
 
 #ifndef NDEBUG
-  if (num_non_zeros > 0) {
-    // perform check that no new rows are added - this is likely to be a mistake
+  if (!cols.empty()) {
+    // perform check that no new rows are added - this is likely to be a
+    // mistake
     int num_rows = spx_->numRowsReal();
-    for (int j = 0; j < num_non_zeros; ++j) {
-      assert(0 <= indices[j] && indices[j] < num_rows);
-      assert(vals[j] != 0.0);
+    for (size_t i = 0; i < cols.size(); i++) {
+      for (size_t j = 0; j < cols[i].indices.size(); ++j) {
+        assert(0 <= cols[i].indices[j] && cols[i].indices[j] < num_rows);
+        assert(cols[i].values[j] != 0.0);
+      }
     }
   }
 #endif
 
   try {
-    std::vector<int> integer_indices(indices.begin(), indices.end());
-    LPColSet cols(num_cols);
-    DSVector col_Vector(num_cols);
-    int start;
-    int last;
-    int i;
-
+    LPColSet columns(cols.size());
+    DSVector col_Vector(cols.size());
+    int last = 0;
     // create column vectors with coefficients and bounds
-    for (i = 0; i < num_cols; ++i) {
+    for (size_t i = 0; i < cols.size(); ++i) {
       col_Vector.clear();
-      if (num_non_zeros > 0) {
-        start = begin_cols[i];
-        last  = (i == num_cols - 1 ? num_non_zeros : begin_cols[i + 1]);
-        col_Vector.add(last - start, &integer_indices[start], &vals[start]);
+      if (!cols[i].indices.empty()) {
+        col_Vector.add(last, &cols[i].indices[0], &cols[i].values[0]);
+        last += cols[i].indices.size();
       }
-      cols.add(objective_values[i], lower_bounds[i], col_Vector,
-               upper_bounds[i]);
+      columns.add(objective_values[i], lower_bounds[i], col_Vector,
+                  upper_bounds[i]);
     }
-    spx_->addColsReal(cols);
+    spx_->addColsReal(columns);
   }
 #ifndef NDEBUG
   catch (const SPxException& x) {
@@ -747,6 +737,79 @@ absl::Status LPSoplexInterface::AddColumns(
 
   return absl::OkStatus();
 }
+// Deprecated:
+// adds columns to the LP
+//
+// NOTE: The indices array is not checked for duplicates, problems may appear
+// if indices are added more than once.
+// absl::Status LPSoplexInterface::AddColumns(
+//    int num_cols,  // number of columns to be added
+//    const std::vector<double>&
+//        objective_values,  // objective function values of new columns
+//    const std::vector<double>& lower_bounds,  // lower bounds of new columns
+//    const std::vector<double>& upper_bounds,  // upper bounds of new columns
+//    std::vector<std::string>& col_names,      // column names
+//    int num_non_zeros,  // number of non-zero elements to be added to the
+//                        // constraint matrix
+//    const std::vector<int>&
+//        begin_cols,  // start index of each column in indices- and vals-array
+//    const std::vector<int>&
+//        indices,                     // row indices of constraint matrix
+//        entries
+//    const std::vector<double>& vals  // values of constraint matrix entries
+//) {
+//  MiniMIPdebugMessage("calling AddColumns()\n");
+//
+//  InvalidateSolution();
+//
+//  assert(PreStrongBranchingBasisFreed());
+//
+//#ifndef NDEBUG
+//  if (num_non_zeros > 0) {
+//    // perform check that no new rows are added - this is likely to be a
+//    // mistake
+//    int num_rows = spx_->numRowsReal();
+//    for (int j = 0; j < num_non_zeros; ++j) {
+//      assert(0 <= indices[j] && indices[j] < num_rows);
+//      assert(vals[j] != 0.0);
+//    }
+//  }
+//#endif
+//
+//  try {
+//    std::vector<int> integer_indices(indices.begin(), indices.end());
+//    LPColSet cols(num_cols);
+//    DSVector col_Vector(num_cols);
+//    int start;
+//    int last;
+//    int i;
+//
+//    // create column vectors with coefficients and bounds
+//    for (i = 0; i < num_cols; ++i) {
+//      col_Vector.clear();
+//      if (num_non_zeros > 0) {
+//        start = begin_cols[i];
+//        last  = (i == num_cols - 1 ? num_non_zeros : begin_cols[i + 1]);
+//        col_Vector.add(last - start, &integer_indices[start], &vals[start]);
+//      }
+//      cols.add(objective_values[i], lower_bounds[i], col_Vector,
+//               upper_bounds[i]);
+//    }
+//    spx_->addColsReal(cols);
+//  }
+//#ifndef NDEBUG
+//  catch (const SPxException& x) {
+//    std::string s = x.what();
+//    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+//    // %s\n", s.c_str());
+//#else
+//  catch (const SPxException&) {
+//#endif
+//    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+//  }
+//
+//  return absl::OkStatus();
+//}
 
 // deletes all columns in the given range from LP
 absl::Status LPSoplexInterface::DeleteColumns(
@@ -769,8 +832,8 @@ absl::Status LPSoplexInterface::DeleteColumns(
 
 // adds rows to the LP
 //
-// NOTE: The indices array is not checked for duplicates, problems may appear if
-// indices are added more than once.
+// NOTE: The indices array is not checked for duplicates, problems may appear
+// if indices are added more than once.
 absl::Status LPSoplexInterface::AddRows(
     int num_rows,                                // number of rows to be added
     const std::vector<double>& left_hand_sides,  // left hand sides of new rows
@@ -855,8 +918,8 @@ absl::Status LPSoplexInterface::DeleteRows(
   return absl::OkStatus();
 }
 
-// deletes rows from LP; the new position of a row must not be greater that its
-// old position
+// deletes rows from LP; the new position of a row must not be greater that
+// its old position
 absl::Status LPSoplexInterface::DeleteRowSet(
     std::vector<bool>& deletion_status  // deletion status of rows
 ) {
@@ -874,8 +937,8 @@ absl::Status LPSoplexInterface::DeleteRowSet(
 
   num_rows = spx_->numRowsReal();
 
-  // SoPlex removeRows() method deletes the rows with deletion_status[i] < 0, so
-  // we have to negate the values
+  // SoPlex removeRows() method deletes the rows with deletion_status[i] < 0,
+  // so we have to negate the values
   for (i = 0; i < num_rows; ++i) int_deletion_status[i] *= -1;
 
   SOPLEX_TRY(spx_->removeRowsReal(int_deletion_status.data()));
@@ -905,8 +968,8 @@ absl::Status LPSoplexInterface::ClearState() {
 #ifndef NDEBUG
   catch (const SPxException& x) {
     std::string s = x.what();
-    //  MiniMIPmessagePrintWarning(lpi->messagehdlr, "SoPlex threw an exception:
-    //  %s\n", s.c_str());
+    //  MiniMIPmessagePrintWarning(lpi->messagehdlr, "SoPlex threw an
+    //  exception: %s\n", s.c_str());
 #else
   catch (const SPxException&) {
 #endif
@@ -1089,8 +1152,8 @@ int LPSoplexInterface::GetNumberOfColumns() const {
 // gets the number of nonzero elements in the LP constraint matrix
 int LPSoplexInterface::GetNumberOfNonZeros() const {
   int i;
-  // SoPlex has no direct method to return the number of nonzeros, so we have to
-  // count them manually
+  // SoPlex has no direct method to return the number of nonzeros, so we have
+  // to count them manually
   int num_non_zeros = 0;
 
   MiniMIPdebugMessage("calling GetNumberOfNonZeros()\n");
@@ -1119,8 +1182,8 @@ LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
 // gets columns from LP problem object
 //
 // Either both, lower_bound and upper_bound, have to be 0, or both have to be
-// non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0,
-// or all of them have to be non-0.
+// non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be
+// 0, or all of them have to be non-0.
 SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
   MiniMIPdebugMessage("calling GetSparseColumnCoefficients()\n");
 
@@ -1148,8 +1211,8 @@ SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
 // gets rows from LP problem object
 //
 // Either both, left_hand_side and right_hand_side, have to be 0, or both have
-// to be non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to
-// be 0, or all of them have to be non-0.
+// to be non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have
+// to be 0, or all of them have to be non-0.
 SparseVector LPSoplexInterface::GetSparseRowCoefficients(int row) const {
   MiniMIPdebugMessage("calling GetSparseRowCoefficients()\n");
 
@@ -1300,8 +1363,8 @@ LPSoplexInterface::StrongBranchValue(
 // Solution information getters.
 // ============================================================================
 
-// returns whether a solve method was called after the last modification of the
-// LP
+// returns whether a solve method was called after the last modification of
+// the LP
 bool LPSoplexInterface::IsSolved() const { return solved_; }
 
 // returns true iff LP is proven to have a primal unbounded ray (but not
@@ -1350,9 +1413,10 @@ bool LPSoplexInterface::IsPrimalFeasible() const {
          spx_->basisStatus() == SPxBasis::PRIMAL;
 }
 
-// returns true iff LP is proven to have a dual unbounded ray (but not necessary
-// a dual feasible point);
-//*  this does not necessarily meanthat the solver knows and can return the dual
+// returns true iff LP is proven to have a dual unbounded ray (but not
+// necessary a dual feasible point);
+//*  this does not necessarily meanthat the solver knows and can return the
+// dual
 // ray
 bool LPSoplexInterface::ExistsDualRay() const {
   MiniMIPdebugMessage("calling ExistsDualRay()\n");
@@ -1360,8 +1424,8 @@ bool LPSoplexInterface::ExistsDualRay() const {
   return (spx_->status() == SPxSolver::INFEASIBLE);
 }
 
-// returns true iff LP is proven to have a dual unbounded ray (but not necessary
-// a dual feasible point),
+// returns true iff LP is proven to have a dual unbounded ray (but not
+// necessary a dual feasible point),
 //*  and the solver knows and can return the dual ray
 bool LPSoplexInterface::HasDualRay() const {
   MiniMIPdebugMessage("calling HasDualRay()\n");
@@ -1406,7 +1470,8 @@ bool LPSoplexInterface::IsOptimal() const {
 //*
 //*  This function should return true if the solution is reliable, i.e.,
 // feasible and optimal (or proven
-//*  infeasible/unbounded) with respect to the original problem. The optimality
+//*  infeasible/unbounded) with respect to the original problem. The
+// optimality
 // status might be with respect to a scaled
 //*  version of the problem, but the solution might not be feasible to the
 // unscaled original problem; in this case,
@@ -1504,9 +1569,10 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetRowActivity() const {
   std::vector<double> activity;
 
   try {
-    static_cast<void>(spx_->getSlacksReal(
-        activity.data(),
-        spx_->numRowsReal()));  // in SoPlex, the activities are called "slacks"
+    static_cast<void>(
+        spx_->getSlacksReal(activity.data(),
+                            spx_->numRowsReal()));  // in SoPlex, the activities
+                                                    // are called "slacks"
   }
 #ifndef NDEBUG
   catch (const SPxException& x) {
@@ -1618,12 +1684,12 @@ LPSoplexInterface::GetColumnBasisStatus() const {
           column_basis_status.push_back(LPBasisStatus::kBasic);
           break;
         case SPxSolver::FIXED:
-          // Get reduced cost estimation. If the estimation is not correct this
-          // should not hurt: If the basis is loaded into SoPlex again, the
-          // status is converted to FIXED again; in this case there is no
+          // Get reduced cost estimation. If the estimation is not correct
+          // this should not hurt: If the basis is loaded into SoPlex again,
+          // the status is converted to FIXED again; in this case there is no
           // problem at all. If the basis is saved and/or used in some other
-          // solver, it usually is very cheap to perform the pivots necessary to
-          // get an optimal basis.
+          // solver, it usually is very cheap to perform the pivots necessary
+          // to get an optimal basis.
           // @todo implement getRedCostEst()
           //
           // MINIMIP_CALL( getRedCostEst(spx_, i, &obj_coeffs) );
@@ -1771,8 +1837,8 @@ absl::Status LPSoplexInterface::SetBase(
   return absl::OkStatus();
 }
 
-// returns the indices of the basic columns and rows; basic column n gives value
-// n, basic row m gives value -1-m
+// returns the indices of the basic columns and rows; basic column n gives
+// value n, basic row m gives value -1-m
 std::vector<int> LPSoplexInterface::GetBasisIndices() const {
   std::vector<int> basis_indices;
   MiniMIPdebugMessage("calling GetBasisInd()\n");
@@ -1792,9 +1858,9 @@ std::vector<int> LPSoplexInterface::GetBasisIndices() const {
 //
 // NOTE: The LP interface defines slack variables to have coefficient +1. This
 // means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose
-//       coefficient is -1, should be negated; see also the explanation in
-//       lpi.h.
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
 absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
     int row_number) const {
   SparseVector sparse_row;
@@ -1821,9 +1887,9 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
 //
 // NOTE: The LP interface defines slack variables to have coefficient +1. This
 // means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose
-//       coefficient is -1, should be negated; see also the explanation in
-//       lpi.h.
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
 //
 // column number of B^-1; this is NOT the number of the
 // column in the LP; you have to call
@@ -1857,9 +1923,9 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
 //
 // NOTE: The LP interface defines slack variables to have coefficient +1. This
 // means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose
-//       coefficient is -1, should be negated; see also the explanation in
-//       lpi.h.
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
 absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
     int row_number) const {
   SparseVector sparse_row;
@@ -1911,9 +1977,9 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
 //
 // NOTE: The LP interface defines slack variables to have coefficient +1. This
 // means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose
-//       coefficient is -1, should be negated; see also the explanation in
-//       lpi.h.
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
 absl::StatusOr<SparseVector>
 LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
   SparseVector sparse_row;
@@ -1934,7 +2000,8 @@ LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
 
   // @todo implement this with sparse vectors
 
-  // col needs to be cleared because copying colVectorReal only regards nonzeros
+  // col needs to be cleared because copying colVectorReal only regards
+  // nonzeros
   col.clear();
 
   spx_->getColVectorReal(col_number, colsparse);

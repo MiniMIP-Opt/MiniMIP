@@ -142,31 +142,41 @@ class LPSoplexInterface : public LPInterface {
 
   // adds column to the LP
   absl::Status AddColumn(
-      const SparseVector& col,      // column to be added
-      const double lower_bound,     // lower bound of new column
-      const double upper_bound,     // upper bounds of new columns
-      const double objective_value  // objective function value of new columns
-      ) override;
+      const SparseVector& col,  // column to be added
+      double lower_bound,       // lower bound of new column
+      double upper_bound,       // upper bounds of new columns
+      double objective_value,   // objective function value of new columns
+      std::string col_name) override;
 
   // adds columns to the LP
-  //
-  // NOTE: The indices array is not checked for duplicates, problems may appear
-  // if indices are added more than once.
   absl::Status AddColumns(
-      int num_cols,  // number of columns to be added
-      const std::vector<double>&
-          objective_values,  // objective function values of new columns
+      const std::vector<SparseVector>& cols,    // columns to be added
       const std::vector<double>& lower_bounds,  // lower bounds of new columns
       const std::vector<double>& upper_bounds,  // upper bounds of new columns
-      std::vector<std::string>& col_names,      // column names
-      int num_non_zeros,  // number of non-zero elements to be added to the
-                          // constraint matrix
-      const std::vector<int>&
-          begin_cols,  // start index of each column in indices- and vals-array
-      const std::vector<int>&
-          indices,  // row indices of constraint matrix entries
-      const std::vector<double>& vals  // values of constraint matrix entries
+      const std::vector<double>&
+          objective_values,  // objective function values of new columns
+      std::vector<std::string>& col_names  // column names
       ) override;
+
+  // Deprecated:
+  //  NOTE: The indices array is not checked for duplicates, problems may appear
+  //  if indices are added more than once.
+  //  absl::Status AddColumns(
+  //      int num_cols,  // number of columns to be added
+  //      const std::vector<double>&
+  //          objective_values,  // objective function values of new columns
+  //      const std::vector<double>& lower_bounds,  // lower bounds of new
+  //      columns const std::vector<double>& upper_bounds,  // upper bounds of
+  //      new columns std::vector<std::string>& col_names,      // column names
+  //      int num_non_zeros,  // number of non-zero elements to be added to the
+  //                          // constraint matrix
+  //      const std::vector<int>&
+  //          begin_cols,  // start index of each column in indices- and
+  //          vals-array
+  //      const std::vector<int>&
+  //          indices,  // row indices of constraint matrix entries
+  //      const std::vector<double>& vals  // values of constraint matrix
+  //      entries ) override;
 
   // deletes all columns in the given range from LP
   absl::Status DeleteColumns(int first_col,  // first column to be deleted
