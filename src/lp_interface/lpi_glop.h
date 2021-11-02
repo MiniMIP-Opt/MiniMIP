@@ -31,9 +31,8 @@
 #pragma GCC diagnostic warning "-Wctor-dtor-privacy"
 #pragma GCC diagnostic warning "-Woverflow"
 
-#include <cinttypes>
-
 #include <cassert>
+#include <cinttypes>
 #include <string>
 #include <vector>
 
