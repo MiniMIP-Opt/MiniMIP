@@ -74,7 +74,7 @@ absl::Status LPGlopInterface::LoadSparseColumnLP(
   return absl::OkStatus();
 }
 
-// Deprecated:
+// To be deleted when finalizing the unittests:
 // absl::Status LPGlopInterface::LoadColumnLP(
 //    LPObjectiveSense obj_sense,  // objective sense
 //    int num_cols,                // number of columns
@@ -163,7 +163,7 @@ absl::Status LPGlopInterface::AddColumns(
   return absl::OkStatus();
 }
 
-//  // deprecated: adds columns to the LP
+// To be deleted when finalizing the unittests:
 //  absl::Status LPGlopInterface::AddColumns(
 //      int num_cols,  // number of columns to be added
 //      const std::vector<double>&
@@ -313,6 +313,7 @@ absl::Status LPGlopInterface::AddRows(
   return absl::OkStatus();
 }
 
+// To be deleted when finalizing the unittests:
 // absl::Status LPGlopInterface::AddRows(
 //     int num_rows,                                // number of rows to be
 //     added const std::vector<double>& left_hand_sides,  // left hand sides
@@ -464,51 +465,35 @@ absl::Status LPGlopInterface::ClearState() {
 }
 
 // changes lower and upper bounds of columns
-absl::Status LPGlopInterface::SetColumnBounds(
-    const std::vector<int>& indices,          // column indices
-    const std::vector<double>& lower_bounds,  // values for the new lower bounds
-    const std::vector<double>& upper_bounds   // values for the new upper bounds
-) {
-  MiniMIPdebugMessage("changing %ld bounds.\n", indices.size());
+absl::Status LPGlopInterface::SetColumnBounds(int col, double lower_bound,
+                                              double upper_bound) {
+  MiniMIPdebugMessage("set column bounds.\n");
 
-  for (size_t i = 0; i < indices.size(); ++i) {
-    MiniMIPdebugMessage("  col %d: [%g,%g]\n", indices[i], lower_bounds[i],
-                        upper_bounds[i]);
-
-    if (IsInfinity(lower_bounds[i])) {
-      MiniMIPerrorMessage(
-          "LP Error: fixing lower bound for variable %d to infinity.\n",
-          indices[i]);
-      return absl::Status(absl::StatusCode::kInternal, "LP Error");
-    }
-    if (IsInfinity(-upper_bounds[i])) {
-      MiniMIPerrorMessage(
-          "LP Error: fixing upper bound for variable %d to -infinity.\n",
-          indices[i]);
-      return absl::Status(absl::StatusCode::kInternal, "LP Error");
-    }
-
-    linear_program_.SetVariableBounds(ColIndex(indices[i]), lower_bounds[i],
-                                      upper_bounds[i]);
+  if (IsInfinity(lower_bound)) {
+    MiniMIPerrorMessage(
+        "LP Error: fixing lower bound for variable %d to infinity.\n", col);
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
+  if (IsInfinity(-upper_bound)) {
+    MiniMIPerrorMessage(
+        "LP Error: fixing upper bound for variable %d to -infinity.\n", col);
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  linear_program_.SetVariableBounds(ColIndex(col), lower_bound, upper_bound);
+
   lp_modified_since_last_solve_ = true;
 
   return absl::OkStatus();
 }
 
-// changes left and right hand sides of rows
-absl::Status LPGlopInterface::SetRowSides(
-    const std::vector<int>& indices,  // row indices
-    const std::vector<double>&
-        left_hand_sides,  // new values for left hand sides
-    const std::vector<double>&
-        right_hand_sides  // new values for right hand sides
-) {
-  MiniMIPdebugMessage("changing %ld sides\n", indices.size());
+// changes left- and right-hand sides of rows
+absl::Status LPGlopInterface::SetRowSides(int row, double left_hand_side,
+                                          double right_hand_side) {
+  MiniMIPdebugMessage("set row sides\n");
 
-  for (size_t i = 0; i < indices.size(); ++i)
-    linear_program_.SetConstraintBounds(
-        RowIndex(indices[i]), left_hand_sides[i], right_hand_sides[i]);
+  linear_program_.SetConstraintBounds(RowIndex(row), left_hand_side,
+                                      right_hand_side);
 
   lp_modified_since_last_solve_ = true;
 

@@ -176,28 +176,6 @@ class LPGlopInterface : public LPInterface {
       const std::vector<SparseVector>& cols         // sparse columns
       ) override;
 
-  //  Deprecated:
-  //  absl::Status LoadColumnLP(
-  //      LPObjectiveSense obj_sense,  // objective sense
-  //      int num_cols,                // number of columns
-  //      const std::vector<double>&
-  //          objective_values,  // objective function values of columns
-  //      const std::vector<double>& lower_bounds,      // lower bounds of
-  //      columns const std::vector<double>& upper_bounds,      // upper bounds
-  //      of columns std::vector<std::string>& col_names,          // column
-  //      names int num_rows,                                 // number of rows
-  //      const std::vector<double>& left_hand_sides,   // left hand sides of
-  //      rows const std::vector<double>& right_hand_sides,  // right hand sides
-  //      of rows std::vector<std::string>& row_names,          // row names int
-  //      num_non_zeros,  // number of non-zero elements in the constraint
-  //                          // matrix
-  //      const std::vector<int>& begin_cols,  // start index of each column in
-  //                                           // row_indices- and vals-array
-  //      const std::vector<int>&
-  //          row_indices,  // row indices of constraint matrix entries
-  //      const std::vector<double>& vals  // values of constraint matrix
-  //      entries ) override;
-
   // add column to the LP
   absl::Status AddColumn(
       const SparseVector& col,  // column to be added
@@ -216,27 +194,6 @@ class LPGlopInterface : public LPInterface {
           objective_values,  // objective function values of new columns
       std::vector<std::string>& col_names  // column names
       ) override;
-
-  // deprecated: adds columns to the LP
-  //
-  // NOTE: The indices array is not checked for duplicates, problems may appear
-  // if indices are added more than once.
-  //  absl::Status AddColumns(
-  //      int num_cols,  // number of columns to be added
-  //      const std::vector<double>&
-  //          objective_values,  // objective function values of new columns
-  //      const std::vector<double>& lower_bounds,  // lower bounds of new
-  //      columns const std::vector<double>& upper_bounds,  // upper bounds of
-  //      new columns std::vector<std::string>& col_names,      // column names
-  //      int num_non_zeros,  // number of non-zero elements to be added to the
-  //                          // constraint matrix
-  //      const std::vector<int>&
-  //          begin_cols,  // start index of each column in indices- and
-  //          vals-array
-  //      const std::vector<int>&
-  //          indices,  // row indices of constraint matrix entries
-  //      const std::vector<double>& vals  // values of constraint matrix
-  //      entries ) override;
 
   // deletes all columns in the given range from LP
   absl::Status DeleteColumns(int first_col,  // first column to be deleted
@@ -260,25 +217,6 @@ class LPGlopInterface : public LPInterface {
       std::vector<std::string>& row_names  // row names
       ) override;
 
-  //
-  // NOTE: The indices array is not checked for duplicates, problems may appear
-  // if indices are added more than once.
-  //  absl::Status AddRows(
-  //      int num_rows,  // number of rows to be added
-  //      const std::vector<double>&
-  //          left_hand_sides,  // left hand sides of new rows
-  //      const std::vector<double>&
-  //          right_hand_sides,                 // right hand sides of new rows
-  //      std::vector<std::string>& row_names,  // row names
-  //      int num_non_zeros,  // number of non-zero elements to be added to the
-  //                          // constraint matrix
-  //      const std::vector<int>&
-  //          begin_rows,  // start index of each row in indices- and vals-array
-  //      const std::vector<int>&
-  //          indices,  // column indices of constraint matrix entries
-  //      const std::vector<double>& vals  // values of constraint matrix
-  //      entries ) override;
-
   // deletes all rows in the given range from LP
   absl::Status DeleteRows(int first_row,  // first row to be deleted
                           int last_row    // last row to be deleted
@@ -296,23 +234,13 @@ class LPGlopInterface : public LPInterface {
   // clears current LPInterface state (like basis information) of the solver
   absl::Status ClearState() override;
 
-  // changes lower and upper bounds of columns
-  absl::Status SetColumnBounds(
-      const std::vector<int>& indices,  // column indices
-      const std::vector<double>&
-          lower_bounds,  // values for the new lower bounds
-      const std::vector<double>&
-          upper_bounds  // values for the new upper bounds
-      ) override;
+  // change lower bound and upper bound of column
+  absl::Status SetColumnBounds(int col, double lower_bound,
+                               double upper_bound) override;
 
-  // changes left and right hand sides of rows
-  absl::Status SetRowSides(
-      const std::vector<int>& indices,  // row indices
-      const std::vector<double>&
-          left_hand_sides,  // new values for left hand sides
-      const std::vector<double>&
-          right_hand_sides  // new values for right hand sides
-      ) override;
+  // change left- and right-hand side of row
+  absl::Status SetRowSides(int row, double left_hand_side,
+                           double right_hand_side) override;
 
   // changes the objective sense
   absl::Status SetObjectiveSense(

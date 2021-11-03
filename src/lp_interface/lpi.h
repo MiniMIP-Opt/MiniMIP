@@ -34,28 +34,6 @@ class LPInterface : private messagehandler {
       const std::vector<SparseVector>& cols         // sparse columns
       ) = 0;
 
-  // copies LP data with column matrix into LP solver
-  //  virtual absl::Status LoadColumnLP(
-  //      LPObjectiveSense obj_sense,  // objective sense
-  //      int num_cols,                // number of columns
-  //      const std::vector<double>&
-  //          objective_values,  // objective function values of columns
-  //      const std::vector<double>& lower_bounds,      // lower bounds of
-  //      columns const std::vector<double>& upper_bounds,      // upper bounds
-  //      of columns std::vector<std::string>& col_names,          // column
-  //      names int num_rows,                                 // number of rows
-  //      const std::vector<double>& left_hand_sides,   // left hand sides of
-  //      rows const std::vector<double>& right_hand_sides,  // right hand sides
-  //      of rows std::vector<std::string>& row_names,          // row names int
-  //      num_non_zeros,  // number of non-zero elements in the constraint
-  //                          // matrix
-  //      const std::vector<int>& begin_cols,  // start index of each column in
-  //                                           // row_indices- and vals-array
-  //      const std::vector<int>&
-  //          row_indices,  // row indices of constraint matrix entries
-  //      const std::vector<double>& vals  // values of constraint matrix
-  //      entries ) = 0;
-
   // add column to the LP
   virtual absl::Status AddColumn(
       const SparseVector& col,       // column to be added
@@ -74,25 +52,6 @@ class LPInterface : private messagehandler {
           objective_values,  // objective function values of new columns
       std::vector<std::string>& col_names  // column names
       ) = 0;
-
-  // NOTE: The indices array is not checked for duplicates, problems may appear
-  // if indices are added more than once.
-  //  virtual absl::Status AddColumns(
-  //      int num_cols,  // number of columns to be added
-  //      const std::vector<double>&
-  //          objective_values,  // objective function values of new columns
-  //      const std::vector<double>& lower_bounds,  // lower bounds of new
-  //      columns const std::vector<double>& upper_bounds,  // upper bounds of
-  //      new columns std::vector<std::string>& col_names,      // column names
-  //      int num_non_zeros,  // number of non-zero elements to be added to the
-  //                          // constraint matrix
-  //      const std::vector<int>&
-  //          begin_cols,  // start index of each column in indices- and
-  //          vals-array
-  //      const std::vector<int>&
-  //          indices,  // row indices of constraint matrix entries
-  //      const std::vector<double>& vals  // values of constraint matrix
-  //      entries ) = 0;
 
   // deletes all columns in the given range from LP
   virtual absl::Status DeleteColumns(
@@ -118,26 +77,6 @@ class LPInterface : private messagehandler {
       std::vector<std::string>& row_names  // row names
       ) = 0;
 
-  // adds rows to the LP
-  //
-  // NOTE: The indices array is not checked for duplicates, problems may appear
-  // if indices are added more than once.
-  //  virtual absl::Status AddRows(
-  //      int num_rows,  // number of rows to be added
-  //      const std::vector<double>&
-  //          left_hand_sides,  // left hand sides of new rows
-  //      const std::vector<double>&
-  //          right_hand_sides,                 // right hand sides of new rows
-  //      std::vector<std::string>& row_names,  // row names
-  //      int num_non_zeros,  // number of non-zero elements to be added to the
-  //                          // constraint matrix
-  //      const std::vector<int>&
-  //          begin_rows,  // start index of each row in indices- and vals-array
-  //      const std::vector<int>&
-  //          indices,  // column indices of constraint matrix entries
-  //      const std::vector<double>& vals  // values of constraint matrix
-  //      entries ) = 0;
-
   // deletes all rows in the given range from LP
   virtual absl::Status DeleteRows(int first_row,  // first row to be deleted
                                   int last_row    // last row to be deleted
@@ -155,23 +94,13 @@ class LPInterface : private messagehandler {
   // clears current LPInterface state (like basis information) of the solver
   virtual absl::Status ClearState() = 0;
 
-  // changes lower and upper bounds of columns
-  virtual absl::Status SetColumnBounds(
-      const std::vector<int>& indices,  // column indices
-      const std::vector<double>&
-          lower_bounds,  // values for the new lower bounds
-      const std::vector<double>&
-          upper_bounds  // values for the new upper bounds
-      ) = 0;
+  // change lower bound and upper bound of column
+  virtual absl::Status SetColumnBounds(int col, double lower_bound,
+                                       double upper_bound) = 0;
 
-  // changes left and right hand sides of rows
-  virtual absl::Status SetRowSides(
-      const std::vector<int>& indices,  // row indices
-      const std::vector<double>&
-          left_hand_sides,  // new values for left hand sides
-      const std::vector<double>&
-          right_hand_sides  // new values for right hand sides
-      ) = 0;
+  // change left- and right-hand side of row
+  virtual absl::Status SetRowSides(int row, double left_hand_side,
+                                   double right_hand_side) = 0;
 
   // changes the objective sense
   virtual absl::Status SetObjectiveSense(

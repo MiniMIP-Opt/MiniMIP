@@ -633,7 +633,7 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
   return absl::OkStatus();
 }
 
-//
+// To be deleted when finalizing the unittests:
 // absl::Status LPSoplexInterface::LoadColumnLP(
 //    LPObjectiveSense obj_sense,  // objective sense
 //    int num_cols,                // number of columns
@@ -807,8 +807,8 @@ absl::Status LPSoplexInterface::AddColumns(
 
   return absl::OkStatus();
 }
-// Deprecated:
-// adds columns to the LP
+
+// To be deleted when finalizing the unittests:
 //
 // NOTE: The indices array is not checked for duplicates, problems may appear
 // if indices are added more than once.
@@ -977,7 +977,7 @@ absl::Status LPSoplexInterface::AddRows(
   return absl::OkStatus();
 }
 
-// Deprecated:
+// To be deleted when finalizing the unittests:
 //
 // NOTE: The indices array is not checked for duplicates, problems may appear
 // if indices are added more than once.
@@ -1127,11 +1127,8 @@ absl::Status LPSoplexInterface::ClearState() {
 }
 
 // changes lower and upper bounds of columns
-absl::Status LPSoplexInterface::SetColumnBounds(
-    const std::vector<int>& indices,          // column indices
-    const std::vector<double>& lower_bounds,  // values for the new lower bounds
-    const std::vector<double>& upper_bounds   // values for the new upper bounds
-) {
+absl::Status LPSoplexInterface::SetColumnBounds(int col, double lower_bound,
+                                                double upper_bound) {
   MiniMIPdebugMessage("calling SetColumnBounds()\n");
 
   InvalidateSolution();
@@ -1139,26 +1136,22 @@ absl::Status LPSoplexInterface::SetColumnBounds(
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    for (size_t i = 0; i < indices.size(); ++i) {
-      assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
+    assert(0 <= col && col < spx_->numColsReal());
 
-      if (IsInfinity(lower_bounds[i])) {
-        MiniMIPerrorMessage(
-            "LP Error: fixing lower bound for variable %d to infinity.\n",
-            indices[i]);
-        return absl::Status(absl::StatusCode::kInternal, "LP Error");
-      }
-      if (IsInfinity(-upper_bounds[i])) {
-        MiniMIPerrorMessage(
-            "LP Error: fixing upper bound for variable %d to -infinity.\n",
-            indices[i]);
-        return absl::Status(absl::StatusCode::kInternal, "LP Error");
-      }
-      spx_->changeBoundsReal(indices[i], lower_bounds[i], upper_bounds[i]);
-      assert(spx_->lowerReal(indices[i]) <=
-             spx_->upperReal(indices[i]) +
-                 spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
+    if (IsInfinity(lower_bound)) {
+      MiniMIPerrorMessage(
+          "LP Error: fixing lower bound for variable %d to infinity.\n", col);
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
     }
+    if (IsInfinity(-upper_bound)) {
+      MiniMIPerrorMessage(
+          "LP Error: fixing upper bound for variable %d to -infinity.\n", col);
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
+    }
+    spx_->changeBoundsReal(col, lower_bound, upper_bound);
+    assert(spx_->lowerReal(col) <=
+           spx_->upperReal(col) +
+               spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
   }
 #ifndef NDEBUG
   catch (const soplex::SPxException& x) {
@@ -1174,30 +1167,19 @@ absl::Status LPSoplexInterface::SetColumnBounds(
 }
 
 // changes left and right hand sides of rows
-absl::Status LPSoplexInterface::SetRowSides(
-    const std::vector<int>& indices,  // row indices
-    const std::vector<double>&
-        left_hand_sides,  // new values for left hand sides
-    const std::vector<double>&
-        right_hand_sides  // new values for right hand sides
-) {
+absl::Status LPSoplexInterface::SetRowSides(int row, double left_hand_side,
+                                            double right_hand_side) {
   MiniMIPdebugMessage("calling SetRowSides()\n");
-
-  if (indices.size() == 0) return absl::OkStatus();
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    for (size_t i = 0; i < indices.size(); ++i) {
-      assert(0 <= indices[i] && indices[i] < spx_->numRowsReal());
-      spx_->changeRangeReal(indices[i], left_hand_sides[i],
-                            right_hand_sides[i]);
-      assert(spx_->lhsReal(indices[i]) <=
-             spx_->rhsReal(indices[i]) +
-                 spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
-    }
+    assert(0 <= row && row < spx_->numRowsReal());
+    spx_->changeRangeReal(row, left_hand_side, right_hand_side);
+    assert(spx_->lhsReal(row) <=
+           spx_->rhsReal(row) + spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
   }
 #ifndef NDEBUG
   catch (const soplex::SPxException& x) {
