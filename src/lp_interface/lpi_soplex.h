@@ -23,9 +23,9 @@ class LPSoplexInterface : public LPInterface {
   int solved_;           // was the current LP solved?
   bool lp_info_;
   bool from_scratch_;
-  soplex::DataArray<SPxSolver::VarStatus>
+  soplex::DataArray<soplex::SPxSolver::VarStatus>
       col_basis_status_;  // column basis status used for strong branching
-  soplex::DataArray<SPxSolver::VarStatus>
+  soplex::DataArray<soplex::SPxSolver::VarStatus>
       row_basis_status_;  // row basis status used for strong branching
 
   // return feastol set by SoPlex
@@ -39,11 +39,11 @@ class LPSoplexInterface : public LPInterface {
 
   // set feasibility tolerance and store value in case SoPlex only accepts a
   // larger tolerance
-  void SetFeasibilityTolerance(const Real d);
+  void SetFeasibilityTolerance(const soplex::Real d);
 
   // set optimality tolerance and store value in case SoPlex only accepts a
   // larger tolerance
-  void SetOptimalityTolerance(const Real d);
+  void SetOptimalityTolerance(const soplex::Real d);
 
   // marks the current LP to be unsolved
   void InvalidateSolution();
@@ -75,16 +75,16 @@ class LPSoplexInterface : public LPInterface {
   ) const;
 
   // provides access for temporary storage of basis status of rows
-  soplex::DataArray<SPxSolver::VarStatus>& RowsBasisStatus();
+  soplex::DataArray<soplex::SPxSolver::VarStatus>& RowsBasisStatus();
 
   // provides access for temporary storage of basis status or columns
-  soplex::DataArray<SPxSolver::VarStatus>& ColumnsBasisStatus();
+  soplex::DataArray<soplex::SPxSolver::VarStatus>& ColumnsBasisStatus();
 
   void SetFromScratch(bool from_scratch);
 
   void SetLPInfo(bool lp_info);
 
-  SPxSolver::Status doSolve(bool print_warning);
+  soplex::SPxSolver::Status doSolve(bool print_warning);
 
   // solves LP -- used for both, primal and dual simplex, because SoPlex doesn't
   // distinct the two cases
