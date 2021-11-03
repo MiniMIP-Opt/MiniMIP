@@ -120,31 +120,31 @@ class LPSoplexInterface : public LPInterface {
 
   // copies LP data with column matrix into LP solver
   absl::Status LoadSparseColumnLP(
-    LPObjectiveSense obj_sense,  // objective sense
-    const std::vector<double>&
-        objective_values,  // objective function values of columns
-    const std::vector<double>& lower_bounds,      // lower bounds of columns
-    const std::vector<double>& upper_bounds,      // upper bounds of columns
-    std::vector<std::string>& col_names,          // column names
-    const std::vector<double>& left_hand_sides,   // left hand sides of rows
-    const std::vector<double>& right_hand_sides,  // right hand sides of rows
-    std::vector<std::string>& row_names,          // row names
-    const std::vector<SparseVector>& cols         // sparse columns
-) override;
+      LPObjectiveSense obj_sense,  // objective sense
+      const std::vector<double>&
+          objective_values,  // objective function values of columns
+      const std::vector<double>& lower_bounds,      // lower bounds of columns
+      const std::vector<double>& upper_bounds,      // upper bounds of columns
+      std::vector<std::string>& col_names,          // column names
+      const std::vector<double>& left_hand_sides,   // left hand sides of rows
+      const std::vector<double>& right_hand_sides,  // right hand sides of rows
+      std::vector<std::string>& row_names,          // row names
+      const std::vector<SparseVector>& cols         // sparse columns
+      ) override;
 
-//  Deprecated:
-//  virtual absl::Status LoadSparseColumnLP(
-//      LPObjectiveSense obj_sense,  // objective sense
-//      const std::vector<double>&
-//          objective_values,  // objective function values of columns
-//      const std::vector<double>& lower_bounds,      // lower bounds of columns
-//      const std::vector<double>& upper_bounds,      // upper bounds of columns
-//      std::vector<std::string>& col_names,          // column names
-//      const std::vector<double>& left_hand_sides,   // left hand sides of rows
-//      const std::vector<double>& right_hand_sides,  // right hand sides of rows
-//      std::vector<std::string>& row_names,          // row names
-//      const std::vector<SparseVector>& cols         // sparse columns
-//      ) override;
+  //  Deprecated:
+  //  virtual absl::Status LoadSparseColumnLP(
+  //      LPObjectiveSense obj_sense,  // objective sense
+  //      const std::vector<double>&
+  //          objective_values,  // objective function values of columns
+  //      const std::vector<double>& lower_bounds,      // lower bounds of
+  //      columns const std::vector<double>& upper_bounds,      // upper bounds
+  //      of columns std::vector<std::string>& col_names,          // column
+  //      names const std::vector<double>& left_hand_sides,   // left hand sides
+  //      of rows const std::vector<double>& right_hand_sides,  // right hand
+  //      sides of rows std::vector<std::string>& row_names,          // row
+  //      names const std::vector<SparseVector>& cols         // sparse columns
+  //      ) override;
 
   // Deprecated:
   //  absl::Status LoadColumnLP(

@@ -67,8 +67,8 @@ absl::Status LPGlopInterface::LoadSparseColumnLP(
   linear_program_.Clear();
   MINIMIP_CALL(AddRows(std::vector<SparseVector>(), left_hand_sides,
                        right_hand_sides, row_names));
-  MINIMIP_CALL(AddColumns(cols, objective_values, lower_bounds,
-                          upper_bounds, col_names));
+  MINIMIP_CALL(AddColumns(cols, objective_values, lower_bounds, upper_bounds,
+                          col_names));
   MINIMIP_CALL(SetObjectiveSense(obj_sense));
 
   return absl::OkStatus();

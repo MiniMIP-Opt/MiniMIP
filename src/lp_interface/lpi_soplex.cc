@@ -618,7 +618,7 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
 
     // create column vectors with coefficients and bounds
     MINIMIP_CALL(AddColumns(cols, objective_values, lower_bounds, upper_bounds,
-                   col_names));
+                            col_names));
   }
 #ifndef NDEBUG
   catch (const soplex::SPxException& x) {
