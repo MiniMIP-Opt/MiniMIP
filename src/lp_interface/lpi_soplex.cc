@@ -994,14 +994,14 @@ absl::Status LPSoplexInterface::AddRows(
 //    const std::vector<int>&
 //        indices,  // column indices of constraint matrix entries
 //    const std::vector<double>& vals  // values of constraint matrix entries
-//) {
+// ) {
 //  MiniMIPdebugMessage("calling AddRows()\n");
 //
 //  InvalidateSolution();
 //
 //  assert(PreStrongBranchingBasisFreed());
 //
-//#ifndef NDEBUG
+// #ifndef NDEBUG
 //  if (num_non_zeros > 0) {
 //    // perform check that no new columns are added - this is likely to be a
 //    // mistake
@@ -1011,7 +1011,7 @@ absl::Status LPSoplexInterface::AddRows(
 //      assert(0 <= indices[j] && indices[j] < num_cols);
 //    }
 //  }
-//#endif
+// #endif
 //
 //  try {
 //    soplex::LPRowSet rows(num_rows);
@@ -1033,18 +1033,18 @@ absl::Status LPSoplexInterface::AddRows(
 //    }
 //    spx_->addRowsReal(rows);
 //  }
-//#ifndef NDEBUG
+// #ifndef NDEBUG
 //  catch (const soplex::SPxException& x) {
 //    std::string s = x.what();
 //    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
 //    // %s\n", s.c_str());
-//#else
+// #else
 //  catch (const soplex::SPxException&) {
-//#endif
+// #endif
 //    return absl::Status(absl::StatusCode::kInternal, "LP Error");
 //  }
 //  return absl::OkStatus();
-//}
+// }
 
 // deletes all rows in the given range from LP
 absl::Status LPSoplexInterface::DeleteRows(
@@ -2175,11 +2175,11 @@ absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
     case LPParameter::kScaling:
       scale_param = spx_->intParam(soplex::SoPlex::SCALER);
 
-      if (scale_param == soplex::SoPlex::SCALER_OFF)
+      if (scale_param == soplex::SoPlex::SCALER_OFF) {
         param_val = 0;
-      else if (scale_param == soplex::SoPlex::SCALER_BIEQUI)
+      } else if (scale_param == soplex::SoPlex::SCALER_BIEQUI) {
         param_val = 1;
-      else {
+      } else {
         assert(scale_param == soplex::SoPlex::SCALER_LEASTSQ);
         param_val = 2;
       }

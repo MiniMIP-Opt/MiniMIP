@@ -2,6 +2,11 @@
 #define SRC_LP_INTERFACE_LPI_GLOP_H_
 
 #include <cstdint>
+#include <cassert>
+#include <cinttypes>
+#include <string>
+#include <vector>
+#include <memory>
 
 #include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
@@ -30,11 +35,6 @@
 #pragma GCC diagnostic warning "-Wnon-virtual-dtor"
 #pragma GCC diagnostic warning "-Wctor-dtor-privacy"
 #pragma GCC diagnostic warning "-Woverflow"
-
-#include <cassert>
-#include <cinttypes>
-#include <string>
-#include <vector>
 
 using operations_research::TimeLimit;
 using operations_research::glop::ConstraintStatus;

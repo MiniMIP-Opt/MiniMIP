@@ -1,6 +1,6 @@
-#include "src/lp_interface/lpi_glop.h"
-
 #include <limits>
+
+#include "src/lp_interface/lpi_glop.h"
 
 using operations_research::MPModelProto;
 using operations_research::TimeLimit;
@@ -187,14 +187,14 @@ absl::Status LPGlopInterface::AddColumns(
 //    if (num_non_zeros > 0) {
 //      assert(num_cols > 0);
 //
-//#ifndef NDEBUG
+// #ifndef NDEBUG
 //      // perform check that no new rows are added
 //      RowIndex num_rows = linear_program_.num_constraints();
 //      for (int j = 0; j < num_non_zeros; ++j) {
 //        assert(0 <= indices[j] && indices[j] < num_rows.value());
 //        assert(vals[j] != 0.0);
 //      }
-//#endif
+// #endif
 //
 //      int nz = 0;
 //      for (int i = 0; i < num_cols; ++i) {
@@ -437,8 +437,9 @@ absl::Status LPGlopInterface::DeleteRowSet(
       rows_to_delete[row] = true;
       deletion_status[i]  = -1;
       ++num_deleted_rows;
-    } else
+    } else {
       deletion_status[i] = new_index++;
+    }
   }
 
   MiniMIPdebugMessage("DeleteRowSet: deleting %d rows.\n", num_deleted_rows);
@@ -938,7 +939,7 @@ LPGlopInterface::StrongBranchValue(
 
   LPInterface::StrongBranchResult strong_branch_result;
 
-  //@TODO: strongbranch() always returns absl::OkStatus() currently
+  // @TODO: strongbranch() always returns absl::OkStatus() currently
   absl::Status absl_status_code = strongbranch(
       col, primal_sol, iteration_limit,
       strong_branch_result.dual_bound_down_branch,
@@ -1365,9 +1366,9 @@ std::vector<int> LPGlopInterface::GetBasisIndices() const {
   const RowIndex num_rows = linear_program_.num_constraints();
   for (RowIndex row(0); row < num_rows; ++row) {
     const ColIndex col = solver_.GetBasis(row);
-    if (col < num_cols)
+    if (col < num_cols) {
       basis_indices[row.value()] = col.value();
-    else {
+    } else {
       assert(col < num_cols.value() + num_rows.value());
       basis_indices[row.value()] = -1 - (col - num_cols).value();
     }
