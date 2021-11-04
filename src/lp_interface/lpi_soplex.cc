@@ -1998,14 +1998,15 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
   assert(row_number >= 0);
   assert(row_number < spx_->numRowsReal());
 
-  std::vector<int> integer_indices(sparse_row.indices.begin(),
-                                   sparse_row.indices.end());
+  std::vector<double> dense_row;
 
-  if (!spx_->getBasisInverseRowReal(row_number, sparse_row.values.data(),
-                                    integer_indices.data(), &num_indices))
+  if (!spx_->getBasisInverseRowReal(row_number, dense_row.data(),
+                                    sparse_row.indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  sparse_row.indices.assign(integer_indices.begin(), integer_indices.end());
+  for (int& non_zero : sparse_row.indices) {
+    sparse_row.values.push_back(dense_row[non_zero]);
+  }
 
   return sparse_row;
 }
@@ -2035,13 +2036,15 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
 
   assert(PreStrongBranchingBasisFreed());
 
-  std::vector<int> integer_indices;
+  std::vector<double> dense_column;
 
-  if (!spx_->getBasisInverseColReal(col_number, sparse_column.values.data(),
-                                    integer_indices.data(), &num_indices))
+  if (!spx_->getBasisInverseColReal(col_number, dense_column.data(),
+                                    sparse_column.indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  sparse_column.indices.assign(integer_indices.begin(), integer_indices.end());
+  for (int& non_zero : sparse_column.indices) {
+    sparse_column.values.push_back(dense_column[non_zero]);
+  }
 
   return sparse_column;
 }
@@ -2055,48 +2058,37 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
 //       in lpi.h.
 absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
     int row_number) const {
-  SparseVector sparse_row;
-  std::vector<double> buf;
-  std::vector<double> binv;
-  size_t num_rows;
-  int num_cols;
-  int c;
-
   MiniMIPdebugMessage("calling GetSparseRowOfBInvertedTimesA()\n");
+
+  SparseVector sparse_row;
+  std::vector<double> dense_binv;
+  std::vector<int> nonzero_indices;
+  size_t num_rows = spx_->numRowsReal();
+  int num_cols    = spx_->numColsReal();
+  int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
 
-  num_rows = spx_->numRowsReal();
-  num_cols = spx_->numColsReal();
-
-  buf.resize(num_rows);
-
   // calculate the row in B^-1
-  absl::StatusOr<SparseVector> absl_tmp_row =
-      GetSparseRowOfBInverted(row_number);
-  if (absl_tmp_row.ok()) {
-    buf                = absl_tmp_row->values;
-    sparse_row.indices = absl_tmp_row->indices;
-  } else {
-    std::cout << absl_tmp_row.status();
-  }
+  if (!spx_->getBasisInverseRowReal(row_number, dense_binv.data(),
+                                    nonzero_indices.data(), &num_indices))
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  binv.assign(buf.begin(), buf.end());
+  assert(dense_binv.size() == num_rows);
 
-  assert(binv.size() == num_rows);
-
-  // @todo exploit sparsity in binv by looping over num_rows
-  // calculate the scalar product of the row in B^-1 and A
-  soplex::Vector binv_vec(num_rows, binv.data());
+  soplex::Vector binv_vec(num_rows, dense_binv.data());
 
   // temporary unscaled column of A
   soplex::DSVector acol;
 
-  for (c = 0; c < num_cols; ++c) {
-    spx_->getColVectorReal(c, acol);
-    sparse_row.values.push_back(binv_vec * acol);  // scalar product
+  for (int col = 0; col < num_cols; ++col) {
+    spx_->getColVectorReal(col, acol);
+    double val = binv_vec * acol;
+    if (REALABS(val) > EPS) {
+      sparse_row.indices.push_back(col);
+      sparse_row.values.push_back(val);
+    }
   }
-
   return sparse_row;
 }
 
@@ -2109,15 +2101,18 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
 //       in lpi.h.
 absl::StatusOr<SparseVector>
 LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
-  SparseVector sparse_row;
+  MiniMIPdebugMessage("calling GetColumnOfBInvertedTimesA()\n");
+
+  std::vector<double> binv_vec;
+  SparseVector sparse_col;
+  int num_rows = spx_->numRowsReal();
+
   // create a new uninitialized full vector
-  soplex::DVector col(spx_->numRowsReal());
+  soplex::DVector column(num_rows);
 
   // temporary sparse vector used for unscaling (memory is automatically
   // enlarged)
-  soplex::DSVector colsparse;
-
-  MiniMIPdebugMessage("calling GetColumnOfBInvertedTimesA()\n");
+  soplex::DSVector column_sparse;
 
   assert(PreStrongBranchingBasisFreed());
 
@@ -2125,22 +2120,25 @@ LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
   assert(col_number >= 0);
   assert(col_number < spx_->numColsReal());
 
-  // @todo implement this with sparse vectors
-
   // col needs to be cleared because copying colVectorReal only regards
   // nonzeros
-  col.clear();
+  column.clear();
 
-  spx_->getColVectorReal(col_number, colsparse);
+  spx_->getColVectorReal(col_number, column_sparse);
   // the copy is necessary to transform the sparse column into a dense vector
-  col = colsparse;
+  column = column_sparse;
 
   // solve
-  if (!spx_->getBasisInverseTimesVecReal(col.get_ptr(),
-                                         sparse_row.values.data()))
+  if (!spx_->getBasisInverseTimesVecReal(column.get_ptr(), binv_vec.data()))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  return sparse_row;
+  for (int row = 0; row < num_rows; ++row) {
+    if (binv_vec[row] > EPS) {
+      sparse_col.indices.push_back(row);
+      sparse_col.values.push_back(binv_vec[row]);
+    }
+  }
+  return sparse_col;
 }
 
 // ==========================================================================
