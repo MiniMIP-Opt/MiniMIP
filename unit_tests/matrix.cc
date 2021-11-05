@@ -3,6 +3,8 @@
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
 
+#include "unit_tests/utils.h"
+
 #define DEF_INTERFACE \
   1  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
@@ -13,11 +15,14 @@ namespace minimip {
 static LPInterface* lp_interface_ = nullptr;
 
 class matrix : public ::testing::Test {
+  // simple problem
+  // 
  protected:
-  std::vector<double> obj, lb, ub, lhs, rhs, val, matval, matlhs, matrhs, row1,
-      row2, empty_vals;
-  std::vector<int> matbeg, matind, beg, ind, empty_indices;
-  std::vector<std::string> empty_names;
+  double lower_bound = 0.0;
+  double upper_bound = 1.0;
+  double lhs = 1.0;
+  double rhs = 2.0;
+  double objective_coeff;
 
   void SetUp() override {
     // build interface factory
@@ -32,90 +37,70 @@ class matrix : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
+    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
-    obj.push_back(0.0);
-    lb.push_back(0.0);
-    ub.push_back(1.0);
-    lhs.push_back(1.0);
-    rhs.push_back(2.0);
-    val.push_back(1.0);
-    matval.reserve(2);
-    row1.reserve(2);
-    row2.reserve(2);
-    matbeg.reserve(2);
-    matind.reserve(2);
-    matlhs.reserve(2);
-    matrhs.reserve(2);
-    beg.push_back(0);
-    ind.push_back(0);
   }
 };
 
 TEST_F(matrix, create_matrix) {
-  int nnonz, nrows, ncols;
-
+  minimip::SparseVector empty_coefficients = {{},{}};
   // add one column
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0,
-                                      empty_indices, empty_indices, empty_vals),
-            absl::OkStatus());
+  ASSERT_OK(lp_interface_->AddColumn(empty_coefficients, objective_coeff, lower_bound, upper_bound, "x1"));
 
-  // add additional column
-  ASSERT_EQ(lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0,
-                                      empty_indices, empty_indices, empty_vals),
-            absl::OkStatus());
+  // add additional identical column
+  ASSERT_OK(lp_interface_->AddColumn(empty_coefficients, objective_coeff, lower_bound, upper_bound, "x2"));
 
+  minimip::SparseVector row_coefficients = {{0}, {1.0}};
   // add one row
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val),
-            absl::OkStatus());
+  ASSERT_OK(lp_interface_->AddRow(row_coefficients, lhs, rhs, "r1"));
 
-  // add one more row using a new variable
-  ind[0] = 1;
-  ASSERT_EQ(lp_interface_->AddRows(1, lhs, rhs, empty_names, 1, beg, ind, val),
-            absl::OkStatus());
+  row_coefficients.indices[0] = 1;
+  // add second row using a new variable
+  ASSERT_OK(lp_interface_->AddRow(row_coefficients, lhs, rhs, "r2"));
 
   // ------------------------------------------------------------
 
   // check size
-  nrows = lp_interface_->GetNumberOfRows();
-  ncols = lp_interface_->GetNumberOfColumns();
+  auto nrows = lp_interface_->GetNumberOfRows();
+  auto ncols = lp_interface_->GetNumberOfColumns();
   ASSERT_EQ(nrows, 2);
   ASSERT_EQ(ncols, 2);
 
   // get rows
   std::vector<SparseVector> sparse_rows;
-  nnonz = 0;
+  int nnonz = 0;
+  std::vector<double> matlhs;
+  std::vector<double> matrhs;
 
-  for (int i = 0; i < 1 + nrows; i++){
+  for (int i = 0; i < nrows; ++i) {
     matlhs.push_back(lp_interface_->GetLeftHandSide(i));
     matrhs.push_back(lp_interface_->GetRightHandSide(i));
 
     sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
     int entries = static_cast<int>(sparse_rows[i].indices.size());
-    for(int j = 0; j < entries; j++){
-      matind.push_back(sparse_rows[i].indices[j]);
-      matval.push_back(sparse_rows[i].values[j]);
-    }
-    matbeg.push_back(entries);
     nnonz += entries;
   }
 
+  // check sparse matrix shape
   ASSERT_EQ(nnonz, 2);
+  ASSERT_EQ(sparse_rows.size(), 2);
+  ASSERT_EQ(sparse_rows[0].indices[0], 0);
+  ASSERT_EQ(sparse_rows[1].indices[0], 1);
+  ASSERT_EQ(sparse_rows[0].indices.size(), 1);
+  ASSERT_EQ(sparse_rows[1].indices.size(), 1);
+  
+  ASSERT_EQ(sparse_rows[0].indices[0], 0);
+  ASSERT_EQ(sparse_rows[1].indices[0], 1);
 
-  // equal, to within 4 ULPs ( Unit in the last place)
+  ASSERT_EQ(sparse_rows[0].values[0], 1.0);
+  ASSERT_EQ(sparse_rows[1].values[0], 1.0);
+
+  // check sparse matrix values
   ASSERT_FLOAT_EQ(matlhs[0], 1.0);
   ASSERT_FLOAT_EQ(matlhs[1], 1.0);
 
   ASSERT_FLOAT_EQ(matrhs[0], 2.0);
   ASSERT_FLOAT_EQ(matrhs[1], 2.0);
 
-  ASSERT_EQ(matbeg[0], 0);
-  ASSERT_EQ(matbeg[1], 1);
-
-  ASSERT_EQ(matind[0], 0);
-  ASSERT_EQ(matind[1], 1);
-
-  ASSERT_FLOAT_EQ(matval[0], 1.0);
-  ASSERT_FLOAT_EQ(matval[1], 1.0);
 }
 }  // namespace minimip
