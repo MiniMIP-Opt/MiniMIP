@@ -5,6 +5,8 @@
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
 
+#include "unit_tests/utils.h"
+
 #define DEF_INTERFACE \
   1  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
@@ -30,43 +32,31 @@ class SimpleTest : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
-
-    // initialize program
-    int num_rows;
-    int num_cols;
-    std::vector<int> begin_rows{0};
-    std::vector<double> lower_bounds{0.0};
-    std::vector<double> upper_bounds{3.0};
-    std::vector<double> left_hand_sides{1.0};
-    std::vector<double> right_hand_sides{2.0};
-    std::vector<double> objective_values{1.0};
-    std::vector<double> vals{1.0};
-    std::vector<int> indices{0};
-
-    // empty vectors
-    std::vector<std::string> empty_names;
-    std::vector<int> empty_indices;
-    std::vector<double> empty_vals;
+    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
     // use the following LP as base:
     //   max x
     //       1 <= x <= 2  (linear constraint)
     //       0 <= x <= 3  (bounds)
-    // add one column
-    ASSERT_EQ(lp_interface_->AddColumns(
-                  1, objective_values, lower_bounds, upper_bounds, empty_names,
-                  0, empty_indices, empty_indices, empty_vals),
-              absl::OkStatus());
 
+    minimip::SparseVector col_coefficients = { {}, {} };
+    
+    // add one column
+    ASSERT_OK(lp_interface_->AddColumn(
+                  col_coefficients,
+                  0.0, 3.0,
+                  1.0,
+                  "x"));
+
+    minimip::SparseVector row_coefficients = { {0}, {1.0} };
     // add one row
-    ASSERT_EQ(lp_interface_->AddRows(1, left_hand_sides, right_hand_sides,
-                                     empty_names, 1, begin_rows, indices, vals),
-              absl::OkStatus());
+    ASSERT_OK(
+      lp_interface_->AddRow(row_coefficients, 0.0, 3.0, "r1")
+    );
 
     // check size
-    num_rows = lp_interface_->GetNumberOfRows();
-    num_cols = lp_interface_->GetNumberOfColumns();
+    auto num_rows = lp_interface_->GetNumberOfRows();
+    auto num_cols = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(num_rows, 1);
     ASSERT_EQ(num_cols, 1);
   }
@@ -82,7 +72,7 @@ TEST_F(SimpleTest, BasicAssertions) {
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
 
   // get basis
   absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
@@ -90,15 +80,14 @@ TEST_F(SimpleTest, BasicAssertions) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   if(absl_tmp.ok())
     column_basis_status = *absl_tmp;
-  else {
-    std::cout<<absl_tmp.status();
-  }
+  else
+    std::cout << absl_tmp.status() << std::endl;
+
   absl_tmp = lp_interface_->GetRowBasisStatus();
   if(absl_tmp.ok())
     row_basis_status = *absl_tmp;
-  else {
-    std::cout<<absl_tmp.status();
-  }
+  else
+    std::cout << absl_tmp.status() << std::endl;
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -114,11 +103,10 @@ TEST_F(SimpleTest, test2) {
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // change sense
-  ASSERT_EQ(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMinimization),
-            absl::OkStatus());
+  ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMinimization))
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
 
   // get basis
   absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
@@ -144,9 +132,6 @@ TEST_F(SimpleTest, test2) {
 TEST_F(SimpleTest, test3) {
   std::vector<LPBasisStatus> column_basis_status(1);
   std::vector<LPBasisStatus> row_basis_status(1);
-  std::vector<double> left_hand_sides{1.0};
-  std::vector<double> right_hand_sides(1.0);
-  std::vector<int> indices{0};
 
   // modify LP to:
   //   min x
@@ -156,14 +141,10 @@ TEST_F(SimpleTest, test3) {
   ASSERT_EQ(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMinimization),
             absl::OkStatus());
 
-  // change row side
-  right_hand_sides[0] = lp_interface_->Infinity();
-  ASSERT_EQ(
-      lp_interface_->SetRowSides(1, indices, left_hand_sides, right_hand_sides),
-      absl::OkStatus());
+  ASSERT_OK(lp_interface_->SetRowSides(0, 1.0, lp_interface_->Infinity()));
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
 
   // get basis
   absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
@@ -200,12 +181,10 @@ TEST_F(SimpleTest, test4) {
 
   // change row sides
   left_hand_sides[0] = -(lp_interface_->Infinity());
-  ASSERT_EQ(
-      lp_interface_->SetRowSides(1, indices, left_hand_sides, right_hand_sides),
-      absl::OkStatus());
+  ASSERT_OK(lp_interface_->SetRowSides(0, -(lp_interface_->Infinity()), 1.0));
 
   // solve problem
-  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
 
   // get basis
   absl::StatusOr<std::vector<LPBasisStatus>> absl_tmp;
@@ -213,15 +192,14 @@ TEST_F(SimpleTest, test4) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   if(absl_tmp.ok())
     column_basis_status = *absl_tmp;
-  else {
-    std::cout<<absl_tmp.status();
-  }
+  else
+    std::cout << absl_tmp.status() << std::endl;
+
   absl_tmp = lp_interface_->GetRowBasisStatus();
   if(absl_tmp.ok())
     row_basis_status = *absl_tmp;
-  else {
-    std::cout<<absl_tmp.status();
-  }
+  else
+    std::cout << absl_tmp.status();
 
   // the variable should be basic and the slack variable at the upper bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -251,7 +229,7 @@ class Complex : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
+    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
     // initialize program
     int ncols;
@@ -267,7 +245,7 @@ class Complex : public ::testing::Test {
 
     // use the following LP:
     // max 1 x1 + 1 x2 + 1 x3
-    //      -8 <= -x1 -          x3 <= -1
+    //      -8 <= -x1           -x3 <= -1
     //      -7 <= -x1 -   x2        <= -1
     //             x1 + 2 x2        <= 12
     //             x1,    x2,    x3 >= 0
@@ -275,50 +253,32 @@ class Complex : public ::testing::Test {
     lb[0] = 0.0;
     ub[0] = lp_interface_->Infinity();
     obj[0] = 1.0;
+    auto inf = lp_interface_-> Infinity();
+    ASSERT_OK(lp_interface_->AddColumn(
+              {{}, {}},
+              0.0, inf,
+              1.0,
+              "x1"));
+    std::vector<std::string> names = {"x2", "x3"};
+    ASSERT_OK(lp_interface_->AddColumns(
+              {{{}, {}}, {{}, {}}},
+              {0.0, 0.0}, {inf, inf},
+              {1.0, 1.0},
+              names));
 
-    ASSERT_EQ(
-        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
-                                  empty_indices, empty_vals),
-        absl::OkStatus());
-    ASSERT_EQ(
-        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
-                                  empty_indices, empty_vals),
-        absl::OkStatus());
-    ASSERT_EQ(
-        lp_interface_->AddColumns(1, obj, lb, ub, empty_names, 0, empty_indices,
-                                  empty_indices, empty_vals),
-        absl::OkStatus());
+    minimip::SparseVector row_coefficients = {{0,2}, {-1.0, -1.0}};
+    ASSERT_OK(
+      lp_interface_->AddRow(row_coefficients, -8.0, -1.0, "r1")
+    );
 
-    // add rows
-    lhs[0] = -8.0;
-    rhs[0] = -1.0;
-    inds[0] = 0;
-    inds[1] = 2;
-    vals[0] = -1.0;
-    vals[1] = -1.0;
-    ASSERT_EQ(
-        lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
-        absl::OkStatus());
-
-    lhs[0] = -7.0;
-    rhs[0] = -1.0;
-    inds[0] = 0;
-    inds[1] = 1;
-    vals[0] = -1.0;
-    vals[1] = -1.0;
-    ASSERT_EQ(
-        lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
-        absl::OkStatus());
-
-    lhs[0] = -lp_interface_->Infinity();
-    rhs[0] = 12.0;
-    inds[0] = 0;
-    inds[1] = 1;
-    vals[0] = 1.0;
-    vals[1] = 2.0;
-    ASSERT_EQ(
-        lp_interface_->AddRows(1, lhs, rhs, empty_names, 2, beg, inds, vals),
-        absl::OkStatus());
+    std::vector<std::string> row_names = {"r2", "r3"};
+    std::vector<SparseVector> rows_coefficients = {
+      { {1, 2}, {-1.0, -1.0} },
+      { {1, 2}, { 1.0,  2.0} }
+    };
+    ASSERT_OK(
+      lp_interface_->AddRows(rows_coefficients, {-7.0, -inf}, {-1.0, 12.0}, row_names)
+    );
 
     // check size
     nrows = lp_interface_->GetNumberOfRows();
@@ -354,10 +314,9 @@ TEST_F(Complex, test1) {
 
   // -------------------------------------
   // first solve problem
-  ASSERT_EQ(lp_interface_->SolveLPWithPrimalSimplex(), absl::OkStatus());
+  ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
 
-  ASSERT_EQ(lp_interface_->GetObjectiveValue(objval), absl::OkStatus());
-  ASSERT_FLOAT_EQ(objval, 14.0);
+  ASSERT_FLOAT_EQ(lp_interface_->GetObjectiveValue(), 14.0);
 
   // the optimal basis should be: {x2, x3, slack for second row}
   // get basis
