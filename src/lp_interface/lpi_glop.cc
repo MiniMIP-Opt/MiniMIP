@@ -1406,11 +1406,10 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
   const ColIndex size = tmp_row_->values.size();
   assert(size.value() == linear_program_.num_constraints());
 
-  // Vectors in Glop might be stored in dense or sparse format dep
-  //
-  // ending on the values. If non_zeros are given, we
-  // can directly loop over the non_zeros, otherwise we have to collect the
-  // nonzeros.
+  // Vectors in Glop might be stored in dense or sparse format
+  // depending on the values. If non_zeros are given,
+  // we can directly loop over the non_zeros, otherwise we have to
+  // collect the nonzeros.
   if (!tmp_row_->non_zeros.empty()) {
     ScatteredRowIterator end = tmp_row_->end();
     for (ScatteredRowIterator iter = tmp_row_->begin(); iter != end; ++iter) {
