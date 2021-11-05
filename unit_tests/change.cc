@@ -901,30 +901,26 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   absl_tmp = lp_interface_->GetPrimalSolution();
   if(absl_tmp.ok())
     primsol = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   absl_tmp = lp_interface_->GetRowActivity();
   if(absl_tmp.ok())
     activity = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   absl_tmp = lp_interface_->GetDualSolution();
   if(absl_tmp.ok())
     dualsol = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   absl_tmp = lp_interface_->GetReducedCost();
   if(absl_tmp.ok())
     redcost = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"),
             absl::OkStatus());
@@ -942,23 +938,20 @@ TEST_F(Change, testlpiwritereadlpmethods) {
   absl_tmp = lp_interface_->GetPrimalSolution();
   if(absl_tmp.ok())
     primsol2 = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   absl_tmp = lp_interface_->GetRowActivity();
   if(absl_tmp.ok())
     activity2 = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   absl_tmp = lp_interface_->GetDualSolution();
   if(absl_tmp.ok())
     dualsol2 = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   absl_tmp = lp_interface_->GetReducedCost();
   if(absl_tmp.ok())

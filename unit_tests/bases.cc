@@ -114,15 +114,13 @@ TEST_F(SimpleTest, test2) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   if(absl_tmp.ok())
     column_basis_status = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
   absl_tmp = lp_interface_->GetRowBasisStatus();
   if(absl_tmp.ok())
     row_basis_status = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -152,15 +150,13 @@ TEST_F(SimpleTest, test3) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   if(absl_tmp.ok())
     column_basis_status = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
   absl_tmp = lp_interface_->GetRowBasisStatus();
   if(absl_tmp.ok())
     row_basis_status = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
 
   // the variable should be basic and the slack variable at the lower bound
   ASSERT_EQ(column_basis_status[0], LPBasisStatus::kBasic);
@@ -325,15 +321,13 @@ TEST_F(Complex, test1) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   if(absl_tmp.ok())
     cstats = *absl_tmp;
-  else {
-    std::cout<<absl_tmp.status();
-  }
+  else
+    std::cout << absl_tmp.status() << std::endl;
   absl_tmp = lp_interface_->GetRowBasisStatus();
   if(absl_tmp.ok())
     rstats = *absl_tmp;
-  else {
-    std::cout<<absl_tmp.status();
-  }
+  else
+    std::cout << absl_tmp.status() << std::endl;
 
   ASSERT_TRUE(cstats[0] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(cstats[1] == LPBasisStatus::kBasic);
@@ -355,9 +349,8 @@ TEST_F(Complex, test1) {
   ASSERT_LT(i, nrows);
 
   // check basis inverse for the row corresponding to the basic slack variable
-  absl::StatusOr<SparseVector> absl_tmp_sparse;
 
-  absl_tmp_sparse = lp_interface_->GetSparseRowOfBInverted(i);
+  absl::StatusOr<SparseVector> absl_tmp_sparse = lp_interface_->GetSparseRowOfBInverted(i);
   if(absl_tmp_sparse.ok()) {
     coef = absl_tmp_sparse->values;
     inds = absl_tmp_sparse->indices;
@@ -365,32 +358,42 @@ TEST_F(Complex, test1) {
   } else {
     std::cout<<absl_tmp_sparse.status();
   }
-  // TODO ALL BINVERTED
-  ASSERT_EQ(
-      lp_interface_->GetRowOfBInverted(i, binvrow, empty_indices, null_int),
-      absl::OkStatus());
-
-  // row of basis inverse should be (0, 1, 0.5)
-  ASSERT_FLOAT_EQ(binvrow[0], 0.0);
-  ASSERT_FLOAT_EQ(binvrow[1], 1.0);
-  ASSERT_FLOAT_EQ(binvrow[2], 0.5);
-
-  // check whether sparse version is available and the same
-  ASSERT_EQ(lp_interface_->GetRowOfBInverted(i, coef, inds, ninds),
-            absl::OkStatus());
-  if (ninds >= 0) {
-    ASSERT_EQ(ninds, 2);
-    for (entry = 0; entry < ninds; ++entry) {
-      idx = inds[entry];
-      ASSERT_TRUE(0 <= idx && idx < 3);
-      ASSERT_FLOAT_EQ(coef[idx], binvrow[idx]);
-    }
+  // TODO CHECK ROW VALUE
+  absl_tmp_sparse = lp_interface_->GetSparseRowOfBInverted(i);
+  if(absl_tmp_sparse.ok()) {
+    coef = absl_tmp_sparse->values;
+    inds = absl_tmp_sparse->indices;
+    ninds = inds.size();
+  } else {
+    std::cout<<absl_tmp_sparse.status() << std::endl;
   }
 
+  // should be dense vector
+  ASSERT_EQ(inds.size(), 3);
+  ASSERT_EQ(inds[0], 0);
+  ASSERT_EQ(inds[1], 1);
+  ASSERT_EQ(inds[2], 2);
+
   // check first column of basis inverse
-  ASSERT_EQ(
-      lp_interface_->GetColumnOfBInverted(0, binvcol, empty_indices, null_int),
-      absl::OkStatus());
+  absl_tmp_sparse = lp_interface_->GetSparseColumnOfBInverted(0);
+  if(absl_tmp_sparse.ok()) {
+    coef = absl_tmp_sparse->values;
+    inds = absl_tmp_sparse->indices;
+    ninds = inds.size();
+  } else {
+    std::cout<<absl_tmp_sparse.status() << std::endl;
+  }
+
+  ASSERT_EQ(inds.size(), 3);
+  ASSERT_EQ(inds[0], 0);
+  ASSERT_EQ(inds[1], 1);
+  ASSERT_EQ(inds[2], 2);
+
+  for (idx = 0; idx < inds.size(); ++idx)
+      ASSERT_FLOAT_EQ(coef[idx], exp_vals[idx]);
+
+
+  // TODO check inv basis column here
 
   // The columns will be in the same order, however, the rows might be permuted.
   // For each row/entry we check that it corresponds to the value of the
@@ -415,9 +418,14 @@ TEST_F(Complex, test1) {
   // check basis inverse times nonbasic matrix for row corresponding to the
   // basic slack variable
   ASSERT_TRUE(0 <= i && i < nrows);
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, coef,
-                                                   empty_indices, null_int),
-            absl::OkStatus());
+  absl_tmp_sparse = lp_interface_->GetSparseRowOfBInvertedTimesA(i);
+  
+  ASSERT_TRUE(absl_tmp_sparse.ok());
+  inds = absl_tmp_sparse->indices;
+  ASSERT_EQ(inds.size(), 3);
+  ASSERT_EQ(inds[0], 0);
+  ASSERT_EQ(inds[1], 1);
+  ASSERT_EQ(inds[2], 2);
 
   // row of basis inverse times nonbasic matrix should be (-0.5, 0, 0)
   ASSERT_FLOAT_EQ(coef[0], -0.5);
@@ -425,16 +433,18 @@ TEST_F(Complex, test1) {
   ASSERT_FLOAT_EQ(coef[2], 0.0);
 
   // check nonzeros
-  ASSERT_EQ(lp_interface_->GetRowOfBInvertedTimesA(i, coeftwo, inds,
-                                                   ninds),
-            absl::OkStatus());
-  if (ninds >= 0) {
-    ASSERT_EQ(ninds, 1);
-    for (entry = 0; entry < ninds; ++entry) {
-      idx = inds[entry];
-      ASSERT_TRUE(0 <= idx && idx < 3);
-      ASSERT_FLOAT_EQ(coeftwo[idx], coef[idx]);
-    }
+  absl_tmp_sparse = lp_interface_->GetSparseRowOfBInvertedTimesA(i));
+  ASSERT_TRUE(absl_tmp_sparse.ok());
+  coeftwo = absl_tmp_sparse->coefficients;
+  inds = absl_tmp_sparse->indices;
+  ninds = absl_tmp_sparse->indices.size();
+
+  ASSERT_EQ(ninds, 1);
+  for (entry = 0; entry < ninds; ++entry) {
+    idx = inds[entry];
+    ASSERT_TRUE(0 <= idx);
+    ASSERT_TRUE(idx < 3);
+    ASSERT_FLOAT_EQ(coeftwo[idx], coef[idx]);
   }
 
   // check first column of basis inverse times nonbasic matrix
@@ -598,15 +608,13 @@ TEST_F(MoreVarsThanRows, test1) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   if(absl_tmp.ok())
     cstats = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
   absl_tmp = lp_interface_->GetRowBasisStatus();
   if(absl_tmp.ok())
     rstats = *absl_tmp;
-  else {
+  else
     std::cout<<absl_tmp.status();
-  }
   ASSERT_TRUE(cstats[0] == LPBasisStatus::kBasic);
   ASSERT_TRUE(cstats[1] == LPBasisStatus::kAtLowerBound);
   ASSERT_TRUE(cstats[2] == LPBasisStatus::kBasic);
