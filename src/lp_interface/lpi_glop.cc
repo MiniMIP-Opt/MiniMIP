@@ -1536,17 +1536,17 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
   int param_val;
   switch (type) {
     case LPParameter::kFromScratch:
-      param_val = (int)from_scratch_;
+      param_val = static_cast<int>(from_scratch_);
       MiniMIPdebugMessage(
           "GetIntegerParameter: LPParameter::kFromScratch = %d.\n", param_val);
       break;
     case LPParameter::kLPInfo:
-      param_val = (int)lp_info_;
+      param_val = static_cast<int>(lp_info_);
       MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kLPInfo = %d.\n",
                           param_val);
       break;
     case LPParameter::kLPIterationLimit:
-      param_val = (int)parameters_.max_number_of_iterations();
+      param_val = static_cast<int>(parameters_.max_number_of_iterations());
       MiniMIPdebugMessage(
           "GetIntegerParameter: LPParameter::kLPIterationLimit = %d.\n",
           param_val);
@@ -1557,7 +1557,7 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
           "GetIntegerParameter: LPParameter::kPresolving = %d.\n", param_val);
       break;
     case LPParameter::kPricing:
-      param_val = (int)pricing_;
+      param_val = static_cast<int>(pricing_);
       MiniMIPdebugMessage("GetIntegerParameter: LPParameter::kPricing = %d.\n",
                           param_val);
       break;
@@ -1579,7 +1579,7 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
                           param_val);
       break;
     case LPParameter::kRandomSeed:
-      param_val = (int)parameters_.random_seed();
+      param_val = static_cast<int>(parameters_.random_seed());
       MiniMIPdebugMessage(
           "GetIntegerParameter: LPParameter::kRandomSeed = %d.\n", param_val);
       break;
