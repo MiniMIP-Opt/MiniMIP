@@ -124,7 +124,8 @@ absl::Status LPGlopInterface::AddColumn(
     // perform check that no new rows are added
     RowIndex num_rows = linear_program_.num_constraints();
     for (size_t j = 0; j < col.indices.size(); ++j) {
-      assert(0 <= col.indices[j] && col.indices[j] < num_rows.value());
+      assert(0 <= col.indices[j]);
+      assert(col.indices[j] < num_rows.value());
       assert(col.values[j] != 0.0);
     }
 #endif
@@ -231,8 +232,9 @@ absl::Status LPGlopInterface::DeleteColumns(
     int first_col,  // first column to be deleted
     int last_col    // last column to be deleted
 ) {
-  assert(0 <= first_col && first_col <= last_col &&
-         last_col < linear_program_.num_variables());
+  assert(0 <= first_col);
+  assert(first_col <= last_col);
+  assert(last_col < linear_program_.num_variables());
 
   MiniMIPdebugMessage("deleting columns %d to %d.\n", first_col, last_col);
 
@@ -266,7 +268,8 @@ absl::Status LPGlopInterface::AddRow(
     const ColIndex num_cols = linear_program_.num_variables();
     for (size_t j = 0; j < row.indices.size(); ++j) {
       assert(row.values[j] != 0.0);
-      assert(0 <= row.indices[j] && row.indices[j] < num_cols.value());
+      assert(0 <= row.indices[j]);
+      assert(row.indices[j] < num_cols.value());
     }
 #endif
 
@@ -408,8 +411,9 @@ absl::Status LPGlopInterface::DeleteRows(
     int first_row,  // first row to be deleted
     int last_row    // last row to be deleted
 ) {
-  assert(0 <= first_row && first_row <= last_row &&
-         last_row < linear_program_.num_constraints());
+  assert(0 <= first_row);
+  assert(first_row <= last_row);
+  assert(last_row < linear_program_.num_constraints());
 
   const RowIndex num_rows = linear_program_.num_constraints();
   DenseBooleanColumn rows_to_delete(num_rows, false);
@@ -568,7 +572,8 @@ int LPGlopInterface::GetNumberOfNonZeros() const {
 // either num_non_zeros, begin_cols, indices, and val have to be NULL, or all
 // of them have to be non-NULL.
 SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
-  assert(0 <= col && col < linear_program_.num_variables());
+  assert(0 <= col);
+  assert(col < linear_program_.num_variables());
 
   SparseVector sparse_column;
   const SparseColumn& column = linear_program_.GetSparseColumn(ColIndex(col));
@@ -588,7 +593,8 @@ SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
 // have to be non-NULL, either num_non_zeros, begin_rows, indices, and val
 // have to be NULL, or all of them have to be non-NULL.
 SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
-  assert(0 <= row && row < linear_program_.num_constraints());
+  assert(0 <= row);
+  assert(row < linear_program_.num_constraints());
 
   const SparseMatrix& matrixtrans = linear_program_.GetTransposeSparseMatrix();
   const SparseColumn& column =
@@ -1409,7 +1415,8 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
     ScatteredRowIterator end = tmp_row_->end();
     for (ScatteredRowIterator iter = tmp_row_->begin(); iter != end; ++iter) {
       int idx = (*iter).column().value();
-      assert(0 <= idx && idx < linear_program_.num_constraints());
+      assert(0 <= idx);
+      assert(idx < linear_program_.num_constraints());
       sparse_row.values.push_back((*iter).coefficient());
       sparse_row.indices.push_back(idx);
     }
@@ -1511,7 +1518,8 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
   for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
        ++iter) {
     int idx = (*iter).row().value();
-    assert(0 <= idx && idx < num_rows);
+    assert(0 <= idx);
+    assert(idx < num_rows);
     sparse_column.values.push_back((*iter).coefficient());
     sparse_column.indices.push_back(idx);
   }

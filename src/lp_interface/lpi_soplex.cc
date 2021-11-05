@@ -717,22 +717,23 @@ absl::Status LPSoplexInterface::AddColumn(
   // perform check that no new rows are added - this is likely to be a mistake
   int num_rows = spx_->numRowsReal();
   for (size_t j = 0; j < col.indices.size(); ++j) {
-    assert(0 <= col.indices[j] && col.indices[j] < num_rows);
+    assert(0 <= col.indices[j]);
+    assert(col.indices[j] < num_rows);
     assert(col.values[j] != 0.0);
   }
 #endif
   try {
     std::vector<int> integer_indices(col.indices.begin(), col.indices.end());
 
-    soplex::DSVector col_Vector(1);
+    soplex::DSVector col_vector(1);
     soplex::LPColSet column(1);
 
     // create column vector with coefficients and bounds
-    col_Vector.clear();
+    col_vector.clear();
     if (!col.indices.empty()) {
-      col_Vector.add(col.indices.size(), &integer_indices[0], &col.values[0]);
+      col_vector.add(col.indices.size(), &integer_indices[0], &col.values[0]);
     }
-    column.add(objective_value, lower_bound, col_Vector, upper_bound);
+    column.add(objective_value, lower_bound, col_vector, upper_bound);
     spx_->addColsReal(column);
   }
 #ifndef NDEBUG
@@ -771,7 +772,8 @@ absl::Status LPSoplexInterface::AddColumns(
     int num_rows = spx_->numRowsReal();
     for (size_t i = 0; i < cols.size(); i++) {
       for (size_t j = 0; j < cols[i].indices.size(); ++j) {
-        assert(0 <= cols[i].indices[j] && cols[i].indices[j] < num_rows);
+        assert(0 <= cols[i].indices[j]);
+        assert(cols[i].indices[j] < num_rows);
         assert(cols[i].values[j] != 0.0);
       }
     }
@@ -888,8 +890,9 @@ absl::Status LPSoplexInterface::DeleteColumns(
 ) {
   MiniMIPdebugMessage("calling DeleteColumns()\n");
 
-  assert(0 <= first_col && first_col <= last_col &&
-         last_col < spx_->numColsReal());
+  assert(0 <= first_col);
+  assert(first_col <= last_col);
+  assert(last_col < spx_->numColsReal());
 
   InvalidateSolution();
 
@@ -938,7 +941,8 @@ absl::Status LPSoplexInterface::AddRows(
       int num_cols = spx_->numColsReal();
       for (size_t j = 0; j < rows[i].indices.size(); ++j) {
         assert(rows[i].values[j] != 0.0);
-        assert(0 <= rows[i].indices[j] && rows[i].indices[j] < num_cols);
+        assert(0 <= rows[i].indices[j]);
+        assert(rows[i].indices[j] < num_cols);
       }
     }
   }
@@ -1053,8 +1057,9 @@ absl::Status LPSoplexInterface::DeleteRows(
 ) {
   MiniMIPdebugMessage("calling DeleteRows()\n");
 
-  assert(0 <= first_row && first_row <= last_row &&
-         last_row < spx_->numRowsReal());
+  assert(0 <= first_row);
+  assert(first_row <= last_row);
+  assert(last_row < spx_->numRowsReal());
 
   InvalidateSolution();
 
@@ -1134,9 +1139,10 @@ absl::Status LPSoplexInterface::SetColumnBounds(int col, double lower_bound,
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
   try {
-    assert(0 <= col && col < spx_->numColsReal());
 
     if (IsInfinity(lower_bound)) {
       MiniMIPerrorMessage(
@@ -1175,8 +1181,10 @@ absl::Status LPSoplexInterface::SetRowSides(int row, double left_hand_side,
 
   assert(PreStrongBranchingBasisFreed());
 
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
+
   try {
-    assert(0 <= row && row < spx_->numRowsReal());
     spx_->changeRangeReal(row, left_hand_side, right_hand_side);
     assert(spx_->lhsReal(row) <=
            spx_->rhsReal(row) + spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
@@ -1238,7 +1246,8 @@ absl::Status LPSoplexInterface::SetObjectiveCoefficients(
 
   try {
     for (i = 0; i < indices.size(); ++i) {
-      assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
+      assert(0 <= indices[i]);
+      assert(indices[i] < spx_->numColsReal());
       spx_->changeObjReal(indices[i], objective_coefficients[i]);
     }
   }
@@ -1312,7 +1321,8 @@ LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
 SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
   MiniMIPdebugMessage("calling GetSparseColumnCoefficients()\n");
 
-  assert(0 <= col && col < spx_->numColsReal());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
   SparseVector sparse_column;
 
@@ -1341,7 +1351,8 @@ SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
 SparseVector LPSoplexInterface::GetSparseRowCoefficients(int row) const {
   MiniMIPdebugMessage("calling GetSparseRowCoefficients()\n");
 
-  assert(0 <= row && row < spx_->numRowsReal());
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
 
   SparseVector sparse_row;
 
@@ -1366,7 +1377,8 @@ SparseVector LPSoplexInterface::GetSparseRowCoefficients(int row) const {
 double LPSoplexInterface::GetObjectiveCoefficient(int col) const {
   MiniMIPdebugMessage("calling GetObjectiveCoefficient()\n");
 
-  assert(0 <= col && col < spx_->numColsReal());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
   return spx_->objReal(col);
 }
@@ -1375,7 +1387,8 @@ double LPSoplexInterface::GetObjectiveCoefficient(int col) const {
 double LPSoplexInterface::GetLowerBound(int col) const {
   MiniMIPdebugMessage("calling GetLowerBound()\n");
 
-  assert(0 <= col && col < spx_->numColsReal());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
   return spx_->lowerReal(col);
 }
@@ -1384,7 +1397,8 @@ double LPSoplexInterface::GetLowerBound(int col) const {
 double LPSoplexInterface::GetUpperBound(int col) const {
   MiniMIPdebugMessage("calling GetUpperBound()\n");
 
-  assert(0 <= col && col < spx_->numColsReal());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
   return spx_->upperReal(col);
 }
@@ -1393,7 +1407,8 @@ double LPSoplexInterface::GetUpperBound(int col) const {
 double LPSoplexInterface::GetLeftHandSide(int row) const {
   MiniMIPdebugMessage("calling GetLeftHandSide()\n");
 
-  assert(0 <= row && row < spx_->numRowsReal());
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
 
   return spx_->lhsReal(row);
 }
@@ -1402,7 +1417,8 @@ double LPSoplexInterface::GetLeftHandSide(int row) const {
 double LPSoplexInterface::GetRightHandSide(int row) const {
   MiniMIPdebugMessage("calling GetRightHandSide()\n");
 
-  assert(0 <= row && row < spx_->numRowsReal());
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
 
   return spx_->rhsReal(row);
 }
@@ -1414,8 +1430,10 @@ double LPSoplexInterface::GetMatrixCoefficient(
 ) const {
   MiniMIPdebugMessage("calling GetMatrixCoefficient()\n");
 
-  assert(0 <= col && col < spx_->numColsReal());
-  assert(0 <= row && row < spx_->numRowsReal());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
 
   return spx_->coefReal(row, col);
 }
