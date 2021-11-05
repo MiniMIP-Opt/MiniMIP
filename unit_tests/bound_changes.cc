@@ -19,7 +19,7 @@
 #include "unit_tests/utils.h"
 
 #define DEF_INTERFACE \
-  1  // 0 = Glop Interface (Default),
+  0  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
 
 namespace minimip {
@@ -28,10 +28,8 @@ static LPInterface* lp_interface_ = nullptr;
 
 class BoundChanges : public ::testing::Test {
  protected:
-  double objective_, lower_bound_, upper_bound_, new_lower_bound_,
+  double objective_coefficients_, lower_bound_, upper_bound_, new_lower_bound_,
       new_upper_bound_;
-  std::string empty_name_;
-  SparseVector column;
 
   void SetUp() override {
     // build interface factory
@@ -49,13 +47,16 @@ class BoundChanges : public ::testing::Test {
     ASSERT_OK(
         lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
-    objective_   = 1.0;
-    lower_bound_ = 0.0;
-    upper_bound_ = 1.0;
+    objective_coefficients_ = 1.0;
+    lower_bound_            = 0.0;
+    upper_bound_            = 1.0;
 
-    // add one column
-    ASSERT_OK(lp_interface_->AddColumn(column, lower_bound_, upper_bound_,
-                                       objective_, empty_name_));
+    SparseVector empty_coefficients = {{}, {}};
+
+    // add one empty column
+    ASSERT_OK(lp_interface_->AddColumn(empty_coefficients, lower_bound_,
+                                       upper_bound_, objective_coefficients_,
+                                       "x1"));
   }
 };
 
