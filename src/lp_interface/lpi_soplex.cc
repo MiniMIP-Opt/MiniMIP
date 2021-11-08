@@ -685,7 +685,7 @@ absl::Status LPSoplexInterface::AddColumn(
 
 // adds columns to the LP
 absl::Status LPSoplexInterface::AddColumns(
-    const std::vector<SparseVector>& cols,    // column to be added
+    const std::vector<SparseVector>& cols,    // columns to be added
     const std::vector<double>& lower_bounds,  // lower bounds of new columns
     const std::vector<double>& upper_bounds,  // upper bounds of new columns
     const std::vector<double>&
