@@ -74,40 +74,6 @@ absl::Status LPGlopInterface::LoadSparseColumnLP(
   return absl::OkStatus();
 }
 
-// To be deleted when finalizing the unittests:
-// absl::Status LPGlopInterface::LoadColumnLP(
-//    LPObjectiveSense obj_sense,  // objective sense
-//    int num_cols,                // number of columns
-//    const std::vector<double>&
-//        objective_values,  // objective function values of columns
-//    const std::vector<double>& lower_bounds,      // lower bounds of columns
-//    const std::vector<double>& upper_bounds,      // upper bounds of columns
-//    std::vector<std::string>& col_names,          // column names
-//    int num_rows,                                 // number of rows
-//    const std::vector<double>& left_hand_sides,   // left hand sides of rows
-//    const std::vector<double>& right_hand_sides,  // right hand sides of rows
-//    std::vector<std::string>& row_names,          // row names
-//    int num_non_zeros,  // number of non-zero elements in the constraint
-//                        // matrix
-//    const std::vector<int>& begin_cols,  // start index of each column in
-//                                         // row_indices- and vals-array
-//    const std::vector<int>&
-//        row_indices,                 // row indices of constraint matrix
-//        entries
-//    const std::vector<double>& vals  // values of constraint matrix entries
-//) {
-//  linear_program_.Clear();
-//  MINIMIP_CALL(AddRows(num_rows, left_hand_sides, right_hand_sides, row_names,
-//                       0, std::vector<int>(), std::vector<int>(),
-//                       std::vector<double>()));
-//  //  MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds,
-//  //                          upper_bounds, col_names, num_non_zeros,
-//  //                          begin_cols, row_indices, vals));
-//  MINIMIP_CALL(SetObjectiveSense(obj_sense));
-//
-//  return absl::OkStatus();
-//}
-
 // adds column to the LP
 absl::Status LPGlopInterface::AddColumn(
     const SparseVector& col,  // column to be added
@@ -163,69 +129,6 @@ absl::Status LPGlopInterface::AddColumns(
   }
   return absl::OkStatus();
 }
-
-// To be deleted when finalizing the unittests:
-//  absl::Status LPGlopInterface::AddColumns(
-//      int num_cols,  // number of columns to be added
-//      const std::vector<double>&
-//          objective_values,  // objective function values of new columns
-//      const std::vector<double>& lower_bounds,  // lower bounds of new columns
-//      const std::vector<double>& upper_bounds,  // upper bounds of new columns
-//      std::vector<std::string>& col_names,      // column names
-//      int num_non_zeros,  // number of non-zero elements to be added to the
-//                          // constraint matrix
-//      const std::vector<int>&
-//          begin_cols,  // start index of each column in indices- and
-//          vals-array
-//      const std::vector<int>&
-//          indices,  // row indices of constraint matrix entries
-//      const std::vector<double>& vals  // values of constraint matrix entries
-//  ) {
-//    MiniMIPdebugMessage("adding %d columns with %d nonzeros.\n", num_cols,
-//                        num_non_zeros);
-//
-//    // @todo add names
-//    if (num_non_zeros > 0) {
-//      assert(num_cols > 0);
-//
-// #ifndef NDEBUG
-//      // perform check that no new rows are added
-//      RowIndex num_rows = linear_program_.num_constraints();
-//      for (int j = 0; j < num_non_zeros; ++j) {
-//        assert(0 <= indices[j] && indices[j] < num_rows.value());
-//        assert(vals[j] != 0.0);
-//      }
-// #endif
-//
-//      int nz = 0;
-//      for (int i = 0; i < num_cols; ++i) {
-//        const ColIndex col = linear_program_.CreateNewVariable();
-//        linear_program_.SetVariableBounds(col, lower_bounds[i],
-//                                          upper_bounds[i]);
-//        linear_program_.SetObjectiveCoefficient(col, objective_values[i]);
-//        const int end = (num_non_zeros == 0 || i == num_cols - 1)
-//                            ? num_non_zeros
-//                            : begin_cols[i + 1];
-//        while (nz < end) {
-//          linear_program_.SetCoefficient(RowIndex(indices[nz]), col,
-//          vals[nz]);
-//          ++nz;
-//        }
-//      }
-//      assert(nz == num_non_zeros);
-//    } else {
-//      for (int i = 0; i < num_cols; ++i) {
-//        const ColIndex col = linear_program_.CreateNewVariable();
-//        linear_program_.SetVariableBounds(col, lower_bounds[i],
-//                                          upper_bounds[i]);
-//        linear_program_.SetObjectiveCoefficient(col, objective_values[i]);
-//      }
-//    }
-//
-//    lp_modified_since_last_solve_ = true;
-//
-//    return absl::OkStatus();
-//  }
 
 // deletes all columns in the given range from LP
 absl::Status LPGlopInterface::DeleteColumns(
@@ -315,67 +218,6 @@ absl::Status LPGlopInterface::AddRows(
   }
   return absl::OkStatus();
 }
-
-// To be deleted when finalizing the unittests:
-// absl::Status LPGlopInterface::AddRows(
-//     int num_rows,                                // number of rows to be
-//     added const std::vector<double>& left_hand_sides,  // left hand sides
-//     of new rows const std::vector<double>&
-//         right_hand_sides,                 // right hand sides of new rows
-//     std::vector<std::string>& row_names,  // row names
-//     int num_non_zeros,  // number of non-zero elements to be added to the
-//                         // constraint matrix
-//     const std::vector<int>&
-//         begin_rows,  // start index of each row in indices- and vals-array
-//     const std::vector<int>&
-//         indices,  // column indices of constraint matrix entries
-//     const std::vector<double>& vals  // values of constraint matrix entries
-//) {
-//     MiniMIPdebugMessage("adding %d rows with %d nonzeros.\n", num_rows,
-//                         num_non_zeros);
-//
-//     // @todo add names
-//     if (num_non_zeros > 0) {
-//       assert(num_rows > 0);
-//
-//  #ifndef NDEBUG
-//       // perform check that no new columns are added - this is likely to be
-//       a
-//       // mistake
-//       const ColIndex num_cols = linear_program_.num_variables();
-//       for (int j = 0; j < num_non_zeros; ++j) {
-//         assert(vals[j] != 0.0);
-//         assert(0 <= indices[j] && indices[j] < num_cols.value());
-//       }
-//  #endif
-//
-//       int nz = 0;
-//       for (int i = 0; i < num_rows; ++i) {
-//         const RowIndex row = linear_program_.CreateNewConstraint();
-//         linear_program_.SetConstraintBounds(row, left_hand_sides[i],
-//                                             right_hand_sides[i]);
-//         const int end = (num_non_zeros == 0 || i == num_rows - 1)
-//                             ? num_non_zeros
-//                             : begin_rows[i + 1];
-//         while (nz < end) {
-//           linear_program_.SetCoefficient(row, ColIndex(indices[nz]),
-//           vals[nz]);
-//           ++nz;
-//         }
-//       }
-//       assert(nz == num_non_zeros);
-//     } else {
-//       for (int i = 0; i < num_rows; ++i) {
-//         const RowIndex row = linear_program_.CreateNewConstraint();
-//         linear_program_.SetConstraintBounds(row, left_hand_sides[i],
-//                                             right_hand_sides[i]);
-//       }
-//     }
-//
-//     lp_modified_since_last_solve_ = true;
-//
-//     return absl::OkStatus();
-// }
 
 // delete rows from LP and update the current basis
 void LPGlopInterface::DeleteRowsAndUpdateCurrentBasis(
