@@ -1,4 +1,3 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -36,10 +35,13 @@ http_archive(
 )
 
 # Extra Bazel utilities that may be handy.
-git_repository(
+http_archive(
     name = "bazel_skylib",
-    commit = "2ec2e6d",  # release 1.0.3
-    remote = "https://github.com/bazelbuild/bazel-skylib.git",
+    strip_prefix = "bazel-skylib-1.0.3",
+    urls = [
+        "https://github.com/bazelbuild/bazel-skylib/archive/refs/tags/1.0.3.zip",
+    ],
+    sha256 = "28f81e36692e1d87823623a99966b2daf85af3fdc1b40f98e37bd5294f3dd185",
 )
 
 # Support for building C++ targets in Bazel.
@@ -50,10 +52,13 @@ http_archive(
 )
 
 # Support for building Python targets in Bazel.
-git_repository(
+http_archive(
     name = "rules_python",
-    commit = "c8c79aa",  # 0.1.0
-    remote = "https://github.com/bazelbuild/rules_python.git",
+    urls = [
+        "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.1.0.zip",
+    ],
+    strip_prefix = "rules_python-0.1.0",
+    sha256 = "e9afc70f3d14151f1f8759dc224159b029068a66d11f554e0df814d001a345d9",
 )
 
 # Google unit testing framework.
@@ -66,10 +71,13 @@ http_archive(
 
 # Google protocol buffers (structs on "steroids", useful to serialize to files
 # and on wire).
-git_repository(
+http_archive(
     name = "com_google_protobuf",
-    commit = "983d115",  # release v3.15.3
-    remote = "https://github.com/protocolbuffers/protobuf.git",
+    urls = [
+        "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.15.3.zip",
+    ],
+    strip_prefix = "protobuf-3.15.3",
+    sha256 = "1c11b325e9fbb655895e8fe9843479337d50dd0be56a41737cbb9aede5e9ffa0",
 )
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
@@ -78,10 +86,11 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 #
 # Note, some utilities are not yet (fully) covered (e.g., logging) and are thus
 # provided in OR-Tools below.
-git_repository(
+http_archive(
     name = "com_google_absl",
-    commit = "278e0a0",  # release 20210324.2
-    remote = "https://github.com/abseil/abseil-cpp.git",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20200923.3.zip"],
+    strip_prefix = "abseil-cpp-20200923.3",
+    sha256 = "6622893ab117501fc23268a2936e0d46ee6cb0319dcf2275e33a708cd9634ea6",
 )
 
 # Google OR-Tools. Contains many LP/MIP related utilities, including GLOP
@@ -92,10 +101,12 @@ git_repository(
 # In particular, OR-Tools includes logging routines, which are not part of
 # abseil yet. Importantly, we do not depend on and use "glog", because it's old
 # and depends on  "gflags" (now replaced by abseil/Flags).
-git_repository(
+
+http_archive(
     name = "com_google_ortools",
-    commit = "fa84bc0",  # release v8.2
-    remote = "https://github.com/google/or-tools.git",
+    urls = ["https://github.com/google/or-tools/archive/refs/tags/v8.2.zip"],
+    strip_prefix = "or-tools-8.2",
+    sha256 = "059af0e0eea8eb333b9cfd4b94815f3e4b5b550e6875a76315faa7eb7da0872a",
 )
 
 # zlib -- needed to compile SCIP.
