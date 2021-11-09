@@ -648,28 +648,11 @@ absl::Status LPSoplexInterface::AddColumn(
 
   assert(PreStrongBranchingBasisFreed());
 
-#ifndef NDEBUG
-  // perform check that no new rows are added - this is likely to be a mistake
-  int num_rows = spx_->numRowsReal();
-  for (size_t j = 0; j < col.indices.size(); ++j) {
-    assert(0 <= col.indices[j]);
-    assert(col.indices[j] < num_rows);
-    assert(col.values[j] != 0.0);
-  }
-#endif
   try {
-    std::vector<int> integer_indices(col.indices.begin(), col.indices.end());
-
-    soplex::DSVector col_vector(1);
-    soplex::LPColSet column(1);
-
-    // create column vector with coefficients and bounds
-    col_vector.clear();
-    if (!col.indices.empty()) {
-      col_vector.add(col.indices.size(), &integer_indices[0], &col.values[0]);
-    }
-    column.add(objective_value, lower_bound, col_vector, upper_bound);
-    spx_->addColsReal(column);
+    soplex::DSVector col_vector;
+    col_vector.add(col.indices.size(), col.indices.data(), col.values.data());
+    spx_->addColReal(
+        soplex::LPCol(objective_value, col_vector, upper_bound, lower_bound));
   }
 #ifndef NDEBUG
   catch (const soplex::SPxException& x) {
@@ -724,7 +707,7 @@ absl::Status LPSoplexInterface::AddColumns(
     for (size_t i = 0; i < cols.size(); ++i) {
       col_Vector.clear();
       if (!cols[i].indices.empty()) {
-        start = ( i == 0 ? 0 : last);
+        start = (i == 0 ? 0 : last);
         last  = start + cols[i].indices.size();
         col_Vector.add(last - start, &cols[i].indices[0], &cols[i].values[0]);
       }
@@ -773,12 +756,9 @@ absl::Status LPSoplexInterface::AddRow(
     double right_hand_side,  // right hand side of new row
     std::string row_name     // row name
 ) {
-  std::vector<SparseVector> rows       = {row};
-  std::vector<double> left_hand_sides  = {left_hand_side};
-  std::vector<double> right_hand_sides = {right_hand_side};
-  std::vector<std::string> row_names   = {row_name};
-
-  MINIMIP_CALL(AddRows(rows, left_hand_sides, right_hand_sides, row_names));
+  soplex::DSVector row_vector;
+  row_vector.add(row.indices.size(), row.indices.data(), row.values.data());
+  spx_->addRowReal(soplex::LPRow(left_hand_side, row_vector, right_hand_side));
 
   return absl::OkStatus();
 }
@@ -938,7 +918,6 @@ absl::Status LPSoplexInterface::SetColumnBounds(int col, double lower_bound,
   assert(col < spx_->numColsReal());
 
   try {
-
     if (IsInfinity(lower_bound)) {
       MiniMIPerrorMessage(
           "LP Error: fixing lower bound for variable %d to infinity.\n", col);
@@ -1290,7 +1269,7 @@ LPSoplexInterface::StrongBranchValue(
 
   // pass absl::Status(absl::StatusCode::kInternal, "LP Error") to MiniMIP
   // without a back trace
-  //@TODO: look into possible statuscode returns.
+  // @TODO: look into possible statuscode returns.
   if (absl_status_code != absl::OkStatus())
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
   else
@@ -1611,7 +1590,7 @@ int LPSoplexInterface::GetIterations() const {
 // gets current basis status for columns and rows
 absl::StatusOr<std::vector<LPBasisStatus>>
 LPSoplexInterface::GetColumnBasisStatus() const {
-  std::vector<LPBasisStatus> column_basis_status;
+  std::vector<LPBasisStatus> column_basis_status(spx_->numColsReal());
   MiniMIPdebugMessage("calling GetColumnBasisStatus()\n");
   assert(PreStrongBranchingBasisFreed());
 
@@ -1620,7 +1599,7 @@ LPSoplexInterface::GetColumnBasisStatus() const {
       //         double obj_coeffs = 0.0;
       switch (spx_->basisColStatus(i)) {
         case soplex::SPxSolver::BASIC:
-          column_basis_status.push_back(LPBasisStatus::kBasic);
+          column_basis_status[i] = LPBasisStatus::kBasic;
           break;
         case soplex::SPxSolver::FIXED:
           // Get reduced cost estimation. If the estimation is not correct
@@ -1636,16 +1615,16 @@ LPSoplexInterface::GetColumnBasisStatus() const {
           //             else => LOWER
           //                column_basis_status.push_back(BASESTAT_UPPER;
           //             else
-          column_basis_status.push_back(LPBasisStatus::kAtLowerBound);
+          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
         case soplex::SPxSolver::ON_LOWER:
-          column_basis_status.push_back(LPBasisStatus::kAtLowerBound);
+          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
         case soplex::SPxSolver::ON_UPPER:
-          column_basis_status.push_back(LPBasisStatus::kAtUpperBound);
+          column_basis_status[i] = LPBasisStatus::kAtUpperBound;
           break;
         case soplex::SPxSolver::ZERO:
-          column_basis_status.push_back(LPBasisStatus::kFree);
+          column_basis_status[i] = LPBasisStatus::kFree;
           break;
         case soplex::SPxSolver::UNDEFINED:
         default:
@@ -1662,7 +1641,7 @@ LPSoplexInterface::GetColumnBasisStatus() const {
 
 absl::StatusOr<std::vector<LPBasisStatus>>
 LPSoplexInterface::GetRowBasisStatus() const {
-  std::vector<LPBasisStatus> row_basis_status;
+  std::vector<LPBasisStatus> row_basis_status(spx_->numRowsReal());
   MiniMIPdebugMessage("calling GetRowBasisStatus()\n");
   assert(PreStrongBranchingBasisFreed());
 
@@ -1670,15 +1649,15 @@ LPSoplexInterface::GetRowBasisStatus() const {
     for (int i = 0; i < spx_->numRowsReal(); ++i) {
       switch (spx_->basisRowStatus(i)) {
         case soplex::SPxSolver::BASIC:
-          row_basis_status.push_back(LPBasisStatus::kBasic);
+          row_basis_status[i] = LPBasisStatus::kBasic;
           break;
         case soplex::SPxSolver::FIXED:
-          row_basis_status.push_back(LPBasisStatus::kFixed);
+          row_basis_status[i] = LPBasisStatus::kFixed;
         case soplex::SPxSolver::ON_LOWER:
-          row_basis_status.push_back(LPBasisStatus::kAtLowerBound);
+          row_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
         case soplex::SPxSolver::ON_UPPER:
-          row_basis_status.push_back(LPBasisStatus::kAtUpperBound);
+          row_basis_status[i] = LPBasisStatus::kAtUpperBound;
           break;
         case soplex::SPxSolver::ZERO:
           MiniMIPerrorMessage(
@@ -1983,7 +1962,7 @@ absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
                   soplex::SoPlex::SIMPLIFIER_AUTO;
       break;
     case LPParameter::kPricing:
-      param_val = (int)pricing_;
+      param_val = static_cast<int>(pricing_);
       break;
     case LPParameter::kScaling:
       scale_param = spx_->intParam(soplex::SoPlex::SCALER);
