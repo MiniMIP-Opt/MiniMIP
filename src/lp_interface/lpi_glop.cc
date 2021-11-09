@@ -67,7 +67,7 @@ absl::Status LPGlopInterface::LoadSparseColumnLP(
   linear_program_.Clear();
   MINIMIP_CALL(AddRows(std::vector<SparseVector>(), left_hand_sides,
                        right_hand_sides, row_names));
-  MINIMIP_CALL(AddColumns(cols, objective_values, lower_bounds, upper_bounds,
+  MINIMIP_CALL(AddColumns(cols, lower_bounds, upper_bounds, objective_values,
                           col_names));
   MINIMIP_CALL(SetObjectiveSense(obj_sense));
 
@@ -124,8 +124,9 @@ absl::Status LPGlopInterface::AddColumns(
     std::vector<std::string>& col_names  // column names
 ) {
   for (size_t j = 0; j < cols.size(); j++) {
+    std::string col_name = (col_names.size() != 0) ?  col_names[j] : "";
     MINIMIP_CALL(AddColumn(cols[j], lower_bounds[j], upper_bounds[j],
-                           objective_values[j], col_names[j]));
+                           objective_values[j], col_name));
   }
   return absl::OkStatus();
 }
@@ -207,13 +208,14 @@ absl::Status LPGlopInterface::AddRows(
   if (!rows.empty()) {
     for (size_t j = 0; j < rows.size(); j++) {
       assert(rows[j].indices.size() == rows[j].values.size());
-      MINIMIP_CALL(AddRow(rows[j], left_hand_sides[j], right_hand_sides[j],
-                          row_names[j]));
+      std::string row_name = (row_names.size() != 0) ?  row_names[j] : "";
+      MINIMIP_CALL(AddRow(rows[j], left_hand_sides[j], right_hand_sides[j], row_name));
     }
   } else {
     for (size_t j = 0; j < left_hand_sides.size(); j++) {
+      std::string row_name = (row_names.size() != 0) ?  row_names[j] : "";
       MINIMIP_CALL(AddRow(SparseVector(), left_hand_sides[j],
-                          right_hand_sides[j], row_names[j]));
+                          right_hand_sides[j], row_name));
     }
   }
   return absl::OkStatus();

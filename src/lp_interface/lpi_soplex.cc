@@ -596,6 +596,8 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
 
   MiniMIPdebugMessage("calling LoadColumnLP()\n");
 
+  InvalidateSolution();
+
   assert(PreStrongBranchingBasisFreed());
 
   try {
@@ -617,7 +619,7 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
     spx_->addRowsReal(rowset);
 
     // create column vectors with coefficients and bounds
-    MINIMIP_CALL(AddColumns(cols, objective_values, lower_bounds, upper_bounds,
+    MINIMIP_CALL(AddColumns(cols, lower_bounds, upper_bounds, objective_values,
                             col_names));
   }
 #ifndef NDEBUG
@@ -716,13 +718,15 @@ absl::Status LPSoplexInterface::AddColumns(
   try {
     soplex::LPColSet columns(cols.size());
     soplex::DSVector col_Vector(cols.size());
-    int last = 0;
+    int start;
+    int last;
     // create column vectors with coefficients and bounds
     for (size_t i = 0; i < cols.size(); ++i) {
       col_Vector.clear();
       if (!cols[i].indices.empty()) {
-        col_Vector.add(last, &cols[i].indices[0], &cols[i].values[0]);
-        last += cols[i].indices.size();
+        start = ( i == 0 ? 0 : last);
+        last  = start + cols[i].indices.size();
+        col_Vector.add(last - start, &cols[i].indices[0], &cols[i].values[0]);
       }
       columns.add(objective_values[i], lower_bounds[i], col_Vector,
                   upper_bounds[i]);
@@ -1458,7 +1462,7 @@ double LPSoplexInterface::GetObjectiveValue() {
 absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalSolution()
     const {
   MiniMIPdebugMessage("calling GetPrimalSolution()\n");
-  std::vector<double> primal_sol;
+  std::vector<double> primal_sol(spx_->numColsReal());
 
   try {
     static_cast<void>(
@@ -1480,7 +1484,7 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalSolution()
 
 absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualSolution() const {
   MiniMIPdebugMessage("calling GetDualSolution()\n");
-  std::vector<double> dual_sol;
+  std::vector<double> dual_sol(spx_->numRowsReal());
 
   try {
     static_cast<void>(spx_->getDualReal(dual_sol.data(), spx_->numRowsReal()));
@@ -1501,7 +1505,7 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualSolution() const {
 
 absl::StatusOr<std::vector<double>> LPSoplexInterface::GetRowActivity() const {
   MiniMIPdebugMessage("calling GetRowActivity()\n");
-  std::vector<double> activity;
+  std::vector<double> activity(spx_->numRowsReal());
 
   try {
     static_cast<void>(
@@ -1525,7 +1529,7 @@ absl::StatusOr<std::vector<double>> LPSoplexInterface::GetRowActivity() const {
 
 absl::StatusOr<std::vector<double>> LPSoplexInterface::GetReducedCost() const {
   MiniMIPdebugMessage("calling GetReducedCost()\n");
-  std::vector<double> reduced_cost;
+  std::vector<double> reduced_cost(spx_->numColsReal());
   try {
     static_cast<void>(
         spx_->getRedCostReal(reduced_cost.data(), spx_->numColsReal()));
