@@ -19,7 +19,7 @@
 
 #define TEST_ERRORS 0  // if 0 then skip tests expected to fail.
 #define DEF_INTERFACE \
-  1  // 0 = Glop Interface (Default),
+  0  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
 
 namespace minimip {
@@ -905,41 +905,27 @@ INSTANTIATE_TEST_SUITE_P(
 // #endif
 // }
 
-// // Test adding zero coeffs in rows, expecting an assert in debug mode
-// //
-// // This test should fail with an assert from the which causes SIGABRT to be
-// // issued. Thus, this test should pass.
-// TEST_F(Change, testzerosinrows) {
-//   int num_rows;
-//   int num_columns;
-//   int num_nonzeros = 2;
-//   LPObjectiveSense objective_sense;
-//   std::vector<double> left_hand_sides = {0};
-//   std::vector<double> right_hand_sides = {20};
-//   std::vector<int> beg    = {0};
-//   std::vector<int> ind    = {0, 1};
-//   std::vector<double> val = {0, 3};
-//   // empty placeholders
-//   std::vector<std::string> empty_names;
+// Test adding zero coeffs in rows, expecting an assert in debug mode
+//
+// This test should fail with an assert from the which causes SIGABRT to be
+// issued. Thus, this test should pass.
+TEST_F(Change, TestZerosInRows) {
+  int num_rows, num_columns, num_nonzeros;
+  LPObjectiveSense objective_sense;
 
-//   // 2x2 problem
-//   initProb(4, num_columns, num_rows, num_nonzeros, objective_sense);
-//   ASSERT_EQ(2, num_rows);
-//   ASSERT_EQ(2, num_columns);
+  // 2x2 problem
+  initProb(4, num_columns, num_rows, num_nonzeros, objective_sense);
+  ASSERT_EQ(2, num_rows);
+  ASSERT_EQ(2, num_columns);
 
-// #ifndef NDEBUG
-//   ASSERT_DEATH(
-//       lp_interface_->AddRows(1, left_hand_sides, right_hand_sides,
-//       empty_names, num_nonzeros, beg, ind, val),
-//       "");
-// #else
-//   // this test can only work in debug mode, so we make it pass in opt mode
-//   ASSERT_OK(
-//       lp_interface_->AddRows(1, left_hand_sides, right_hand_sides,
-//       empty_names, num_nonzeros, beg, ind, val));
-//   SUCCEED();
-// #endif
-// }
+#ifndef NDEBUG
+  ASSERT_DEATH(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""),"");
+#else
+  // this test can only work in debug mode, so we make it pass in opt mode
+  ASSERT_OK(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""));
+  SUCCEED();
+#endif
+}
 
 // Test WriteLP, ReadLP, Clear
 TEST_F(Change, TestWriteReadLPMethods) {

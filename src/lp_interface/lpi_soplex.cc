@@ -756,6 +756,18 @@ absl::Status LPSoplexInterface::AddRow(
     double right_hand_side,  // right hand side of new row
     std::string row_name     // row name
 ) {
+
+#ifndef NDEBUG
+    // perform check that no new columns are added - this is likely to be a
+    // mistake
+    int num_cols = spx_->numColsReal();
+    for (size_t j = 0; j < row.indices.size(); ++j) {
+      assert(row.values[j] != 0.0);
+      assert(0 <= row.indices[j]);
+      assert(row.indices[j] < num_cols);
+    }
+#endif
+
   soplex::DSVector row_vector;
   row_vector.add(row.indices.size(), row.indices.data(), row.values.data());
   spx_->addRowReal(soplex::LPRow(left_hand_side, row_vector, right_hand_side));
