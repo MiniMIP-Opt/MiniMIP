@@ -45,7 +45,7 @@ class Solve : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
+    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
   }
   // local functions
 
@@ -58,15 +58,10 @@ class Solve : public ::testing::Test {
                         const std::vector<double>& expected_row_activities,
                         const std::vector<double>& expected_reduced_costs) {
     // solution data
-    double objective_value;
     std::vector<double> primal_solution;
     std::vector<double> dual_solution;
     std::vector<double> row_activities;
     std::vector<double> reduced_costs;
-
-    // auxiliary data
-    bool primal_feasible;
-    bool dual_feasible;
 
     // check size
     ASSERT_EQ(num_rows, lp_interface_->GetNumberOfRows());
@@ -86,8 +81,8 @@ class Solve : public ::testing::Test {
     ASSERT_TRUE(!lp_interface_->TimeLimitIsExceeded());
 
     // check feasibility status
-    primal_feasible = lp_interface_->IsPrimalFeasible();
-    dual_feasible   = lp_interface_->IsDualFeasible();
+    auto primal_feasible = lp_interface_->IsPrimalFeasible();
+    auto dual_feasible   = lp_interface_->IsDualFeasible();
 
     // if we are feasible, we should be optimal
     if (expected_primal_feasibility_status == LPFeasibilityStat::FEASIBLE &&
@@ -166,7 +161,7 @@ class Solve : public ::testing::Test {
     // check solution
     if (expected_primal_feasibility_status == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      objective_value = lp_interface_->GetObjectiveValue();
+      auto objective_value = lp_interface_->GetObjectiveValue();
 
       absl::StatusOr<std::vector<double>> absl_tmp;
 
@@ -221,7 +216,7 @@ class Solve : public ::testing::Test {
 
     if (expected_dual_feasibility_status == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      objective_value = lp_interface_->GetObjectiveValue();
+      auto objective_value = lp_interface_->GetObjectiveValue();
       absl::StatusOr<std::vector<double>> absl_tmp;
 
       absl_tmp = lp_interface_->GetPrimalSolution();
@@ -394,10 +389,10 @@ class Solve : public ::testing::Test {
     // compare sparse rows
     ASSERT_EQ(expected_sparse_columns.size(), sparse_columns.size());
 
-    for (int j = 0; j < expected_sparse_columns.size(); ++j) {
+    for (size_t j = 0; j < expected_sparse_columns.size(); ++j) {
       ASSERT_EQ(expected_sparse_columns[j].indices.size(),
                 sparse_columns[j].indices.size());
-      for (int i = 0; i < expected_sparse_columns[j].indices.size(); ++i) {
+      for (size_t i = 0; i < expected_sparse_columns[j].indices.size(); ++i) {
         expected_sparse_columns[j].values[i];
         ASSERT_EQ(expected_sparse_columns[j].indices[i],
                   sparse_columns[j].indices[i]);
@@ -1007,7 +1002,7 @@ TEST_F(Solve, test6) {
   lower_bounds[11] = 0.499951;
   upper_bounds[11] = 0.5;
 
-  for (int j = 0; j < sparse_columns.size(); ++j) {
+  for (size_t j = 0; j < sparse_columns.size(); ++j) {
     ASSERT_OK(
         lp_interface_->SetColumnBounds(j, lower_bounds[j], upper_bounds[j]))
   }
