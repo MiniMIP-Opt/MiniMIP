@@ -1001,6 +1001,12 @@ absl::Status LPSoplexInterface::SetObjectiveCoefficient(
     const int col,  // column index to change objective value for
     const double objective_coefficient  // new objective values for column
 ) {
+  MiniMIPdebugMessage("calling SetObjectiveCoefficient()\n");
+
+  InvalidateSolution();
+
+  assert(PreStrongBranchingBasisFreed());
+
   spx_->changeObjReal(col, objective_coefficient);
   return absl::OkStatus();
 }
