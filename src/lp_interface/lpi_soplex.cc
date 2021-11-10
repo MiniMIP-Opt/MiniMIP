@@ -795,8 +795,8 @@ absl::Status LPSoplexInterface::AddRows(
   try {
     soplex::LPRowSet row_set(rows.size());
     soplex::DSVector row_Vector;
-    int start = 0;    
-    int last = 0;
+    int start = 0;
+    int last  = 0;
     for (size_t i = 0; i < rows.size(); i++)
       for (size_t j = 0; j < rows[i].indices.size(); j++)
         std::vector<int> integer_indices(rows[i].indices.begin(),
@@ -1785,8 +1785,6 @@ std::vector<int> LPSoplexInterface::GetBasisIndices() const {
 absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
     int row_number) const {
   SparseVector sparse_row;
-  // sparse_row.indices.reserve(spx_->numRowsReal());
-  // sparse_row.values.reserve(spx_->numRowsReal());
 
   int num_indices;
   MiniMIPdebugMessage("calling GetSparseRowOfBInverted()\n");
@@ -1798,14 +1796,13 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
   std::vector<double> dense_row(spx_->numRowsReal());
   std::vector<int> indices(spx_->numRowsReal());
 
-
   if (!spx_->getBasisInverseRowReal(row_number, dense_row.data(),
                                     indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
   for (int i = 0; i < num_indices; ++i) {
-      sparse_row.indices.push_back(indices[i]);
-      sparse_row.values.push_back(dense_row[indices[i]]);
+    sparse_row.indices.push_back(indices[i]);
+    sparse_row.values.push_back(dense_row[indices[i]]);
   }
 
   return sparse_row;
@@ -1832,23 +1829,21 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
   MiniMIPdebugMessage("calling GetColumnOfBInverted()\n");
 
   SparseVector sparse_column;
-  // sparse_column.values.reserve(spx_->numCols());
-  // sparse_column.indices.reserve(spx_->numCols());
 
   int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
 
-  std::vector<double> dense_column(spx_->numCols());
-  std::vector<int> indices(spx_->numCols());
+  std::vector<double> dense_column(spx_->numColsReal());
+  std::vector<int> indices(spx_->numColsReal());
 
   if (!spx_->getBasisInverseColReal(col_number, dense_column.data(),
                                     indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
   for (int i = 0; i < num_indices; ++i) {
-      sparse_column.indices.push_back(indices[i]);
-      sparse_column.values.push_back(dense_column[indices[i]]);
+    sparse_column.indices.push_back(indices[i]);
+    sparse_column.values.push_back(dense_column[indices[i]]);
   }
 
   return sparse_column;
@@ -1868,8 +1863,7 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
   size_t num_rows = spx_->numRowsReal();
   int num_cols    = spx_->numColsReal();
   SparseVector sparse_row;
-  // sparse_row.indices.reserve(num_rows);
-  // sparse_row.values.reserve(num_rows);
+
   std::vector<double> dense_binv(num_rows);
   std::vector<int> nonzero_indices(num_rows);
   int num_indices;
@@ -1880,8 +1874,6 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
   if (!spx_->getBasisInverseRowReal(row_number, dense_binv.data(),
                                     nonzero_indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
-
-  assert(dense_binv.size() == num_rows);
 
   soplex::Vector binv_vec(num_rows, dense_binv.data());
 
@@ -1910,7 +1902,7 @@ absl::StatusOr<SparseVector>
 LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
   MiniMIPdebugMessage("calling GetColumnOfBInvertedTimesA()\n");
 
-  std::vector<double> binv_vec;
+  std::vector<double> binv_vec(spx_->numCols());
   SparseVector sparse_col;
   int num_rows = spx_->numRowsReal();
 
@@ -1940,7 +1932,7 @@ LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
   for (int row = 0; row < num_rows; ++row) {
-    if (binv_vec[row] > EPS) {
+    if (REALABS(binv_vec[row]) > EPS) {
       sparse_col.indices.push_back(row);
       sparse_col.values.push_back(binv_vec[row]);
     }
