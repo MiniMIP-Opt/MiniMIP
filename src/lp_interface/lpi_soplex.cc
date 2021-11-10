@@ -1784,10 +1784,10 @@ std::vector<int> LPSoplexInterface::GetBasisIndices() const {
 //       in lpi.h.
 absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
     int row_number) const {
-  SparseVector sparse_row;
-
-  int num_indices;
   MiniMIPdebugMessage("calling GetSparseRowOfBInverted()\n");
+
+  SparseVector sparse_row;
+  int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
   assert(row_number >= 0);
@@ -1834,8 +1834,8 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
 
   assert(PreStrongBranchingBasisFreed());
 
-  std::vector<double> dense_column(spx_->numColsReal());
-  std::vector<int> indices(spx_->numColsReal());
+  std::vector<double> dense_column(spx_->numRowsReal());
+  std::vector<int> indices(spx_->numRowsReal());
 
   if (!spx_->getBasisInverseColReal(col_number, dense_column.data(),
                                     indices.data(), &num_indices))
