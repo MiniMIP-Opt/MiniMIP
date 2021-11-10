@@ -1207,7 +1207,7 @@ absl::Status LPGlopInterface::SetBasisStatus(
 // returns the indices of the basic columns and rows; basic column n gives
 // value n, basic row m gives value -1-m
 std::vector<int> LPGlopInterface::GetBasisIndices() const {
-  std::vector<int> basis_indices;
+  std::vector<int> basis_indices(GetNumberOfRows());
 
   MiniMIPdebugMessage("GetBasisIndices\n");
 
@@ -1262,8 +1262,18 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
       assert(idx < linear_program_.num_constraints());
       sparse_row.values.push_back((*iter).coefficient());
       sparse_row.indices.push_back(idx);
+      }
+    } else {
+      // use dense access to tmp_row_
+      const Fractional eps = parameters_.primal_feasibility_tolerance();
+      for (ColIndex col(0); col < size; ++col) {
+        double value = (*tmp_row_)[col];
+        if (fabs(value) >= eps) {
+          sparse_row.values.push_back(value);
+          sparse_row.indices.push_back(col.value());
+        }
+      }
     }
-  }
   return sparse_row;
 }
 
