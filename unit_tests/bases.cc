@@ -219,7 +219,7 @@ class Complex : public ::testing::Test {
     //             x1 + 2 x2        <= 12
     //             x1,    x2,    x3 >= 0
 
-    auto inf = lp_interface_->Infinity();
+    double inf = lp_interface_->Infinity();
     ASSERT_OK(lp_interface_->AddColumn({{}, {}}, 0.0, inf, 1.0, "x1"));
     std::vector<std::string> names = {"x2", "x3"};
     ASSERT_OK(lp_interface_->AddColumns({{{}, {}}, {{}, {}}}, {0.0, 0.0},

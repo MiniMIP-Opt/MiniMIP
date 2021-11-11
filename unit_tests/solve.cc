@@ -82,8 +82,8 @@ class Solve : public ::testing::Test {
     ASSERT_TRUE(!lp_interface_->TimeLimitIsExceeded());
 
     // check feasibility status
-    auto primal_feasible = lp_interface_->IsPrimalFeasible();
-    auto dual_feasible   = lp_interface_->IsDualFeasible();
+    bool primal_feasible = lp_interface_->IsPrimalFeasible();
+    bool dual_feasible   = lp_interface_->IsDualFeasible();
 
     // if we are feasible, we should be optimal
     if (expected_primal_feasibility_status == LPFeasibilityStat::FEASIBLE &&
