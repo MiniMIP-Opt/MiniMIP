@@ -45,7 +45,8 @@ class Solve : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
+    ASSERT_OK(
+        lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
   }
   // local functions
 

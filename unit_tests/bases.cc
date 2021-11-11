@@ -344,10 +344,8 @@ TEST_F(Complex, test1) {
       // Check that the value is the expected one if the column corresponds
       // to
       // the current variable given in expected_b_invert_variables.
-      if (expected_b_invert_variables[idx] == basis_indices[entry])
-      {
-        ASSERT_FLOAT_EQ(b_inverted_dense[entry],
-        expected_b_invert_values[idx]);
+      if (expected_b_invert_variables[idx] == basis_indices[entry]) {
+        ASSERT_FLOAT_EQ(b_inverted_dense[entry], expected_b_invert_values[idx]);
       }
     }
   }
@@ -376,12 +374,10 @@ TEST_F(Complex, test1) {
   indices     = absl_tmp_sparse->indices;
   num_indices = absl_tmp_sparse->indices.size();
 
-
   b_inverted_dense.resize(num_rows, 0.0);
   for (size_t j = 0; j < indices.size(); ++j) {
     b_inverted_dense[indices[j]] = b_inverted[j];
   }
-
 
   // The columns will be in the same order, however, the rows will be permuted.
   // For each row/entry we check that it corresponds to the value of the
@@ -420,7 +416,8 @@ class MoreVarsThanRows : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
+    ASSERT_OK(
+        lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
     // use the following LP:
     // max 1 x1 + 1 x2 + 1 x3 + x4
