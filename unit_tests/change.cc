@@ -19,7 +19,7 @@
 
 #define TEST_ERRORS 0  // if 0 then skip tests expected to fail.
 #define DEF_INTERFACE \
-  0  // 0 = Glop Interface (Default),
+  1  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
 
 namespace minimip {
@@ -43,7 +43,8 @@ class Change : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
+    ASSERT_OK(
+        lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
   }
 
   // write num_columns, num_rows and objective_sense into variables to check
@@ -286,7 +287,7 @@ class ChangeObjective
     }
 
     for (size_t i; i < set_objective_coefficients.size(); i++) {
-      ASSERT_EQ(objective_coefficients[i], set_objective_coefficients[i]);
+      ASSERT_FLOAT_EQ(objective_coefficients[i], set_objective_coefficients[i]);
     }
   }
 };
@@ -368,11 +369,11 @@ class ChangeBounds : public Change,
       upper_bounds[i] = lp_interface_->GetUpperBound(i);
     }
 
-    for (size_t i; i < last_col; i++) {
-      ASSERT_EQ(upper_bounds[i], set_upper_bounds[i]);
+    for (int i = 0; i < last_col; i++) {
+      ASSERT_FLOAT_EQ(upper_bounds[i], set_upper_bounds[i]);
     }
-    for (size_t i; i < last_col; i++) {
-      ASSERT_EQ(lower_bounds[i], set_lower_bounds[i]);
+    for (int i = 0; i < last_col; i++) {
+      ASSERT_FLOAT_EQ(lower_bounds[i], set_lower_bounds[i]);
     }
   }
 };
@@ -449,15 +450,15 @@ class ChangeSides : public Change,
     ASSERT_TRUE(!lp_interface_->IsSolved());
 
     for (int i = 0; i < lastrow; i++) {
-      left_hand_sides[i] = lp_interface_->GetLeftHandSide(i);
+      left_hand_sides[i]  = lp_interface_->GetLeftHandSide(i);
       right_hand_sides[i] = lp_interface_->GetRightHandSide(i);
     }
 
     for (int i; i < lastrow; i++) {
-      ASSERT_EQ(left_hand_sides[i], set_left_hand_sides[i]);
+      ASSERT_FLOAT_EQ(left_hand_sides[i], set_left_hand_sides[i]);
     }
     for (int i; i < lastrow; i++) {
-      ASSERT_EQ(right_hand_sides[i], set_right_hand_sides[i]);
+      ASSERT_FLOAT_EQ(right_hand_sides[i], set_right_hand_sides[i]);
     }
   }
 };
@@ -467,14 +468,14 @@ TEST_P(ChangeSides, checkChangedSides) {
   double left_2  = substituteInfinity(std::get<1>(GetParam()));
   double right_1 = substituteInfinity(std::get<2>(GetParam()));
   double right_2 = substituteInfinity(std::get<3>(GetParam()));
-  int prob      = std::get<4>(GetParam());
+  int prob       = std::get<4>(GetParam());
 
   int num_rows, num_columns, num_nonzeros;
   std::vector<int> ind = {0, 1};
   LPObjectiveSense objective_sense;
-  std::vector<double> set_left_hand_sides = {left_1, left_2};
+  std::vector<double> set_left_hand_sides  = {left_1, left_2};
   std::vector<double> set_right_hand_sides = {right_1, right_2};
-  bool deathflag             = false;
+  bool deathflag                           = false;
 
   ASSERT_NO_FATAL_FAILURE(
       initProb(prob, num_columns, num_rows, num_nonzeros, objective_sense));
@@ -496,9 +497,12 @@ TEST_P(ChangeSides, checkChangedSides) {
   }
 
   if (deathflag)
-    ASSERT_DEATH(checkChangedSides(num_rows, ind, set_left_hand_sides, set_right_hand_sides), "");
+    ASSERT_DEATH(checkChangedSides(num_rows, ind, set_left_hand_sides,
+                                   set_right_hand_sides),
+                 "");
   else
-    ASSERT_NO_FATAL_FAILURE(checkChangedSides(num_rows, ind, set_left_hand_sides, set_right_hand_sides));
+    ASSERT_NO_FATAL_FAILURE(checkChangedSides(
+        num_rows, ind, set_left_hand_sides, set_right_hand_sides));
 }
 
 INSTANTIATE_TEST_SUITE_P(ChangeSidesCombinations, ChangeSides,
@@ -541,369 +545,254 @@ INSTANTIATE_TEST_SUITE_P(
                        ::testing::Values(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
 
 // Test for AddRows, DeleteRowSet, DeleteRows
-// TEST_F(Change, TestRowMethods) {
-//   // problem data
-//   std::vector<double> objective_coefficients = {1.0, 1.0, 1.0, 1.0, 1.0};
-//   std::vector<double> lower_bounds  = {-1.0, -lp_interface_->Infinity(), 0.0,
-//                             -lp_interface_->Infinity(), 0.0};
-//   std::vector<double> upper_bounds  = {10.0, lp_interface_->Infinity(),
-//                             lp_interface_->Infinity(), 29.0, 0.0};
-//   int ncolsbefore, ncolsafter;
-//   int nrowsbefore, nrowsafter;
-//   std::vector<double> lhsvals = {
-//       -lp_interface_->Infinity(), -1.0, -3e-10, 0.0, 1.0, 3e10};
-//   std::vector<double> rhsvals = {-1.0, -3e-10, 0.0,
-//                                  1.0,  3e10,   lp_interface_->Infinity()};
-//   std::vector<int> nnonzs = {1, 10, -1, 6, -1};
-//   std::vector<int> begvals = {0, 2, 3, 5, 8, 9};
-//   std::vector<int> indvals = {0, 1, 3, 2, 1, 1, 2, 4, 0, 3};
-//   std::vector<double> vals = {1.0, 5.0, -1.0, 3e5,  2.0,
-//                               1.0, 20,  10,   -1.9, 1e-2};
+TEST_F(Change, TestRowMethods) {
+  // problem data
+  std::vector<double> objective_coefficients = {1.0, 1.0, 1.0, 1.0, 1.0};
 
-//   std::vector<SparseVector> sparse_rows = {{{0,1},{1.0,5.0}}, {{3},{-1.0}},
-//   {{2,1},{3e5,2.0}},
-//                                           {{1,2,4},{1.0,20,10}},
-//                                           {{0},{-1.9}}, {{3},{1e-2}}};
+  std::vector<double> lower_bounds = {-1.0, -lp_interface_->Infinity(), 0.0,
+                                      -lp_interface_->Infinity(), 0.0};
 
-//   int iterations              = 5;
-//   std::vector<int> k          = {1, 6, -1, 4, -2};
-//   std::vector<int> nnonzsdiff = {1, 10, -1, 6, -3};
-//   int i;
-//   int j;
+  std::vector<double> upper_bounds = {10.0, lp_interface_->Infinity(),
+                                      lp_interface_->Infinity(), 29.0, 0.0};
 
-//   // empty placeholders
-//   std::vector<std::string> empty_names;
-//   std::vector<double> empty_values;
-//   std::vector<int> empty_indices;
+  std::vector<double> left_hand_sides_values = {
+      -lp_interface_->Infinity(), -1.0, -3e-10, 0.0, 1.0, 3e10};
 
-//   // empty columns
-//     std::vector<SparseVector> empty_columns;
-//     // empty_columns.reserve(num_columns);
-//     for (int i = 0; i < objective_coefficients.size(); ++i){
-//       empty_columns.push_back({{},{}});
-//     }
+  std::vector<double> right_hand_sides_values = {
+      -1.0, -3e-10, 0.0, 1.0, 3e10, lp_interface_->Infinity()};
 
-//   // create original lp
-//   ASSERT_OK(lp_interface_->AddColumns(empty_columns, lower_bounds,
-//   upper_bounds, objective_coefficients, empty_names)); ncolsbefore =
-//   lp_interface_->GetNumberOfColumns();
+  std::vector<SparseVector> sparse_rows = {
+      {{0, 1}, {1.0, 5.0}},       {{3}, {-1.0}}, {{1, 2}, {2.0, 3e5}},
+      {{1, 2, 4}, {1.0, 20, 10}}, {{0}, {-1.9}}, {{3}, {1e-2}}};
 
-//   for (i = 0; i < iterations; i++) {
-//     // setup row values
-//     int num_rows;
-//     int nnonzsbefore;
-//     int nnonzsafter;
+  std::vector<int> set_num_rows = {1, 6, -1, 4, -2};
 
-//     num_rows = k[i];
-//     // get data before modification
-//     nnonzsbefore = lp_interface_->GetNumberOfNonZeros();
-//     nrowsbefore  = lp_interface_->GetNumberOfRows();
+  int num_columns_before, num_columns_after, num_rows_before, num_rows_after;
 
-//     if (num_rows < 0) {
-//       ASSERT_OK(lp_interface_->DeleteRows(0, -(1 + num_rows)));
-//     } else {  // num_rows >= 0
-//       std::vector<double> left_hand_sides(100);
-//       std::vector<double> right_hand_sides(100);
-//       std::vector<int> beg(100);
+  // empty placeholders
+  std::vector<std::string> empty_names;
 
-//       int num_nonzeros = nnonzs[i];
-//       std::vector<int> ind(100);
-//       std::vector<double> val(100);
+  // empty columns
+  std::vector<SparseVector> empty_columns;
+  for (size_t i = 0; i < objective_coefficients.size(); ++i) {
+    empty_columns.push_back({{}, {}});
+  }
 
-//       std::vector<double> newlhs(100);
-//       std::vector<double> newval(100);
-//       std::vector<double> newrhs(100);
-//       std::vector<int> newbeg(100);
-//       std::vector<int> newind(100);
-//       int newnnonz;
-//       int indold;
-//       int indnew;
+  // create original lp
+  ASSERT_OK(lp_interface_->AddColumns(empty_columns, lower_bounds, upper_bounds,
+                                      objective_coefficients, empty_names));
+  num_columns_before = lp_interface_->GetNumberOfColumns();
 
-//       ASSERT_LE(num_rows, 100);
-//       for (j = 0; j < num_rows; j++) {
-//         left_hand_sides[j] = lhsvals[j];
-//         right_hand_sides[j] = rhsvals[j];
-//         beg[j] = begvals[j];
-//       }
-//       ASSERT_LE(num_nonzeros, 100);
-//       for (j = 0; j < num_nonzeros; j++) {
-//         ind[j] = indvals[j];
-//         val[j] = vals[j];
-//       }
-//       ASSERT_OK(lp_interface_->AddRows(sparse_rows, left_hand_sides,
-//       right_hand_sides, empty_names));
+  for (int k = 0; k < 5; k++) {
+    // get data before modification
+    int num_rows    = set_num_rows[k];
+    num_rows_before = lp_interface_->GetNumberOfRows();
 
-//       // checks
-//       std::vector<SparseVector> check_sparse_rows;
-//       newnnonz = 0;
+    if (num_rows < 0) {
+      ASSERT_OK(lp_interface_->DeleteRows(0, -(1 + num_rows)));
+    } else {  // num_rows >= 0
+      std::vector<double> left_hand_sides;
+      std::vector<double> right_hand_sides;
+      std::vector<SparseVector> sparse_rows_to_add;
 
-//       for (int i = nrowsbefore; i < nrowsbefore + num_rows -1; i++) {
-//         // ASSERT_EQ(left_hand_sides[i], lp_interface_->GetLeftHandSide(i));
-//         // ASSERT_EQ(right_hand_sides[i],
-//         lp_interface_->GetRightHandSide(i)); newlhs[i] =
-//         lp_interface_->GetLeftHandSide(i); newrhs[i] =
-//         lp_interface_->GetRightHandSide(i);
+      ASSERT_LE(num_rows, 100);
+      for (int j = 0; j < num_rows; j++) {
+        left_hand_sides.push_back(left_hand_sides_values[j]);
+        right_hand_sides.push_back(right_hand_sides_values[j]);
+        sparse_rows_to_add.push_back(sparse_rows[j]);
+      }
 
-//         check_sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
-//         int entries = static_cast<int>(check_sparse_rows[i].indices.size());
-//         // for (int j = 0; j < entries; j++) {
-//         //   newind[i] = check_sparse_rows[i].indices[j];
-//         //   newval[i] = check_sparse_rows[i].values[j];
-//         // }
-//         newbeg.push_back(entries);
-//         newnnonz += entries;
-//       }
-//       ASSERT_EQ(num_nonzeros, newnnonz);
+      ASSERT_OK(lp_interface_->AddRows(sparse_rows_to_add, left_hand_sides,
+                                       right_hand_sides, empty_names));
 
-//       for (j = 0; j < num_rows; j++) {
-//         ASSERT_EQ(beg[j], newbeg[j]);
-//       }
-//       beg[num_rows]    = num_nonzeros;
-//       newbeg[num_rows] = newnnonz;
+      // checks
+      std::vector<double> new_left_hand_sides;
+      std::vector<double> new_right_hand_sides;
+      std::vector<SparseVector> check_sparse_rows;
 
-//       // check each row seperately
-//       for (j = 0; j < num_rows; j++) {
-//         if (fabs(left_hand_sides[j]) < 1e30 && fabs(newlhs[j]) < 1e30) {
-//           ASSERT_DOUBLE_EQ(left_hand_sides[j], newlhs[j]);
-//         }
-//         if (fabs(right_hand_sides[j]) < 1e30 && fabs(newrhs[j]) < 1e30) {
-//           ASSERT_DOUBLE_EQ(right_hand_sides[j], newrhs[j]);
-//         }
+      for (int i = num_rows_before; i < num_rows_before + num_rows; i++) {
+        new_left_hand_sides.push_back(lp_interface_->GetLeftHandSide(i));
+        new_right_hand_sides.push_back(lp_interface_->GetRightHandSide(i));
+        check_sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
+      }
 
-//     // compare sparse rows
+      ASSERT_EQ(check_sparse_rows.size(), sparse_rows_to_add.size());
 
-//     ASSERT_EQ(expected_sparse_columns.size(), sparse_columns.size());
+      // check each row seperately
+      for (int j = 0; j < num_rows; j++) {
+        if (fabs(left_hand_sides[j]) < 1e30 &&
+            fabs(new_left_hand_sides[j]) < 1e30) {
+          ASSERT_DOUBLE_EQ(left_hand_sides[j], new_left_hand_sides[j]);
+        }
+        if (fabs(right_hand_sides[j]) < 1e30 &&
+            fabs(new_right_hand_sides[j]) < 1e30) {
+          ASSERT_DOUBLE_EQ(right_hand_sides[j], new_right_hand_sides[j]);
+        }
 
-//     for (int j = 0; j < expected_sparse_columns.size(); ++j) {
-//       ASSERT_EQ(expected_sparse_columns[j].indices.size(),
-//                 sparse_columns[j].indices.size());
-//       for (int i = 0; i < expected_sparse_columns[j].indices.size(); ++i) {
-//         expected_sparse_columns[j].values[i];
-//         ASSERT_EQ(expected_sparse_columns[j].indices[i],
-//                   sparse_columns[j].indices[i]);
-//         ASSERT_EQ(expected_sparse_columns[j].values[i],
-//                   sparse_columns[j].values[i]);
-//       }
-//     }
+        ASSERT_EQ(check_sparse_rows[j].indices.size(),
+                  sparse_rows_to_add[j].indices.size());
+        for (size_t i = 0; i < check_sparse_rows[j].indices.size(); ++i) {
+          check_sparse_rows[j].values[i];
+          ASSERT_EQ(check_sparse_rows[j].indices[i],
+                    sparse_rows_to_add[j].indices[i]);
+          ASSERT_FLOAT_EQ(check_sparse_rows[j].values[i],
+                          sparse_rows_to_add[j].values[i]);
+        }
+      }
 
-//         // // We add a row where the indices are not sorted, some lp solvers
-//         give
-//         // // them back sorted (e.g. soplex), some others don't (e.g. cplex).
-//         // // Therefore we cannot simply assert the ind and val arrays to be
-//         equal,
-//         // // but have to search for and check each value individually.
-//         // for (indold = beg[j]; indold < beg[j + 1]; indold++) {
-//         //   int occurrences = 0;
+      // checks
+      num_rows_after = lp_interface_->GetNumberOfRows();
+      ASSERT_EQ(num_rows_before + num_rows, num_rows_after);
 
-//         //   // for each value ind associated to the current row search for
-//         it in
-//         //   // the newind array
-//         //   for (indnew = beg[j]; indnew < beg[j + 1]; indnew++) {
-//         //     if (ind[indold] == newind[indnew]) {
-//         //       occurrences = occurrences + 1;
-//         //       ASSERT_DOUBLE_EQ(val[indold], newval[indnew]);
-//         //     }
-//         //   }
-//         //   // assert that we found only one occurrence in the current row
-//         //   ASSERT_EQ(occurrences, 1);
-//         // }
+      num_columns_after = lp_interface_->GetNumberOfColumns();
+      ASSERT_EQ(num_columns_before, num_columns_after);
+    }
+  }
+  // delete rowsets
+  // should have 8 rows now
+  num_rows_before = lp_interface_->GetNumberOfRows();
+  ASSERT_EQ(8, num_rows_before);
+  for (int i = 3; i > 0; i--) {
+    std::vector<bool> rows = {false, false, false, false,
+                              false, false, false, false};
 
-//     }
+    for (int j = 0; j < i; j++) rows[(2 * j) + 1] = true;
 
-//     }
+    num_rows_before = lp_interface_->GetNumberOfRows();
+    ASSERT_OK(lp_interface_->DeleteRowSet(rows));
 
-//     // checks
-//     nrowsafter = lp_interface_->GetNumberOfRows();
-//     ASSERT_EQ(nrowsbefore + num_rows, nrowsafter);
+    num_rows_after = lp_interface_->GetNumberOfRows();
+    ASSERT_EQ(num_rows_before - i, num_rows_after);
+  }
+}
 
-//     nnonzsafter = lp_interface_->GetNumberOfNonZeros();
-//     ASSERT_EQ(nnonzsbefore + nnonzsdiff[i], nnonzsafter);
+// Test for AddColumns, DeleteColumns
+TEST_F(Change, TestColumnMethods) {
+  // problem data
+  std::vector<double> objective_coefficients = {1.0, 1.0, 1.0, 1.0, 1.0};
 
-//     ncolsafter = lp_interface_->GetNumberOfColumns();
-//     ASSERT_EQ(ncolsbefore, ncolsafter);
-//   }
+  std::vector<double> lower_bounds_values = {
+      -1.0, -lp_interface_->Infinity(), 0.0, -lp_interface_->Infinity(), 0.0};
 
-//   // delete rowsets
-//   // should have 8 rows now
-//   nrowsbefore = lp_interface_->GetNumberOfRows();
-//   ASSERT_EQ(8, nrowsbefore);
-//   for (i = 3; i > 0; i--) {
-//     std::vector<bool> rows = {false, false, false, false,
-//                               false, false, false, false};
+  std::vector<double> upper_bounds_values = {
+      10.0, lp_interface_->Infinity(), lp_interface_->Infinity(), 29.0, 0.0};
 
-//     for (j = 0; j < i; j++) rows[(2 * j) + 1] = true;
+  std::vector<double> left_hand_sides_values = {
+      -lp_interface_->Infinity(), -1.0, -3e-10, 0.0, 1.0, 3e10};
 
-//     nrowsbefore = lp_interface_->GetNumberOfRows();
-//     ASSERT_OK(lp_interface_->DeleteRowSet(rows));
+  std::vector<double> right_hand_sides_values = {
+      -1.0, -3e-10, 0.0, 1.0, 3e10, lp_interface_->Infinity()};
 
-//     nrowsafter = lp_interface_->GetNumberOfRows();
-//     ASSERT_EQ(nrowsbefore - i, nrowsafter);
-//     // assert that the rows that are left are the ones I intended
-//   }
-// }
+  std::vector<SparseVector> sparse_columns = {
+      {{0, 1}, {1.0, 5.0}},       {{3}, {-1.0}}, {{1, 2}, {2.0, 3e5}},
+      {{1, 2, 4}, {1.0, 20, 10}}, {{0}, {-1.9}}, {{3}, {1e-2}}};
 
-// // Test for AddColumns, DeleteColumns
-// TEST_F(Change, TestColumnMethods) {
-//   // problem data
-//   std::vector<double> objective_coefficients = {1.0, 1.0, 1.0, 1.0, 1.0};
-//   std::vector<double> left_hand_sides = {-1.0, -lp_interface_->Infinity(),
-//   0.0,
-//                              -lp_interface_->Infinity(), 0.0};
-//   std::vector<double> right_hand_sides = {10.0, lp_interface_->Infinity(),
-//                              lp_interface_->Infinity(), 29.0, 0.0};
-//   int ncolsbefore, ncolsafter;
-//   int nrowsbefore, nrowsafter;
-//   std::vector<double> lbvals = {
-//       -lp_interface_->Infinity(), -1.0, -3e-10, 0.0, 1.0, 3e10};
-//   std::vector<double> ubvals = {-1.0, -3e-10, 0.0,
-//                                 1.0,  3e10,   lp_interface_->Infinity()};
-//   std::vector<double> vals   = {1.0, 5.0, -1.0, 3e5,  2.0,
-//                               1.0, 20,  10,   -1.9, 1e-2};
-//   std::vector<int> nnonzs    = {1, 10, -1, 6, -1};
-//   std::vector<int> begvals   = {0, 2, 3, 5, 8, 9};
-//   std::vector<int> indvals   = {0, 1, 3, 2, 1, 1, 2, 4, 0, 3};
+  // problem data
+  int num_columns_before, num_columns_after;
+  int num_rows_before, num_rows_after;
+  std::vector<int> set_num_columns = {1, 6, -1, 4, -2};
 
-//   int iterations              = 5;
-//   std::vector<int> k          = {1, 6, -1, 4, -2};
-//   std::vector<int> nnonzsdiff = {1, 10, -1, 6, -3};
+  // empty placeholders
+  std::vector<std::string> empty_names;
+  std::vector<double> empty_values;
+  std::vector<int> empty_indices;
 
-//   // empty placeholders
-//   std::vector<std::string> empty_names;
-//   std::vector<double> empty_values;
-//   std::vector<int> empty_indices;
+  // empty rows
+  std::vector<SparseVector> empty_rows;
+  for (size_t i = 0; i < left_hand_sides_values.size(); ++i) {
+    empty_rows.push_back({{}, {}});
+  }
 
-//   // create original lp
-//   ASSERT_OK(lp_interface_->AddRows(5, left_hand_sides, right_hand_sides,
-//   empty_names, 0, empty_indices,
-//                                    empty_indices, empty_values));
-//   nrowsbefore = lp_interface_->GetNumberOfRows();
+  // create original lp
+  ASSERT_OK(lp_interface_->AddRows(empty_rows, left_hand_sides_values,
+                                   right_hand_sides_values, empty_names));
+  num_rows_before = lp_interface_->GetNumberOfRows();
 
-//   for (int i = 0; i < iterations; i++) {
-//     // setup col values
-//     int num_columns;
-//     int nnonzsbefore;
-//     int nnonzsafter;
+  for (int k = 0; k < 5; k++) {
+    // setup col values
+    int num_columns;
 
-//     num_columns = k[i];
+    num_columns = set_num_columns[k];
 
-//     // get data before modification
-//     nnonzsbefore = lp_interface_->GetNumberOfNonZeros();
-//     ncolsbefore  = lp_interface_->GetNumberOfColumns();
+    // get data before modification
+    num_columns_before = lp_interface_->GetNumberOfColumns();
 
-//     if (k[i] < 0) {
-//       ASSERT_EQ(lp_interface_->DeleteColumns(0, -(1 + num_columns)),
-//                 absl::OkStatus());
-//     } else {  // num_columns >= 0
-//       std::vector<double> lower_bounds(100);
-//       std::vector<double> upper_bounds(100);
-//       std::vector<int> beg(100);
+    if (num_columns < 0) {
+      ASSERT_OK(lp_interface_->DeleteColumns(0, -(1 + num_columns)));
+    } else {  // num_columns >= 0
+      std::vector<double> lower_bounds;
+      std::vector<double> upper_bounds;
+      std::vector<SparseVector> sparse_columns_to_add;
 
-//       assert(nnonzs[i] >= 0);
-//       int num_nonzeros = nnonzs[i];
-//       std::vector<int> ind(100);
-//       std::vector<double> val(100);
+      std::vector<double> new_lower_bounds;
+      std::vector<double> new_upper_bounds;
 
-//       std::vector<double> newlb(100);
-//       std::vector<double> newval(100);
-//       std::vector<double> newub(100);
-//       std::vector<int> newbeg(100);
-//       std::vector<int> newind(100);
-//       int newnnonz;
+      ASSERT_LE(num_columns, 100);
+      for (int j = 0; j < num_columns; j++) {
+        lower_bounds.push_back(lower_bounds_values[j]);
+        upper_bounds.push_back(upper_bounds_values[j]);
+        sparse_columns_to_add.push_back(sparse_columns[j]);
+      }
 
-//       ASSERT_LE(num_columns, 100);
-//       for (int j = 0; j < num_columns; j++) {
-//         lower_bounds[j]  = lbvals[j];
-//         upper_bounds[j]  = ubvals[j];
-//         beg[j] = begvals[j];
-//       }
+      ASSERT_OK(lp_interface_->AddColumns(sparse_columns_to_add, lower_bounds,
+                                          upper_bounds, objective_coefficients,
+                                          empty_names));
 
-//       ASSERT_LE(num_nonzeros, 100);
-//       for (int j = 0; j < num_nonzeros; j++) {
-//         ind[j] = indvals[j];
-//         val[j] = vals[j];
-//       }
-//       ASSERT_OK(lp_interface_->AddColumns(num_columns,
-//       objective_coefficients, lower_bounds, upper_bounds, empty_names,
-//                                           num_nonzeros, beg, ind, val));
+      // checks
+      std::vector<SparseVector> check_sparse_columns;
 
-//       // checks
-//       std::vector<SparseVector> sparse_rows;
-//       newnnonz = 0;
+      for (int i = num_columns_before; i < num_columns_before + num_columns;
+           i++) {
+        new_lower_bounds.push_back(lp_interface_->GetLowerBound(i));
+        new_upper_bounds.push_back(lp_interface_->GetUpperBound(i));
+        check_sparse_columns.push_back(
+            lp_interface_->GetSparseColumnCoefficients(i));
+      }
 
-//       for (int i = 0; i < ncolsbefore; i++) {
-//         newlb.push_back(lp_interface_->GetLowerBound(i));
-//         newub.push_back(lp_interface_->GetUpperBound(i));
+      ASSERT_EQ(check_sparse_columns.size(), sparse_columns_to_add.size());
 
-//         sparse_rows.push_back(lp_interface_->GetSparseColumnCoefficients(i));
-//         int entries = static_cast<int>(sparse_rows[i].indices.size());
-//         for (int j = 0; j < entries; j++) {
-//           newind.push_back(sparse_rows[i].indices[j]);
-//           newval.push_back(sparse_rows[i].values[j]);
-//         }
-//         newbeg.push_back(entries);
-//         newnnonz += entries;
-//       }
+      for (int j = 0; j < num_columns; j++) {
+        ASSERT_FLOAT_EQ(lower_bounds[j], new_lower_bounds[j]);
+        ASSERT_FLOAT_EQ(upper_bounds[j], new_upper_bounds[j]);
+        ASSERT_EQ(check_sparse_columns[j].indices.size(),
+                  sparse_columns_to_add[j].indices.size());
+        for (size_t i = 0; i < check_sparse_columns[j].indices.size(); ++i) {
+          ASSERT_EQ(check_sparse_columns[j].indices[i],
+                    sparse_columns_to_add[j].indices[i]);
+          ASSERT_FLOAT_EQ(check_sparse_columns[j].values[i],
+                          sparse_columns_to_add[j].values[i]);
+        }
+      }
+    }
 
-//       ASSERT_EQ(num_nonzeros, newnnonz);
+    // checks
+    num_rows_after = lp_interface_->GetNumberOfRows();
+    ASSERT_EQ(num_rows_before, num_rows_after);
 
-//       for (int j = 0; j < num_columns; j++) {
-//         ASSERT_EQ(lower_bounds[j], newlb[j]);
-//         ASSERT_EQ(upper_bounds[j], newub[j]);
-//         ASSERT_EQ(beg[j], newbeg[j]);
-//       }
-//       for (int j = 0; j < num_nonzeros; j++) {
-//         ASSERT_EQ(ind[j], newind[j]);
-//         ASSERT_EQ(val[j], newval[j]);
-//       }
-//     }
+    num_columns_after = lp_interface_->GetNumberOfColumns();
+    ASSERT_EQ(num_columns_before + num_columns, num_columns_after);
+  }
+}
 
-//     // checks
-//     nrowsafter = lp_interface_->GetNumberOfRows();
-//     ASSERT_EQ(nrowsbefore, nrowsafter);
+// Test adding zero coeffs cols
+TEST_F(Change, TestZerosInColumns) {
+  int num_columns, num_rows, num_nonzeros;
+  LPObjectiveSense objective_sense;
 
-//     nnonzsafter = lp_interface_->GetNumberOfNonZeros();
-//     ASSERT_EQ(nnonzsbefore + nnonzsdiff[i], nnonzsafter);
+  initProb(4, num_columns, num_rows, num_nonzeros, objective_sense);
+  ASSERT_EQ(2, num_rows);
+  ASSERT_EQ(2, num_columns);
 
-//     ncolsafter = lp_interface_->GetNumberOfColumns();
-//     ASSERT_EQ(ncolsbefore + num_columns, ncolsafter);
-//   }
-// }
-
-// // Test adding zero coeffs cols
-// TEST_F(Change, testzerosincols) {
-//   int num_columns;
-//   int num_rows;
-//   int num_nonzeros = 2;
-//   LPObjectiveSense objective_sense;
-//   std::vector<double> lower_bounds  = {0};
-//   std::vector<double> upper_bounds  = {20};
-//   std::vector<int> beg    = {0};
-//   std::vector<int> ind    = {0, 1};
-//   std::vector<double> val = {0, 3};
-//   std::vector<double> objective_coefficients = {1};
-
-//   // empty placeholders
-//   std::vector<std::string> empty_names;
-
-//   // 2x2 problem
-//   initProb(4, num_columns, num_rows, num_nonzeros, objective_sense);
-//   ASSERT_EQ(2, num_rows);
-//   ASSERT_EQ(2, num_columns);
-
-// #ifndef NDEBUG
-//   ASSERT_DEATH(lp_interface_->AddColumns(1, objective_coefficients,
-//   lower_bounds, upper_bounds, empty_names, num_nonzeros,
-//                                          beg, ind, val),
-//                "");
-// #endif
-//   // this test can only work in debug mode, so we make it pass in opt mode
-// #ifdef NDEBUG
-//   ASSERT_OK(lp_interface_->AddColumns(1, objective_coefficients,
-//   lower_bounds, upper_bounds, empty_names, num_nonzeros, beg,
-//                                       ind, val));
-//   SUCCEED();  // return SIGABORT
-// #endif
-// }
+#ifndef NDEBUG
+  ASSERT_DEATH(
+      lp_interface_->AddColumn({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, 1.0, ""), "");
+#endif
+  // this test can only work in debug mode, so we make it pass in opt mode
+#ifdef NDEBUG
+  ASSERT_OK(lp_interface_->AddColumn({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, 1.0, ""));
+  SUCCEED();  // return SIGABORT
+#endif
+}
 
 // Test adding zero coeffs in rows, expecting an assert in debug mode
 //
@@ -919,7 +808,7 @@ TEST_F(Change, TestZerosInRows) {
   ASSERT_EQ(2, num_columns);
 
 #ifndef NDEBUG
-  ASSERT_DEATH(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""),"");
+  ASSERT_DEATH(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""), "");
 #else
   // this test can only work in debug mode, so we make it pass in opt mode
   ASSERT_OK(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""));
@@ -1000,22 +889,22 @@ TEST_F(Change, TestWriteReadLPMethods) {
 
   ASSERT_EQ(primal_solution.size(), primal_solution_2.size());
   for (size_t j = 0; j < primal_solution.size(); j++) {
-    ASSERT_EQ(primal_solution[j], primal_solution_2[j]);
+    ASSERT_FLOAT_EQ(primal_solution[j], primal_solution_2[j]);
   }
 
   ASSERT_EQ(dual_solution.size(), dual_solution_2.size());
   for (size_t j = 0; j < dual_solution.size(); j++) {
-    ASSERT_EQ(dual_solution[j], dual_solution_2[j]);
+    ASSERT_FLOAT_EQ(dual_solution[j], dual_solution_2[j]);
   }
 
   ASSERT_EQ(row_activities.size(), row_activities_2.size());
   for (size_t j = 0; j < row_activities.size(); j++) {
-    ASSERT_EQ(row_activities[j], row_activities_2[j]);
+    ASSERT_FLOAT_EQ(row_activities[j], row_activities_2[j]);
   }
 
   ASSERT_EQ(reduced_costs.size(), reduced_costs_2.size());
   for (size_t j = 0; j < reduced_costs.size(); j++) {
-    ASSERT_EQ(reduced_costs[j], reduced_costs_2[j]);
+    ASSERT_FLOAT_EQ(reduced_costs[j], reduced_costs_2[j]);
   }
 
   if (DEF_INTERFACE == 0) {

@@ -14,6 +14,7 @@ namespace minimip {
 
 static LPInterface* lp_interface_ = nullptr;
 
+// TEST SUITE SIMPLE
 class SimpleTest : public ::testing::Test {
  protected:
   // setup for test
@@ -307,8 +308,8 @@ TEST_F(Complex, test1) {
   ASSERT_EQ(indices.size(), 2);
   ASSERT_EQ(indices[0], 1);
   ASSERT_EQ(indices[1], 2);
-  ASSERT_EQ(b_inverted[0], 1.0);
-  ASSERT_EQ(b_inverted[1], 0.5);
+  ASSERT_FLOAT_EQ(b_inverted[0], 1.0);
+  ASSERT_FLOAT_EQ(b_inverted[1], 0.5);
 
   // check first column of basis inverse
   absl_tmp_sparse = lp_interface_->GetSparseColumnOfBInverted(0);
@@ -317,6 +318,7 @@ TEST_F(Complex, test1) {
   indices     = absl_tmp_sparse->indices;
   num_indices = indices.size();
 
+  // column of basis inverse should be (0, 0, -1.0)
   ASSERT_EQ(indices.size(), 1);
   ASSERT_EQ(indices[0], 2);
 
@@ -515,9 +517,9 @@ TEST_F(MoreVarsThanRows, test1) {
   b_inverted_times_a_indices = absl_tmp_sparse->indices;
   b_inverted_times_a_row     = absl_tmp_sparse->values;
 
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[0], 0);
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[1], 1);
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[2], 3);
+  ASSERT_EQ(b_inverted_times_a_indices[0], 0);
+  ASSERT_EQ(b_inverted_times_a_indices[1], 1);
+  ASSERT_EQ(b_inverted_times_a_indices[2], 3);
 
   ASSERT_FLOAT_EQ(b_inverted_times_a_row[0], 1.0);
   ASSERT_FLOAT_EQ(b_inverted_times_a_row[1], 2.0);
@@ -537,9 +539,9 @@ TEST_F(MoreVarsThanRows, test1) {
   b_inverted_times_a_indices = absl_tmp_sparse->indices;
   b_inverted_times_a_row     = absl_tmp_sparse->values;
 
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[0], 1);
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[1], 2);
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[2], 3);
+  ASSERT_EQ(b_inverted_times_a_indices[0], 1);
+  ASSERT_EQ(b_inverted_times_a_indices[1], 2);
+  ASSERT_EQ(b_inverted_times_a_indices[2], 3);
 
   ASSERT_FLOAT_EQ(b_inverted_times_a_row[0], 1.0);
   ASSERT_FLOAT_EQ(b_inverted_times_a_row[1], 1.0);
@@ -559,8 +561,8 @@ TEST_F(MoreVarsThanRows, test1) {
   b_inverted_times_a_indices = absl_tmp_sparse->indices;
   b_inverted_times_a_row     = absl_tmp_sparse->values;
 
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[0], 1);
-  ASSERT_FLOAT_EQ(b_inverted_times_a_indices[1], 3);
+  ASSERT_EQ(b_inverted_times_a_indices[0], 1);
+  ASSERT_EQ(b_inverted_times_a_indices[1], 3);
 
   ASSERT_FLOAT_EQ(b_inverted_times_a_row[0], -3.0);
   ASSERT_FLOAT_EQ(b_inverted_times_a_row[1], -6.0);

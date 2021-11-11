@@ -648,6 +648,16 @@ absl::Status LPSoplexInterface::AddColumn(
 
   assert(PreStrongBranchingBasisFreed());
 
+  #ifndef NDEBUG
+      // perform check that no new rows are added
+      int num_rows = GetNumberOfRows();
+      for (size_t j = 0; j < col.indices.size(); ++j) {
+        assert(0 <= col.indices[j]);
+        assert(col.indices[j] < num_rows);
+        assert(col.values[j] != 0.0);
+      }
+  #endif
+
   try {
     soplex::DSVector col_vector;
     col_vector.add(col.indices.size(), col.indices.data(), col.values.data());
@@ -1092,7 +1102,6 @@ int LPSoplexInterface::GetNumberOfNonZeros() const {
     for (i = 0; i < spx_->numColsReal(); ++i)
       num_non_zeros += spx_->colVectorRealInternal(i).size();
   }
-  std::cout << " num_non_zeros " << num_non_zeros << std::endl;
 
   return num_non_zeros;
 }
