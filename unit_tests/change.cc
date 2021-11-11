@@ -858,9 +858,9 @@ TEST_F(Change, TestWriteReadLPMethods) {
 
   if (DEF_INTERFACE == 0) {
     ASSERT_OK(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"));
-  } else
+  } else {
     ASSERT_OK(lp_interface_->ReadLP("lpi_change_test_problem.lp"));
-
+  }
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
   double objective_value_2 = lp_interface_->GetObjectiveValue();
 

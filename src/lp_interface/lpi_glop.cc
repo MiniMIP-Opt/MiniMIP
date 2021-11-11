@@ -1672,7 +1672,7 @@ absl::Status LPGlopInterface::ReadLP(const char* file_name  // file name
   MPModelProto proto;
   if (!ReadFileToProto(filespec, &proto)) {
     MiniMIPerrorMessage("Could not read <%s>\n", file_name);
-    return absl::Status(absl::StatusCode::kInternal, "Read Errror");
+    return absl::Status(absl::StatusCode::kInternal, "Read Error");
   }
   linear_program_.Clear();
   MPModelProtoToLinearProgram(proto, &linear_program_);

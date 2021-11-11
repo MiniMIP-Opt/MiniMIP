@@ -2257,13 +2257,13 @@ absl::Status LPSoplexInterface::ReadLP(const char* file_name  // file name
   assert(PreStrongBranchingBasisFreed());
 
   if (!FileExists(file_name))
-    return absl::Status(absl::StatusCode::kInternal, "Read Errror");
+    return absl::Status(absl::StatusCode::kInternal, "Read Error, file does not exist");
 
   try {
     assert(spx_->intParam(soplex::SoPlex::READMODE) ==
            soplex::SoPlex::READMODE_REAL);
     if (!spx_->readFile((char*)(file_name)))
-      return absl::Status(absl::StatusCode::kInternal, "Read Errror");
+      return absl::Status(absl::StatusCode::kInternal, "Internal SoPlex Read Error");
   }
 #ifndef NDEBUG
   catch (const soplex::SPxException& x) {
@@ -2273,7 +2273,7 @@ absl::Status LPSoplexInterface::ReadLP(const char* file_name  // file name
 #else
   catch (const soplex::SPxException&) {
 #endif
-    return absl::Status(absl::StatusCode::kInternal, "Read Errror");
+    return absl::Status(absl::StatusCode::kInternal, "Read Error: soplex exception");
   }
 
   return absl::OkStatus();

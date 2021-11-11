@@ -527,8 +527,8 @@ TEST_F(Solve, test1) {
 //      x1 + 3 x2 <= 15
 //      x1, x2 free
 //
-// which is unbounded (the only difference to Test 1 is that the variables are
-// free).
+// which is unbounded,
+// the only difference to Test 1 is that the variables are free.
 //
 // Then use objective (1, 1) with primal optimal solution (3,4), dual optimal
 // solution (0.4, 0.2), activity (10, 15), and reduced_costs (0, 0).
