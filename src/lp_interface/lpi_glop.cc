@@ -1,6 +1,6 @@
-#include <limits>
-
 #include "src/lp_interface/lpi_glop.h"
+
+#include <limits>
 
 using operations_research::MPModelProto;
 using operations_research::TimeLimit;
@@ -124,7 +124,7 @@ absl::Status LPGlopInterface::AddColumns(
     std::vector<std::string>& col_names  // column names
 ) {
   for (size_t j = 0; j < cols.size(); j++) {
-    std::string col_name = (col_names.size() != 0) ?  col_names[j] : "";
+    std::string col_name = (col_names.size() != 0) ? col_names[j] : "";
     MINIMIP_CALL(AddColumn(cols[j], lower_bounds[j], upper_bounds[j],
                            objective_values[j], col_name));
   }
@@ -208,12 +208,13 @@ absl::Status LPGlopInterface::AddRows(
   if (!rows.empty()) {
     for (size_t j = 0; j < rows.size(); j++) {
       assert(rows[j].indices.size() == rows[j].values.size());
-      std::string row_name = (row_names.size() != 0) ?  row_names[j] : "";
-      MINIMIP_CALL(AddRow(rows[j], left_hand_sides[j], right_hand_sides[j], row_name));
+      std::string row_name = (row_names.size() != 0) ? row_names[j] : "";
+      MINIMIP_CALL(
+          AddRow(rows[j], left_hand_sides[j], right_hand_sides[j], row_name));
     }
   } else {
     for (size_t j = 0; j < left_hand_sides.size(); j++) {
-      std::string row_name = (row_names.size() != 0) ?  row_names[j] : "";
+      std::string row_name = (row_names.size() != 0) ? row_names[j] : "";
       MINIMIP_CALL(AddRow(SparseVector(), left_hand_sides[j],
                           right_hand_sides[j], row_name));
     }
@@ -1262,18 +1263,18 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
       assert(idx < linear_program_.num_constraints());
       sparse_row.values.push_back((*iter).coefficient());
       sparse_row.indices.push_back(idx);
-      }
-    } else {
-      // use dense access to tmp_row_
-      const Fractional eps = parameters_.primal_feasibility_tolerance();
-      for (ColIndex col(0); col < size; ++col) {
-        double value = (*tmp_row_)[col];
-        if (fabs(value) >= eps) {
-          sparse_row.values.push_back(value);
-          sparse_row.indices.push_back(col.value());
-        }
+    }
+  } else {
+    // use dense access to tmp_row_
+    const Fractional eps = parameters_.primal_feasibility_tolerance();
+    for (ColIndex col(0); col < size; ++col) {
+      double value = (*tmp_row_)[col];
+      if (fabs(value) >= eps) {
+        sparse_row.values.push_back(value);
+        sparse_row.indices.push_back(col.value());
       }
     }
+  }
   return sparse_row;
 }
 
@@ -1370,7 +1371,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
   if (!tmp_column_->non_zeros.empty()) {
     ScatteredColumnIterator end = tmp_column_->end();
     for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
-        ++iter) {
+         ++iter) {
       int idx = (*iter).row().value();
       assert(0 <= idx);
       assert(idx < num_rows);
@@ -1378,18 +1379,17 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
       sparse_column.indices.push_back(idx);
     }
   } else {
-      // use dense access to tmp_column_
-      const Fractional eps = parameters_.primal_feasibility_tolerance();
-      for (RowIndex row(0); row < num_rows; ++row) {
-        double value = (*tmp_column_)[row];
-        if (fabs(value) > eps) {
-          sparse_column.values.push_back(value);
-          sparse_column.indices.push_back(row.value());
-        }
+    // use dense access to tmp_column_
+    const Fractional eps = parameters_.primal_feasibility_tolerance();
+    for (RowIndex row(0); row < num_rows; ++row) {
+      double value = (*tmp_column_)[row];
+      if (fabs(value) > eps) {
+        sparse_column.values.push_back(value);
+        sparse_column.indices.push_back(row.value());
       }
+    }
   }
   return sparse_column;
-
 }
 
 // ==========================================================================

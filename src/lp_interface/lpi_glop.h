@@ -1,12 +1,12 @@
 #ifndef SRC_LP_INTERFACE_LPI_GLOP_H_
 #define SRC_LP_INTERFACE_LPI_GLOP_H_
 
-#include <cstdint>
 #include <cassert>
 #include <cinttypes>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
