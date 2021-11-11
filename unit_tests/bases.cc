@@ -59,11 +59,13 @@ class SimpleTest : public ::testing::Test {
 // TESTS
 TEST_F(SimpleTest, BasicAssertions) {
   // use LP from setup:
-  //   min x
+  //   max x
   //       1 <= x <= 2  (linear constraint)
   //       0 <= x <= 3  (bounds)
   // solve problem
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
+
+  ASSERT_FLOAT_EQ(lp_interface_->GetObjectiveValue(), 2.0);
 
   std::vector<LPBasisStatus> column_basis_status(1);
   std::vector<LPBasisStatus> row_basis_status(1);
@@ -94,6 +96,8 @@ TEST_F(SimpleTest, test2) {
 
   // solve problem
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
+
+  ASSERT_FLOAT_EQ(lp_interface_->GetObjectiveValue(), 1.0);
 
   std::vector<LPBasisStatus> column_basis_status(1);
   std::vector<LPBasisStatus> row_basis_status(1);
@@ -128,6 +132,8 @@ TEST_F(SimpleTest, test3) {
   // solve problem
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
 
+  ASSERT_FLOAT_EQ(lp_interface_->GetObjectiveValue(), 1.0);
+
   std::vector<LPBasisStatus> column_basis_status(1);
   std::vector<LPBasisStatus> row_basis_status(1);
 
@@ -157,6 +163,8 @@ TEST_F(SimpleTest, test4) {
 
   // solve problem
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
+
+  ASSERT_FLOAT_EQ(lp_interface_->GetObjectiveValue(), 1.0);
 
   std::vector<LPBasisStatus> column_basis_status(1);
   std::vector<LPBasisStatus> row_basis_status(1);
