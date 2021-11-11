@@ -240,7 +240,6 @@ TEST_F(Complex, test1) {
   std::vector<double> b_inverted_column(3);
   std::vector<double> b_inverted(3);
   std::vector<double> coeftwo(3);
-  double objective_value;
   std::vector<LPBasisStatus> column_basis_status(3);
   int num_rows;
   std::vector<LPBasisStatus> row_basis_status(3);
@@ -320,29 +319,30 @@ TEST_F(Complex, test1) {
 
   // column of basis inverse should be (0, 0, -1.0)
   ASSERT_EQ(indices.size(), 1);
-  ASSERT_EQ(indices[0], 2);
 
-  for (idx = 0; idx < indices.size(); ++idx)
-    ASSERT_FLOAT_EQ(b_inverted[idx], expected_b_invert_values[indices[idx]]);
+  std::vector<double> b_inverted_dense(num_rows);
+  for (size_t j = 0; j < indices.size(); ++j) {
+    b_inverted_dense[indices[j]] = b_inverted[j];
+  }
 
-  // // The columns will be in the same order, however, the rows might be
+  // The columns will be in the same order, however, the rows might be
   // permuted.
-  // // For each row/entry we check that it corresponds to the value of the
-  // // corresponding variable.
-  // // The correspondance variable to row/entry is given by basis_indices.
-  // for (entry = 0; entry < num_rows; entry++) {
-  //   // for the given entry try each variable in expected_b_invert_variables
-  //   for (idx = 0; idx < indices.size(); idx++) {
-  //     // Check that the value is the expected one if the column corresponds
-  //     to
-  //     // the current variable given in expected_b_invert_variables.
-  //     if (expected_b_invert_variables[indices[idx]] == basis_indices[entry])
-  //     {
-  //       ASSERT_FLOAT_EQ(b_inverted[entry],
-  //       expected_b_invert_values[indices[idx]]);
-  //     }
-  //   }
-  // }
+  // For each row/entry we check that it corresponds to the value of the
+  // corresponding variable.
+  // The correspondance variable to row/entry is given by basis_indices.
+  for (entry = 0; entry < num_rows; entry++) {
+    // for the given entry try each variable in expected_b_invert_variables
+    for (idx = 0; idx < num_rows; idx++) {
+      // Check that the value is the expected one if the column corresponds
+      // to
+      // the current variable given in expected_b_invert_variables.
+      if (expected_b_invert_variables[idx] == basis_indices[entry])
+      {
+        ASSERT_FLOAT_EQ(b_inverted_dense[entry],
+        expected_b_invert_values[idx]);
+      }
+    }
+  }
 
   // check whether number of nonzeros fits
   ASSERT_TRUE(num_indices < 0 || num_indices == 1);
@@ -368,6 +368,13 @@ TEST_F(Complex, test1) {
   indices     = absl_tmp_sparse->indices;
   num_indices = absl_tmp_sparse->indices.size();
 
+
+  b_inverted_dense.resize(num_rows, 0.0);
+  for (size_t j = 0; j < indices.size(); ++j) {
+    b_inverted_dense[indices[j]] = b_inverted[j];
+  }
+
+
   // The columns will be in the same order, however, the rows will be permuted.
   // For each row/entry we check that it corresponds to the value of the
   // corresponding variable.
@@ -377,8 +384,8 @@ TEST_F(Complex, test1) {
     for (idx = 0; idx < num_rows; idx++) {
       // Check that the value is the expected one if the column corresponds to
       // the current variable given in expected_b_invert_variables.
-      if (expected_b_invert_variables[indices[idx]] == basis_indices[entry]) {
-        ASSERT_FLOAT_EQ(b_inverted[entry],
+      if (expected_b_invert_variables[idx] == basis_indices[entry]) {
+        ASSERT_FLOAT_EQ(b_inverted_dense[entry],
                         expected_b_invert_times_a_values[idx]);
       }
     }
@@ -405,7 +412,7 @@ class MoreVarsThanRows : public ::testing::Test {
         break;
     }
     lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization);
+    ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
     // use the following LP:
     // max 1 x1 + 1 x2 + 1 x3 + x4
