@@ -286,7 +286,7 @@ class ChangeObjective
       objective_coefficients[i] = lp_interface_->GetObjectiveCoefficient(i);
     }
 
-    for (size_t i; i < set_objective_coefficients.size(); i++) {
+    for (size_t i = 0; i < set_objective_coefficients.size(); i++) {
       ASSERT_FLOAT_EQ(objective_coefficients[i], set_objective_coefficients[i]);
     }
   }
@@ -454,10 +454,10 @@ class ChangeSides : public Change,
       right_hand_sides[i] = lp_interface_->GetRightHandSide(i);
     }
 
-    for (int i; i < lastrow; i++) {
+    for (int i = 0; i < lastrow; i++) {
       ASSERT_FLOAT_EQ(left_hand_sides[i], set_left_hand_sides[i]);
     }
-    for (int i; i < lastrow; i++) {
+    for (int i = 0; i < lastrow; i++) {
       ASSERT_FLOAT_EQ(right_hand_sides[i], set_right_hand_sides[i]);
     }
   }
