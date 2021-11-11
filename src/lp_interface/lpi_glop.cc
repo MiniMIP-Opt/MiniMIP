@@ -1367,16 +1367,29 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
   // Vectors in Glop might be stored in dense or sparse format depending on
   // the values. If non_zeros are given, we can directly loop over the
   // non_zeros, otherwise we have to collect the nonzeros.
-  ScatteredColumnIterator end = tmp_column_->end();
-  for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
-       ++iter) {
-    int idx = (*iter).row().value();
-    assert(0 <= idx);
-    assert(idx < num_rows);
-    sparse_column.values.push_back((*iter).coefficient());
-    sparse_column.indices.push_back(idx);
+  if (!tmp_column_->non_zeros.empty()) {
+    ScatteredColumnIterator end = tmp_column_->end();
+    for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
+        ++iter) {
+      int idx = (*iter).row().value();
+      assert(0 <= idx);
+      assert(idx < num_rows);
+      sparse_column.values.push_back((*iter).coefficient());
+      sparse_column.indices.push_back(idx);
+    }
+  } else {
+      // use dense access to tmp_column_
+      const Fractional eps = parameters_.primal_feasibility_tolerance();
+      for (RowIndex row(0); row < num_rows; ++row) {
+        double value = (*tmp_column_)[row];
+        if (fabs(value) > eps) {
+          sparse_column.values.push_back(value);
+          sparse_column.indices.push_back(row.value());
+        }
+      }
   }
   return sparse_column;
+
 }
 
 // ==========================================================================
