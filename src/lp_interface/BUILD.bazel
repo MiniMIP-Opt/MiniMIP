@@ -11,7 +11,7 @@ cmake(
         "CMAKE_CXX_FLAGS": "-Wno-psabi",
         "CMAKE_DISABLE_FIND_PACKAGE_GMP": "True",
         "CMAKE_DISABLE_FIND_PACKAGE_ZLIB": "True",
-        "BOOST": "off"
+        "BOOST": "on"
     },
     lib_source = "@soplex//:all_srcs",
     out_static_libs = ["libsoplex.a"],

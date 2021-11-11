@@ -161,7 +161,6 @@ class Solve : public ::testing::Test {
     // check solution
     if (expected_primal_feasibility_status == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      auto objective_value = lp_interface_->GetObjectiveValue();
 
       absl::StatusOr<std::vector<double>> absl_tmp;
 
@@ -216,7 +215,6 @@ class Solve : public ::testing::Test {
 
     if (expected_dual_feasibility_status == LPFeasibilityStat::FEASIBLE) {
       // get solution
-      auto objective_value = lp_interface_->GetObjectiveValue();
       absl::StatusOr<std::vector<double>> absl_tmp;
 
       absl_tmp = lp_interface_->GetPrimalSolution();
