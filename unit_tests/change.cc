@@ -286,7 +286,7 @@ class ChangeObjective
       objective_coefficients[i] = lp_interface_->GetObjectiveCoefficient(i);
     }
 
-    for (size_t i = 0; i < set_objective_coefficients.size(); i++) {
+    for (int i = 0; i < last_col; i++) {
       ASSERT_FLOAT_EQ(objective_coefficients[i], set_objective_coefficients[i]);
     }
   }

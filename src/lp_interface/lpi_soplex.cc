@@ -2262,7 +2262,7 @@ absl::Status LPSoplexInterface::ReadLP(const char* file_name  // file name
   try {
     assert(spx_->intParam(soplex::SoPlex::READMODE) ==
            soplex::SoPlex::READMODE_REAL);
-    if (!spx_->readFile((char*)(file_name)))
+    if (!spx_->readFile(const_cast<char*>(file_name)))
       return absl::Status(absl::StatusCode::kInternal,
                           "Internal SoPlex Read Error");
   }
