@@ -1,133 +1,128 @@
-#ifndef MINIMIP_SRC_LP_INTERFACE_LPI_H
-#define MINIMIP_SRC_LP_INTERFACE_LPI_H
-
-#include "src/lp_interface/lp_types.h"
-#include "src/messagehandler/message_handler.h"
+#ifndef SRC_LP_INTERFACE_LPI_H_
+#define SRC_LP_INTERFACE_LPI_H_
 
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "src/lp_interface/lp_types.h"
+#include "src/messagehandler/message_handler.h"
+
 namespace minimip {
 
-// LPInterface base class
-//
-// Just testing how the change appears.
+// LPInterface abstract class. This is used by MiniMIP to communicate with an
+// underlying LP solver.
 class LPInterface : private messagehandler {
-
  public:
-  // This is yet another change in a separate commit.
-  // Methods
   virtual ~LPInterface() = default;
 
-  // @name Modification Methods
-  // @{
-  // copies LP data with column matrix into LP solver
-  virtual RetCode LoadColumnLP(
-    LPObjectiveSense obj_sense,           // objective sense
-    int num_cols,                       // number of columns
-    const std::vector<double>& objective_values, // objective function values of columns
-    const std::vector<double>& lower_bounds,     // lower bounds of columns
-    const std::vector<double>& upper_bounds,     // upper bounds of columns
-    std::vector<std::string>& col_names,               // column names
-    int num_rows,                       // number of rows
-    const std::vector<double>& left_hand_sides,  // left hand sides of rows
-    const std::vector<double>& right_hand_sides, // right hand sides of rows
-    std::vector<std::string>& row_names,               // row names
-    int num_non_zeros,                  // number of non-zero elements in the constraint matrix
-    const std::vector<int>& begin_cols,       // start index of each column in row_indices- and vals-array
-    const std::vector<int>& row_indices,      // row indices of constraint matrix entries
-    const std::vector<double>& vals              // values of constraint matrix entries
-    ) = 0;
+  // ==========================================================================
+  // LP model setters.
+  // ==========================================================================
 
-  // adds columns to the LP
-  //
-  //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
-  virtual RetCode AddColumns(
-    int num_cols,                       // number of columns to be added
-    const std::vector<double>& objective_values, // objective function values of new columns
-    const std::vector<double>& lower_bounds,     // lower bounds of new columns
-    const std::vector<double>& upper_bounds,     // upper bounds of new columns
-    std::vector<std::string>& col_names,               // column names
-    int num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
-    const std::vector<int>& begin_cols,       // start index of each column in indices- and vals-array
-    const std::vector<int>& indices,          // row indices of constraint matrix entries
-    const std::vector<double>& vals              // values of constraint matrix entries
-    ) = 0;
+  virtual absl::Status LoadSparseColumnLP(
+      LPObjectiveSense obj_sense,  // objective sense
+      const std::vector<double>&
+          objective_values,  // objective function values of columns
+      const std::vector<double>& lower_bounds,      // lower bounds of columns
+      const std::vector<double>& upper_bounds,      // upper bounds of columns
+      std::vector<std::string>& col_names,          // column names
+      const std::vector<double>& left_hand_sides,   // left hand sides of rows
+      const std::vector<double>& right_hand_sides,  // right hand sides of rows
+      std::vector<std::string>& row_names,          // row names
+      const std::vector<SparseVector>& cols         // sparse columns
+      ) = 0;
+
+  // add column to the LP
+  virtual absl::Status AddColumn(
+      const SparseVector& col,       // column to be added
+      const double lower_bound,      // lower bound of new column
+      const double upper_bound,      // upper bound of new column
+      const double objective_value,  // objective function value of new column
+      std::string col_name           // column name
+      ) = 0;
+
+  // add columns to the LP
+  virtual absl::Status AddColumns(
+      const std::vector<SparseVector>& cols,    // columns to be added
+      const std::vector<double>& lower_bounds,  // lower bounds of new columns
+      const std::vector<double>& upper_bounds,  // upper bounds of new columns
+      const std::vector<double>&
+          objective_values,  // objective function values of new columns
+      std::vector<std::string>& col_names  // column names
+      ) = 0;
 
   // deletes all columns in the given range from LP
-  virtual RetCode DeleteColumns(
-    int first_col, // first column to be deleted
-    int last_col   // last column to be deleted
-    ) = 0;
+  virtual absl::Status DeleteColumns(
+      int first_col,  // first column to be deleted
+      int last_col    // last column to be deleted
+      ) = 0;
 
-  // deletes columns from LP; the new position of a column must not be greater than its old position
-  virtual RetCode DeleteColumnSet(
-    std::vector<bool>& deletion_status // deletion status of columns
-    ) = 0;
+  // add row to the LP
+  virtual absl::Status AddRow(
+      SparseVector row,        // row to be added
+      double left_hand_side,   // left hand side of new row
+      double right_hand_side,  // right hand side of new row
+      std::string row_name     // row name
+      ) = 0;
 
   // adds rows to the LP
-  //
-  //  @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
-  virtual RetCode AddRows(
-    int num_rows,                       // number of rows to be added
-    const std::vector<double>& left_hand_sides,  // left hand sides of new rows
-    const std::vector<double>& right_hand_sides, // right hand sides of new rows
-    std::vector<std::string>& row_names,               // row names
-    int num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
-    const std::vector<int>& begin_rows,       // start index of each row in indices- and vals-array
-    const std::vector<int>& indices,          // column indices of constraint matrix entries
-    const std::vector<double>& vals              // values of constraint matrix entries
-    ) = 0;
+  virtual absl::Status AddRows(
+      const std::vector<SparseVector>& rows,  // number of rows to be added
+      const std::vector<double>&
+          left_hand_sides,  // left hand sides of new rows
+      const std::vector<double>&
+          right_hand_sides,                // right hand sides of new rows
+      std::vector<std::string>& row_names  // row names
+      ) = 0;
 
   // deletes all rows in the given range from LP
-  virtual RetCode DeleteRows(
-    int first_row, // first row to be deleted
-    int last_row   // last row to be deleted
-    ) = 0;
+  virtual absl::Status DeleteRows(int first_row,  // first row to be deleted
+                                  int last_row    // last row to be deleted
+                                  ) = 0;
 
-  // deletes rows from LP; the new position of a row must not be greater that its old position
-  virtual RetCode DeleteRowSet(
-    std::vector<bool>& deletion_status // deletion status of rows
-    ) = 0;
+  // deletes rows from LP; the new position of a row must not be greater that
+  // its old position
+  virtual absl::Status DeleteRowSet(
+      std::vector<bool>& deletion_status  // deletion status of rows
+      ) = 0;
 
   // clears the whole LP
-  virtual RetCode Clear() = 0;
+  virtual absl::Status Clear() = 0;
 
   // clears current LPInterface state (like basis information) of the solver
-  virtual RetCode ClearState() = 0;
+  virtual absl::Status ClearState() = 0;
 
-  // changes lower and upper bounds of columns
-  virtual RetCode ChangeBounds(
-    int num_cols,                   // number of columns to change bounds for
-    const std::vector<int>& indices,      // column indices
-    const std::vector<double>& lower_bounds, // values for the new lower bounds
-    const std::vector<double>& upper_bounds  // values for the new upper bounds
-    ) = 0;
+  // change lower bound and upper bound of column
+  virtual absl::Status SetColumnBounds(int col, double lower_bound,
+                                       double upper_bound) = 0;
 
-  // changes left and right hand sides of rows
-  virtual RetCode ChangeSides(
-    int num_rows,                      // number of rows to change sides for
-    const std::vector<int>& indices,         // row indices
-    const std::vector<double>& left_hand_sides, // new values for left hand sides
-    const std::vector<double>& right_hand_sides // new values for right hand sides
-    ) = 0;
+  // change left- and right-hand side of row
+  virtual absl::Status SetRowSides(int row, double left_hand_side,
+                                   double right_hand_side) = 0;
 
   // changes the objective sense
-  virtual RetCode ChangeObjectiveSense(
-    LPObjectiveSense obj_sense // new objective sense
-    ) = 0;
+  virtual absl::Status SetObjectiveSense(
+      LPObjectiveSense obj_sense  // new objective sense
+      ) = 0;
 
-  // changes objective values of columns in the LP
-  virtual RetCode ChangeObjective(
-    int num_cols,                  // number of columns to change objective value for
-    const std::vector<int>& indices,     // column indices to change objective value for
-    const std::vector<double>& new_obj_vals // new objective values for columns
-    ) = 0;
+  // changes a single objective value of a column in the LP
+  virtual absl::Status SetObjectiveCoefficient(
+      int col,  // column index to change objective value for
+      double objective_coefficient  // new objective value
+      ) = 0;
 
-  // @}
-
-  // @name Data Accessing Methods
-  // @{
+  // changes multiple objective values of columns in the LP
+  virtual absl::Status SetObjectiveCoefficients(
+      const std::vector<int>&
+          indices,  // column indices to change objective value for
+      const std::vector<double>&
+          objective_coefficients  // new objective values for columns
+  );
+  // ==========================================================================
+  // LP model getters.
+  // ==========================================================================
 
   // gets the number of rows in the LP
   virtual int GetNumberOfRows() const = 0;
@@ -142,116 +137,83 @@ class LPInterface : private messagehandler {
   virtual LPObjectiveSense GetObjectiveSense() const = 0;
 
   // gets columns from LP problem object
-  virtual RetCode GetColumns(
-    int first_col,            // first column to get from LP
-    int last_col,             // last column to get from LP
-    std::vector<double>& lower_bounds, // array to store the lower bound vector
-    std::vector<double>& upper_bounds, // array to store the upper bound vector
-    int& num_non_zeros,       // store the number of non-zero elements
-    std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
-    std::vector<int>& indices,      // array to store row indices of constraint matrix entries
-    std::vector<double>& vals          // array to store values of constraint matrix entries
-    ) const = 0;
+  virtual SparseVector GetSparseColumnCoefficients(int col) const = 0;
 
   // gets rows from LP problem object
-  virtual RetCode GetRows(
-    int first_row,                // first row to get from LP
-    int last_row,                 // last row to get from LP
-    std::vector<double>& left_hand_sides,  // array to store left hand side vector
-    std::vector<double>& right_hand_sides, // array to store right hand side vector
-    int& num_non_zeros,           // store the number of non-zero elements
-    std::vector<int>& begin_rows,       // array to store start index of each row in indices- and vals-array
-    std::vector<int>& indices,          // array to store column indices of constraint matrix entries
-    std::vector<double>& vals              // array to store values of constraint matrix entries
-    ) const = 0;
+  virtual SparseVector GetSparseRowCoefficients(int row) const = 0;
 
-  // gets objective coefficients from LP problem object
-  virtual RetCode GetObjective(
-    int first_col,         // first column to get objective coefficient for
-    int last_col,          // last column to get objective coefficient for
-    std::vector<double>& obj_coeffs // array to store objective coefficients
-    ) const = 0;
+  // gets objective coefficient of column from LP problem object
+  virtual double GetObjectiveCoefficient(int col) const = 0;
 
-  // gets current bounds from LP problem object
-  virtual RetCode GetBounds(
-    int first_col,            // first column to get bounds for
-    int last_col,             // last column to get bounds for
-    std::vector<double>& lower_bounds, // array to store lower bound values
-    std::vector<double>& upper_bounds  // array to store upper bound values
-    ) const = 0;
+  // gets current lower bound of column from LP problem object
+  virtual double GetLowerBound(int col) const = 0;
 
-  // gets current row sides from LP problem object
-  virtual RetCode GetSides(
-    int first_row,               // first row to get sides for
-    int last_row,                // last row to get sides for
-    std::vector<double>& left_hand_sides, // array to store left hand side values
-    std::vector<double>& right_hand_sides // array to store right hand side values
-    ) const = 0;
+  // gets current upper bound of column from LP problem object
+  virtual double GetUpperBound(int col) const = 0;
 
-  // gets a single coefficient
-  virtual RetCode GetCoefficient(
-    int row,   // row number of coefficient
-    int col,   // column number of coefficient
-    double& val // array to store the value of the coefficient
-    ) const = 0;
+  // gets current left hand sides of row from LP problem object
+  virtual double GetLeftHandSide(int row) const = 0;
 
-  // @}
+  // gets current right hand sides of row from LP problem object
+  virtual double GetRightHandSide(int row) const = 0;
 
-  // @name Solving Methods
-  // @{
+  // gets the matrix coefficient of column and row from LP problem object
+  virtual double GetMatrixCoefficient(int col,  // column number of coefficient
+                                      int row   // row number of coefficient
+  ) const = 0;
+
+  // ==========================================================================
+  // Solving methods.
+  // ==========================================================================
 
   // calls primal simplex to solve the LP
-  virtual RetCode SolvePrimal() = 0;
+  virtual absl::Status SolveLPWithPrimalSimplex() = 0;
 
   // calls dual simplex to solve the LP
-  virtual RetCode SolveDual() = 0;
+  virtual absl::Status SolveLPWithDualSimplex() = 0;
 
   // start strong branching - call before any strong branching
-  virtual RetCode StartStrongbranch() = 0;
+  virtual absl::Status StartStrongBranching() = 0;
 
   // end strong branching - call after any strong branching
-  virtual RetCode EndStrongbranch() = 0;
+  virtual absl::Status EndStrongBranching() = 0;
 
-  // performs strong branching iterations on one @b fractional candidate
-  virtual RetCode StrongbranchFractionalValue(
-    int col,                       // column to apply strong branching on
-    double primal_sol,              // fractional current primal solution value of column
-    int iteration_limit,           // iteration limit for strong branchings
-    double& dual_bound_down_branch, // stores dual bound after branching column down
-    double& dual_bound_up_branch,   // stores dual bound after branching column up
-    bool& down_valid,                // whether the returned down value is a valid dual bound; otherwise, it can only be used as an estimate value
-    bool& up_valid,                  // whether the returned up value is a valid dual bound; otherwise, it can only be used as an estimate value
-    int& iterations                // stores total number of strong branching iterations
-    ) = 0;
+  // performs strong branching iterations on one branching candidate
+  struct StrongBranchResult {
+    double dual_bound_down_branch;  // stores dual bound after branching
+                                    // column down
+    double dual_bound_up_branch;    // stores dual bound after branching
+                                    // column up
+    bool down_valid;  // whether the returned down value is a valid dual
+                      // bound; otherwise, it can only be used as an
+                      // estimate value
+    bool up_valid;    // whether the returned up value is a valid dual bound;
+                      // otherwise, it can only be used as an estimate value
+    int iterations;   // stores total number of strong branching iterations
+  };
 
-  // performs strong branching iterations on one candidate with @b integral value
-  virtual RetCode StrongbranchIntegerValue(
-    int col,                       // column to apply strong branching on
-    double primal_sol,              // current integral primal solution value of column
-    int iteration_limit,           // iteration limit for strong branchings
-    double& dual_bound_down_branch, // stores dual bound after branching column down
-    double& dual_bound_up_branch,   // stores dual bound after branching column up
-    bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                     //     *   otherwise, it can only be used as an estimate value
-    bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                     //     *   otherwise, it can only be used as an estimate value
-    int& iterations                // stores total number of strong branching iterations
-    ) = 0;
+  virtual absl::StatusOr<StrongBranchResult> StrongBranchValue(
+      int col,             // column to apply strong branching on
+      double primal_sol,   // current primal solution value of column
+      int iteration_limit  // iteration limit for strong branchings
+      ) = 0;
 
-  // @}
+  // ==========================================================================
+  // Solution information getters.
+  // ==========================================================================
 
-  // @name Solution Information Methods
-  // @{
-
-  // returns whether a solve method was called after the last modification of the LP
+  // returns whether a solve method was called after the last modification of
+  // the LP
   virtual bool IsSolved() const = 0;
 
   // returns true if current LP solution is stable
   //
-  // This function should return true if the solution is reliable, i.e., feasible and optimal (or proven
-  // infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
-  // version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
-  // MiniMIP::LPInterface.IsStable() should return false.
+  // This function should return true if the solution is reliable, i.e.,
+  // feasible and optimal (or proven infeasible/unbounded) with respect to the
+  // original problem. The optimality status might be with respect to a scaled
+  // version of the problem, but the solution might not be feasible to the
+  // unscaled original problem; in this case, minimip::LPInterface.IsStable()
+  // should return false.
   virtual bool IsStable() const = 0;
 
   // returns true if LP was solved to optimality
@@ -275,20 +237,25 @@ class LPInterface : private messagehandler {
   // returns true if LP is proven to be dual unbounded
   virtual bool IsDualUnbounded() const = 0;
 
-  // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
-  //  this does not necessarily mean that the solver knows and can return the primal ray
+  // returns true if LP is proven to have a primal unbounded ray (but not
+  // necessary a primal feasible point);
+  //  this does not necessarily mean that the solver knows and can return the
+  //  primal ray
   virtual bool ExistsPrimalRay() const = 0;
 
-  // returns true if LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
+  // returns true if LP is proven to have a primal unbounded ray (but not
+  // necessary a primal feasible point),
   //  and the solver knows and can return the primal ray
   virtual bool HasPrimalRay() const = 0;
-  
-  // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
-  // this does not necessarily mean that the solver knows and can return the dual ray
+
+  // returns true if LP is proven to have a dual unbounded ray (but not
+  // necessary a dual feasible point); this does not necessarily mean that the
+  // solver knows and can return the dual ray
   virtual bool ExistsDualRay() const = 0;
 
-  // returns true if LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
-  // and the solver knows and can return the dual ray
+  // returns true if LP is proven to have a dual unbounded ray (but not
+  // necessary a dual feasible point), and the solver knows and can return the
+  // dual ray
   virtual bool HasDualRay() const = 0;
 
   // returns true if the objective limit was reached
@@ -301,170 +268,158 @@ class LPInterface : private messagehandler {
   virtual bool TimeLimitIsExceeded() const = 0;
 
   // gets objective value of solution
-  virtual RetCode GetObjectiveValue(
-    double& obj_val // the objective value
-    ) = 0;
+  virtual double GetObjectiveValue() = 0;
 
   // gets primal and dual solution vectors for feasible LPs
   //
-  // Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
-  // MiniMIP::LPInterface.IsOptimal() returns true.
-  virtual RetCode GetSolution(
-    double& obj_val,          // stores the objective value
-    std::vector<double>& primal_sol,  // primal solution vector
-    std::vector<double>& dual_sol,    // dual solution vector
-    std::vector<double>& activity,    // row activity vector
-    std::vector<double>& reduced_cost // reduced cost vector
-    ) const = 0;
+  // Before calling these functions, the caller must ensure that the LP has been
+  // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
+  // true.
+
+  // gets primal solution vector
+  virtual absl::StatusOr<std::vector<double>> GetPrimalSolution() const = 0;
+
+  // gets row activity vector
+  virtual absl::StatusOr<std::vector<double>> GetRowActivity() const = 0;
+
+  // gets dual solution vector
+  virtual absl::StatusOr<std::vector<double>> GetDualSolution() const = 0;
+
+  // gets reduced cost vector
+  virtual absl::StatusOr<std::vector<double>> GetReducedCost() const = 0;
 
   // gets primal ray for unbounded LPs
-  virtual RetCode GetPrimalRay(
-    std::vector<double>& primal_ray // primal ray
-    ) const = 0;
+  virtual absl::StatusOr<std::vector<double>> GetPrimalRay() const = 0;
 
   // gets dual Farkas proof for infeasibility
-  virtual RetCode GetDualFarkasMultiplier(
-    std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
-    ) const = 0;
+  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier()
+      const = 0;
 
   // gets the number of LP iterations of the last solve call
-  virtual RetCode GetIterations(
-    int& iterations // number of iterations of the last solve call
-    ) const = 0;
+  virtual int GetIterations() const = 0;
 
-  // @}
-
-  // @name LP Basis Methods
-  // @{
+  // ==========================================================================
+  // Getters and setters of the basis.
+  // ==========================================================================
 
   // gets current basis status for columns and rows
-  virtual RetCode GetBase(
-    std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
-    std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
-    ) const = 0;
+  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
+      const = 0;
+  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus()
+      const = 0;
 
   // sets current basis status for columns and rows
-  virtual RetCode SetBase(
-    const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
-    const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
-    ) = 0;
+  virtual absl::Status SetBasisStatus(
+      const std::vector<LPBasisStatus>& column_basis_status,
+      const std::vector<LPBasisStatus>& row_basis_status) = 0;
 
-  // returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
-  virtual RetCode GetBasisIndices(
-    std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
-    ) const = 0;
+  // returns the indices of the basic columns and rows; basic column n gives
+  // value n, basic row m gives value -1-m
+  virtual std::vector<int> GetBasisIndices() const = 0;
+
+  // ==========================================================================
+  // Getters of vectors in the inverted basis matrix.
+  // ==========================================================================
 
   // get row of inverse basis matrix B^-1
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-  //       see also the explanation in lpi.h.
-  virtual RetCode GetBInvertedRow(
-    int row_number,         // row number
-    std::vector<double>& row_coeffs, // array to store the coefficients of the row
-    std::vector<int>& indices,    // array to store the non-zero indices
-    int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) const = 0;
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This
+  // means that if, internally, the LP solver
+  //       uses a -1 coefficient, then rows associated with slacks variables
+  //       whose coefficient is -1, should be negated; see also the explanation
+  //       in lpi.h.
+
+  // make only dense available
+  // virtual absl::StaturOr<const std::vector<double>&> GetSparseRowOfBInverted(
+
+  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInverted(
+      int row_number) const = 0;
 
   // get column of inverse basis matrix B^-1
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated
-  virtual RetCode GetBInvertedColumn(
-    int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
-                               // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
-                               // B^-1 column numbers to the row and column numbers of the LP!
-                               // c must be between 0 and num_rows-1, since the basis has the size
-                               // num_rows * num_rows
-    std::vector<double>& col_coeffs, // array to store the coefficients of the column
-    std::vector<int>& indices,    // array to store the non-zero indices
-    int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) const = 0;
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This
+  // means that if, internally, the LP solver
+  //       uses a -1 coefficient, then rows associated with slacks variables
+  //       whose coefficient is -1, should be negated
+  //
+  // column number of B^-1; this is NOT the number of the
+  // column in the LP; you have to call
+  // minimip::LPInterface.GetBasisIndices() to get the
+  // array which links the B^-1 column numbers to the row
+  // and column numbers of the LP! c must be between 0 and
+  // num_rows-1, since the basis has the size num_rows *
+  // num_rows
+  virtual absl::StatusOr<SparseVector> GetSparseColumnOfBInverted(
+      int col_number) const = 0;
 
   // get row of inverse basis matrix times constraint matrix B^-1 * A
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-  //       see also the explanation in lpi.h.
-  virtual RetCode GetBInvertedARow(
-    int row_number,                   // row number
-    const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
-    std::vector<double>& row_coeffs,           // array to store coefficients of the row
-    std::vector<int>& indices,              // array to store the non-zero indices
-    int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
-    ) const = 0;
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This
+  // means that if, internally, the LP solver
+  //       uses a -1 coefficient, then rows associated with slacks variables
+  //       whose coefficient is -1, should be negated; see also the explanation
+  //       in lpi.h.
+  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInvertedTimesA(
+      int row_number) const = 0;
 
   // get column of inverse basis matrix times constraint matrix B^-1 * A
   //
-  // @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-  //       see also the explanation in lpi.h.
-  virtual RetCode GetBInvertedAColumn(
-    int col_number,         // column number
-    std::vector<double>& col_coeffs, // array to store coefficients of the column
-    std::vector<int>& indices,    // array to store the non-zero indices
-    int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-    ) const = 0;
+  // NOTE: The LP interface defines slack variables to have coefficient +1. This
+  // means that if, internally, the LP solver
+  //       uses a -1 coefficient, then rows associated with slacks variables
+  //       whose coefficient is -1, should be negated; see also the explanation
+  //       in lpi.h.
+  virtual absl::StatusOr<SparseVector> GetSparseColumnOfBInvertedTimesA(
+      int col_number) const = 0;
 
-  // @}
-
-  // @name Parameter Methods
-  // @{
+  // ==========================================================================
+  // Getters and setters of the parameters.
+  // ==========================================================================
 
   // gets integer parameter of LP
-  virtual RetCode GetIntegerParameter(
-    LPParameter type, // parameter number
-    int& param_val  // returns the parameter value
-    ) const = 0;
+  virtual absl::StatusOr<int> GetIntegerParameter(
+      LPParameter type  // parameter number
+  ) const = 0;
 
   // sets integer parameter of LP
-  virtual RetCode SetIntegerParameter(
-    LPParameter type, // parameter number
-    int param_val   // parameter value
-    ) = 0;
+  virtual absl::Status SetIntegerParameter(
+      LPParameter type,  // parameter number
+      int param_val      // parameter value
+      ) = 0;
 
   // gets floating point parameter of LP
-  virtual RetCode GetRealParameter(
-    LPParameter type,  // parameter number
-    double& param_val // returns the parameter value
-    ) const = 0;
+  virtual absl::StatusOr<double> GetRealParameter(
+      LPParameter type  // parameter number
+  ) const = 0;
 
   // sets floating point parameter of LP
-  virtual RetCode SetRealParameter(
-    LPParameter type, // parameter number
-    double param_val // parameter value
-    ) = 0;
+  virtual absl::Status SetRealParameter(LPParameter type,  // parameter number
+                                        double param_val   // parameter value
+                                        ) = 0;
 
-  // @}
-
-  // @name Numerical Methods
-  // @{
+  // ==========================================================================
+  // Numerical methods.
+  // ==========================================================================
 
   // returns value treated as infinity in the LP solver
   virtual double Infinity() const = 0;
 
   // checks if given value is treated as infinity in the LP solver
-  virtual bool IsInfinity(
-    double val // value to be checked for infinity
-    ) const = 0;
+  virtual bool IsInfinity(double value  // value to be checked for infinity
+  ) const = 0;
 
-  // @}
-
-  // @name File Interface Methods
-  // @{
+  // ==========================================================================
+  // File interface methods.
+  // ==========================================================================
 
   // reads LP from a file
-  virtual RetCode ReadLP(
-    const char* file_name // file name
-    ) = 0;
+  virtual absl::Status ReadLP(const char* file_name  // file name
+                              ) = 0;
 
   // writes LP to a file
-  virtual RetCode WriteLP(
-    const char* file_name // file name
-    ) const = 0;
-
-  // @}
+  virtual absl::Status WriteLP(const char* file_name  // file name
+  ) const = 0;
 };
 
-} // namespace minimip
-#endif // MINIMIP_SRC_LP_INTERFACE_LPI_H
+}  // namespace minimip
+#endif  // SRC_LP_INTERFACE_LPI_H_

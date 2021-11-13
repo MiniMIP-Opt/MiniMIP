@@ -11,19 +11,23 @@ cmake(
         "CMAKE_CXX_FLAGS": "-Wno-psabi",
         "CMAKE_DISABLE_FIND_PACKAGE_GMP": "True",
         "CMAKE_DISABLE_FIND_PACKAGE_ZLIB": "True",
-        "BOOST": "off"
+        "BOOST": "on"
     },
     lib_source = "@soplex//:all_srcs",
     out_static_libs = ["libsoplex.a"],
 )
 
 cc_library(
-     name = "lpi",
-     hdrs = ["lpi.h"],
-     deps = [
+    name = "lpi",
+    srcs = ["lpi.cc"],
+    hdrs = ["lpi.h"],
+    deps = [
          "//src/lp_interface:lp_types",
          "//src/messagehandler:message_handler",
-     ],
+        "//src/minimip:minimip_def",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
  )
 
 cc_library(

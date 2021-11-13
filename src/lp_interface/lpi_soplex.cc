@@ -20,24 +20,24 @@
 #undef ___DEBUG
 #endif
 
-#define SOPLEX_VERBLEVEL 0 // verbosity level for LPINFO
+#define SOPLEX_VERBLEVEL 0  // verbosity level for LPINFO
 
-// Macro for a single SoPlex call for which exceptions have to be catched - return an LP error. We
-// make no distinction between different exception types, e.g., between memory allocation and other
-// exceptions.
+// Macro for a single SoPlex call for which exceptions have to be catched -
+// return an LP error. We make no distinction between different exception types,
+// e.g., between memory allocation and other exceptions.
 #ifndef NDEBUG
 #define SOPLEX_TRY(x)                                                          \
   do {                                                                         \
     try {                                                                      \
       (x);                                                                     \
-    } catch (const SPxMemoryException& E) {                                    \
+    } catch (const soplex::SPxMemoryException& E) {                            \
       std::string s = E.what();                                                \
       MiniMIPerrorMessage("SoPlex threw a memory exception: %s\n", s.c_str()); \
-      return RetCode::kError;                                                   \
-    } catch (const SPxException& E) {                                          \
+      return absl::Status(absl::StatusCode::kInternal, "Error");               \
+    } catch (const soplex::SPxException& E) {                                  \
       std::string s = E.what();                                                \
       MiniMIPerrorMessage("SoPlex threw an exception: %s\n", s.c_str());       \
-      return RetCode::kLPError;                                                \
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");            \
     }                                                                          \
   } while (false)
 
@@ -46,23 +46,23 @@
   do {                                                                         \
     try {                                                                      \
       (x);                                                                     \
-    } catch (const SPxMemoryException& E) {                                    \
+    } catch (const soplex::SPxMemoryException& E) {                            \
       std::string s = E.what();                                                \
       MiniMIPerrorMessage("SoPlex threw a memory exception: %s\n", s.c_str()); \
-      return ERROR;                                                            \
-    } catch (const SPxException&) {                                            \
-      return LP_ERROR;                                                         \
+      return absl::Status(absl::StatusCode::kInternal, "Error");               \
+    } catch (const soplex::SPxException&) {                                    \
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");            \
     }                                                                          \
   } while (FALSE)
 #endif
 
-// Macro for a single SoPlex call for which exceptions have to be catched - abort if they
-// arise. MINIMIP_ABORT() is not accessible here.
+// Macro for a single SoPlex call for which exceptions have to be catched -
+// abort if they arise. MINIMIP_ABORT() is not accessible here.
 #define SOPLEX_TRY_ABORT(x)                                              \
   do {                                                                   \
     try {                                                                \
       (x);                                                               \
-    } catch (const SPxException& E) {                                    \
+    } catch (const soplex::SPxException& E) {                            \
       std::string s = E.what();                                          \
       MiniMIPerrorMessage("SoPlex threw an exception: %s\n", s.c_str()); \
       abort();                                                           \
@@ -71,26 +71,25 @@
 
 namespace minimip {
 
-// constructor
-LPSoplexInterface::LPSoplexInterface() : spx_(new soplex::SoPlex),
-                                         pricing_(LPPricing::kDefault),
-                                         solved_(false),
-                                         lp_info_(false),
-                                         from_scratch_(false),
-                                         col_basis_status_(0),
-                                         row_basis_status_(0) {}
+LPSoplexInterface::LPSoplexInterface()
+    : spx_(new soplex::SoPlex),
+      pricing_(LPPricing::kDefault),
+      solved_(false),
+      lp_info_(false),
+      from_scratch_(false),
+      col_basis_status_(0),
+      row_basis_status_(0) {}
 
-// destructor
-LPSoplexInterface::~LPSoplexInterface() {
-  delete spx_;
-}
+LPSoplexInterface::~LPSoplexInterface() { delete spx_; }
 
 // provides access for temporary storage of basis status of rows
-DataArray<SPxSolver::VarStatus>& LPSoplexInterface::RowsBasisStatus() {
+soplex::DataArray<soplex::SPxSolver::VarStatus>&
+LPSoplexInterface::RowsBasisStatus() {
   return row_basis_status_;
 }
 // provides access for temporary storage of basis status of columns
-DataArray<SPxSolver::VarStatus>& LPSoplexInterface::ColumnsBasisStatus() {
+soplex::DataArray<soplex::SPxSolver::VarStatus>&
+LPSoplexInterface::ColumnsBasisStatus() {
   return col_basis_status_;
 }
 
@@ -98,61 +97,63 @@ void LPSoplexInterface::SetFromScratch(bool from_scratch) {
   from_scratch_ = from_scratch;
 }
 
-void LPSoplexInterface::SetLPInfo(bool lp_info) {
-  lp_info_ = lp_info;
-}
+void LPSoplexInterface::SetLPInfo(bool lp_info) { lp_info_ = lp_info; }
 
 // get objective limit according to objective sense
 double LPSoplexInterface::GetObjectiveLimit() const {
-  return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
-    ? spx_->realParam(SoPlex::OBJLIMIT_UPPER)
-    : spx_->realParam(SoPlex::OBJLIMIT_LOWER);
+  return (spx_->intParam(soplex::SoPlex::OBJSENSE) ==
+          soplex::SoPlex::OBJSENSE_MINIMIZE)
+             ? spx_->realParam(soplex::SoPlex::OBJLIMIT_UPPER)
+             : spx_->realParam(soplex::SoPlex::OBJLIMIT_LOWER);
 }
 
 double LPSoplexInterface::FeasibilityTolerance() const {
-  return spx_->realParam(SoPlex::FEASTOL);
+  return spx_->realParam(soplex::SoPlex::FEASTOL);
 }
 
 // return optimality tolerance
 double LPSoplexInterface::OptimalityTolerance() const {
-  return spx_->realParam(SoPlex::OPTTOL);
+  return spx_->realParam(soplex::SoPlex::OPTTOL);
 }
 
-// set feasibility tolerance and store value in case SoPlex only accepts a larger tolerance
-void LPSoplexInterface::SetFeasibilityTolerance(
-  const Real d) {
-  assert(spx_->setRealParam(SoPlex::FEASTOL, d));
+// set feasibility tolerance and store value in case SoPlex only accepts a
+// larger tolerance
+void LPSoplexInterface::SetFeasibilityTolerance(const soplex::Real d) {
+  assert(spx_->setRealParam(soplex::SoPlex::FEASTOL, d));
 }
 
-// set optimality tolerance and store value in case SoPlex only accepts a larger tolerance
-void LPSoplexInterface::SetOptimalityTolerance(
-  const Real d) {
-  assert(spx_->setRealParam(SoPlex::OPTTOL, d));
+// set optimality tolerance and store value in case SoPlex only accepts a larger
+// tolerance
+void LPSoplexInterface::SetOptimalityTolerance(const soplex::Real d) {
+  assert(spx_->setRealParam(soplex::SoPlex::OPTTOL, d));
 }
 
 void LPSoplexInterface::TrySolve(bool print_warning = true) {
-  Real time_spent;
-  Real time_limit;
+  soplex::Real time_spent;
+  soplex::Real time_limit;
 
   try {
     static_cast<void>(spx_->optimize());
-  } catch (const SPxException& x) {
+  } catch (const soplex::SPxException& x) {
     std::string s = x.what();
     if (print_warning) {
-      //  MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+      //  MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+      //  %s\n", s.c_str());
     }
-    // since it is not clear if the status in SoPlex are set correctly we want to make sure that if an error is thrown
-    // the status is not OPTIMAL anymore.
-    assert(spx_->status() != SPxSolver::OPTIMAL);
+    // since it is not clear if the status in SoPlex are set correctly we want
+    // to make sure that if an error is thrown the status is not OPTIMAL
+    // anymore.
+    assert(spx_->status() != soplex::SPxSolver::OPTIMAL);
   }
-  assert(spx_->intParam(SoPlex::ITERLIMIT) < 0 || spx_->numIterations() <= spx_->intParam(SoPlex::ITERLIMIT));
+  assert(spx_->intParam(soplex::SoPlex::ITERLIMIT) < 0 ||
+         spx_->numIterations() <= spx_->intParam(soplex::SoPlex::ITERLIMIT));
 
   // update time limit
   time_spent = spx_->solveTime();
 
   // get current time limit
   if (time_spent > 0) {
-    time_limit = spx_->realParam(SoPlex::TIMELIMIT);
+    time_limit = spx_->realParam(soplex::SoPlex::TIMELIMIT);
     if (time_limit > time_spent)
       time_limit -= time_spent;
     else
@@ -161,15 +162,17 @@ void LPSoplexInterface::TrySolve(bool print_warning = true) {
     // set new time limit
     assert(time_limit >= 0);
 
-    assert(spx_->setRealParam(SoPlex::TIMELIMIT, time_limit));
+    assert(spx_->setRealParam(soplex::SoPlex::TIMELIMIT, time_limit));
   }
 }
 
 bool LPSoplexInterface::CheckConsistentBounds() const {
   for (int i = 0; i < spx_->numColsReal(); ++i) {
-    if (spx_->lowerReal(i) > spx_->upperReal(i) + spx_->realParam(SoPlex::EPSILON_ZERO)) {
-      MiniMIPerrorMessage("inconsistent bounds on column %d: lower=%.17g, upper=%.17g\n",
-                          i, spx_->lowerReal(i), spx_->upperReal(i));
+    if (spx_->lowerReal(i) >
+        spx_->upperReal(i) + spx_->realParam(soplex::SoPlex::EPSILON_ZERO)) {
+      MiniMIPerrorMessage(
+          "inconsistent bounds on column %d: lower=%.17g, upper=%.17g\n", i,
+          spx_->lowerReal(i), spx_->upperReal(i));
       return false;
     }
   }
@@ -178,22 +181,26 @@ bool LPSoplexInterface::CheckConsistentBounds() const {
 
 bool LPSoplexInterface::CheckConsistentSides() const {
   for (int i = 0; i < spx_->numRowsReal(); ++i) {
-    if (spx_->lhsReal(i) > spx_->rhsReal(i) + spx_->realParam(SoPlex::EPSILON_ZERO)) {
-      MiniMIPerrorMessage("inconsistent sides on row %d: lhs=%.17g, rhs=%.17g\n",
-                          i, spx_->lhsReal(i), spx_->rhsReal(i));
+    if (spx_->lhsReal(i) >
+        spx_->rhsReal(i) + spx_->realParam(soplex::SoPlex::EPSILON_ZERO)) {
+      MiniMIPerrorMessage(
+          "inconsistent sides on row %d: lhs=%.17g, rhs=%.17g\n", i,
+          spx_->lhsReal(i), spx_->rhsReal(i));
       return false;
     }
   }
   return true;
 }
 
-SPxSolver::Status LPSoplexInterface::doSolve(bool print_warning = true) {
-  SPxOut::Verbosity verbosity;
-  SPxSolver::Status spx_status;
+soplex::SPxSolver::Status LPSoplexInterface::doSolve(
+    bool print_warning = true) {
+  soplex::SPxOut::Verbosity verbosity;
+  soplex::SPxSolver::Status spx_status;
 
   // store and set verbosity
   verbosity = spx_->spxout.getVerbosity();
-  spx_->spxout.setVerbosity((SPxOut::Verbosity)(GetLPInfo() ? SOPLEX_VERBLEVEL : 0));
+  spx_->spxout.setVerbosity(
+      (soplex::SPxOut::Verbosity)(GetLPInfo() ? SOPLEX_VERBLEVEL : 0));
 
   assert(CheckConsistentBounds());
   assert(CheckConsistentSides());
@@ -207,21 +214,19 @@ SPxSolver::Status LPSoplexInterface::doSolve(bool print_warning = true) {
   return spx_status;
 }
 
-bool LPSoplexInterface::GetFromScratch() const {
-  return from_scratch_;
-}
+bool LPSoplexInterface::GetFromScratch() const { return from_scratch_; }
 
 // @todo member variable?
-bool LPSoplexInterface::GetLPInfo() const {
-  return lp_info_;
-}
+bool LPSoplexInterface::GetLPInfo() const { return lp_info_; }
 
-RetCode LPSoplexInterface::SoPlexSolve() {
+absl::Status LPSoplexInterface::SoPlexSolve() {
   // store and set verbosity
-  SPxOut::Verbosity verbosity = spx_->spxout.getVerbosity();
-  spx_->spxout.setVerbosity((SPxOut::Verbosity)(GetLPInfo() ? SOPLEX_VERBLEVEL : 0));
+  soplex::SPxOut::Verbosity verbosity = spx_->spxout.getVerbosity();
+  spx_->spxout.setVerbosity(
+      (soplex::SPxOut::Verbosity)(GetLPInfo() ? SOPLEX_VERBLEVEL : 0));
 
-  MiniMIPdebugMessage("calling SoPlex solve(): %d cols, %d rows\n", spx_->numColsReal(), spx_->numRowsReal());
+  MiniMIPdebugMessage("calling SoPlex solve(): %d cols, %d rows\n",
+                      spx_->numColsReal(), spx_->numRowsReal());
 
   InvalidateSolution();
 
@@ -233,39 +238,41 @@ RetCode LPSoplexInterface::SoPlexSolve() {
       spx_->clearBasis();
     }
 #ifndef NDEBUG
-    catch (const SPxException& x) {
+    catch (const soplex::SPxException& x) {
       std::string s = x.what();
-      // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+      // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+      // %s\n", s.c_str());
 #else
-    catch (const SPxException&) {
+    catch (const soplex::SPxException&) {
 #endif
-      assert(spx_->status() != SPxSolver::OPTIMAL);
-      return RetCode::kLPError;
+      assert(spx_->status() != soplex::SPxSolver::OPTIMAL);
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
     }
   }
-  assert(!GetFromScratch() || spx_->status() == SPxSolver::NO_PROBLEM);
+  assert(!GetFromScratch() || spx_->status() == soplex::SPxSolver::NO_PROBLEM);
 
-  SPxSolver::Status status = doSolve();
-  MiniMIPdebugMessage(" -> SoPlex status: %d, basis status: %d\n", spx_->status(), spx_->basisStatus());
+  soplex::SPxSolver::Status status = doSolve();
+  MiniMIPdebugMessage(" -> SoPlex status: %d, basis status: %d\n",
+                      spx_->status(), spx_->basisStatus());
   solved_ = true;
 
   // restore verbosity
   spx_->spxout.setVerbosity(verbosity);
 
   switch (status) {
-    case SPxSolver::ABORT_TIME:
-    case SPxSolver::ABORT_ITER:
-    case SPxSolver::ABORT_VALUE:
-    case SPxSolver::SINGULAR:
-    case SPxSolver::REGULAR:
-    case SPxSolver::UNKNOWN:
-    case SPxSolver::OPTIMAL:
-    case SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
-    case SPxSolver::UNBOUNDED:
-    case SPxSolver::INFEASIBLE:
-      return RetCode::kOkay;
+    case soplex::SPxSolver::ABORT_TIME:
+    case soplex::SPxSolver::ABORT_ITER:
+    case soplex::SPxSolver::ABORT_VALUE:
+    case soplex::SPxSolver::SINGULAR:
+    case soplex::SPxSolver::REGULAR:
+    case soplex::SPxSolver::UNKNOWN:
+    case soplex::SPxSolver::OPTIMAL:
+    case soplex::SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
+    case soplex::SPxSolver::UNBOUNDED:
+    case soplex::SPxSolver::INFEASIBLE:
+      return absl::OkStatus();
     default:
-      return RetCode::kLPError;
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
 }
 
@@ -278,16 +285,18 @@ void LPSoplexInterface::SavePreStrongbranchingBasis() {
     spx_->getBasis(row_basis_status_.get_ptr(), col_basis_status_.get_ptr());
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 
-    // since it is not clear if the status in SoPlex are set correctly we want to make sure that if an error is thrown
-    // the status is not OPTIMAL anymore.
-    assert(spx_->status() != SPxSolver::OPTIMAL);
+    // since it is not clear if the status in SoPlex are set correctly we want
+    // to make sure that if an error is thrown the status is not OPTIMAL
+    // anymore.
+    assert(spx_->status() != soplex::SPxSolver::OPTIMAL);
   }
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
   }
 #endif
 }
@@ -301,21 +310,21 @@ void LPSoplexInterface::RestorePreStrongbranchingBasis() {
     spx_->setBasis(row_basis_status_.get_ptr(), col_basis_status_.get_ptr());
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    // since it is not clear if the status in SoPlex are set correctly we want to make sure that if an error is thrown
-    // the status is not OPTIMAL anymore.
-    assert(spx_->status() != SPxSolver::OPTIMAL);
+    // since it is not clear if the status in SoPlex are set correctly we want
+    // to make sure that if an error is thrown the status is not OPTIMAL
+    // anymore.
+    assert(spx_->status() != soplex::SPxSolver::OPTIMAL);
   }
 }
 
-void LPSoplexInterface::InvalidateSolution() {
-  solved_ = false;
-}
+void LPSoplexInterface::InvalidateSolution() { solved_ = false; }
 
 bool LPSoplexInterface::PreStrongBranchingBasisFreed() const {
   return ((row_basis_status_.size() == 0) && (col_basis_status_.size() == 0));
@@ -326,19 +335,24 @@ void LPSoplexInterface::FreePreStrongBranchingBasis() {
   col_basis_status_.clear();
 }
 
-RetCode LPSoplexInterface::StrongBranch(
-  int col,                       // column to apply strong branching on
-  double primal_sol,              // current primal solution value of column
-  int iteration_limit,           // iteration limit for strong branchings
-  double& dual_bound_down_branch, // stores dual bound after branching column down
-  double& dual_bound_up_branch,   // stores dual bound after branching column up
-  bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                   // otherwise, it can only be used as an estimate value
-  bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                   // otherwise, it can only be used as an estimate value
-  int& iterations                // stores total number of strong branching iterations, or -1
+absl::Status LPSoplexInterface::StrongBranch(
+    int col,                         // column to apply strong branching on
+    double primal_sol,               // current primal solution value of column
+    int iteration_limit,             // iteration limit for strong branchings
+    double& dual_bound_down_branch,  // stores dual bound after branching column
+                                     // down
+    double&
+        dual_bound_up_branch,  // stores dual bound after branching column up
+    bool& down_valid,  // stores whether the returned down value is a valid dual
+                       // bound; otherwise, it can only be used as an estimate
+                       // value
+    bool&
+        up_valid,  // stores whether the returned up value is a valid dual
+                   // bound; otherwise, it can only be used as an estimate value
+    int&
+        iterations  // stores total number of strong branching iterations, or -1
 ) {
-  SPxSolver::Status status;
+  soplex::SPxSolver::Status status;
   double old_lb;
   double old_ub;
   double new_lb;
@@ -346,40 +360,46 @@ RetCode LPSoplexInterface::StrongBranch(
   bool from_parent_basis;
   bool error;
   int old_iter_limit;
-  SPxOut::Verbosity verbosity;
+  soplex::SPxOut::Verbosity verbosity;
 
   // store and set verbosity
   verbosity = spx_->spxout.getVerbosity();
-  spx_->spxout.setVerbosity((SPxOut::Verbosity)(GetLPInfo() ? SOPLEX_VERBLEVEL : 0));
+  spx_->spxout.setVerbosity(
+      (soplex::SPxOut::Verbosity)(GetLPInfo() ? SOPLEX_VERBLEVEL : 0));
 
-  MiniMIPdebugMessage("calling StrongBranch() on variable %d (%d iterations)\n", col, iteration_limit);
+  MiniMIPdebugMessage("calling StrongBranch() on variable %d (%d iterations)\n",
+                      col, iteration_limit);
 
 #ifndef STRONGBRANCH_RESTOREBASIS
   from_parent_basis = false;
 #endif
-  error = false;
-  old_iter_limit = spx_->intParam(SoPlex::ITERLIMIT);
+  error          = false;
+  old_iter_limit = spx_->intParam(soplex::SoPlex::ITERLIMIT);
 
   // get current bounds of column
-  old_lb = spx_->lowerReal(col);
-  old_ub = spx_->upperReal(col);
+  old_lb     = spx_->lowerReal(col);
+  old_ub     = spx_->upperReal(col);
   down_valid = false;
-  up_valid = false;
+  up_valid   = false;
   iterations = 0;
 
   // set the algorithm type to use dual simplex
-  static_cast<void>(spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_DUAL));
+  static_cast<void>(spx_->setIntParam(soplex::SoPlex::ALGORITHM,
+                                      soplex::SoPlex::ALGORITHM_DUAL));
 
   // down branch
   new_ub = EPSCEIL(primal_sol - 1.0, FeasibilityTolerance());
 
   if (new_ub >= old_lb - 0.5) {
-    MiniMIPdebugMessage("strong branching down on x%d (%g) with %d iterations\n", col, primal_sol, iteration_limit);
+    MiniMIPdebugMessage(
+        "strong branching down on x%d (%g) with %d iterations\n", col,
+        primal_sol, iteration_limit);
 
     spx_->changeUpperReal(col, new_ub);
     assert(spx_->lowerReal(col) <= spx_->upperReal(col));
 
-    static_cast<void>(spx_->setIntParam(SoPlex::ITERLIMIT, iteration_limit));
+    static_cast<void>(
+        spx_->setIntParam(soplex::SoPlex::ITERLIMIT, iteration_limit));
     do {
 #ifndef STRONGBRANCH_RESTOREBASIS
       bool repeat_strong_branching;
@@ -388,21 +408,23 @@ RetCode LPSoplexInterface::StrongBranch(
 
       MiniMIPdebugMessage(" --> Terminate with status %d\n", status);
       switch (status) {
-        case SPxSolver::OPTIMAL:
+        case soplex::SPxSolver::OPTIMAL:
           dual_bound_down_branch = spx_->objValueReal();
-          down_valid = true;
-          MiniMIPdebugMessage(" --> Terminate with value %f\n", dual_bound_down_branch);
+          down_valid             = true;
+          MiniMIPdebugMessage(" --> Terminate with value %f\n",
+                              dual_bound_down_branch);
           break;
-        case SPxSolver::ABORT_TIME: // SoPlex does not return a proven dual bound, if it is aborted
-        case SPxSolver::ABORT_ITER:
-        case SPxSolver::ABORT_CYCLING:
-        case SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
+        case soplex::SPxSolver::ABORT_TIME:  // SoPlex does not return a proven
+                                             // dual bound, if it is aborted
+        case soplex::SPxSolver::ABORT_ITER:
+        case soplex::SPxSolver::ABORT_CYCLING:
+        case soplex::SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
           dual_bound_down_branch = spx_->objValueReal();
           break;
-        case SPxSolver::ABORT_VALUE:
-        case SPxSolver::INFEASIBLE:
+        case soplex::SPxSolver::ABORT_VALUE:
+        case soplex::SPxSolver::INFEASIBLE:
           dual_bound_down_branch = GetObjectiveLimit();
-          down_valid = true;
+          down_valid             = true;
           break;
         default:
           error = true;
@@ -411,26 +433,34 @@ RetCode LPSoplexInterface::StrongBranch(
       iterations += spx_->numIterations();
 
 #ifdef STRONGBRANCH_RESTOREBASIS
-      // we restore the pre-strong-branching basis by default (and don't solve again)
+      // we restore the pre-strong-branching basis by default (and don't solve
+      // again)
       assert(!PreStrongBranchingBasisFreed());
       RestorePreStrongbranchingBasis();
       from_parent_basis = false;
 #else
-      // if cycling or singular basis occured and we started not from the pre-strong-branching basis, then we restore the
-      // pre-strong-branching basis and try again with reduced iteration limit
-      repeat_strong_branching = ((status == SPxSolver::ABORT_CYCLING || status == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS || status == SPxSolver::SINGULAR) && !from_parent_basis && spx_->numIterations() < iteration_limit);
+      // if cycling or singular basis occured and we started not from the
+      // pre-strong-branching basis, then we restore the pre-strong-branching
+      // basis and try again with reduced iteration limit
+      repeat_strong_branching =
+          ((status == soplex::SPxSolver::ABORT_CYCLING ||
+            status == soplex::SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS ||
+            status == soplex::SPxSolver::SINGULAR) &&
+           !from_parent_basis && spx_->numIterations() < iteration_limit);
 
       if (repeat_strong_branching) {
-        MiniMIPdebugMessage(" --> Repeat strong branching down with %d iterations after restoring basis\n",
-           iteration_limit - spx_->numIterations());
-        spx_->setIntParam(SoPlex::ITERLIMIT, iteration_limit - spx_->numIterations());
+        MiniMIPdebugMessage(
+            " --> Repeat strong branching down with %d iterations after "
+            "restoring basis\n",
+            iteration_limit - spx_->numIterations());
+        spx_->setIntParam(soplex::SoPlex::ITERLIMIT,
+                          iteration_limit - spx_->numIterations());
         RestorePreStrongbranchingBasis();
         from_parent_basis = true;
         error = false;
-      }
-      // otherwise don't solve again
-      else
+      } else {
         from_parent_basis = false;
+      }
 #endif
     } while (from_parent_basis);
 
@@ -438,19 +468,22 @@ RetCode LPSoplexInterface::StrongBranch(
     assert(spx_->lowerReal(col) <= spx_->upperReal(col));
   } else {
     dual_bound_down_branch = GetObjectiveLimit();
-    down_valid = true;
+    down_valid             = true;
   }
 
   // up branch
   if (!error) {
     new_lb = EPSFLOOR(primal_sol + 1.0, FeasibilityTolerance());
     if (new_lb <= old_ub + 0.5) {
-      MiniMIPdebugMessage("strong branching  up  on x%d (%g) with %d iterations\n", col, primal_sol, iteration_limit);
+      MiniMIPdebugMessage(
+          "strong branching  up  on x%d (%g) with %d iterations\n", col,
+          primal_sol, iteration_limit);
 
       spx_->changeLowerReal(col, new_lb);
       assert(spx_->lowerReal(col) <= spx_->upperReal(col));
 
-      static_cast<void>(spx_->setIntParam(SoPlex::ITERLIMIT, iteration_limit));
+      static_cast<void>(
+          spx_->setIntParam(soplex::SoPlex::ITERLIMIT, iteration_limit));
       do {
 #ifndef STRONGBRANCH_RESTOREBASIS
         bool repeat_strong_branching;
@@ -459,21 +492,24 @@ RetCode LPSoplexInterface::StrongBranch(
 
         MiniMIPdebugMessage(" --> Terminate with status %d\n", status);
         switch (status) {
-          case SPxSolver::OPTIMAL:
+          case soplex::SPxSolver::OPTIMAL:
             dual_bound_up_branch = spx_->objValueReal();
-            up_valid = true;
-            MiniMIPdebugMessage(" --> Terminate with value %f\n", spx_->objValueReal());
+            up_valid             = true;
+            MiniMIPdebugMessage(" --> Terminate with value %f\n",
+                                spx_->objValueReal());
             break;
-          case SPxSolver::ABORT_TIME: // SoPlex does not return a proven dual bound, if it is aborted
-          case SPxSolver::ABORT_ITER:
-          case SPxSolver::ABORT_CYCLING:
-          case SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
+          case soplex::SPxSolver::ABORT_TIME:  // SoPlex does not return a
+                                               // proven dual bound, if it is
+                                               // aborted
+          case soplex::SPxSolver::ABORT_ITER:
+          case soplex::SPxSolver::ABORT_CYCLING:
+          case soplex::SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS:
             dual_bound_up_branch = spx_->objValueReal();
             break;
-          case SPxSolver::ABORT_VALUE:
-          case SPxSolver::INFEASIBLE:
+          case soplex::SPxSolver::ABORT_VALUE:
+          case soplex::SPxSolver::INFEASIBLE:
             dual_bound_up_branch = GetObjectiveLimit();
-            up_valid = true;
+            up_valid             = true;
             break;
           default:
             error = true;
@@ -482,25 +518,34 @@ RetCode LPSoplexInterface::StrongBranch(
         iterations += spx_->numIterations();
 
 #ifdef STRONGBRANCH_RESTOREBASIS
-        // we restore the pre-strong-branching basis by default (and don't solve again)
+        // we restore the pre-strong-branching basis by default (and don't solve
+        // again)
         assert(!PreStrongBranchingBasisFreed());
         RestorePreStrongbranchingBasis();
         from_parent_basis = false;
 #else
-        // if cycling or singular basis occured and we started not from the pre-strong-branching basis, then we restore the
-        // pre-strong-branching basis and try again with reduced iteration limit
-        repeat_strong_branching = ((status == SPxSolver::ABORT_CYCLING || status == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS || status == SPxSolver::SINGULAR) && !from_parent_basis && spx_->numIterations() < iteration_limit);
+        // if cycling or singular basis occured and we started not from the
+        // pre-strong-branching basis, then we restore the pre-strong-branching
+        // basis and try again with reduced iteration limit
+        repeat_strong_branching =
+            ((status == soplex::SPxSolver::ABORT_CYCLING ||
+              status == soplex::SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS ||
+              status == soplex::SPxSolver::SINGULAR) &&
+             !from_parent_basis && spx_->numIterations() < iteration_limit);
 
         if (repeat_strong_branching) {
-          MiniMIPdebugMessage(" --> Repeat strong branching  up  with %d iterations after restoring basis\n", iteration_limit - spx_->numIterations());
+          MiniMIPdebugMessage(
+              " --> Repeat strong branching  up  with %d iterations after "
+              "restoring basis\n",
+              iteration_limit - spx_->numIterations());
           RestorePreStrongbranchingBasis();
-          spx_->setIntParam(SoPlex::ITERLIMIT, iteration_limit - spx_->numIterations());
+          spx_->setIntParam(soplex::SoPlex::ITERLIMIT,
+                            iteration_limit - spx_->numIterations());
           error = false;
           from_parent_basis = true;
-        }
-        // otherwise don't solve again
-        else
+        } else {
           from_parent_basis = false;
+        }
 #endif
       } while (from_parent_basis);
 
@@ -508,90 +553,139 @@ RetCode LPSoplexInterface::StrongBranch(
       assert(spx_->lowerReal(col) <= spx_->upperReal(col));
     } else {
       dual_bound_up_branch = GetObjectiveLimit();
-      up_valid = true;
+      up_valid             = true;
     }
   }
   // reset old iteration limit
-  static_cast<void>(spx_->setIntParam(SoPlex::ITERLIMIT, old_iter_limit));
+  static_cast<void>(
+      spx_->setIntParam(soplex::SoPlex::ITERLIMIT, old_iter_limit));
 
   // restore verbosity
   spx_->spxout.setVerbosity(verbosity);
 
   if (error) {
-    MiniMIPdebugMessage("StrongBranch() returned SoPlex status %d\n", int(status));
-    return RetCode::kLPError;
+    MiniMIPdebugMessage("StrongBranch() returned SoPlex status %d\n",
+                        static_cast<int>(status));
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-RetCode LPSoplexInterface::LoadColumnLP(
-  LPObjectiveSense obj_sense,           // objective sense
-  int num_cols,                       // number of columns
-  const std::vector<double>& objective_values, // objective function values of columns
-  const std::vector<double>& lower_bounds,     // lower bounds of columns
-  const std::vector<double>& upper_bounds,     // upper bounds of columns
-  std::vector<std::string>& col_names,               // column names
-  int num_rows,                       // number of rows
-  const std::vector<double>& left_hand_sides,  // left hand sides of rows
-  const std::vector<double>& right_hand_sides, // right hand sides of rows
-  std::vector<std::string>& row_names,               // row names
-  int num_non_zeros,                  // number of non-zero elements in the constraint matrix
-  const std::vector<int>& begin_cols,       // start index of each column in row_indices- and vals-array
-  const std::vector<int>& row_indices,      // row indices of constraint matrix entries
-  const std::vector<double>& vals              // values of constraint matrix entries
+// ==========================================================================
+// LP model setters.
+// ==========================================================================
+absl::Status LPSoplexInterface::LoadSparseColumnLP(
+    LPObjectiveSense obj_sense,  // objective sense
+    const std::vector<double>&
+        objective_values,  // objective function values of columns
+    const std::vector<double>& lower_bounds,      // lower bounds of columns
+    const std::vector<double>& upper_bounds,      // upper bounds of columns
+    std::vector<std::string>& col_names,          // column names
+    const std::vector<double>& left_hand_sides,   // left hand sides of rows
+    const std::vector<double>& right_hand_sides,  // right hand sides of rows
+    std::vector<std::string>& row_names,          // row names
+    const std::vector<SparseVector>& cols         // sparse columns
 ) {
 #ifndef NDEBUG
-   for (int j = 0; j < num_non_zeros; j++)
-      assert(vals[j] != 0);
+  for (size_t i = 0; i < cols.size(); i++) {
+    for (size_t j = 0; j < cols[i].indices.size(); j++) {
+      assert(cols[i].values[j] != 0);
+    }
+  }
 #endif
 
   MiniMIPdebugMessage("calling LoadColumnLP()\n");
 
+  InvalidateSolution();
+
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    LPRowSet rows(num_rows);
-    DSVector empty_vector(0);
-    int i;
+    size_t num_rows = left_hand_sides.size();
+    soplex::LPRowSet rowset(num_rows);
+    soplex::DSVector empty_vector(0);
 
     spx_->clearLPReal();
 
     // set objective sense
-    static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
+    static_cast<void>(spx_->setIntParam(
+        soplex::SoPlex::OBJSENSE, (obj_sense == LPObjectiveSense::kMinimization
+                                       ? soplex::SoPlex::OBJSENSE_MINIMIZE
+                                       : soplex::SoPlex::OBJSENSE_MAXIMIZE)));
 
     // create empty rows with given sides
-    for (i = 0; i < num_rows; ++i)
-      rows.add(left_hand_sides[i], empty_vector, right_hand_sides[i]);
-    spx_->addRowsReal(rows);
+    for (size_t i = 0; i < num_rows; ++i)
+      rowset.add(left_hand_sides[i], empty_vector, right_hand_sides[i]);
+    spx_->addRowsReal(rowset);
 
     // create column vectors with coefficients and bounds
-    MINIMIP_CALL(AddColumns(num_cols, objective_values, lower_bounds, upper_bounds, col_names, num_non_zeros, begin_cols, row_indices, vals));
+    MINIMIP_CALL(AddColumns(cols, lower_bounds, upper_bounds, objective_values,
+                            col_names));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
+}
+
+// adds column to the LP
+absl::Status LPSoplexInterface::AddColumn(
+    const SparseVector& col,  // column to be added
+    double lower_bound,       // lower bound of new column
+    double upper_bound,       // upper bound of new column
+    double objective_value,   // objective function value of new column
+    std::string col_name      // column name
+) {
+  MiniMIPdebugMessage("Calling AddColumn()\n");
+  InvalidateSolution();
+
+  assert(PreStrongBranchingBasisFreed());
+
+#ifndef NDEBUG
+  // perform check that no new rows are added
+  int num_rows = GetNumberOfRows();
+  for (size_t j = 0; j < col.indices.size(); ++j) {
+    assert(0 <= col.indices[j]);
+    assert(col.indices[j] < num_rows);
+    assert(col.values[j] != 0.0);
+  }
+#endif
+
+  try {
+    soplex::DSVector col_vector;
+    col_vector.add(col.indices.size(), col.indices.data(), col.values.data());
+    spx_->addColReal(
+        soplex::LPCol(objective_value, col_vector, upper_bound, lower_bound));
+  }
+#ifndef NDEBUG
+  catch (const soplex::SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const soplex::SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return absl::OkStatus();
 }
 
 // adds columns to the LP
-//
-// @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
-RetCode LPSoplexInterface::AddColumns(
-  int num_cols,                       // number of columns to be added
-  const std::vector<double>& objective_values, // objective function values of new columns
-  const std::vector<double>& lower_bounds,     // lower bounds of new columns
-  const std::vector<double>& upper_bounds,     // upper bounds of new columns
-  std::vector<std::string>& col_names,               // column names
-  int num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
-  const std::vector<int>& begin_cols,       // start index of each column in indices- and vals-array
-  const std::vector<int>& indices,          // row indices of constraint matrix entries
-  const std::vector<double>& vals              // values of constraint matrix entries
+absl::Status LPSoplexInterface::AddColumns(
+    const std::vector<SparseVector>& cols,    // columns to be added
+    const std::vector<double>& lower_bounds,  // lower bounds of new columns
+    const std::vector<double>& upper_bounds,  // upper bounds of new columns
+    const std::vector<double>&
+        objective_values,  // objective function values of new columns
+    std::vector<std::string>& col_names  // column names
 ) {
   MiniMIPdebugMessage("calling AddColumns()\n");
 
@@ -600,57 +694,62 @@ RetCode LPSoplexInterface::AddColumns(
   assert(PreStrongBranchingBasisFreed());
 
 #ifndef NDEBUG
-  if (num_non_zeros > 0) {
-    // perform check that no new rows are added - this is likely to be a mistake
+  if (!cols.empty()) {
+    // perform check that no new rows are added - this is likely to be a
+    // mistake
     int num_rows = spx_->numRowsReal();
-    for (int j = 0; j < num_non_zeros; ++j) {
-      assert(0 <= indices[j] && indices[j] < num_rows);
-      assert(vals[j] != 0.0);
+    for (size_t i = 0; i < cols.size(); i++) {
+      for (size_t j = 0; j < cols[i].indices.size(); ++j) {
+        assert(0 <= cols[i].indices[j]);
+        assert(cols[i].indices[j] < num_rows);
+        assert(cols[i].values[j] != 0.0);
+      }
     }
   }
 #endif
 
   try {
-    std::vector<int> integer_indices(indices.begin(), indices.end());
-    LPColSet cols(num_cols);
-    DSVector col_Vector(num_cols);
+    soplex::LPColSet columns(cols.size());
+    soplex::DSVector col_Vector(cols.size());
     int start;
     int last;
-    int i;
-
     // create column vectors with coefficients and bounds
-    for (i = 0; i < num_cols; ++i) {
+    for (size_t i = 0; i < cols.size(); ++i) {
       col_Vector.clear();
-      if (num_non_zeros > 0) {
-        start = begin_cols[i];
-        last = (i == num_cols - 1 ? num_non_zeros : begin_cols[i + 1]);
-        col_Vector.add(last - start, &integer_indices[start], &vals[start]);
+      if (!cols[i].indices.empty()) {
+        start = (i == 0 ? 0 : last);
+        last  = start + cols[i].indices.size();
+        col_Vector.add(last - start, &cols[i].indices[0], &cols[i].values[0]);
       }
-      cols.add(objective_values[i], lower_bounds[i], col_Vector, upper_bounds[i]);
+      columns.add(objective_values[i], lower_bounds[i], col_Vector,
+                  upper_bounds[i]);
     }
-    spx_->addColsReal(cols);
+    spx_->addColsReal(columns);
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // deletes all columns in the given range from LP
-RetCode LPSoplexInterface::DeleteColumns(
-  int first_col, // first column to be deleted
-  int last_col   // last column to be deleted
+absl::Status LPSoplexInterface::DeleteColumns(
+    int first_col,  // first column to be deleted
+    int last_col    // last column to be deleted
 ) {
   MiniMIPdebugMessage("calling DeleteColumns()\n");
 
-  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
+  assert(0 <= first_col);
+  assert(first_col <= last_col);
+  assert(last_col < spx_->numColsReal());
 
   InvalidateSolution();
 
@@ -658,46 +757,40 @@ RetCode LPSoplexInterface::DeleteColumns(
 
   SOPLEX_TRY(spx_->removeColRangeReal(first_col, last_col));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
-
-// deletes columns from LP; the new position of a column must not be greater than its old position
-RetCode LPSoplexInterface::DeleteColumnSet(
-  std::vector<bool>& deletion_status // deletion status of columns
+// add row to the LP
+absl::Status LPSoplexInterface::AddRow(
+    SparseVector row,        // row to be added
+    double left_hand_side,   // left hand side of new row
+    double right_hand_side,  // right hand side of new row
+    std::string row_name     // row name
 ) {
-  int num_cols;
-  int i;
+#ifndef NDEBUG
+  // perform check that no new columns are added - this is likely to be a
+  // mistake
+  int num_cols = spx_->numColsReal();
+  for (size_t j = 0; j < row.indices.size(); ++j) {
+    assert(row.values[j] != 0.0);
+    assert(0 <= row.indices[j]);
+    assert(row.indices[j] < num_cols);
+  }
+#endif
 
-  MiniMIPdebugMessage("calling DeleteColumnSet()\n");
+  soplex::DSVector row_vector;
+  row_vector.add(row.indices.size(), row.indices.data(), row.values.data());
+  spx_->addRowReal(soplex::LPRow(left_hand_side, row_vector, right_hand_side));
 
-  InvalidateSolution();
-
-  assert(PreStrongBranchingBasisFreed());
-
-  std::vector<int> int_deletion_status(deletion_status.begin(), deletion_status.end());
-  num_cols = spx_->numColsReal();
-
-  // SoPlex removeCols() method deletes the columns with deletion_status[i] < 0, so we have to negate the values
-  for (i = 0; i < num_cols; ++i)
-    int_deletion_status[i] *= -1;
-
-  SOPLEX_TRY(spx_->removeColsReal(int_deletion_status.data()));
-
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-// adds rows to the LP
-//
-// @note The indices array is not checked for duplicates, problems may appear if indices are added more than once.
-RetCode LPSoplexInterface::AddRows(
-  int num_rows,                       // number of rows to be added
-  const std::vector<double>& left_hand_sides,  // left hand sides of new rows
-  const std::vector<double>& right_hand_sides, // right hand sides of new rows
-  std::vector<std::string>& row_names,               // row names
-  int num_non_zeros,                  // number of non-zero elements to be added to the constraint matrix
-  const std::vector<int>& begin_rows,       // start index of each row in indices- and vals-array
-  const std::vector<int>& indices,          // column indices of constraint matrix entries
-  const std::vector<double>& vals              // values of constraint matrix entries
+// add rows to the LP
+absl::Status LPSoplexInterface::AddRows(
+    const std::vector<SparseVector>& rows,       // number of rows to be added
+    const std::vector<double>& left_hand_sides,  // left hand sides of new rows
+    const std::vector<double>&
+        right_hand_sides,                // right hand sides of new rows
+    std::vector<std::string>& row_names  // row names
 ) {
   MiniMIPdebugMessage("calling AddRows()\n");
 
@@ -706,56 +799,65 @@ RetCode LPSoplexInterface::AddRows(
   assert(PreStrongBranchingBasisFreed());
 
 #ifndef NDEBUG
-  if (num_non_zeros > 0) {
-    // perform check that no new columns are added - this is likely to be a mistake
-    int num_cols = spx_->numColsReal();
-    for (int j = 0; j < num_non_zeros; ++j) {
-      assert(vals[j] != 0.0);
-      assert(0 <= indices[j] && indices[j] < num_cols);
+  for (size_t i = 0; i < rows.size(); i++) {
+    if (!rows[i].indices.empty()) {
+      // perform check that no new columns are added - this is likely to be a
+      // mistake
+      int num_cols = spx_->numColsReal();
+      for (size_t j = 0; j < rows[i].indices.size(); ++j) {
+        assert(rows[i].values[j] != 0.0);
+        assert(0 <= rows[i].indices[j]);
+        assert(rows[i].indices[j] < num_cols);
+      }
     }
   }
 #endif
 
   try {
-    LPRowSet rows(num_rows);
-    DSVector row_Vector;
-    int start;
-    int last;
-    int i;
-    std::vector<int> integer_indices(indices.begin(), indices.end());
+    soplex::LPRowSet row_set(rows.size());
+    soplex::DSVector row_Vector;
+    int start = 0;
+    int last  = 0;
+    for (size_t i = 0; i < rows.size(); i++)
+      for (size_t j = 0; j < rows[i].indices.size(); j++)
+        std::vector<int> integer_indices(rows[i].indices.begin(),
+                                         rows[i].indices.end());
 
     // create row vectors with given sides
-    for (i = 0; i < num_rows; ++i) {
+    for (size_t i = 0; i < rows.size(); ++i) {
       row_Vector.clear();
-      if (num_non_zeros > 0) {
-        start = begin_rows[i];
-        last = (i == num_rows - 1 ? num_non_zeros : begin_rows[i + 1]);
-        row_Vector.add(last - start, &integer_indices[start], &vals[start]);
+      if (!rows[i].indices.empty()) {
+        start = (i == 0 ? 0 : last);
+        last  = start + rows[i].indices.size();
+        row_Vector.add(last - start, &rows[i].indices[0], &rows[i].values[0]);
       }
-      rows.add(left_hand_sides[i], row_Vector, right_hand_sides[i]);
+      row_set.add(left_hand_sides[i], row_Vector, right_hand_sides[i]);
     }
-    spx_->addRowsReal(rows);
+    spx_->addRowsReal(row_set);
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // deletes all rows in the given range from LP
-RetCode LPSoplexInterface::DeleteRows(
-  int first_row, // first row to be deleted
-  int last_row   // last row to be deleted
+absl::Status LPSoplexInterface::DeleteRows(
+    int first_row,  // first row to be deleted
+    int last_row    // last row to be deleted
 ) {
   MiniMIPdebugMessage("calling DeleteRows()\n");
 
-  assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
+  assert(0 <= first_row);
+  assert(first_row <= last_row);
+  assert(last_row < spx_->numRowsReal());
 
   InvalidateSolution();
 
@@ -763,12 +865,13 @@ RetCode LPSoplexInterface::DeleteRows(
 
   SOPLEX_TRY(spx_->removeRowRangeReal(first_row, last_row));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-// deletes rows from LP; the new position of a row must not be greater that its old position
-RetCode LPSoplexInterface::DeleteRowSet(
-  std::vector<bool>& deletion_status // deletion status of rows
+// deletes rows from LP; the new position of a row must not be greater that
+// its old position
+absl::Status LPSoplexInterface::DeleteRowSet(
+    std::vector<bool>& deletion_status  // deletion status of rows
 ) {
   int num_rows;
   int i;
@@ -779,21 +882,22 @@ RetCode LPSoplexInterface::DeleteRowSet(
 
   assert(PreStrongBranchingBasisFreed());
 
-  std::vector<int> int_deletion_status(deletion_status.begin(), deletion_status.end());
+  std::vector<int> int_deletion_status(deletion_status.begin(),
+                                       deletion_status.end());
 
   num_rows = spx_->numRowsReal();
 
-  // SoPlex removeRows() method deletes the rows with deletion_status[i] < 0, so we have to negate the values
-  for (i = 0; i < num_rows; ++i)
-    int_deletion_status[i] *= -1;
+  // SoPlex removeRows() method deletes the rows with deletion_status[i] < 0,
+  // so we have to negate the values
+  for (i = 0; i < num_rows; ++i) int_deletion_status[i] *= -1;
 
   SOPLEX_TRY(spx_->removeRowsReal(int_deletion_status.data()));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // clears the whole LP
-RetCode LPSoplexInterface::Clear() {
+absl::Status LPSoplexInterface::Clear() {
   MiniMIPdebugMessage("calling Clear()\n");
 
   InvalidateSolution();
@@ -801,161 +905,171 @@ RetCode LPSoplexInterface::Clear() {
   assert(PreStrongBranchingBasisFreed());
   SOPLEX_TRY(spx_->clearLPReal());
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // clears current LP Interface state (like basis information) of the solver
-RetCode LPSoplexInterface::ClearState() {
-  
+absl::Status LPSoplexInterface::ClearState() {
   MiniMIPdebugMessage("calling ClearState()\n");
 
   try {
     spx_->clearBasis();
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    //  MiniMIPmessagePrintWarning(lpi->messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    //  MiniMIPmessagePrintWarning(lpi->messagehdlr, "SoPlex threw an
+    //  exception: %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    assert(spx_->status() != SPxSolver::OPTIMAL);
-    return RetCode::kLPError;
+    assert(spx_->status() != soplex::SPxSolver::OPTIMAL);
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes lower and upper bounds of columns
-RetCode LPSoplexInterface::ChangeBounds(
-  int num_cols,                   // number of columns to change bounds for
-  const std::vector<int>& indices,      // column indices
-  const std::vector<double>& lower_bounds, // values for the new lower bounds
-  const std::vector<double>& upper_bounds  // values for the new upper bounds
-) {
-  int i;
-
-  MiniMIPdebugMessage("calling ChangeBounds()\n");
+absl::Status LPSoplexInterface::SetColumnBounds(int col, double lower_bound,
+                                                double upper_bound) {
+  MiniMIPdebugMessage("calling SetColumnBounds()\n");
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
   try {
-    for (i = 0; i < num_cols; ++i) {
-      assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
-
-      if (IsInfinity(lower_bounds[i])) {
-        MiniMIPerrorMessage("LP Error: fixing lower bound for variable %d to infinity.\n", indices[i]);
-        return RetCode::kLPError;
-      }
-      if (IsInfinity(-upper_bounds[i])) {
-        MiniMIPerrorMessage("LP Error: fixing upper bound for variable %d to -infinity.\n", indices[i]);
-        return RetCode::kLPError;
-      }
-      spx_->changeBoundsReal(indices[i], lower_bounds[i], upper_bounds[i]);
-      assert(spx_->lowerReal(indices[i]) <= spx_->upperReal(indices[i]) + spx_->realParam(SoPlex::EPSILON_ZERO));
+    if (IsInfinity(lower_bound)) {
+      MiniMIPerrorMessage(
+          "LP Error: fixing lower bound for variable %d to infinity.\n", col);
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
     }
+    if (IsInfinity(-upper_bound)) {
+      MiniMIPerrorMessage(
+          "LP Error: fixing upper bound for variable %d to -infinity.\n", col);
+      return absl::Status(absl::StatusCode::kInternal, "LP Error");
+    }
+    spx_->changeBoundsReal(col, lower_bound, upper_bound);
+    assert(spx_->lowerReal(col) <=
+           spx_->upperReal(col) +
+               spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes left and right hand sides of rows
-RetCode LPSoplexInterface::ChangeSides(
-  int num_rows,                      // number of rows to change sides for
-  const std::vector<int>& indices,         // row indices
-  const std::vector<double>& left_hand_sides, // new values for left hand sides
-  const std::vector<double>& right_hand_sides // new values for right hand sides
-) {
-  int i;
-
-  MiniMIPdebugMessage("calling ChangeSides()\n");
-
-  if (num_rows <= 0)
-    return RetCode::kOkay;
+absl::Status LPSoplexInterface::SetRowSides(int row, double left_hand_side,
+                                            double right_hand_side) {
+  MiniMIPdebugMessage("calling SetRowSides()\n");
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
 
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
+
   try {
-    for (i = 0; i < num_rows; ++i) {
-      assert(0 <= indices[i] && indices[i] < spx_->numRowsReal());
-      spx_->changeRangeReal(indices[i], left_hand_sides[i], right_hand_sides[i]);
-      assert(spx_->lhsReal(indices[i]) <= spx_->rhsReal(indices[i]) + spx_->realParam(SoPlex::EPSILON_ZERO));
-    }
+    spx_->changeRangeReal(row, left_hand_side, right_hand_side);
+    assert(spx_->lhsReal(row) <=
+           spx_->rhsReal(row) + spx_->realParam(soplex::SoPlex::EPSILON_ZERO));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes the objective sense
-RetCode LPSoplexInterface::ChangeObjectiveSense(
-  LPObjectiveSense obj_sense // new objective sense
+absl::Status LPSoplexInterface::SetObjectiveSense(
+    LPObjectiveSense obj_sense  // new objective sense
 ) {
-  MiniMIPdebugMessage("calling ChangeObjectiveSense()\n");
+  MiniMIPdebugMessage("calling SetObjectiveSense()\n");
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
 
-  SOPLEX_TRY(static_cast<void>(spx_->setIntParam(SoPlex::OBJSENSE, obj_sense == LPObjectiveSense::kMinimize ? SoPlex::OBJSENSE_MINIMIZE : SoPlex::OBJSENSE_MAXIMIZE)));
+  SOPLEX_TRY(static_cast<void>(spx_->setIntParam(
+      soplex::SoPlex::OBJSENSE, obj_sense == LPObjectiveSense::kMinimization
+                                    ? soplex::SoPlex::OBJSENSE_MINIMIZE
+                                    : soplex::SoPlex::OBJSENSE_MAXIMIZE)));
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // changes objective values of columns in the LP
-RetCode LPSoplexInterface::ChangeObjective(
-  int num_cols,                  // number of columns to change objective value for
-  const std::vector<int>& indices,     // column indices to change objective value for
-  const std::vector<double>& new_obj_vals // new objective values for columns
+absl::Status LPSoplexInterface::SetObjectiveCoefficient(
+    const int col,  // column index to change objective value for
+    const double objective_coefficient  // new objective values for column
 ) {
-  int i;
+  MiniMIPdebugMessage("calling SetObjectiveCoefficient()\n");
 
-  MiniMIPdebugMessage("calling ChangeObjective()\n");
+  InvalidateSolution();
+
+  assert(PreStrongBranchingBasisFreed());
+
+  spx_->changeObjReal(col, objective_coefficient);
+  return absl::OkStatus();
+}
+
+// changes objective values of columns in the LP
+absl::Status LPSoplexInterface::SetObjectiveCoefficients(
+    const std::vector<int>&
+        indices,  // column indices to change objective value for
+    const std::vector<double>&
+        objective_coefficients  // new objective values for columns
+) {
+  size_t i;
+
+  MiniMIPdebugMessage("calling SetObjectiveCoefficients()\n");
 
   InvalidateSolution();
 
   assert(PreStrongBranchingBasisFreed());
 
   try {
-    for (i = 0; i < num_cols; ++i) {
-      assert(0 <= indices[i] && indices[i] < spx_->numColsReal());
-      spx_->changeObjReal(indices[i], new_obj_vals[i]);
+    for (i = 0; i < indices.size(); ++i) {
+      assert(0 <= indices[i]);
+      assert(indices[i] < spx_->numColsReal());
+      spx_->changeObjReal(indices[i], objective_coefficients[i]);
     }
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-// @}
-
-// @name Data Accessing Methods
-// @{
+// ==========================================================================
+// LP model getters.
+// ==========================================================================
 
 // gets the number of rows in the LP
 int LPSoplexInterface::GetNumberOfRows() const {
@@ -974,7 +1088,8 @@ int LPSoplexInterface::GetNumberOfColumns() const {
 // gets the number of nonzero elements in the LP constraint matrix
 int LPSoplexInterface::GetNumberOfNonZeros() const {
   int i;
-  // SoPlex has no direct method to return the number of nonzeros, so we have to count them manually
+  // SoPlex has no direct method to return the number of nonzeros, so we have
+  // to count them manually
   int num_non_zeros = 0;
 
   MiniMIPdebugMessage("calling GetNumberOfNonZeros()\n");
@@ -986,7 +1101,6 @@ int LPSoplexInterface::GetNumberOfNonZeros() const {
     for (i = 0; i < spx_->numColsReal(); ++i)
       num_non_zeros += spx_->colVectorRealInternal(i).size();
   }
-  std::cout << " num_non_zeros " << num_non_zeros << std::endl;
 
   return num_non_zeros;
 }
@@ -995,326 +1109,221 @@ int LPSoplexInterface::GetNumberOfNonZeros() const {
 LPObjectiveSense LPSoplexInterface::GetObjectiveSense() const {
   MiniMIPdebugMessage("calling GetObjectiveSense()\n");
 
-  return (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE) ? LPObjectiveSense::kMinimize : LPObjectiveSense::kMaximize;
+  return (spx_->intParam(soplex::SoPlex::OBJSENSE) ==
+          soplex::SoPlex::OBJSENSE_MINIMIZE)
+             ? LPObjectiveSense::kMinimization
+             : LPObjectiveSense::kMaximization;
 }
 
 // gets columns from LP problem object
 //
-// Either both, lower_bound and upper_bound, have to be 0, or both have to be non-0,
-// either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0, or all of them have to be non-0.
-RetCode LPSoplexInterface::GetColumns(
-  int first_col,            // first column to get from LP
-  int last_col,             // last column to get from LP
-  std::vector<double>& lower_bounds, // array to store the lower bound vector
-  std::vector<double>& upper_bounds, // array to store the upper bound vector
-  int& num_non_zeros,       // store the number of non-zero elements
-  std::vector<int>& begin_cols,   // array to store start index of each column in indices- and vals-array
-  std::vector<int>& indices,      // array to store row indices of constraint matrix entries
-  std::vector<double>& vals          // array to store values of constraint matrix entries
-) const {
-  int i;
-  int j;
+// Either both, lower_bound and upper_bound, have to be 0, or both have to be
+// non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be
+// 0, or all of them have to be non-0.
+SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
+  MiniMIPdebugMessage("calling GetSparseColumnCoefficients()\n");
 
-  MiniMIPdebugMessage("calling GetColumns()\n");
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
-  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
+  SparseVector sparse_column;
 
-  if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-    DVector tmp_lower_bound(spx_->numColsReal());
-    DVector tmp_upper_bound(spx_->numColsReal());
-    spx_->getLowerReal(tmp_lower_bound);
-    spx_->getUpperReal(tmp_upper_bound);
-    for (i = first_col; i <= last_col; ++i) {
-      lower_bounds[i - first_col] = tmp_lower_bound[i];
-      upper_bounds[i - first_col] = tmp_upper_bound[i];
+  if (spx_->boolParam(soplex::SoPlex::PERSISTENTSCALING)) {
+    soplex::DSVector cvec;
+    spx_->getColVectorReal(col, cvec);
+    for (int j = 0; j < cvec.size(); ++j) {
+      sparse_column.indices.push_back(cvec.index(j));
+      sparse_column.values.push_back(cvec.value(j));
     }
   } else {
-    const Vector& tmp_lower_bound = spx_->lowerRealInternal();
-    const Vector& tmp_upper_bound = spx_->upperRealInternal();
-    for (i = first_col; i <= last_col; ++i) {
-      lower_bounds[i - first_col] = tmp_lower_bound[i];
-      upper_bounds[i - first_col] = tmp_upper_bound[i];
+    const soplex::SVector& cvec = spx_->colVectorRealInternal(col);
+    for (int j = 0; j < cvec.size(); ++j) {
+      sparse_column.indices.push_back(cvec.index(j));
+      sparse_column.values.push_back(cvec.value(j));
     }
   }
-
-  num_non_zeros = 0;
-  for (i = first_col; i <= last_col; ++i) {
-    begin_cols[i - first_col] = num_non_zeros;
-
-    if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-      DSVector cvec;
-      spx_->getColVectorReal(i, cvec);
-      for (j = 0; j < cvec.size(); ++j) {
-        indices[num_non_zeros] = cvec.index(j);
-        vals[num_non_zeros] = cvec.value(j);
-        num_non_zeros++;
-      }
-    } else {
-      const SVector& cvec = spx_->colVectorRealInternal(i);
-      for (j = 0; j < cvec.size(); ++j) {
-        indices[num_non_zeros] = cvec.index(j);
-        vals[num_non_zeros] = cvec.value(j);
-        num_non_zeros++;
-      }
-    }
-  }
-  return RetCode::kOkay;
+  return sparse_column;
 }
 
 // gets rows from LP problem object
 //
-// Either both, left_hand_side and right_hand_side, have to be 0, or both have to be non-0,
-// either n_non_zeroes, begin_cols, indices, and obj_coeffs have to be 0, or all of them have to be non-0.
-RetCode LPSoplexInterface::GetRows(
-  int first_row,                // first row to get from LP
-  int last_row,                 // last row to get from LP
-  std::vector<double>& left_hand_sides,  // array to store left hand side vector
-  std::vector<double>& right_hand_sides, // array to store right hand side vector
-  int& num_non_zeros,           // store the number of non-zero elements
-  std::vector<int>& begin_cols,       // array to store start index of each row in indices- and vals-array
-  std::vector<int>& indices,          // array to store column indices of constraint matrix entries
-  std::vector<double>& vals              // array to store values of constraint matrix entries
-) const {
-  int i;
-  int j;
+// Either both, left_hand_side and right_hand_side, have to be 0, or both have
+// to be non-0, either n_non_zeroes, begin_cols, indices, and obj_coeffs have
+// to be 0, or all of them have to be non-0.
+SparseVector LPSoplexInterface::GetSparseRowCoefficients(int row) const {
+  MiniMIPdebugMessage("calling GetSparseRowCoefficients()\n");
 
-  MiniMIPdebugMessage("calling GetRows()\n");
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
 
-  assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
+  SparseVector sparse_row;
 
-  if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-    DVector lhsvec(spx_->numRowsReal());
-    DVector rhsvec(spx_->numRowsReal());
-    spx_->getLhsReal(lhsvec);
-    spx_->getRhsReal(rhsvec);
-    for (i = first_row; i <= last_row; ++i) {
-      left_hand_sides[i - first_row] = lhsvec[i];
-      right_hand_sides[i - first_row] = rhsvec[i];
+  if (spx_->boolParam(soplex::SoPlex::PERSISTENTSCALING)) {
+    soplex::DSVector rvec;
+    spx_->getRowVectorReal(row, rvec);
+    for (int j = 0; j < rvec.size(); ++j) {
+      sparse_row.indices.push_back(rvec.index(j));
+      sparse_row.values.push_back(rvec.value(j));
     }
   } else {
-    const Vector& lhsvec = spx_->lhsRealInternal();
-    const Vector& rhsvec = spx_->rhsRealInternal();
-    for (i = first_row; i <= last_row; ++i) {
-      left_hand_sides[i - first_row] = lhsvec[i];
-      right_hand_sides[i - first_row] = rhsvec[i];
+    const soplex::SVector& rvec = spx_->rowVectorRealInternal(row);
+    for (int j = 0; j < rvec.size(); ++j) {
+      sparse_row.indices.push_back(rvec.index(j));
+      sparse_row.values.push_back(rvec.value(j));
     }
   }
-
-  num_non_zeros = 0;
-  for (i = first_row; i <= last_row; ++i) {
-    begin_cols[i - first_row] = num_non_zeros;
-
-    if (spx_->boolParam(SoPlex::PERSISTENTSCALING)) {
-      DSVector rvec;
-      spx_->getRowVectorReal(i, rvec);
-      for (j = 0; j < rvec.size(); ++j) {
-        indices[num_non_zeros] = rvec.index(j);
-        vals[num_non_zeros] = rvec.value(j);
-        num_non_zeros++;
-      }
-    } else {
-      const SVector& rvec = spx_->rowVectorRealInternal(i);
-      for (j = 0; j < rvec.size(); ++j) {
-        indices[num_non_zeros] = rvec.index(j);
-        vals[num_non_zeros] = rvec.value(j);
-        num_non_zeros++;
-      }
-    }
-  }
-  return RetCode::kOkay;
+  return sparse_row;
 }
 
 // gets objective coefficients from LP problem object
-RetCode LPSoplexInterface::GetObjective(
-  int first_col,         // first column to get objective coefficient for
-  int last_col,          // last column to get objective coefficient for
-  std::vector<double>& obj_coeffs // array to store objective coefficients
-) const {
-  int i;
+double LPSoplexInterface::GetObjectiveCoefficient(int col) const {
+  MiniMIPdebugMessage("calling GetObjectiveCoefficient()\n");
 
-  MiniMIPdebugMessage("calling GetObjective()\n");
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
-  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
-
-  for (i = first_col; i <= last_col; ++i)
-    obj_coeffs[i - first_col] = spx_->objReal(i);
-
-  return RetCode::kOkay;
+  return spx_->objReal(col);
 }
 
-// gets current bounds from LP problem object
-RetCode LPSoplexInterface::GetBounds(
-  int first_col,            // first column to get bounds for
-  int last_col,             // last column to get bounds for
-  std::vector<double>& lower_bounds, // array to store lower bound values
-  std::vector<double>& upper_bounds  // array to store upper bound values
-) const {
-  int i;
+// gets current lower bound of column from LP problem object
+double LPSoplexInterface::GetLowerBound(int col) const {
+  MiniMIPdebugMessage("calling GetLowerBound()\n");
 
-  MiniMIPdebugMessage("calling GetBounds()\n");
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
-  assert(0 <= first_col && first_col <= last_col && last_col < spx_->numColsReal());
-
-  for (i = first_col; i <= last_col; ++i) {
-    lower_bounds[i - first_col] = spx_->lowerReal(i);
-    upper_bounds[i - first_col] = spx_->upperReal(i);
-  }
-
-  return RetCode::kOkay;
+  return spx_->lowerReal(col);
 }
 
-// gets current row sides from LP problem object
-RetCode LPSoplexInterface::GetSides(
-  int first_row,               // first row to get sides for
-  int last_row,                // last row to get sides for
-  std::vector<double>& left_hand_sides, // array to store left hand side values
-  std::vector<double>& right_hand_sides // array to store right hand side values
-) const {
-  int i;
+// gets current upper bound of column from LP problem object
+double LPSoplexInterface::GetUpperBound(int col) const {
+  MiniMIPdebugMessage("calling GetUpperBound()\n");
 
-  MiniMIPdebugMessage("calling GetSides()\n");
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
 
-  assert(0 <= first_row && first_row <= last_row && last_row < spx_->numRowsReal());
-
-  for (i = first_row; i <= last_row; ++i) {
-    left_hand_sides[i - first_row] = spx_->lhsReal(i);
-    right_hand_sides[i - first_row] = spx_->rhsReal(i);
-  }
-  return RetCode::kOkay;
+  return spx_->upperReal(col);
 }
 
-// gets a single coefficient
-RetCode LPSoplexInterface::GetCoefficient(
-  int row,   // row number of coefficient
-  int col,   // column number of coefficient
-  double& val // array to store the value of the coefficient
-) const {
-  MiniMIPdebugMessage("calling GetCoefficients()\n");
+// gets current left hand sides of row from LP problem object
+double LPSoplexInterface::GetLeftHandSide(int row) const {
+  MiniMIPdebugMessage("calling GetLeftHandSide()\n");
 
-  assert(0 <= col && col < spx_->numColsReal());
-  assert(0 <= row && row < spx_->numRowsReal());
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
 
-  val = spx_->coefReal(row, col);
-
-  return RetCode::kOkay;
+  return spx_->lhsReal(row);
 }
 
-// @}
+// gets current right hand sides of row from LP problem object
+double LPSoplexInterface::GetRightHandSide(int row) const {
+  MiniMIPdebugMessage("calling GetRightHandSide()\n");
 
-// @name Solving Methods
-// @{
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
+
+  return spx_->rhsReal(row);
+}
+
+// gets the matrix coefficient of column and row from LP problem object
+double LPSoplexInterface::GetMatrixCoefficient(
+    int col,  // column number of coefficient
+    int row   // row number of coefficient
+) const {
+  MiniMIPdebugMessage("calling GetMatrixCoefficient()\n");
+
+  assert(0 <= col);
+  assert(col < spx_->numColsReal());
+  assert(0 <= row);
+  assert(row < spx_->numRowsReal());
+
+  return spx_->coefReal(row, col);
+}
+
+// ==========================================================================
+// Solving methods.
+// ==========================================================================
 
 // calls primal simplex to solve the LP
-RetCode LPSoplexInterface::SolvePrimal() {
-  MiniMIPdebugMessage("calling SolvePrimal()\n");
+absl::Status LPSoplexInterface::SolveLPWithPrimalSimplex() {
+  MiniMIPdebugMessage("calling SolveLPWithPrimalSimplex()\n");
 
-  static_cast<void>(spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_PRIMAL));
+  static_cast<void>(spx_->setIntParam(soplex::SoPlex::ALGORITHM,
+                                      soplex::SoPlex::ALGORITHM_PRIMAL));
   return SoPlexSolve();
 }
 
 // calls dual simplex to solve the LP
-RetCode LPSoplexInterface::SolveDual() {
-  MiniMIPdebugMessage("calling SolveDual()\n");
+absl::Status LPSoplexInterface::SolveLPWithDualSimplex() {
+  MiniMIPdebugMessage("calling SolveLPWithDualSimplex()\n");
 
-  static_cast<void>(spx_->setIntParam(SoPlex::ALGORITHM, SoPlex::ALGORITHM_DUAL));
+  static_cast<void>(spx_->setIntParam(soplex::SoPlex::ALGORITHM,
+                                      soplex::SoPlex::ALGORITHM_DUAL));
   return SoPlexSolve();
 }
 
 // start strong branching - call before any strong branching
-RetCode LPSoplexInterface::StartStrongbranch() {
-
+absl::Status LPSoplexInterface::StartStrongBranching() {
   assert(PreStrongBranchingBasisFreed());
   SavePreStrongbranchingBasis();
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // end strong branching - call after any strong branching
-RetCode LPSoplexInterface::EndStrongbranch() {
-
+absl::Status LPSoplexInterface::EndStrongBranching() {
   assert(!PreStrongBranchingBasisFreed());
   RestorePreStrongbranchingBasis();
   FreePreStrongBranchingBasis();
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-// performs strong branching iterations on one @b fractional candidate
-RetCode LPSoplexInterface::StrongbranchFractionalValue(
-  int col,                       // column to apply strong branching on
-  double primal_sol,              // fractional current primal solution value of column
-  int iteration_limit,           // iteration limit for strong branchings
-  double& dual_bound_down_branch, // stores dual bound after branching column down
-  double& dual_bound_up_branch,   // stores dual bound after branching column up
-  bool& down_valid,                // whether the returned down value is a valid dual bound; otherwise, it can only be used as an estimate value
-  bool& up_valid,                  // whether the returned up value is a valid dual bound; otherwise, it can only be used as an estimate value
-  int& iterations                // stores total number of strong branching iterations
+// performs strong branching iterations on one branching candidate
+absl::StatusOr<LPInterface::StrongBranchResult>
+LPSoplexInterface::StrongBranchValue(
+    int col,             // column to apply strong branching on
+    double primal_sol,   // current primal solution value of column
+    int iteration_limit  // iteration limit for strong branchings
 ) {
-
-  RetCode retcode;
-
+  StrongBranchResult strong_branch_result;
   // pass call on to StrongBranch()
-  retcode = StrongBranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations);
+  absl::Status absl_status_code = StrongBranch(
+      col, primal_sol, iteration_limit,
+      strong_branch_result.dual_bound_down_branch,
+      strong_branch_result.dual_bound_up_branch,
+      strong_branch_result.down_valid, strong_branch_result.up_valid,
+      strong_branch_result.iterations);
 
-  // pass RetCode::kLPError to MiniMIP without a back trace
-  if (retcode == RetCode::kLPError)
-    return RetCode::kLPError;
-
-  // evaluate retcode
-  MINIMIP_CALL(retcode);
-
-  return RetCode::kOkay;
+  // pass absl::Status(absl::StatusCode::kInternal, "LP Error") to MiniMIP
+  // without a back trace
+  // @TODO: look into possible statuscode returns.
+  if (absl_status_code != absl::OkStatus())
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  else
+    return strong_branch_result;
 }
 
-// performs strong branching iterations on one candidate with @b integral value
-RetCode LPSoplexInterface::StrongbranchIntegerValue(
-  int col,                       // column to apply strong branching on
-  double primal_sol,              // current integral primal solution value of column
-  int iteration_limit,           // iteration limit for strong branchings
-  double& dual_bound_down_branch, // stores dual bound after branching column down
-  double& dual_bound_up_branch,   // stores dual bound after branching column up
-  bool& down_valid,                // stores whether the returned down value is a valid dual bound;
-                                   // otherwise, it can only be used as an estimate value
-  bool& up_valid,                  // stores whether the returned up value is a valid dual bound;
-                                   // otherwise, it can only be used as an estimate value
-  int& iterations                // stores total number of strong branching iterations
-) {
-  RetCode retcode;
+// ============================================================================
+// Solution information getters.
+// ============================================================================
 
-  // pass call on to StrongBranch()
-  retcode = StrongBranch(col, primal_sol, iteration_limit, dual_bound_down_branch, dual_bound_up_branch, down_valid, up_valid, iterations);
+// returns whether a solve method was called after the last modification of
+// the LP
+bool LPSoplexInterface::IsSolved() const { return solved_; }
 
-  // pass RetCode::kLPError to MiniMIP without a back trace
-  if (retcode == RetCode::kLPError)
-    return RetCode::kLPError;
-
-  // evaluate retcode
-  MINIMIP_CALL(retcode);
-
-  return RetCode::kOkay;
-}
-
-// @}
-
-// @name Solution Information Methods
-// @{
-
-// returns whether a solve method was called after the last modification of the LP
-bool LPSoplexInterface::IsSolved() const {
-
-  return solved_;
-}
-
-// returns true iff LP is proven to have a primal unbounded ray (but not necessary a primal feasible point);
-// this does not necessarily meanthat the solver knows and can return the primal ray
+// returns true iff LP is proven to have a primal unbounded ray (but not
+// necessary a primal feasible point); this does not necessarily meanthat the
+// solver knows and can return the primal ray
 bool LPSoplexInterface::ExistsPrimalRay() const {
   MiniMIPdebugMessage("calling ExistsPrimalRay()\n");
 
-  return (spx_->status() == SPxSolver::UNBOUNDED);
+  return (spx_->status() == soplex::SPxSolver::UNBOUNDED);
 }
 
-// returns true iff LP is proven to have a primal unbounded ray (but not necessary a primal feasible point),
-// and the solver knows and can return the primal ray
+// returns true iff LP is proven to have a primal unbounded ray (but not
+// necessary a primal feasible point), and the solver knows and can return the
+// primal ray
 bool LPSoplexInterface::HasPrimalRay() const {
   MiniMIPdebugMessage("calling HasPrimalRay()\n");
 
@@ -1325,36 +1334,43 @@ bool LPSoplexInterface::HasPrimalRay() const {
 bool LPSoplexInterface::IsPrimalUnbounded() const {
   MiniMIPdebugMessage("calling IsPrimalUnbounded()\n");
 
-  assert(spx_->status() != SPxSolver::UNBOUNDED || spx_->basisStatus() == SPxBasis::UNBOUNDED);
+  assert(spx_->status() != soplex::SPxSolver::UNBOUNDED ||
+         spx_->basisStatus() == soplex::SPxBasis::UNBOUNDED);
 
-  // if SoPlex returns unbounded, this may only mean that an unbounded ray is available, not necessarily a primal
+  // if SoPlex returns unbounded, this may only mean that an unbounded ray is
+  // available, not necessarily a primal
   //* feasible point; hence we have to check the perturbation
-  return spx_->status() == SPxSolver::UNBOUNDED;
+  return spx_->status() == soplex::SPxSolver::UNBOUNDED;
 }
 
 // returns true iff LP is proven to be primal infeasible
 bool LPSoplexInterface::IsPrimalInfeasible() const {
   MiniMIPdebugMessage("calling IsPrimalInfeasible()\n");
 
-  return (spx_->status() == SPxSolver::INFEASIBLE);
+  return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
 // returns true iff LP is proven to be primal feasible
 bool LPSoplexInterface::IsPrimalFeasible() const {
   MiniMIPdebugMessage("calling IsPrimalFeasible()\n");
 
-  return spx_->basisStatus() == SPxBasis::OPTIMAL || spx_->basisStatus() == SPxBasis::PRIMAL;
+  return spx_->basisStatus() == soplex::SPxBasis::OPTIMAL ||
+         spx_->basisStatus() == soplex::SPxBasis::PRIMAL;
 }
 
-// returns true iff LP is proven to have a dual unbounded ray (but not necessary a dual feasible point);
-//*  this does not necessarily meanthat the solver knows and can return the dual ray
+// returns true iff LP is proven to have a dual unbounded ray (but not
+// necessary a dual feasible point);
+//*  this does not necessarily meanthat the solver knows and can return the
+// dual
+// ray
 bool LPSoplexInterface::ExistsDualRay() const {
   MiniMIPdebugMessage("calling ExistsDualRay()\n");
 
-  return (spx_->status() == SPxSolver::INFEASIBLE);
+  return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
-// returns true iff LP is proven to have a dual unbounded ray (but not necessary a dual feasible point),
+// returns true iff LP is proven to have a dual unbounded ray (but not
+// necessary a dual feasible point),
 //*  and the solver knows and can return the dual ray
 bool LPSoplexInterface::HasDualRay() const {
   MiniMIPdebugMessage("calling HasDualRay()\n");
@@ -1366,44 +1382,52 @@ bool LPSoplexInterface::HasDualRay() const {
 bool LPSoplexInterface::IsDualUnbounded() const {
   MiniMIPdebugMessage("calling IsDualUnbounded()\n");
 
-  return spx_->status() == SPxSolver::INFEASIBLE && spx_->basisStatus() == SPxBasis::DUAL;
+  return spx_->status() == soplex::SPxSolver::INFEASIBLE &&
+         spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
 
 // returns true iff LP is proven to be dual infeasible
 bool LPSoplexInterface::IsDualInfeasible() const {
   MiniMIPdebugMessage("calling IsDualInfeasible()\n");
 
-  return (spx_->status() == SPxSolver::UNBOUNDED);
+  return (spx_->status() == soplex::SPxSolver::UNBOUNDED);
 }
 
 // returns true iff LP is proven to be dual feasible
 bool LPSoplexInterface::IsDualFeasible() const {
   MiniMIPdebugMessage("calling IsDualFeasible()\n");
 
-  return (spx_->basisStatus() == SPxBasis::OPTIMAL) || spx_->basisStatus() == SPxBasis::DUAL;
+  return (spx_->basisStatus() == soplex::SPxBasis::OPTIMAL) ||
+         spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
 
 // returns true iff LP was solved to optimality
 bool LPSoplexInterface::IsOptimal() const {
   MiniMIPdebugMessage("calling IsOptimal()\n");
 
-  assert((spx_->basisStatus() == SPxBasis::OPTIMAL) == (IsPrimalFeasible() && IsDualFeasible()));
+  assert((spx_->basisStatus() == soplex::SPxBasis::OPTIMAL) ==
+         (IsPrimalFeasible() && IsDualFeasible()));
 
-  return (spx_->status() == SPxSolver::OPTIMAL);
+  return (spx_->status() == soplex::SPxSolver::OPTIMAL);
 }
 
 // returns true iff current LP solution is stable
 //*
-//*  This function should return true if the solution is reliable, i.e., feasible and optimal (or proven
-//*  infeasible/unbounded) with respect to the original problem. The optimality status might be with respect to a scaled
-//*  version of the problem, but the solution might not be feasible to the unscaled original problem; in this case,
-//*  MiniMIP::LPInterface.IsStable() should return false.
+//*  This function should return true if the solution is reliable, i.e.,
+// feasible and optimal (or proven
+//*  infeasible/unbounded) with respect to the original problem. The
+// optimality
+// status might be with respect to a scaled
+//*  version of the problem, but the solution might not be feasible to the
+// unscaled original problem; in this case,
+//*  minimip::LPInterface.IsStable() should return false.
 bool LPSoplexInterface::IsStable() const {
   MiniMIPdebugMessage("calling IsStable()\n");
 
-  if (spx_->status() == SPxSolver::ERROR || spx_->status() == SPxSolver::SINGULAR)
+  if (spx_->status() == soplex::SPxSolver::ERROR ||
+      spx_->status() == soplex::SPxSolver::SINGULAR)
     return false;
-  if (spx_->status() == SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS)
+  if (spx_->status() == soplex::SPxSolver::OPTIMAL_UNSCALED_VIOLATIONS)
     return false;
   return true;
 }
@@ -1412,223 +1436,281 @@ bool LPSoplexInterface::IsStable() const {
 bool LPSoplexInterface::ObjectiveLimitIsExceeded() const {
   MiniMIPdebugMessage("calling ObjectiveLimitIsExceeded()\n");
 
-  return (spx_->status() == SPxSolver::ABORT_VALUE);
+  return (spx_->status() == soplex::SPxSolver::ABORT_VALUE);
 }
 
 // returns true iff the iteration limit was reached
-bool LPSoplexInterface::IterationLimitIsExceeded()  const {
+bool LPSoplexInterface::IterationLimitIsExceeded() const {
   MiniMIPdebugMessage("calling IterationLimitIsExceeded()\n");
 
-  return (spx_->status() == SPxSolver::ABORT_ITER);
+  return (spx_->status() == soplex::SPxSolver::ABORT_ITER);
 }
 
 // returns true iff the time limit was reached
 bool LPSoplexInterface::TimeLimitIsExceeded() const {
   MiniMIPdebugMessage("calling TimeLimitIsExceeded()\n");
 
-  return (spx_->status() == SPxSolver::ABORT_TIME);
+  return (spx_->status() == soplex::SPxSolver::ABORT_TIME);
 }
 
 // gets objective value of solution
-RetCode LPSoplexInterface::GetObjectiveValue(
-  double& obj_val // the objective value
-) {
+double LPSoplexInterface::GetObjectiveValue() {
   MiniMIPdebugMessage("calling GetObjectiveValue()\n");
 
-  obj_val = spx_->objValueReal();
-
-  return RetCode::kOkay;
+  return spx_->objValueReal();
 }
 
 // gets primal and dual solution vectors for feasible LPs
 //*
-//*  Before calling this function, the caller must ensure that the LP has been solved to optimality, i.e., that
-//*  MiniMIP::LPInterface.IsOptimal() returns true.
-RetCode LPSoplexInterface::GetSolution(
-  double& obj_val,          // stores the objective value
-  std::vector<double>& primal_sol,  // primal solution vector
-  std::vector<double>& dual_sol,    // dual solution vector
-  std::vector<double>& activity,    // row activity vector
-  std::vector<double>& reduced_cost // reduced cost vector
-) const {
-  MiniMIPdebugMessage("calling GetSolution()\n");
-  obj_val = spx_->objValueReal();
+//*  Before calling this function, the caller must ensure that the LP has been
+// solved to optimality, i.e., that
+//*  minimip::LPInterface.IsOptimal() returns true.
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalSolution()
+    const {
+  MiniMIPdebugMessage("calling GetPrimalSolution()\n");
+  std::vector<double> primal_sol(spx_->numColsReal());
 
   try {
-    //    if (primal_sol != 0) {
-    static_cast<void>(spx_->getPrimalReal(primal_sol.data(), spx_->numColsReal()));
-    //    }
-    // if (dual_sol.size() != 0) {
-    static_cast<void>(spx_->getDualReal(dual_sol.data(), spx_->numRowsReal()));
-    //    }
-    // if (activity.size() != 0) {
-    static_cast<void>(spx_->getSlacksReal(activity.data(), spx_->numRowsReal())); // in SoPlex, the activities are called "slacks"
-                                                                                  //    }
-    // if (reduced_cost.size() != 0) {
-    static_cast<void>(spx_->getRedCostReal(reduced_cost.data(), spx_->numColsReal()));
-    //    }
+    static_cast<void>(
+        spx_->getPrimalReal(primal_sol.data(), spx_->numColsReal()));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
 
-  return RetCode::kOkay;
+  return primal_sol;
+}
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualSolution() const {
+  MiniMIPdebugMessage("calling GetDualSolution()\n");
+  std::vector<double> dual_sol(spx_->numRowsReal());
+
+  try {
+    static_cast<void>(spx_->getDualReal(dual_sol.data(), spx_->numRowsReal()));
+  }
+#ifndef NDEBUG
+  catch (const soplex::SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const soplex::SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return dual_sol;
+}
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetRowActivity() const {
+  MiniMIPdebugMessage("calling GetRowActivity()\n");
+  std::vector<double> activity(spx_->numRowsReal());
+
+  try {
+    static_cast<void>(
+        spx_->getSlacksReal(activity.data(),
+                            spx_->numRowsReal()));  // in SoPlex, the activities
+                                                    // are called "slacks"
+  }
+#ifndef NDEBUG
+  catch (const soplex::SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const soplex::SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return activity;
+}
+
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetReducedCost() const {
+  MiniMIPdebugMessage("calling GetReducedCost()\n");
+  std::vector<double> reduced_cost(spx_->numColsReal());
+  try {
+    static_cast<void>(
+        spx_->getRedCostReal(reduced_cost.data(), spx_->numColsReal()));
+  }
+#ifndef NDEBUG
+  catch (const soplex::SPxException& x) {
+    std::string s = x.what();
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
+#else
+  catch (const soplex::SPxException&) {
+#endif
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
+  }
+
+  return reduced_cost;
 }
 
 // gets primal ray for unbounded LPs
-RetCode LPSoplexInterface::GetPrimalRay(
-  std::vector<double>& primal_ray // primal ray
-) const {
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetPrimalRay() const {
   MiniMIPdebugMessage("calling GetPrimalRay()\n");
+  std::vector<double> primal_ray;
 
   assert(spx_->hasPrimalRay());
 
   try {
-    static_cast<void>(spx_->getPrimalRayReal(primal_ray.data(), spx_->numColsReal()));
+    static_cast<void>(
+        spx_->getPrimalRayReal(primal_ray.data(), spx_->numColsReal()));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return primal_ray;
 }
 
 // gets dual Farkas proof for infeasibility
-RetCode LPSoplexInterface::GetDualFarkasMultiplier(
-  std::vector<double>& dual_farkas_multiplier // dual Farkas row multipliers
-) const {
+absl::StatusOr<std::vector<double>> LPSoplexInterface::GetDualFarkasMultiplier()
+    const {
   MiniMIPdebugMessage("calling GetDualFarkasMultiplier()\n");
+  std::vector<double> dual_farkas_multiplier;
 
   assert(spx_->hasDualFarkas());
 
   try {
-    static_cast<void>(spx_->getDualFarkasReal(dual_farkas_multiplier.data(), spx_->numRowsReal()));
+    static_cast<void>(spx_->getDualFarkasReal(dual_farkas_multiplier.data(),
+                                              spx_->numRowsReal()));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kLPError;
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
   }
-  return RetCode::kOkay;
+  return dual_farkas_multiplier;
 }
 
 // gets the number of LP iterations of the last solve call
-RetCode LPSoplexInterface::GetIterations(
-  int& iterations // the number of iterations of the last solve call
-) const {
+int LPSoplexInterface::GetIterations() const {
   MiniMIPdebugMessage("calling GetIterations()\n");
 
-  iterations = spx_->numIterations();
-
-  return RetCode::kOkay;
+  return spx_->numIterations();
 }
 
-// @}
-
-// @name LP Basis Methods
-// @{
+// ==========================================================================
+// Getters and setters of the basis.
+// ==========================================================================
 
 // gets current basis status for columns and rows
-RetCode LPSoplexInterface::GetBase(
-  std::vector<LPBasisStatus>& column_basis_status, // array to store column basis status
-  std::vector<LPBasisStatus>& row_basis_status     // array to store row basis status
-) const {
-  int i;
-
-  MiniMIPdebugMessage("calling GetBase()\n");
+absl::StatusOr<std::vector<LPBasisStatus>>
+LPSoplexInterface::GetColumnBasisStatus() const {
+  std::vector<LPBasisStatus> column_basis_status(spx_->numColsReal());
+  MiniMIPdebugMessage("calling GetColumnBasisStatus()\n");
   assert(PreStrongBranchingBasisFreed());
 
-  if (row_basis_status.size() != 0) {
-    for (i = 0; i < spx_->numRowsReal(); ++i) {
-      switch (spx_->basisRowStatus(i)) {
-        case SPxSolver::BASIC:
-          row_basis_status[i] = LPBasisStatus::kBasic;
-          break;
-        case SPxSolver::FIXED:
-          row_basis_status[i] = LPBasisStatus::kFixed;
-        case SPxSolver::ON_LOWER:
-          row_basis_status[i] = LPBasisStatus::kLower;
-          break;
-        case SPxSolver::ON_UPPER:
-          row_basis_status[i] = LPBasisStatus::kUpper;
-          break;
-        case SPxSolver::ZERO:
-          MiniMIPerrorMessage("slack variable has basis status ZERO (should not occur)\n");
-          return RetCode::kLPError;
-        case SPxSolver::UNDEFINED:
-        default:
-          MiniMIPerrorMessage("invalid basis status\n");
-          // std::abort();
-          return RetCode::kInvalidData;
-      }
-    }
-  }
-
   if (column_basis_status.size() != 0) {
-    for (i = 0; i < spx_->numColsReal(); ++i) {
+    for (int i = 0; i < spx_->numColsReal(); ++i) {
       //         double obj_coeffs = 0.0;
       switch (spx_->basisColStatus(i)) {
-        case SPxSolver::BASIC:
+        case soplex::SPxSolver::BASIC:
           column_basis_status[i] = LPBasisStatus::kBasic;
           break;
-        case SPxSolver::FIXED:
-          // Get reduced cost estimation. If the estimation is not correct this should not hurt:
-          // If the basis is loaded into SoPlex again, the status is converted to FIXED again; in
-          // this case there is no problem at all. If the basis is saved and/or used in some other
-          // solver, it usually is very cheap to perform the pivots necessary to get an optimal
-          // basis.
+        case soplex::SPxSolver::FIXED:
+          // Get reduced cost estimation. If the estimation is not correct
+          // this should not hurt: If the basis is loaded into SoPlex again,
+          // the status is converted to FIXED again; in this case there is no
+          // problem at all. If the basis is saved and/or used in some other
+          // solver, it usually is very cheap to perform the pivots necessary
+          // to get an optimal basis.
           // @todo implement getRedCostEst()
           //
           // MINIMIP_CALL( getRedCostEst(spx_, i, &obj_coeffs) );
-          //             if( obj_coeffs < 0.0 )  // reduced costs < 0 => UPPER  else => LOWER
-          //                column_basis_status[i] = BASESTAT_UPPER; 
+          //             if( obj_coeffs < 0.0 )  // reduced costs < 0 => UPPER
+          //             else => LOWER
+          //                column_basis_status.push_back(BASESTAT_UPPER;
           //             else
-          column_basis_status[i] = LPBasisStatus::kLower;
+          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
-        case SPxSolver::ON_LOWER:
-          column_basis_status[i] = LPBasisStatus::kLower;
+        case soplex::SPxSolver::ON_LOWER:
+          column_basis_status[i] = LPBasisStatus::kAtLowerBound;
           break;
-        case SPxSolver::ON_UPPER:
-          column_basis_status[i] = LPBasisStatus::kUpper;
+        case soplex::SPxSolver::ON_UPPER:
+          column_basis_status[i] = LPBasisStatus::kAtUpperBound;
           break;
-        case SPxSolver::ZERO:
+        case soplex::SPxSolver::ZERO:
           column_basis_status[i] = LPBasisStatus::kFree;
           break;
-        case SPxSolver::UNDEFINED:
+        case soplex::SPxSolver::UNDEFINED:
         default:
           MiniMIPerrorMessage("invalid basis status\n");
           // MINIMIP_ABORT();
           assert(false);
-          return RetCode::kInvalidData;
+          return absl::Status(absl::StatusCode::kInvalidArgument,
+                              "Invalid Data");
       }
     }
   }
-  return RetCode::kOkay;
+  return column_basis_status;
+}
+
+absl::StatusOr<std::vector<LPBasisStatus>>
+LPSoplexInterface::GetRowBasisStatus() const {
+  std::vector<LPBasisStatus> row_basis_status(spx_->numRowsReal());
+  MiniMIPdebugMessage("calling GetRowBasisStatus()\n");
+  assert(PreStrongBranchingBasisFreed());
+
+  if (row_basis_status.size() != 0) {
+    for (int i = 0; i < spx_->numRowsReal(); ++i) {
+      switch (spx_->basisRowStatus(i)) {
+        case soplex::SPxSolver::BASIC:
+          row_basis_status[i] = LPBasisStatus::kBasic;
+          break;
+        case soplex::SPxSolver::FIXED:
+          row_basis_status[i] = LPBasisStatus::kFixed;
+        case soplex::SPxSolver::ON_LOWER:
+          row_basis_status[i] = LPBasisStatus::kAtLowerBound;
+          break;
+        case soplex::SPxSolver::ON_UPPER:
+          row_basis_status[i] = LPBasisStatus::kAtUpperBound;
+          break;
+        case soplex::SPxSolver::ZERO:
+          MiniMIPerrorMessage(
+              "slack variable has basis status ZERO (should not occur)\n");
+          return absl::Status(absl::StatusCode::kInternal, "LP Error");
+        case soplex::SPxSolver::UNDEFINED:
+        default:
+          MiniMIPerrorMessage("invalid basis status\n");
+          // std::abort();
+          return absl::Status(absl::StatusCode::kInvalidArgument,
+                              "Invalid Data");
+      }
+    }
+  }
+  return row_basis_status;
 }
 
 // sets current basis status for columns and rows
-RetCode LPSoplexInterface::SetBase(
-  const std::vector<LPBasisStatus>& column_basis_status, // array with column basis status
-  const std::vector<LPBasisStatus>& row_basis_status     // array with row basis status
+absl::Status LPSoplexInterface::SetBasisStatus(
+    const std::vector<LPBasisStatus>&
+        column_basis_status,  // array with column basis status
+    const std::vector<LPBasisStatus>&
+        row_basis_status  // array with row basis status
 ) {
-  int i;
-
-  MiniMIPdebugMessage("calling SetBase()\n");
+  MiniMIPdebugMessage("calling SetBasisStatus()\n");
 
   int num_cols = GetNumberOfColumns();
   int num_rows = GetNumberOfRows();
@@ -1636,215 +1718,226 @@ RetCode LPSoplexInterface::SetBase(
   assert(PreStrongBranchingBasisFreed());
   InvalidateSolution();
 
-  DataArray<SPxSolver::VarStatus>& _colstat = ColumnsBasisStatus();
-  DataArray<SPxSolver::VarStatus>& _rowstat = RowsBasisStatus();
+  soplex::DataArray<soplex::SPxSolver::VarStatus>& _colstat =
+      ColumnsBasisStatus();
+  soplex::DataArray<soplex::SPxSolver::VarStatus>& _rowstat = RowsBasisStatus();
 
   _colstat.reSize(num_cols);
   _rowstat.reSize(num_rows);
 
-  for (i = 0; i < num_rows; ++i) {
-    switch (row_basis_status[i])
-    {
+  for (int i = 0; i < num_rows; ++i) {
+    switch (row_basis_status[i]) {
       case LPBasisStatus::kBasic:
-        _rowstat[i] = SPxSolver::BASIC;
+        _rowstat[i] = soplex::SPxSolver::BASIC;
         break;
-      case LPBasisStatus::kLower:
-        _rowstat[i] = SPxSolver::ON_LOWER;
+      case LPBasisStatus::kAtLowerBound:
+        _rowstat[i] = soplex::SPxSolver::ON_LOWER;
         break;
-      case LPBasisStatus::kUpper:
-        _rowstat[i] = SPxSolver::ON_UPPER;
+      case LPBasisStatus::kAtUpperBound:
+        _rowstat[i] = soplex::SPxSolver::ON_UPPER;
         break;
       case LPBasisStatus::kFixed:
-        _rowstat[i] = SPxSolver::FIXED;
+        _rowstat[i] = soplex::SPxSolver::FIXED;
         break;
       case LPBasisStatus::kFree:
-        MiniMIPerrorMessage("slack variable has basis status ZERO (should not occur)\n");
-        return RetCode::kLPError;
+        MiniMIPerrorMessage(
+            "slack variable has basis status ZERO (should not occur)\n");
+        return absl::Status(absl::StatusCode::kInternal, "LP Error");
       default:
         MiniMIPerrorMessage("invalid basis status\n");
 
         // MINIMIP_ABORT();
         assert(false);
 
-        return RetCode::kInvalidData;
+        return absl::Status(absl::StatusCode::kInvalidArgument, "Invalid Data");
     }
   }
 
-  for (i = 0; i < num_cols; ++i) {
-    switch (column_basis_status[i])
-    {
+  for (int i = 0; i < num_cols; ++i) {
+    switch (column_basis_status[i]) {
       case LPBasisStatus::kBasic:
-        _colstat[i] = SPxSolver::BASIC;
+        _colstat[i] = soplex::SPxSolver::BASIC;
         break;
-      case LPBasisStatus::kLower:
-        _colstat[i] = SPxSolver::ON_LOWER;
+      case LPBasisStatus::kAtLowerBound:
+        _colstat[i] = soplex::SPxSolver::ON_LOWER;
         break;
-      case LPBasisStatus::kUpper:
-        _colstat[i] = SPxSolver::ON_UPPER;
+      case LPBasisStatus::kAtUpperBound:
+        _colstat[i] = soplex::SPxSolver::ON_UPPER;
         break;
-        case LPBasisStatus::kFixed:
-        _colstat[i] = SPxSolver::FIXED;
+      case LPBasisStatus::kFixed:
+        _colstat[i] = soplex::SPxSolver::FIXED;
         break;
       case LPBasisStatus::kFree:
-        _colstat[i] = SPxSolver::ZERO;
+        _colstat[i] = soplex::SPxSolver::ZERO;
         break;
       default:
         MiniMIPerrorMessage("invalid basis status\n");
         // MINIMIP_ABORT();
         assert(false);
-        return RetCode::kInvalidData;
+        return absl::Status(absl::StatusCode::kInvalidArgument, "Invalid Data");
     }
   }
 
   SOPLEX_TRY(spx_->setBasis(_rowstat.get_ptr(), _colstat.get_ptr()));
   FreePreStrongBranchingBasis();
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-// returns the indices of the basic columns and rows; basic column n gives value n, basic row m gives value -1-m
-RetCode LPSoplexInterface::GetBasisIndices(
-  std::vector<int>& basis_indices // array to store basis indices ready to keep number of rows entries
-) const {
-
+// returns the indices of the basic columns and rows; basic column n gives
+// value n, basic row m gives value -1-m
+std::vector<int> LPSoplexInterface::GetBasisIndices() const {
+  std::vector<int> basis_indices(spx_->numRows());
   MiniMIPdebugMessage("calling GetBasisInd()\n");
 
   assert(PreStrongBranchingBasisFreed());
 
   spx_->getBasisInd(basis_indices.data());
 
-  return RetCode::kOkay;
+  return basis_indices;
 }
+
+// ==========================================================================
+// Getters of vectors in the inverted basis matrix.
+// ==========================================================================
 
 // get row of inverse basis matrix B^-1
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-//       see also the explanation in lpi.h.
-RetCode LPSoplexInterface::GetBInvertedRow(
-  int row_number,         // row number
-  std::vector<double>& row_coeffs, // array to store the coefficients of the row
-  std::vector<int>& indices,    // array to store the non-zero indices
-  int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) const {
-  MiniMIPdebugMessage("calling GetBInvertedRow()\n");
+// NOTE: The LP interface defines slack variables to have coefficient +1. This
+// means that if, internally, the LP solver
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
+absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
+    int row_number) const {
+  MiniMIPdebugMessage("calling GetSparseRowOfBInverted()\n");
+
+  SparseVector sparse_row;
+  int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
   assert(row_number >= 0);
   assert(row_number < spx_->numRowsReal());
 
-  std::vector<int> integer_indices(indices.begin(), indices.end());
+  std::vector<double> dense_row(spx_->numRowsReal());
+  std::vector<int> indices(spx_->numRowsReal());
 
-  if (!spx_->getBasisInverseRowReal(row_number, row_coeffs.data(), integer_indices.data(), &num_indices))
-    return RetCode::kLPError;
+  if (!spx_->getBasisInverseRowReal(row_number, dense_row.data(),
+                                    indices.data(), &num_indices))
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  indices.assign(integer_indices.begin(), integer_indices.end());
+  for (int i = 0; i < num_indices; ++i) {
+    sparse_row.indices.push_back(indices[i]);
+    sparse_row.values.push_back(dense_row[indices[i]]);
+  }
 
-  return RetCode::kOkay;
+  return sparse_row;
 }
 
 // get column of inverse basis matrix B^-1
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-//       see also the explanation in lpi.h.
-RetCode LPSoplexInterface::GetBInvertedColumn(
-  int col_number,         // column number of B^-1; this is NOT the number of the column in the LP;
-                             // you have to call MiniMIP::LPInterface.GetBasisIndices() to get the array which links the
-                             // B^-1 column numbers to the row and column numbers of the LP!
-                             // c must be between 0 and num_rows-1, since the basis has the size
-                             // num_rows * num_rows
-  std::vector<double>& col_coeffs, // array to store the coefficients of the column
-  std::vector<int>& indices,    // array to store the non-zero indices
-  int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) const {
-  MiniMIPdebugMessage("calling GetBInvertedColumn()\n");
+// NOTE: The LP interface defines slack variables to have coefficient +1. This
+// means that if, internally, the LP solver
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
+//
+// column number of B^-1; this is NOT the number of the
+// column in the LP; you have to call
+// minimip::LPInterface.GetBasisIndices() to get the array
+// which links the B^-1 column numbers to the row and
+// column numbers of the LP! c must be between 0 and
+// num_rows-1, since the basis has the size num_rows *
+// num_rows
+
+absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
+    int col_number) const {
+  MiniMIPdebugMessage("calling GetColumnOfBInverted()\n");
+
+  SparseVector sparse_column;
+
+  int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
 
-  std::vector<int> integer_indices(indices.begin(), indices.end());
+  std::vector<double> dense_column(spx_->numRowsReal());
+  std::vector<int> indices(spx_->numRowsReal());
 
-  if (!spx_->getBasisInverseColReal(col_number, col_coeffs.data(), integer_indices.data(), &num_indices))
-    return RetCode::kLPError;
+  if (!spx_->getBasisInverseColReal(col_number, dense_column.data(),
+                                    indices.data(), &num_indices))
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  indices.assign(integer_indices.begin(), integer_indices.end());
+  for (int i = 0; i < num_indices; ++i) {
+    sparse_column.indices.push_back(indices[i]);
+    sparse_column.values.push_back(dense_column[indices[i]]);
+  }
 
-  return RetCode::kOkay;
+  return sparse_column;
 }
 
 // get row of inverse basis matrix times constraint matrix B^-1 * A
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-//       see also the explanation in lpi.h.
-RetCode LPSoplexInterface::GetBInvertedARow(
-  int row_number,                   // row number
-  const std::vector<double>& b_inverted_row, // row in (A_B)^-1 from prior call to MiniMIP::LPInterface.GetBInvRow()
-  std::vector<double>& row_coeffs,           // array to store coefficients of the row
-  std::vector<int>& indices,              // array to store the non-zero indices
-  int& num_indices                    // thee number of non-zero indices (-1: if we do not store sparsity information)
-) const {
+// NOTE: The LP interface defines slack variables to have coefficient +1. This
+// means that if, internally, the LP solver
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
+absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
+    int row_number) const {
+  MiniMIPdebugMessage("calling GetSparseRowOfBInvertedTimesA()\n");
 
-  std::vector<double> buf;
-  std::vector<double> binv;
-  int num_rows;
-  int num_cols;
-  int c;
+  size_t num_rows = spx_->numRowsReal();
+  int num_cols    = spx_->numColsReal();
+  SparseVector sparse_row;
 
-  MiniMIPdebugMessage("calling GetBInvertedARow()\n");
+  std::vector<double> dense_binv(num_rows);
+  std::vector<int> nonzero_indices(num_rows);
+  int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
 
-  num_rows = spx_->numRowsReal();
-  num_cols = spx_->numColsReal();
+  // calculate the row in B^-1
+  if (!spx_->getBasisInverseRowReal(row_number, dense_binv.data(),
+                                    nonzero_indices.data(), &num_indices))
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  buf.resize(num_rows);
-
-  // get (or calculate) the row in B^-1
-  if (b_inverted_row.size() == 0) {
-    MINIMIP_CALL(GetBInvertedRow(row_number, buf, indices, num_indices));
-    binv.assign(buf.begin(), buf.end());
-  } else
-    binv.assign(b_inverted_row.begin(), b_inverted_row.end());
-
-  assert(binv.size() == num_rows);
-
-  // mark sparsity pattern as invalid
-  num_indices = -1;
-
-  // @todo exploit sparsity in binv by looping over num_rows
-  // calculate the scalar product of the row in B^-1 and A
-  Vector binv_vec(num_rows, binv.data());
+  soplex::Vector binv_vec(num_rows, dense_binv.data());
 
   // temporary unscaled column of A
-  DSVector acol;
+  soplex::DSVector acol;
 
-  for (c = 0; c < num_cols; ++c) {
-    spx_->getColVectorReal(c, acol);
-    row_coeffs[c] = binv_vec * acol; // scalar product 
+  for (int col = 0; col < num_cols; ++col) {
+    spx_->getColVectorReal(col, acol);
+    double val = binv_vec * acol;
+    if (REALABS(val) > EPS) {
+      sparse_row.indices.push_back(col);
+      sparse_row.values.push_back(val);
+    }
   }
-
-  return RetCode::kOkay;
+  return sparse_row;
 }
 
 // get column of inverse basis matrix times constraint matrix B^-1 * A
 //
-// @note The LP interface defines slack variables to have coefficient +1. This means that if, internally, the LP solver
-//       uses a -1 coefficient, then rows associated with slacks variables whose coefficient is -1, should be negated;
-//       see also the explanation in lpi.h.
-RetCode LPSoplexInterface::GetBInvertedAColumn(
-  int col_number,         // column number
-  std::vector<double>& col_coeffs, // array to store coefficients of the column
-  std::vector<int>& indices,    // array to store the non-zero indices
-  int& num_indices          // the number of non-zero indices (-1: if we do not store sparsity information)
-) const {
+// NOTE: The LP interface defines slack variables to have coefficient +1. This
+// means that if, internally, the LP solver
+//       uses a -1 coefficient, then rows associated with slacks variables
+//       whose coefficient is -1, should be negated; see also the explanation
+//       in lpi.h.
+absl::StatusOr<SparseVector>
+LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
+  MiniMIPdebugMessage("calling GetColumnOfBInvertedTimesA()\n");
+
+  std::vector<double> binv_vec(spx_->numCols());
+  SparseVector sparse_col;
+  int num_rows = spx_->numRowsReal();
+
   // create a new uninitialized full vector
-  DVector col(spx_->numRowsReal());
+  soplex::DVector column(num_rows);
 
-  // temporary sparse vector used for unscaling (memory is automatically enlarged)
-  DSVector colsparse;
-
-  MiniMIPdebugMessage("calling GetBInvertedAColumn()\n");
+  // temporary sparse vector used for unscaling (memory is automatically
+  // enlarged)
+  soplex::DSVector column_sparse;
 
   assert(PreStrongBranchingBasisFreed());
 
@@ -1852,35 +1945,37 @@ RetCode LPSoplexInterface::GetBInvertedAColumn(
   assert(col_number >= 0);
   assert(col_number < spx_->numColsReal());
 
-  // @todo implement this with sparse vectors
-  // mark sparsity pattern as invalid
-  num_indices = -1;
+  // col needs to be cleared because copying colVectorReal only regards
+  // nonzeros
+  column.clear();
 
-  // col needs to be cleared because copying colVectorReal only regards nonzeros
-  col.clear();
-
-  spx_->getColVectorReal(col_number, colsparse);
+  spx_->getColVectorReal(col_number, column_sparse);
   // the copy is necessary to transform the sparse column into a dense vector
-  col = colsparse;
+  column = column_sparse;
 
   // solve
-  if (!spx_->getBasisInverseTimesVecReal(col.get_ptr(), col_coeffs.data()))
-    return RetCode::kLPError;
+  if (!spx_->getBasisInverseTimesVecReal(column.get_ptr(), binv_vec.data()))
+    return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
-  return RetCode::kOkay;
+  for (int row = 0; row < num_rows; ++row) {
+    if (REALABS(binv_vec[row]) > EPS) {
+      sparse_col.indices.push_back(row);
+      sparse_col.values.push_back(binv_vec[row]);
+    }
+  }
+  return sparse_col;
 }
 
-// @}
-
-// @name Parameter Methods
-// @{
+// ==========================================================================
+// Getters and setters of the parameters.
+// ==========================================================================
 
 // gets integer parameter of LP
-RetCode LPSoplexInterface::GetIntegerParameter(
-  LPParameter type, // parameter number
-  int& param_val  // returns the parameter value
+absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
+    LPParameter type  // parameter number
 ) const {
   int scale_param;
+  int param_val;
 
   MiniMIPdebugMessage("calling GetIntegerParameter()\n");
 
@@ -1892,246 +1987,267 @@ RetCode LPSoplexInterface::GetIntegerParameter(
       param_val = GetLPInfo();
       break;
     case LPParameter::kLPIterationLimit:
-      if (spx_->intParam(SoPlex::ITERLIMIT) == -1)
-        param_val = INT_MAX;
+      if (spx_->intParam(soplex::SoPlex::ITERLIMIT) == -1) param_val = INT_MAX;
       break;
-      param_val = spx_->intParam(SoPlex::ITERLIMIT);
+      param_val = spx_->intParam(soplex::SoPlex::ITERLIMIT);
     case LPParameter::kPresolving:
-      param_val = spx_->intParam(SoPlex::SIMPLIFIER) == SoPlex::SIMPLIFIER_AUTO;
+      param_val = spx_->intParam(soplex::SoPlex::SIMPLIFIER) ==
+                  soplex::SoPlex::SIMPLIFIER_AUTO;
       break;
     case LPParameter::kPricing:
-      param_val = (int) pricing_;
+      param_val = static_cast<int>(pricing_);
       break;
     case LPParameter::kScaling:
-      scale_param = spx_->intParam(SoPlex::SCALER);
+      scale_param = spx_->intParam(soplex::SoPlex::SCALER);
 
-      if (scale_param == SoPlex::SCALER_OFF)
+      if (scale_param == soplex::SoPlex::SCALER_OFF) {
         param_val = 0;
-      else if (scale_param == SoPlex::SCALER_BIEQUI)
+      } else if (scale_param == soplex::SoPlex::SCALER_BIEQUI) {
         param_val = 1;
-      else {
-        assert(scale_param == SoPlex::SCALER_LEASTSQ);
+      } else {
+        assert(scale_param == soplex::SoPlex::SCALER_LEASTSQ);
         param_val = 2;
       }
       break;
     case LPParameter::kTiming:
-      param_val = (int) (spx_->intParam(SoPlex::TIMER));
+      param_val = static_cast<int>(spx_->intParam(soplex::SoPlex::TIMER));
       break;
     case LPParameter::kRandomSeed:
-      param_val = (int) spx_->randomSeed();
+      param_val = static_cast<int>(spx_->randomSeed());
       break;
     case LPParameter::kRefactor:
-      param_val = (int) spx_->intParam(SoPlex::FACTOR_UPDATE_MAX);
+      param_val =
+          static_cast<int>(spx_->intParam(soplex::SoPlex::FACTOR_UPDATE_MAX));
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument,
+                          "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return param_val;
 }
 
 // sets integer parameter of LP
-RetCode LPSoplexInterface::SetIntegerParameter(
-  LPParameter type, // parameter number
-  int param_val   // parameter value
+absl::Status LPSoplexInterface::SetIntegerParameter(
+    LPParameter type,  // parameter number
+    int param_val      // parameter value
 ) {
   MiniMIPdebugMessage("calling SetIntegerParameter()\n");
 
   switch (type) {
     case LPParameter::kFromScratch:
       assert(param_val == true || param_val == false);
-      SetFromScratch(bool(param_val));
+      SetFromScratch(static_cast<bool>(param_val));
       break;
     case LPParameter::kLPInfo:
       assert(param_val == true || param_val == false);
-      SetLPInfo(bool(param_val));
+      SetLPInfo(static_cast<bool>(param_val));
       break;
     case LPParameter::kLPIterationLimit:
       assert(param_val >= 0);
       // -1 <= param_val, -1 meaning no time limit, 0 stopping immediately
       if (param_val >= INT_MAX)
-        static_cast<void>(spx_->setIntParam(SoPlex::ITERLIMIT, -1));
+        static_cast<void>(spx_->setIntParam(soplex::SoPlex::ITERLIMIT, -1));
       break;
     case LPParameter::kPresolving:
       assert(param_val == true || param_val == false);
-      static_cast<void>(spx_->setIntParam(SoPlex::SIMPLIFIER, (param_val ? SoPlex::SIMPLIFIER_AUTO : SoPlex::SIMPLIFIER_OFF)));
+      static_cast<void>(
+          spx_->setIntParam(soplex::SoPlex::SIMPLIFIER,
+                            (param_val ? soplex::SoPlex::SIMPLIFIER_AUTO
+                                       : soplex::SoPlex::SIMPLIFIER_OFF)));
       break;
     case LPParameter::kPricing:
-      pricing_ = (LPPricing) param_val;
+      pricing_ = (LPPricing)param_val;
       switch (pricing_) {
         case LPPricing::kDefault:
         case LPPricing::kAuto:
-          static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_AUTO));
+          static_cast<void>(spx_->setIntParam(soplex::SoPlex::PRICER,
+                                              soplex::SoPlex::PRICER_AUTO));
           break;
         case LPPricing::kFull:
-          static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_STEEP));
+          static_cast<void>(spx_->setIntParam(soplex::SoPlex::PRICER,
+                                              soplex::SoPlex::PRICER_STEEP));
           break;
         case LPPricing::kPartial:
-          static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_PARMULT));
+          static_cast<void>(spx_->setIntParam(soplex::SoPlex::PRICER,
+                                              soplex::SoPlex::PRICER_PARMULT));
           break;
         case LPPricing::kSteep:
-          static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_STEEP));
+          static_cast<void>(spx_->setIntParam(soplex::SoPlex::PRICER,
+                                              soplex::SoPlex::PRICER_STEEP));
           break;
         case LPPricing::kSteepQStart:
-          static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_QUICKSTEEP));
+          static_cast<void>(spx_->setIntParam(
+              soplex::SoPlex::PRICER, soplex::SoPlex::PRICER_QUICKSTEEP));
           break;
         case LPPricing::kDevex:
-          static_cast<void>(spx_->setIntParam(SoPlex::PRICER, SoPlex::PRICER_DEVEX));
+          static_cast<void>(spx_->setIntParam(soplex::SoPlex::PRICER,
+                                              soplex::SoPlex::PRICER_DEVEX));
           break;
         default:
-          return RetCode::kLPError;
+          return absl::Status(absl::StatusCode::kInternal, "LP Error");
       }
       break;
     case LPParameter::kScaling:
       assert(param_val >= 0 && param_val <= 2);
       if (param_val == 0)
-        static_cast<void>(spx_->setIntParam(SoPlex::SCALER, SoPlex::SCALER_OFF));
+        static_cast<void>(spx_->setIntParam(soplex::SoPlex::SCALER,
+                                            soplex::SoPlex::SCALER_OFF));
       else if (param_val == 1)
-        static_cast<void>(spx_->setIntParam(SoPlex::SCALER, SoPlex::SCALER_BIEQUI));
+        static_cast<void>(spx_->setIntParam(soplex::SoPlex::SCALER,
+                                            soplex::SoPlex::SCALER_BIEQUI));
       else
-        static_cast<void>(spx_->setIntParam(SoPlex::SCALER, SoPlex::SCALER_LEASTSQ));
+        static_cast<void>(spx_->setIntParam(soplex::SoPlex::SCALER,
+                                            soplex::SoPlex::SCALER_LEASTSQ));
       break;
     case LPParameter::kTiming:
       assert(param_val >= 0 && param_val < 3);
-      static_cast<void>(spx_->setIntParam(SoPlex::TIMER, param_val));
+      static_cast<void>(spx_->setIntParam(soplex::SoPlex::TIMER, param_val));
       break;
     case LPParameter::kRandomSeed:
-      spx_->setRandomSeed((unsigned long) (long) param_val); // TODO: add c++ style static_cast
+      spx_->setRandomSeed(
+          static_cast<unsigned long>(static_cast<long>(param_val)));
       break;
     case LPParameter::kRefactor:
       assert(param_val >= 0);
-      static_cast<void>(spx_->setIntParam(SoPlex::FACTOR_UPDATE_MAX, param_val));
+      static_cast<void>(
+          spx_->setIntParam(soplex::SoPlex::FACTOR_UPDATE_MAX, param_val));
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument,
+                          "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // gets floating point parameter of LP
-RetCode LPSoplexInterface::GetRealParameter(
-  LPParameter type,    // parameter number
-  double& LPValue_val // returns the parameter value
+absl::StatusOr<double> LPSoplexInterface::GetRealParameter(
+    LPParameter type  // parameter number
 ) const {
+  double param_val;
   MiniMIPdebugMessage("calling GetRealParameter()\n");
 
   switch (type) {
     case LPParameter::kFeasibilityTolerance:
-      LPValue_val = FeasibilityTolerance();
+      param_val = FeasibilityTolerance();
       break;
     case LPParameter::kDualFeasibilityTolerance:
-      LPValue_val = OptimalityTolerance();
+      param_val = OptimalityTolerance();
       break;
     case LPParameter::kObjectiveLimit:
-      if (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
-        LPValue_val = spx_->realParam(SoPlex::OBJLIMIT_UPPER);
+      if (spx_->intParam(soplex::SoPlex::OBJSENSE) ==
+          soplex::SoPlex::OBJSENSE_MINIMIZE)
+        param_val = spx_->realParam(soplex::SoPlex::OBJLIMIT_UPPER);
       else
-        LPValue_val = spx_->realParam(SoPlex::OBJLIMIT_LOWER);
+        param_val = spx_->realParam(soplex::SoPlex::OBJLIMIT_LOWER);
       break;
     case LPParameter::kLPTimeLimit:
-      LPValue_val = spx_->realParam(SoPlex::TIMELIMIT);
+      param_val = spx_->realParam(soplex::SoPlex::TIMELIMIT);
       break;
     case LPParameter::kMarkowitz:
-      LPValue_val = spx_->realParam(SoPlex::MIN_MARKOWITZ);
+      param_val = spx_->realParam(soplex::SoPlex::MIN_MARKOWITZ);
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument,
+                          "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return param_val;
 }
 
 // sets floating point parameter of LP
-RetCode LPSoplexInterface::SetRealParameter(
-  LPParameter type,   // parameter number
-  double LPValue_val // parameter value
+absl::Status LPSoplexInterface::SetRealParameter(
+    LPParameter type,  // parameter number
+    double param_val   // parameter value
 ) {
   MiniMIPdebugMessage("calling SetRealParameter()\n");
 
   switch (type) {
     case LPParameter::kFeasibilityTolerance:
-      // 0 < LPValue_val
-      assert(LPValue_val > 0.0);
-      SetFeasibilityTolerance(LPValue_val);
+      // 0 < param_val
+      assert(param_val > 0.0);
+      SetFeasibilityTolerance(param_val);
       break;
     case LPParameter::kDualFeasibilityTolerance:
-      // 0 < LPValue_val
-      assert(LPValue_val > 0.0);
-      SetOptimalityTolerance(LPValue_val);
+      // 0 < param_val
+      assert(param_val > 0.0);
+      SetOptimalityTolerance(param_val);
       break;
     case LPParameter::kObjectiveLimit:
-      // no restrictions on LPValue_val
-      if (spx_->intParam(SoPlex::OBJSENSE) == SoPlex::OBJSENSE_MINIMIZE)
-        static_cast<void>(spx_->setRealParam(SoPlex::OBJLIMIT_UPPER, LPValue_val));
+      // no restrictions on param_val
+      if (spx_->intParam(soplex::SoPlex::OBJSENSE) ==
+          soplex::SoPlex::OBJSENSE_MINIMIZE)
+        static_cast<void>(
+            spx_->setRealParam(soplex::SoPlex::OBJLIMIT_UPPER, param_val));
       else
-        static_cast<void>(spx_->setRealParam(SoPlex::OBJLIMIT_LOWER, LPValue_val));
+        static_cast<void>(
+            spx_->setRealParam(soplex::SoPlex::OBJLIMIT_LOWER, param_val));
       break;
     case LPParameter::kLPTimeLimit:
-      assert(LPValue_val > 0.0);
-      // soplex requires 0 < LPValue_val < DEFAULT_INFINITY (= 1e100), -1 means unlimited
-      static_cast<void>(spx_->setRealParam(SoPlex::TIMELIMIT, LPValue_val));
+      assert(param_val > 0.0);
+      // soplex requires 0 < param_val < DEFAULT_INFINITY (= 1e100), -1 means
+      // unlimited
+      static_cast<void>(
+          spx_->setRealParam(soplex::SoPlex::TIMELIMIT, param_val));
       break;
     case LPParameter::kMarkowitz:
-      // 1e-4 <= LPValue_val <= 0.999
-      if (LPValue_val < 1e-4)
-        LPValue_val = 1e-4;
-      else if (LPValue_val > 0.9999)
-        LPValue_val = 0.9999;
+      // 1e-4 <= param_val <= 0.999
+      if (param_val < 1e-4)
+        param_val = 1e-4;
+      else if (param_val > 0.9999)
+        param_val = 0.9999;
 
-      static_cast<void>(spx_->setRealParam(SoPlex::MIN_MARKOWITZ, LPValue_val));
+      static_cast<void>(
+          spx_->setRealParam(soplex::SoPlex::MIN_MARKOWITZ, param_val));
       break;
     default:
-      return RetCode::kParameterUnknown;
+      return absl::Status(absl::StatusCode::kInvalidArgument,
+                          "Parameter Unknown");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-// @}
-
-// @name Numerical Methods
-// @{
+// ==========================================================================
+// Numerical methods.
+// ==========================================================================
 
 // returns value treated as infinity in the LP solver
 double LPSoplexInterface::Infinity() const {
   MiniMIPdebugMessage("calling Infinity()\n");
 
-  return spx_->realParam(SoPlex::INFTY);
+  return spx_->realParam(soplex::SoPlex::INFTY);
 }
 
 // checks if given value is treated as infinity in the LP solver
-bool LPSoplexInterface::IsInfinity (
-  double val // value to be checked for infinity
+bool LPSoplexInterface::IsInfinity(
+    double value  // value to be checked for infinity
 ) const {
   MiniMIPdebugMessage("calling IsInfinity()\n");
 
-  return (val >= spx_->realParam(SoPlex::INFTY));
+  return (value >= spx_->realParam(soplex::SoPlex::INFTY));
 }
 
 // returns, whether the given file exists
-bool LPSoplexInterface::FileExists(
-  const char* file_name // file name
+bool LPSoplexInterface::FileExists(const char* file_name  // file name
 ) const {
   FILE* file;
 
   file = fopen(file_name, "r");
-  if (file == NULL)
-    return false;
+  if (file == NULL) return false;
 
   fclose(file);
 
   return true;
 }
 
-// @}
-
-// @name File Interface Methods
-// @{
+// ==========================================================================
+// File interface methods.
+// ==========================================================================
 
 // reads LP from a file
-RetCode LPSoplexInterface::ReadLP(
-  const char* file_name // file name
+absl::Status LPSoplexInterface::ReadLP(const char* file_name  // file name
 ) {
   MiniMIPdebugMessage("calling ReadLP()\n");
 
@@ -2140,29 +2256,33 @@ RetCode LPSoplexInterface::ReadLP(
   assert(PreStrongBranchingBasisFreed());
 
   if (!FileExists(file_name))
-    return RetCode::kReadError;
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Read Error, file does not exist");
 
   try {
-    assert(spx_->intParam(SoPlex::READMODE) == SoPlex::READMODE_REAL);
-    if (!spx_->readFile((char*) (file_name)))
-      return RetCode::kReadError;
+    assert(spx_->intParam(soplex::SoPlex::READMODE) ==
+           soplex::SoPlex::READMODE_REAL);
+    if (!spx_->readFile(const_cast<char*>(file_name)))
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Internal SoPlex Read Error");
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kReadError;
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Read Error: soplex exception");
   }
 
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
 // writes LP to a file
-RetCode LPSoplexInterface::WriteLP(
-  const char* file_name // file name
+absl::Status LPSoplexInterface::WriteLP(const char* file_name  // file name
 ) const {
   MiniMIPdebugMessage("calling WriteLP()\n");
 
@@ -2172,15 +2292,16 @@ RetCode LPSoplexInterface::WriteLP(
     static_cast<void>(spx_->writeFileReal(file_name));
   }
 #ifndef NDEBUG
-  catch (const SPxException& x) {
+  catch (const soplex::SPxException& x) {
     std::string s = x.what();
-    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception: %s\n", s.c_str());
+    // MiniMIPmessagePrintWarning(messagehdlr, "SoPlex threw an exception:
+    // %s\n", s.c_str());
 #else
-  catch (const SPxException&) {
+  catch (const soplex::SPxException&) {
 #endif
-    return RetCode::kWriteError;
+    return absl::Status(absl::StatusCode::kInternal, "Write Errror");
   }
-  return RetCode::kOkay;
+  return absl::OkStatus();
 }
 
-} // namespace minimip
+}  // namespace minimip
