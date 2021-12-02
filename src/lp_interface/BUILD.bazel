@@ -11,7 +11,7 @@ cmake(
         "CMAKE_CXX_FLAGS": "-Wno-psabi",
         "CMAKE_DISABLE_FIND_PACKAGE_GMP": "True",
         "CMAKE_DISABLE_FIND_PACKAGE_ZLIB": "True",
-        "BOOST": "on"
+        "BOOST": "off"
     },
     lib_source = "@soplex//:all_srcs",
     out_static_libs = ["libsoplex.a"],
@@ -73,5 +73,5 @@ cc_library(
 
 cc_library(
     name = "lp_types",
-    hdrs = ["lp_types.h"]
+    hdrs = ["lp_types.h", "sparse_types.h"]
 )

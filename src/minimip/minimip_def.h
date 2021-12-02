@@ -4,6 +4,7 @@
 
 #include "absl/status/status.h"
 #include "src/lp_interface/lp_types.h"
+#include "src/lp_interface/sparse_types.h"
 #include "src/messagehandler/message_handler.h"
 #include "src/messagehandler/message_macros.h"
 
@@ -18,14 +19,14 @@
 #define EPSFLOOR(x, eps) (floor((x) + (eps)))
 #define REALABS(x) (fabs(x))
 
-#define MINIMIP_CALL(x)                                        \
-  {                                                            \
-    absl::Status _restat_ = (x);                               \
-    if (!_restat_.ok()) {                                      \
-      MiniMIPerrorMessage("Error <%d> in function call\n",     \
-                          static_cast<int>(_restat_.code()));  \
-      return _restat_;                                         \
-    }                                                          \
+#define MINIMIP_CALL(x)                                       \
+  {                                                           \
+    absl::Status _restat_ = (x);                              \
+    if (!_restat_.ok()) {                                     \
+      MiniMIPerrorMessage("Error <%d> in function call\n",    \
+                          static_cast<int>(_restat_.code())); \
+      return _restat_;                                        \
+    }                                                         \
   }
 
 #endif  // SRC_MINIMIP_MINIMIP_DEF_H_

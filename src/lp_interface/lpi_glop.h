@@ -10,6 +10,7 @@
 
 #include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
+#include "src/lp_interface/sparse_types.h"
 #include "src/minimip/minimip_def.h"
 
 // turn off some warnings from includes
@@ -178,11 +179,11 @@ class LPGlopInterface : public LPInterface {
 
   // add column to the LP
   absl::Status AddColumn(
-      const SparseVector& col,  // column to be added
-      double lower_bound,       // lower bound of new column
-      double upper_bound,       // upper bound of new column
-      double objective_value,   // objective function value of new column
-      std::string col_name      // column name
+      const AbstractSparseVector& col,  // column to be added
+      double lower_bound,               // lower bound of new column
+      double upper_bound,               // upper bound of new column
+      double objective_value,      // objective function value of new column
+      const std::string& col_name  // column name
       ) override;
 
   // add columns to the LP
@@ -192,7 +193,7 @@ class LPGlopInterface : public LPInterface {
       const std::vector<double>& upper_bounds,  // upper bounds of new columns
       const std::vector<double>&
           objective_values,  // objective function values of new columns
-      std::vector<std::string>& col_names  // column names
+      const std::vector<std::string>& col_names  // column names
       ) override;
 
   // deletes all columns in the given range from LP
@@ -201,10 +202,10 @@ class LPGlopInterface : public LPInterface {
                              ) override;
 
   // add row to the LP
-  absl::Status AddRow(SparseVector row,        // row to be added
-                      double left_hand_side,   // left hand side of new row
-                      double right_hand_side,  // right hand side of new row
-                      std::string row_name     // row name
+  absl::Status AddRow(const AbstractSparseVector& row,  // row to be added
+                      double left_hand_side,       // left hand side of new row
+                      double right_hand_side,      // right hand side of new row
+                      const std::string& row_name  // row name
                       ) override;
 
   // adds rows to the LP

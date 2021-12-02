@@ -7,6 +7,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/lp_interface/lp_types.h"
+#include "src/lp_interface/sparse_types.h"
 #include "src/messagehandler/message_handler.h"
 
 namespace minimip {
@@ -36,11 +37,11 @@ class LPInterface : private messagehandler {
 
   // add column to the LP
   virtual absl::Status AddColumn(
-      const SparseVector& col,       // column to be added
-      const double lower_bound,      // lower bound of new column
-      const double upper_bound,      // upper bound of new column
+      const AbstractSparseVector& col,  // column to be added
+      const double lower_bound,         // lower bound of new column
+      const double upper_bound,         // upper bound of new column
       const double objective_value,  // objective function value of new column
-      std::string col_name           // column name
+      const std::string& col_name    // column name
       ) = 0;
 
   // add columns to the LP
@@ -50,7 +51,7 @@ class LPInterface : private messagehandler {
       const std::vector<double>& upper_bounds,  // upper bounds of new columns
       const std::vector<double>&
           objective_values,  // objective function values of new columns
-      std::vector<std::string>& col_names  // column names
+      const std::vector<std::string>& col_names  // column names
       ) = 0;
 
   // deletes all columns in the given range from LP
@@ -61,10 +62,10 @@ class LPInterface : private messagehandler {
 
   // add row to the LP
   virtual absl::Status AddRow(
-      SparseVector row,        // row to be added
-      double left_hand_side,   // left hand side of new row
-      double right_hand_side,  // right hand side of new row
-      std::string row_name     // row name
+      const AbstractSparseVector& row,  // row to be added
+      double left_hand_side,            // left hand side of new row
+      double right_hand_side,           // right hand side of new row
+      const std::string& row_name       // row name
       ) = 0;
 
   // adds rows to the LP

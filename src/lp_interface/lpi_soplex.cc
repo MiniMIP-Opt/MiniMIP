@@ -588,8 +588,8 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
 ) {
 #ifndef NDEBUG
   for (size_t i = 0; i < cols.size(); i++) {
-    for (size_t j = 0; j < cols[i].indices.size(); j++) {
-      assert(cols[i].values[j] != 0);
+    for (size_t j = 0; j < cols[i].NumNonZeros(); j++) {
+      assert(cols[i].ValuesData()[j] != 0.0);
     }
   }
 #endif
@@ -637,11 +637,11 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
 
 // adds column to the LP
 absl::Status LPSoplexInterface::AddColumn(
-    const SparseVector& col,  // column to be added
-    double lower_bound,       // lower bound of new column
-    double upper_bound,       // upper bound of new column
-    double objective_value,   // objective function value of new column
-    std::string col_name      // column name
+    const AbstractSparseVector& col,  // column to be added
+    double lower_bound,               // lower bound of new column
+    double upper_bound,               // upper bound of new column
+    double objective_value,           // objective function value of new column
+    const std::string& col_name       // column name
 ) {
   MiniMIPdebugMessage("Calling AddColumn()\n");
   InvalidateSolution();
@@ -651,16 +651,16 @@ absl::Status LPSoplexInterface::AddColumn(
 #ifndef NDEBUG
   // perform check that no new rows are added
   int num_rows = GetNumberOfRows();
-  for (size_t j = 0; j < col.indices.size(); ++j) {
-    assert(0 <= col.indices[j]);
-    assert(col.indices[j] < num_rows);
-    assert(col.values[j] != 0.0);
+  for (size_t j = 0; j < col.NumNonZeros(); ++j) {
+    assert(0 <= col.IndicesData()[j]);
+    assert(col.IndicesData()[j] < num_rows);
+    assert(col.ValuesData()[j] != 0.0);
   }
 #endif
 
   try {
     soplex::DSVector col_vector;
-    col_vector.add(col.indices.size(), col.indices.data(), col.values.data());
+    col_vector.add(col.NumNonZeros(), col.IndicesData(), col.ValuesData());
     spx_->addColReal(
         soplex::LPCol(objective_value, col_vector, upper_bound, lower_bound));
   }
@@ -685,7 +685,7 @@ absl::Status LPSoplexInterface::AddColumns(
     const std::vector<double>& upper_bounds,  // upper bounds of new columns
     const std::vector<double>&
         objective_values,  // objective function values of new columns
-    std::vector<std::string>& col_names  // column names
+    const std::vector<std::string>& col_names  // column names
 ) {
   MiniMIPdebugMessage("calling AddColumns()\n");
 
@@ -699,10 +699,12 @@ absl::Status LPSoplexInterface::AddColumns(
     // mistake
     int num_rows = spx_->numRowsReal();
     for (size_t i = 0; i < cols.size(); i++) {
-      for (size_t j = 0; j < cols[i].indices.size(); ++j) {
-        assert(0 <= cols[i].indices[j]);
-        assert(cols[i].indices[j] < num_rows);
-        assert(cols[i].values[j] != 0.0);
+      const int* indices   = cols[i].IndicesData();
+      const double* values = cols[i].ValuesData();
+      for (size_t j = 0; j < cols[i].NumNonZeros(); ++j) {
+        assert(0 <= indices[j]);
+        assert(indices[j] < num_rows);
+        assert(values[j] != 0.0);
       }
     }
   }
@@ -715,11 +717,13 @@ absl::Status LPSoplexInterface::AddColumns(
     int last;
     // create column vectors with coefficients and bounds
     for (size_t i = 0; i < cols.size(); ++i) {
+      const int* indices   = cols[i].IndicesData();
+      const double* values = cols[i].ValuesData();
       col_Vector.clear();
-      if (!cols[i].indices.empty()) {
+      if (!cols[i].empty()) {
         start = (i == 0 ? 0 : last);
-        last  = start + cols[i].indices.size();
-        col_Vector.add(last - start, &cols[i].indices[0], &cols[i].values[0]);
+        last  = start + cols[i].NumNonZeros();
+        col_Vector.add(last - start, indices, values);
       }
       columns.add(objective_values[i], lower_bounds[i], col_Vector,
                   upper_bounds[i]);
@@ -759,26 +763,27 @@ absl::Status LPSoplexInterface::DeleteColumns(
 
   return absl::OkStatus();
 }
+
 // add row to the LP
 absl::Status LPSoplexInterface::AddRow(
-    SparseVector row,        // row to be added
-    double left_hand_side,   // left hand side of new row
-    double right_hand_side,  // right hand side of new row
-    std::string row_name     // row name
+    const AbstractSparseVector& row,  // row to be added
+    double left_hand_side,            // left hand side of new row
+    double right_hand_side,           // right hand side of new row
+    const std::string& row_name       // row name
 ) {
 #ifndef NDEBUG
   // perform check that no new columns are added - this is likely to be a
   // mistake
   int num_cols = spx_->numColsReal();
-  for (size_t j = 0; j < row.indices.size(); ++j) {
-    assert(row.values[j] != 0.0);
-    assert(0 <= row.indices[j]);
-    assert(row.indices[j] < num_cols);
+  for (size_t j = 0; j < row.NumNonZeros(); ++j) {
+    assert(row.ValuesData()[j] != 0.0);
+    assert(0 <= row.IndicesData()[j]);
+    assert(row.IndicesData()[j] < num_cols);
   }
 #endif
 
   soplex::DSVector row_vector;
-  row_vector.add(row.indices.size(), row.indices.data(), row.values.data());
+  row_vector.add(row.NumNonZeros(), row.IndicesData(), row.ValuesData());
   spx_->addRowReal(soplex::LPRow(left_hand_side, row_vector, right_hand_side));
 
   return absl::OkStatus();
@@ -800,14 +805,14 @@ absl::Status LPSoplexInterface::AddRows(
 
 #ifndef NDEBUG
   for (size_t i = 0; i < rows.size(); i++) {
-    if (!rows[i].indices.empty()) {
+    if (!rows[i].empty()) {
       // perform check that no new columns are added - this is likely to be a
       // mistake
       int num_cols = spx_->numColsReal();
-      for (size_t j = 0; j < rows[i].indices.size(); ++j) {
-        assert(rows[i].values[j] != 0.0);
-        assert(0 <= rows[i].indices[j]);
-        assert(rows[i].indices[j] < num_cols);
+      for (size_t j = 0; j < rows[i].NumNonZeros(); ++j) {
+        assert(rows[i].ValuesData()[j] != 0.0);
+        assert(0 <= rows[i].IndicesData()[j]);
+        assert(rows[i].IndicesData()[j] < num_cols);
       }
     }
   }
@@ -816,20 +821,16 @@ absl::Status LPSoplexInterface::AddRows(
   try {
     soplex::LPRowSet row_set(rows.size());
     soplex::DSVector row_Vector;
-    int start = 0;
-    int last  = 0;
-    for (size_t i = 0; i < rows.size(); i++)
-      for (size_t j = 0; j < rows[i].indices.size(); j++)
-        std::vector<int> integer_indices(rows[i].indices.begin(),
-                                         rows[i].indices.end());
+    int last = 0;
 
     // create row vectors with given sides
     for (size_t i = 0; i < rows.size(); ++i) {
       row_Vector.clear();
-      if (!rows[i].indices.empty()) {
-        start = (i == 0 ? 0 : last);
-        last  = start + rows[i].indices.size();
-        row_Vector.add(last - start, &rows[i].indices[0], &rows[i].values[0]);
+      if (!rows[i].empty()) {
+        auto start = (i == 0 ? 0 : last);
+        last       = start + rows[i].NumNonZeros();
+        row_Vector.add(last - start, rows[i].IndicesData(),
+                       rows[i].ValuesData());
       }
       row_set.add(left_hand_sides[i], row_Vector, right_hand_sides[i]);
     }
@@ -1132,14 +1133,12 @@ SparseVector LPSoplexInterface::GetSparseColumnCoefficients(int col) const {
     soplex::DSVector cvec;
     spx_->getColVectorReal(col, cvec);
     for (int j = 0; j < cvec.size(); ++j) {
-      sparse_column.indices.push_back(cvec.index(j));
-      sparse_column.values.push_back(cvec.value(j));
+      sparse_column.InsertSorted(cvec.index(j), cvec.value(j));
     }
   } else {
     const soplex::SVector& cvec = spx_->colVectorRealInternal(col);
     for (int j = 0; j < cvec.size(); ++j) {
-      sparse_column.indices.push_back(cvec.index(j));
-      sparse_column.values.push_back(cvec.value(j));
+      sparse_column.InsertSorted(cvec.index(j), cvec.value(j));
     }
   }
   return sparse_column;
@@ -1162,14 +1161,12 @@ SparseVector LPSoplexInterface::GetSparseRowCoefficients(int row) const {
     soplex::DSVector rvec;
     spx_->getRowVectorReal(row, rvec);
     for (int j = 0; j < rvec.size(); ++j) {
-      sparse_row.indices.push_back(rvec.index(j));
-      sparse_row.values.push_back(rvec.value(j));
+      sparse_row.InsertSorted(rvec.index(j), rvec.value(j));
     }
   } else {
     const soplex::SVector& rvec = spx_->rowVectorRealInternal(row);
     for (int j = 0; j < rvec.size(); ++j) {
-      sparse_row.indices.push_back(rvec.index(j));
-      sparse_row.values.push_back(rvec.value(j));
+      sparse_row.InsertSorted(rvec.index(j), rvec.value(j));
     }
   }
   return sparse_row;
@@ -1812,7 +1809,6 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
     int row_number) const {
   MiniMIPdebugMessage("calling GetSparseRowOfBInverted()\n");
 
-  SparseVector sparse_row;
   int num_indices;
 
   assert(PreStrongBranchingBasisFreed());
@@ -1826,9 +1822,9 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInverted(
                                     indices.data(), &num_indices))
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
+  auto sparse_row = SparseVector();
   for (int i = 0; i < num_indices; ++i) {
-    sparse_row.indices.push_back(indices[i]);
-    sparse_row.values.push_back(dense_row[indices[i]]);
+    sparse_row.InsertSorted(indices[i], dense_row[indices[i]]);
   }
 
   return sparse_row;
@@ -1868,8 +1864,7 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseColumnOfBInverted(
     return absl::Status(absl::StatusCode::kInternal, "LP Error");
 
   for (int i = 0; i < num_indices; ++i) {
-    sparse_column.indices.push_back(indices[i]);
-    sparse_column.values.push_back(dense_column[indices[i]]);
+    sparse_column.InsertSorted(indices[i], dense_column[indices[i]]);
   }
 
   return sparse_column;
@@ -1910,8 +1905,7 @@ absl::StatusOr<SparseVector> LPSoplexInterface::GetSparseRowOfBInvertedTimesA(
     spx_->getColVectorReal(col, acol);
     double val = binv_vec * acol;
     if (REALABS(val) > EPS) {
-      sparse_row.indices.push_back(col);
-      sparse_row.values.push_back(val);
+      sparse_row.InsertSorted(col, val);
     }
   }
   return sparse_row;
@@ -1959,8 +1953,7 @@ LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(int col_number) const {
 
   for (int row = 0; row < num_rows; ++row) {
     if (REALABS(binv_vec[row]) > EPS) {
-      sparse_col.indices.push_back(row);
-      sparse_col.values.push_back(binv_vec[row]);
+      sparse_col.InsertSorted(row, binv_vec[row]);
     }
   }
   return sparse_col;

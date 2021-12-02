@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <iostream>
-
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "unit_tests/utils.h"
@@ -39,12 +37,12 @@ class SimpleTest : public ::testing::Test {
     //       1 <= x <= 2  (linear constraint)
     //       0 <= x <= 3  (bounds)
 
-    minimip::SparseVector col_coefficients = {{}, {}};
+    minimip::SparseVector col_coefficients;
 
     // add one column
     ASSERT_OK(lp_interface_->AddColumn(col_coefficients, 0.0, 3.0, 1.0, "x"));
 
-    minimip::SparseVector row_coefficients = {{0}, {1.0}};
+    minimip::SparseVector row_coefficients = minimip::SparseVector({0}, {1.0});
     // add one row
     ASSERT_OK(lp_interface_->AddRow(row_coefficients, 1.0, 2.0, "r1"));
 
@@ -185,71 +183,55 @@ TEST_F(SimpleTest, test4) {
   ASSERT_EQ(row_basis_status[0], LPBasisStatus::kAtUpperBound);
 }
 
-// TEST SUITE COMPLEX
-class Complex : public ::testing::Test {
- protected:
-  // setup for test
-  void SetUp() override {
-    // build interface factory
-    auto* interface_factory = new LPInterfaceFactory();
-    InterfaceCode interface_code;
-    switch (DEF_INTERFACE) {
-      case 1:
-        interface_code = InterfaceCode::kSoplex;
-        break;
-      default:
-        interface_code = InterfaceCode::kGlop;
-        break;
-    }
-    lp_interface_ = interface_factory->CreateLPInterface(interface_code);
-    ASSERT_OK(
-        lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
-
-    // initialize program
-    int num_columns;
-    std::vector<int> beg = {0};
-    std::vector<int> indices(2);
-    int num_rows;
-    std::vector<double> objective_coefficients(1);
-
-    // use the following LP:
-    // max 1 x1 + 1 x2 + 1 x3
-    //      -8 <= -x1           -x3 <= -1
-    //      -7 <= -x1 -   x2        <= -1
-    //             x1 + 2 x2        <= 12
-    //             x1,    x2,    x3 >= 0
-
-    double inf = lp_interface_->Infinity();
-    ASSERT_OK(lp_interface_->AddColumn({{}, {}}, 0.0, inf, 1.0, "x1"));
-    std::vector<std::string> names = {"x2", "x3"};
-    ASSERT_OK(lp_interface_->AddColumns({{{}, {}}, {{}, {}}}, {0.0, 0.0},
-                                        {inf, inf}, {1.0, 1.0}, names));
-
-    minimip::SparseVector row_coefficients = {{0, 2}, {-1.0, -1.0}};
-    ASSERT_OK(lp_interface_->AddRow(row_coefficients, -8.0, -1.0, "r1"));
-
-    std::vector<std::string> row_names          = {"r2", "r3"};
-    std::vector<SparseVector> rows_coefficients = {{{0, 1}, {-1.0, -1.0}},
-                                                   {{0, 1}, {1.0, 2.0}}};
-    ASSERT_OK(lp_interface_->AddRows(rows_coefficients, {-7.0, -inf},
-                                     {-1.0, 12.0}, row_names));
-
-    // check size
-    num_rows    = lp_interface_->GetNumberOfRows();
-    num_columns = lp_interface_->GetNumberOfColumns();
-    ASSERT_EQ(num_rows, 3);
-    ASSERT_EQ(num_columns, 3);
+TEST(Complex, testcomplex1) {
+  auto* interface_factory = new LPInterfaceFactory();
+  InterfaceCode interface_code;
+  switch (DEF_INTERFACE) {
+    case 1:
+      interface_code = InterfaceCode::kSoplex;
+      break;
+    default:
+      interface_code = InterfaceCode::kGlop;
+      break;
   }
-};
 
-// TESTS
-TEST_F(Complex, test1) {
+  lp_interface_ = interface_factory->CreateLPInterface(interface_code);
+
+  // use the following LP:
+  // max 1 x1 + 1 x2 + 1 x3
+  //      -8 <= -x1           -x3 <= -1
+  //      -7 <= -x1 -   x2        <= -1
+  //             x1 + 2 x2        <= 12
+  //             x1,    x2,    x3 >= 0
+
+  // initialize program
+  ASSERT_OK(lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
+  double inf = lp_interface_->Infinity();
+  ASSERT_OK(lp_interface_->AddColumn(SparseVector(), 0.0, inf, 1.0, "x1"));
+  ASSERT_EQ(lp_interface_->GetNumberOfColumns(), 1);
+  std::vector<std::string> names = {"x2", "x3"};
+  ASSERT_OK(lp_interface_->AddColumns({SparseVector(), SparseVector()},
+                                      {0.0, 0.0}, {inf, inf}, {1.0, 1.0},
+                                      names));
+  ASSERT_EQ(lp_interface_->GetNumberOfColumns(), 3);
+  SparseVector row_coefficients = SparseVector({0, 2}, {-1.0, -1.0});
+  ASSERT_OK(lp_interface_->AddRow(row_coefficients, -8.0, -1.0, "r1"));
+  std::vector<std::string> row_names          = {"r2", "r3"};
+  std::vector<SparseVector> rows_coefficients = {
+      SparseVector({0, 1}, {-1.0, -1.0}), SparseVector({0, 1}, {1.0, 2.0})};
+  ASSERT_OK(lp_interface_->AddRows(rows_coefficients, {-7.0, -inf},
+                                   {-1.0, 12.0}, row_names));
+
+  // check size
+  int num_rows    = lp_interface_->GetNumberOfRows();
+  int num_columns = lp_interface_->GetNumberOfColumns();
+  ASSERT_EQ(num_rows, 3);
+  ASSERT_EQ(num_columns, 3);
   std::vector<double> b_inverted_row(3);
   std::vector<double> b_inverted_column(3);
   std::vector<double> b_inverted(3);
   std::vector<double> coeftwo(3);
   std::vector<LPBasisStatus> column_basis_status(3);
-  int num_rows;
   std::vector<LPBasisStatus> row_basis_status(3);
   std::vector<int> basis_indices(3);
   std::vector<int> indices(3);
@@ -307,8 +289,12 @@ TEST_F(Complex, test1) {
   absl::StatusOr<SparseVector> absl_tmp_sparse =
       lp_interface_->GetSparseRowOfBInverted(i);
   ASSERT_OK(absl_tmp_sparse.status());
-  b_inverted  = absl_tmp_sparse->values;
-  indices     = absl_tmp_sparse->indices;
+  b_inverted = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
+  indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
   num_indices = indices.size();
 
   // row of basis inverse should be (0, 1, 0.5)
@@ -321,8 +307,12 @@ TEST_F(Complex, test1) {
   // check first column of basis inverse
   absl_tmp_sparse = lp_interface_->GetSparseColumnOfBInverted(0);
   ASSERT_OK(absl_tmp_sparse.status());
-  b_inverted  = absl_tmp_sparse->values;
-  indices     = absl_tmp_sparse->indices;
+  b_inverted = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
+  indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
   num_indices = indices.size();
 
   // column of basis inverse should be (0, 0, -1.0)
@@ -359,8 +349,13 @@ TEST_F(Complex, test1) {
   absl_tmp_sparse = lp_interface_->GetSparseRowOfBInvertedTimesA(i);
 
   ASSERT_OK(absl_tmp_sparse.status());
-  indices    = absl_tmp_sparse->indices;
-  b_inverted = absl_tmp_sparse->values;
+  b_inverted = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
+  indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
+  num_indices = indices.size();
 
   // row of basis inverse times nonbasic matrix should be (-0.5, 0, 0)
   ASSERT_EQ(indices.size(), 1);
@@ -370,9 +365,13 @@ TEST_F(Complex, test1) {
   // check first column of basis inverse times nonbasic matrix
   absl_tmp_sparse = lp_interface_->GetSparseColumnOfBInvertedTimesA(0);
   ASSERT_OK(absl_tmp_sparse.status());
-  b_inverted  = absl_tmp_sparse->values;
-  indices     = absl_tmp_sparse->indices;
-  num_indices = absl_tmp_sparse->indices.size();
+  b_inverted = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
+  indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
+  num_indices = absl_tmp_sparse->NumNonZeros();
 
   b_inverted_dense.resize(num_rows, 0.0);
   for (size_t j = 0; j < indices.size(); ++j) {
@@ -434,18 +433,18 @@ class MoreVarsThanRows : public ::testing::Test {
         lp_interface_->Infinity(), lp_interface_->Infinity()};
 
     // add columns
-    ASSERT_OK(lp_interface_->AddColumn({{}, {}}, 0.0, lp_interface_->Infinity(),
-                                       1.0, "x1"));
-    ASSERT_OK(lp_interface_->AddColumn({{}, {}}, 0.0, lp_interface_->Infinity(),
-                                       1.0, "x2"));
-    ASSERT_OK(lp_interface_->AddColumn({{}, {}}, 0.0, lp_interface_->Infinity(),
-                                       1.0, "x3"));
-    ASSERT_OK(lp_interface_->AddColumn({{}, {}}, 0.0, lp_interface_->Infinity(),
-                                       1.0, "x4"));
+    ASSERT_OK(lp_interface_->AddColumn(SparseVector(), 0.0,
+                                       lp_interface_->Infinity(), 1.0, "x1"));
+    ASSERT_OK(lp_interface_->AddColumn(SparseVector(), 0.0,
+                                       lp_interface_->Infinity(), 1.0, "x2"));
+    ASSERT_OK(lp_interface_->AddColumn(SparseVector(), 0.0,
+                                       lp_interface_->Infinity(), 1.0, "x3"));
+    ASSERT_OK(lp_interface_->AddColumn(SparseVector(), 0.0,
+                                       lp_interface_->Infinity(), 1.0, "x4"));
 
     // add one row
-    ASSERT_OK(lp_interface_->AddRow({{0, 2, 3}, {1, 1, 1}}, 1,
-                                    lp_interface_->Infinity(), "r1"));
+    ASSERT_OK(lp_interface_->AddRow(minimip::SparseVector({0, 2, 3}, {1, 1, 1}),
+                                    1, lp_interface_->Infinity(), "r1"));
 
     std::vector<std::string> row_names          = {"r2", "r3"};
     std::vector<SparseVector> rows_coefficients = {
@@ -519,15 +518,16 @@ TEST_F(MoreVarsThanRows, test1) {
   }
   ASSERT_LT(basic_variable_positions, 3);  // assert that we found the variable
 
-  std::vector<int> b_inverted_times_a_indices;
-  std::vector<double> b_inverted_times_a_row;
-
   absl::StatusOr<SparseVector> absl_tmp_sparse =
       lp_interface_->GetSparseRowOfBInvertedTimesA(basic_variable_positions);
   ASSERT_OK(absl_tmp_sparse.status());
 
-  b_inverted_times_a_indices = absl_tmp_sparse->indices;
-  b_inverted_times_a_row     = absl_tmp_sparse->values;
+  auto b_inverted_times_a_indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
+  auto b_inverted_times_a_row = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
 
   ASSERT_EQ(b_inverted_times_a_indices[0], 0);
   ASSERT_EQ(b_inverted_times_a_indices[1], 1);
@@ -548,8 +548,12 @@ TEST_F(MoreVarsThanRows, test1) {
   absl_tmp_sparse =
       lp_interface_->GetSparseRowOfBInvertedTimesA(basic_variable_positions);
   ASSERT_OK(absl_tmp_sparse.status());
-  b_inverted_times_a_indices = absl_tmp_sparse->indices;
-  b_inverted_times_a_row     = absl_tmp_sparse->values;
+  b_inverted_times_a_indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
+  b_inverted_times_a_row = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
 
   ASSERT_EQ(b_inverted_times_a_indices[0], 1);
   ASSERT_EQ(b_inverted_times_a_indices[1], 2);
@@ -570,8 +574,12 @@ TEST_F(MoreVarsThanRows, test1) {
   absl_tmp_sparse =
       lp_interface_->GetSparseRowOfBInvertedTimesA(basic_variable_positions);
   ASSERT_OK(absl_tmp_sparse.status());
-  b_inverted_times_a_indices = absl_tmp_sparse->indices;
-  b_inverted_times_a_row     = absl_tmp_sparse->values;
+  b_inverted_times_a_indices = std::vector<int>(
+      absl_tmp_sparse->IndicesData(),
+      absl_tmp_sparse->IndicesData() + absl_tmp_sparse->NumNonZeros());
+  b_inverted_times_a_row = std::vector<double>(
+      absl_tmp_sparse->ValuesData(),
+      absl_tmp_sparse->ValuesData() + absl_tmp_sparse->NumNonZeros());
 
   ASSERT_EQ(b_inverted_times_a_indices[0], 1);
   ASSERT_EQ(b_inverted_times_a_indices[1], 3);
