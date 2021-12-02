@@ -389,14 +389,13 @@ class Solve : public ::testing::Test {
     ASSERT_EQ(expected_sparse_columns.size(), sparse_columns.size());
 
     for (size_t j = 0; j < expected_sparse_columns.size(); ++j) {
-      ASSERT_EQ(expected_sparse_columns[j].indices.size(),
-                sparse_columns[j].indices.size());
-      for (size_t i = 0; i < expected_sparse_columns[j].indices.size(); ++i) {
-        expected_sparse_columns[j].values[i];
-        ASSERT_EQ(expected_sparse_columns[j].indices[i],
-                  sparse_columns[j].indices[i]);
-        ASSERT_EQ(expected_sparse_columns[j].values[i],
-                  sparse_columns[j].values[i]);
+      ASSERT_EQ(expected_sparse_columns[j].NumNonZeros(),
+                sparse_columns[j].NumNonZeros());
+      for (size_t i = 0; i < expected_sparse_columns[j].NumNonZeros(); ++i) {
+        ASSERT_EQ(expected_sparse_columns[j].IndicesData()[i],
+                  sparse_columns[j].IndicesData()[i]);
+        ASSERT_EQ(expected_sparse_columns[j].ValuesData()[i],
+                  sparse_columns[j].ValuesData()[i]);
       }
     }
 

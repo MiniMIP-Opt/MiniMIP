@@ -13,13 +13,15 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
+
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "unit_tests/utils.h"
 
 #define TEST_ERRORS 0  // if 0 then skip tests expected to fail.
 #define DEF_INTERFACE \
-  1  // 0 = Glop Interface (Default),
+  0  // 0 = Glop Interface (Default),
      // 1 = SoPlex Interface,
 
 namespace minimip {
@@ -137,7 +139,7 @@ class Change : public ::testing::Test {
         num_rows        = 2;
         num_nonzeros    = 2;
         objective_sense = LPObjectiveSense::kMaximization;
-        sparse_rows     = {{{0}, {-1}}, {{1}, {-1}}};
+        sparse_rows     = {{{0}, {-1.0}}, {{1}, {-1.0}}};
         break;
 
       case 5:
@@ -159,7 +161,7 @@ class Change : public ::testing::Test {
         num_rows        = 2;
         num_nonzeros    = 2;
         objective_sense = LPObjectiveSense::kMaximization;
-        sparse_rows     = {{{0}, {1}}, {{1}, {1}}};
+        sparse_rows     = {{{0}, {1.0}}, {{1}, {1.0}}};
         break;
 
       case 6:
@@ -183,7 +185,7 @@ class Change : public ::testing::Test {
         objective_sense     = LPObjectiveSense::kMaximization;
         right_hand_sides[0] = -1.0;
         right_hand_sides[1] = -1.0;
-        sparse_rows         = {{{0}, {-1}}, {{1}, {1}}};
+        sparse_rows         = {{{0}, {-1.0}}, {{1}, {1.0}}};
         break;
 
       case 7:
@@ -232,7 +234,7 @@ class Change : public ::testing::Test {
     std::vector<std::string> empty_names;
     std::vector<double> empty_values;
     std::vector<int> empty_indices;
-
+    ASSERT_OK(lp_interface_->Clear());
     ASSERT_OK(lp_interface_->SetObjectiveSense(objective_sense));
 
     std::vector<SparseVector> empty_columns;
@@ -286,7 +288,7 @@ class ChangeObjective
       objective_coefficients[i] = lp_interface_->GetObjectiveCoefficient(i);
     }
 
-    for (int i = 0; i < last_col; i++) {
+    for (int i = 0; i < last_col; ++i) {
       ASSERT_FLOAT_EQ(objective_coefficients[i], set_objective_coefficients[i]);
     }
   }
@@ -562,8 +564,9 @@ TEST_F(Change, TestRowMethods) {
       -1.0, -3e-10, 0.0, 1.0, 3e10, lp_interface_->Infinity()};
 
   std::vector<SparseVector> sparse_rows = {
-      {{0, 1}, {1.0, 5.0}},       {{3}, {-1.0}}, {{1, 2}, {2.0, 3e5}},
-      {{1, 2, 4}, {1.0, 20, 10}}, {{0}, {-1.9}}, {{3}, {1e-2}}};
+      SparseVector({0, 1}, {1.0, 5.0}), SparseVector({3}, {-1.0}),
+      SparseVector({1, 2}, {2.0, 3e5}), SparseVector({1, 2, 4}, {1.0, 20, 10}),
+      SparseVector({0}, {-1.9}),        SparseVector({3}, {1e-2})};
 
   std::vector<int> set_num_rows = {1, 6, -1, 4, -2};
 
@@ -575,7 +578,7 @@ TEST_F(Change, TestRowMethods) {
   // empty columns
   std::vector<SparseVector> empty_columns;
   for (size_t i = 0; i < objective_coefficients.size(); ++i) {
-    empty_columns.push_back({{}, {}});
+    empty_columns.push_back(SparseVector());
   }
 
   // create original lp
@@ -629,14 +632,13 @@ TEST_F(Change, TestRowMethods) {
           ASSERT_DOUBLE_EQ(right_hand_sides[j], new_right_hand_sides[j]);
         }
 
-        ASSERT_EQ(check_sparse_rows[j].indices.size(),
-                  sparse_rows_to_add[j].indices.size());
-        for (size_t i = 0; i < check_sparse_rows[j].indices.size(); ++i) {
-          check_sparse_rows[j].values[i];
-          ASSERT_EQ(check_sparse_rows[j].indices[i],
-                    sparse_rows_to_add[j].indices[i]);
-          ASSERT_FLOAT_EQ(check_sparse_rows[j].values[i],
-                          sparse_rows_to_add[j].values[i]);
+        ASSERT_EQ(check_sparse_rows[j].NumNonZeros(),
+                  sparse_rows_to_add[j].NumNonZeros());
+        for (size_t i = 0; i < check_sparse_rows[j].NumNonZeros(); ++i) {
+          ASSERT_EQ(check_sparse_rows[j].IndicesData()[i],
+                    sparse_rows_to_add[j].IndicesData()[i]);
+          ASSERT_FLOAT_EQ(check_sparse_rows[j].ValuesData()[i],
+                          sparse_rows_to_add[j].ValuesData()[i]);
         }
       }
 
@@ -684,8 +686,12 @@ TEST_F(Change, TestColumnMethods) {
       -1.0, -3e-10, 0.0, 1.0, 3e10, lp_interface_->Infinity()};
 
   std::vector<SparseVector> sparse_columns = {
-      {{0, 1}, {1.0, 5.0}},       {{3}, {-1.0}}, {{1, 2}, {2.0, 3e5}},
-      {{1, 2, 4}, {1.0, 20, 10}}, {{0}, {-1.9}}, {{3}, {1e-2}}};
+      SparseVector({0, 1}, {1.0, 5.0}),
+      SparseVector({3}, {-1.0}),
+      SparseVector({1, 2}, {2.0, 3e5}),
+      SparseVector({1, 2, 4}, {1.0, 20.0, 10.0}),
+      SparseVector({0}, {-1.9}),
+      SparseVector({3}, {1e-2})};
 
   // problem data
   int num_columns_before, num_columns_after;
@@ -754,13 +760,13 @@ TEST_F(Change, TestColumnMethods) {
       for (int j = 0; j < num_columns; j++) {
         ASSERT_FLOAT_EQ(lower_bounds[j], new_lower_bounds[j]);
         ASSERT_FLOAT_EQ(upper_bounds[j], new_upper_bounds[j]);
-        ASSERT_EQ(check_sparse_columns[j].indices.size(),
-                  sparse_columns_to_add[j].indices.size());
-        for (size_t i = 0; i < check_sparse_columns[j].indices.size(); ++i) {
-          ASSERT_EQ(check_sparse_columns[j].indices[i],
-                    sparse_columns_to_add[j].indices[i]);
-          ASSERT_FLOAT_EQ(check_sparse_columns[j].values[i],
-                          sparse_columns_to_add[j].values[i]);
+        ASSERT_EQ(check_sparse_columns[j].NumNonZeros(),
+                  sparse_columns_to_add[j].NumNonZeros());
+        for (size_t i = 0; i < check_sparse_columns[j].NumNonZeros(); ++i) {
+          ASSERT_EQ(check_sparse_columns[j].IndicesData()[i],
+                    sparse_columns_to_add[j].IndicesData()[i]);
+          ASSERT_FLOAT_EQ(check_sparse_columns[j].ValuesData()[i],
+                          sparse_columns_to_add[j].ValuesData()[i]);
         }
       }
     }
@@ -784,8 +790,9 @@ TEST_F(Change, TestZerosInColumns) {
   ASSERT_EQ(2, num_columns);
 
 #ifndef NDEBUG
-  ASSERT_DEATH(
-      lp_interface_->AddColumn({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, 1.0, ""), "");
+  ASSERT_DEATH(lp_interface_->AddColumn(SparseVector({0, 1}, {0.0, 3.0}), 0.0,
+                                        20.0, 1.0, ""),
+               "");
 #endif
   // this test can only work in debug mode, so we make it pass in opt mode
 #ifdef NDEBUG
@@ -808,7 +815,9 @@ TEST_F(Change, TestZerosInRows) {
   ASSERT_EQ(2, num_columns);
 
 #ifndef NDEBUG
-  ASSERT_DEATH(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""), "");
+  ASSERT_DEATH(
+      lp_interface_->AddRow(SparseVector({0, 1}, {0.0, 3.0}), 0.0, 20.0, ""),
+      "");
 #else
   // this test can only work in debug mode, so we make it pass in opt mode
   ASSERT_OK(lp_interface_->AddRow({{0, 1}, {0.0, 3.0}}, 0.0, 20.0, ""));
@@ -824,7 +833,6 @@ TEST_F(Change, TestWriteReadLPMethods) {
   // 2x2 problem
   ASSERT_NO_FATAL_FAILURE(
       initProb(5, num_columns, num_rows, num_nonzeros, objective_sense));
-
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
   double objective_value;
   objective_value = lp_interface_->GetObjectiveValue();
@@ -835,7 +843,6 @@ TEST_F(Change, TestWriteReadLPMethods) {
   std::vector<double> reduced_costs(2);
 
   absl::StatusOr<std::vector<double>> absl_tmp;
-
   absl_tmp = lp_interface_->GetPrimalSolution();
   ASSERT_OK(absl_tmp.status());
   primal_solution = *absl_tmp;
@@ -852,8 +859,7 @@ TEST_F(Change, TestWriteReadLPMethods) {
   ASSERT_OK(absl_tmp.status());
   reduced_costs = *absl_tmp;
 
-  ASSERT_EQ(lp_interface_->WriteLP("lpi_change_test_problem.lp"),
-            absl::OkStatus());
+  ASSERT_OK(lp_interface_->WriteLP("lpi_change_test_problem.lp"));
   ASSERT_OK(lp_interface_->Clear());
 
   if (DEF_INTERFACE == 0) {

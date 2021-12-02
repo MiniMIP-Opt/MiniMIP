@@ -76,23 +76,26 @@ absl::Status LPGlopInterface::LoadSparseColumnLP(
 
 // adds column to the LP
 absl::Status LPGlopInterface::AddColumn(
-    const SparseVector& col,  // column to be added
-    double lower_bound,       // lower bound of new column
-    double upper_bound,       // upper bound of new column
-    double objective_value,   // objective function value of new columns
-    std::string col_name      // column name
+    const AbstractSparseVector& col,  // column to be added
+    double lower_bound,               // lower bound of new column
+    double upper_bound,               // upper bound of new column
+    double objective_value,           // objective function value of new columns
+    const std::string& col_name       // column name
 ) {
   MiniMIPdebugMessage("add column.\n");
 
+  auto indices = col.IndicesData();
+  auto values  = col.ValuesData();
+
   // @todo add names
-  if (!col.indices.empty()) {
+  if (!col.empty()) {
 #ifndef NDEBUG
     // perform check that no new rows are added
     RowIndex num_rows = linear_program_.num_constraints();
-    for (size_t j = 0; j < col.indices.size(); ++j) {
-      assert(0 <= col.indices[j]);
-      assert(col.indices[j] < num_rows.value());
-      assert(col.values[j] != 0.0);
+    for (size_t j = 0; j < col.NumNonZeros(); ++j) {
+      assert(0 <= indices[j]);
+      assert(indices[j] < num_rows.value());
+      assert(values[j] != 0.0);
     }
 #endif
 
@@ -100,9 +103,8 @@ absl::Status LPGlopInterface::AddColumn(
     linear_program_.SetVariableBounds(column, lower_bound, upper_bound);
     linear_program_.SetObjectiveCoefficient(column, objective_value);
 
-    for (size_t j = 0; j < col.indices.size(); ++j) {
-      linear_program_.SetCoefficient(RowIndex(col.indices[j]), column,
-                                     col.values[j]);
+    for (size_t j = 0; j < col.NumNonZeros(); ++j) {
+      linear_program_.SetCoefficient(RowIndex(indices[j]), column, values[j]);
     }
   } else {
     const ColIndex column = linear_program_.CreateNewVariable();
@@ -121,7 +123,7 @@ absl::Status LPGlopInterface::AddColumns(
     const std::vector<double>& upper_bounds,  // upper bounds of new columns
     const std::vector<double>&
         objective_values,  // objective function values of new columns
-    std::vector<std::string>& col_names  // column names
+    const std::vector<std::string>& col_names  // column names
 ) {
   for (size_t j = 0; j < cols.size(); j++) {
     std::string col_name = (col_names.size() != 0) ? col_names[j] : "";
@@ -155,35 +157,35 @@ absl::Status LPGlopInterface::DeleteColumns(
 
 // add row to the LP
 absl::Status LPGlopInterface::AddRow(
-    SparseVector row,        // row to be added
-    double left_hand_side,   // left hand side of new row
-    double right_hand_side,  // right hand side of new row
-    std::string row_name     // row name
+    const AbstractSparseVector& row,  // row to be added
+    double left_hand_side,            // left hand side of new row
+    double right_hand_side,           // right hand side of new row
+    const std::string& row_name       // row name
 ) {
-  MiniMIPdebugMessage("adding row with %zu nonzeros.\n", row.indices.size());
+  MiniMIPdebugMessage("adding row with %zu nonzeros.\n", row.NumNonZeros());
 
-  // @todo add names
-  if (!row.indices.empty()) {
-    assert(!row.values.empty());
+  auto indices      = row.IndicesData();
+  auto coefficients = row.ValuesData();
 
+  if (!row.empty()) {
 #ifndef NDEBUG
     // perform check that no new columns are added - this is likely to be a
     // mistake
     const ColIndex num_cols = linear_program_.num_variables();
-    for (size_t j = 0; j < row.indices.size(); ++j) {
-      assert(row.values[j] != 0.0);
-      assert(0 <= row.indices[j]);
-      assert(row.indices[j] < num_cols.value());
+    for (size_t j = 0; j < row.NumNonZeros(); ++j) {
+      assert(coefficients[j] != 0.0);
+      assert(0 <= indices[j]);
+      assert(indices[j] < num_cols.value());
     }
 #endif
 
     const RowIndex lprow = linear_program_.CreateNewConstraint();
     linear_program_.SetConstraintBounds(lprow, left_hand_side, right_hand_side);
-    for (size_t j = 0; j < row.indices.size(); j++) {
-      linear_program_.SetCoefficient(lprow, ColIndex(row.indices[j]),
-                                     row.values[j]);
+    for (size_t j = 0; j < row.NumNonZeros(); j++) {
+      linear_program_.SetCoefficient(lprow, ColIndex(indices[j]),
+                                     coefficients[j]);
     }
-  } else {
+  } else {  // add empty row with bounds
     const RowIndex lprow = linear_program_.CreateNewConstraint();
     linear_program_.SetConstraintBounds(lprow, left_hand_side, right_hand_side);
   }
@@ -207,7 +209,6 @@ absl::Status LPGlopInterface::AddRows(
 
   if (!rows.empty()) {
     for (size_t j = 0; j < rows.size(); j++) {
-      assert(rows[j].indices.size() == rows[j].values.size());
       std::string row_name = (row_names.size() != 0) ? row_names[j] : "";
       MINIMIP_CALL(
           AddRow(rows[j], left_hand_sides[j], right_hand_sides[j], row_name));
@@ -425,8 +426,7 @@ SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
 
   for (const SparseColumn::Entry& entry : column) {
     const RowIndex row = entry.row();
-    sparse_column.indices.push_back(row.value());
-    sparse_column.values.push_back(entry.coefficient());
+    sparse_column.InsertSorted(row.value(), entry.coefficient());
   }
 
   return sparse_column;
@@ -448,8 +448,7 @@ SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
 
   for (const SparseColumn::Entry& entry : column) {
     const RowIndex rowidx = entry.row();
-    sparse_row.indices.push_back(rowidx.value());
-    sparse_row.values.push_back(entry.coefficient());
+    sparse_row.InsertSorted(rowidx.value(), entry.coefficient());
   }
 
   return sparse_row;
@@ -1261,8 +1260,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
       int idx = (*iter).column().value();
       assert(0 <= idx);
       assert(idx < linear_program_.num_constraints());
-      sparse_row.values.push_back((*iter).coefficient());
-      sparse_row.indices.push_back(idx);
+      sparse_row.InsertSorted(idx, (*iter).coefficient());
     }
   } else {
     // use dense access to tmp_row_
@@ -1270,8 +1268,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
     for (ColIndex col(0); col < size; ++col) {
       double value = (*tmp_row_)[col];
       if (fabs(value) >= eps) {
-        sparse_row.values.push_back(value);
-        sparse_row.indices.push_back(col.value());
+        sparse_row.InsertSorted(col.value(), value);
       }
     }
   }
@@ -1310,8 +1307,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInverted(
 
     double value = (*tmp_row_)[col];
     if (fabs(value) >= eps) {
-      sparse_column.values.push_back(value);
-      sparse_column.indices.push_back(row);
+      sparse_column.InsertSorted(row, value);
     }
   }
   return sparse_column;
@@ -1340,10 +1336,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInvertedTimesA(
   for (ColIndex col(0); col < num_cols; ++col) {
     double value = operations_research::glop::ScalarProduct(
         tmp_row_->values, linear_program_.GetSparseColumn(col));
-    if (fabs(value) >= eps) {
-      sparse_row.values.push_back(value);
-      sparse_row.indices.push_back(col.value());
-    }
+    if (fabs(value) >= eps) sparse_row.InsertSorted(col.value(), value);
   }
   return sparse_row;
 }
@@ -1375,8 +1368,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
       int idx = (*iter).row().value();
       assert(0 <= idx);
       assert(idx < num_rows);
-      sparse_column.values.push_back((*iter).coefficient());
-      sparse_column.indices.push_back(idx);
+      sparse_column.InsertSorted(idx, (*iter).coefficient());
     }
   } else {
     // use dense access to tmp_column_
@@ -1384,8 +1376,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
     for (RowIndex row(0); row < num_rows; ++row) {
       double value = (*tmp_column_)[row];
       if (fabs(value) > eps) {
-        sparse_column.values.push_back(value);
-        sparse_column.indices.push_back(row.value());
+        sparse_column.InsertSorted(row.value(), value);
       }
     }
   }

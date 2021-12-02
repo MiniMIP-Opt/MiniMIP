@@ -1,16 +1,11 @@
 #ifndef SRC_LP_INTERFACE_LP_TYPES_H_
 #define SRC_LP_INTERFACE_LP_TYPES_H_
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
 namespace minimip {
-
-// Sparse Vector type
-struct SparseVector {
-  std::vector<int> indices;
-  std::vector<double> values;
-};
 
 // LP objective sense
 enum class LPObjectiveSense {
