@@ -169,4 +169,118 @@ TEST(SparseVectorTests, CreateFromEmpty) {
   ASSERT_EQ(v.NumNonZeros(), 0);
 }
 
+TEST(SparseMatrixTests, ConstructionAndAccessors) {
+  auto m = SparseCompressedMatrix(3, 3);
+  ASSERT_EQ(m.num_nonzeros(), 0);
+  ASSERT_EQ(m.values.size(), 0);
+  ASSERT_EQ(m.column_indices.size(), 4);
+  ASSERT_EQ(m.row_indices.size(), 0);
+
+  // test matrix with entries
+  // 1.0   ⋅    ⋅
+  // 3.0   ⋅    ⋅
+  // 5.0  2.0  7.0
+  std::vector<int> row_indices    = {0, 1, 2, 2, 2};
+  std::vector<int> column_indices = {0, 3, 4, 5};
+  std::vector<double> vals        = {1.0, 3.0, 5.0, 2.0, 7.0};
+
+  auto m_filled =
+      SparseCompressedMatrix(3, 3, column_indices, row_indices, vals);
+
+  // elements match with a (row, col, val) ordering
+  std::vector<int> col_ordering = {0, 0, 0, 1, 2};
+  for (auto elem_idx = 0; elem_idx < 5; ++elem_idx) {
+    ASSERT_FLOAT_EQ(m_filled.at(row_indices[elem_idx], col_ordering[elem_idx]),
+                    vals[elem_idx]);
+  }
+
+  // verify structural zeros
+  ASSERT_FLOAT_EQ(m_filled.at(0, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_filled.at(0, 2), 0.0);
+  ASSERT_FLOAT_EQ(m_filled.at(1, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_filled.at(1, 2), 0.0);
+
+  // test on non-square matrix
+  // 1.0   ⋅    ⋅
+  // 3.0   ⋅    ⋅
+  // 5.0  2.0  7.0
+  // 5.0   ⋅   7.0
+  std::vector<int> row_indices2 = {0, 1, 2, 3, 2, 2, 3};
+  std::vector<int> col_indices2 = {0, 4, 5, 7};
+  std::vector<double> nzvals2   = {1.0, 3.0, 5.0, 5.0, 2.0, 7.0, 7.0};
+
+  auto m_nonsquare =
+      SparseCompressedMatrix(4, 3, col_indices2, row_indices2, nzvals2);
+  std::vector<int> col_entries = {0, 0, 0, 0, 1, 2, 2};
+  for (size_t elem_idx = 0; elem_idx < nzvals2.size(); ++elem_idx) {
+    ASSERT_FLOAT_EQ(
+        m_nonsquare.at(row_indices2[elem_idx], col_entries[elem_idx]),
+        nzvals2[elem_idx]);
+  }
+  ASSERT_FLOAT_EQ(m_nonsquare.at(0, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_nonsquare.at(0, 2), 0.0);
+  ASSERT_FLOAT_EQ(m_nonsquare.at(1, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_nonsquare.at(1, 2), 0.0);
+  ASSERT_FLOAT_EQ(m_nonsquare.at(3, 1), 0.0);
+
+  // copy constructor
+  SparseCompressedMatrix m_ident = m_nonsquare;
+  for (size_t elem_idx = 0; elem_idx < nzvals2.size(); ++elem_idx) {
+    ASSERT_FLOAT_EQ(m_ident.at(row_indices2[elem_idx], col_entries[elem_idx]),
+                    nzvals2[elem_idx]);
+  }
+  ASSERT_FLOAT_EQ(m_ident.at(0, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_ident.at(0, 2), 0.0);
+  ASSERT_FLOAT_EQ(m_ident.at(1, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_ident.at(1, 2), 0.0);
+  ASSERT_FLOAT_EQ(m_ident.at(3, 1), 0.0);
+  // the copy is independent from the original
+  m_ident.insert(1, 1, 5.0);
+  ASSERT_EQ(m_ident.num_nonzeros(), nzvals2.size() + 1);
+  ASSERT_EQ(m_nonsquare.num_nonzeros(), nzvals2.size());
+  ASSERT_FLOAT_EQ(m_nonsquare.at(1, 1), 0.0);
+  ASSERT_FLOAT_EQ(m_ident.at(1, 1), 5.0);
+}
+
+TEST(SparseMatrixTests, MatrixMutation) {
+  auto nrows = 3;
+  auto ncols = 4;
+  auto mnew  = SparseCompressedMatrix(nrows, ncols);
+  ASSERT_EQ(mnew.num_nonzeros(), 0);
+  ASSERT_EQ(mnew.num_rows_, nrows);
+  ASSERT_EQ(mnew.num_cols_, ncols);
+  ASSERT_EQ(mnew.values.size(), 0);
+  ASSERT_EQ(mnew.column_indices.size(), ncols + 1);
+  ASSERT_EQ(mnew.row_indices.size(), 0);
+  mnew.insert(0, 0, 1.0);
+  ASSERT_EQ(mnew.num_nonzeros(), 1);
+  ASSERT_EQ(mnew.row_indices[0], 0);
+  ASSERT_FLOAT_EQ(mnew.values[0], 1.0);
+  ASSERT_EQ(mnew.column_indices[0], 0);
+  ASSERT_EQ(mnew.column_indices[1], 1);
+  ASSERT_EQ(mnew.column_indices[2], 1);
+  ASSERT_FLOAT_EQ(mnew.at(0, 0), 1.0);
+  // add on same column after
+  mnew.insert(2, 0, 3.0);
+  ASSERT_EQ(mnew.num_nonzeros(), 2);
+  ASSERT_EQ(mnew.row_indices.size(), 2);
+  ASSERT_EQ(mnew.values.size(), 2);
+  ASSERT_FLOAT_EQ(mnew.at(2, 0), 3.0);
+  // inserting 0 over existing entry
+  mnew.insert(2, 0, 0.0);
+  ASSERT_FLOAT_EQ(mnew.at(2, 0), 0.0);
+  ASSERT_EQ(mnew.num_nonzeros(), 2);
+  // inserting 0 at new entry is a no-op
+  ASSERT_FLOAT_EQ(mnew.at(2, 1), 0.0);
+  ASSERT_EQ(mnew.num_nonzeros(), 2);
+  ASSERT_FLOAT_EQ(mnew.at(2, 1), 0.0);
+
+  // inserting at new column
+  mnew.insert(2, 1, 4.0).insert(1, 1, 2.0);
+
+  ASSERT_EQ(mnew.num_nonzeros(), 4);
+  ASSERT_FLOAT_EQ(mnew.at(2, 1), 4.0);
+  ASSERT_FLOAT_EQ(mnew.at(1, 1), 2.0);
+}
+
 }  // namespace minimip
