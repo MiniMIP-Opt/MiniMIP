@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <cassert>
+#include <vector>
+
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/lp_interface/sparse_types.h"
@@ -73,7 +76,7 @@ TEST_F(matrix, create_matrix) {
 
   // get rows
   std::vector<SparseVector> sparse_rows;
-  int num_nonzeros = 0;
+  int NumNonzeros = 0;
   std::vector<double> matrix_left_hand_sides;
   std::vector<double> matrix_right_hand_sides;
 
@@ -82,11 +85,11 @@ TEST_F(matrix, create_matrix) {
     matrix_right_hand_sides.push_back(lp_interface_->GetRightHandSide(i));
 
     sparse_rows.push_back(lp_interface_->GetSparseRowCoefficients(i));
-    num_nonzeros += static_cast<int>(sparse_rows[i].NumNonZeros());
+    NumNonzeros += static_cast<int>(sparse_rows[i].NumNonZeros());
   }
 
   // check sparse matrix shape
-  ASSERT_EQ(num_nonzeros, 2);
+  ASSERT_EQ(NumNonzeros, 2);
   ASSERT_EQ(sparse_rows.size(), 2);
   ASSERT_EQ(sparse_rows[0].IndicesData()[0], 0);
   ASSERT_EQ(sparse_rows[1].IndicesData()[0], 1);
@@ -171,7 +174,7 @@ TEST(SparseVectorTests, CreateFromEmpty) {
 
 TEST(SparseMatrixTests, ConstructionAndAccessors) {
   auto m = SparseCompressedMatrix(3, 3);
-  ASSERT_EQ(m.num_nonzeros(), 0);
+  ASSERT_EQ(m.NumNonzeros(), 0);
   ASSERT_EQ(m.values.size(), 0);
   ASSERT_EQ(m.column_indices.size(), 4);
   ASSERT_EQ(m.row_indices.size(), 0);
@@ -236,24 +239,24 @@ TEST(SparseMatrixTests, ConstructionAndAccessors) {
   ASSERT_FLOAT_EQ(m_ident.at(3, 1), 0.0);
   // the copy is independent from the original
   m_ident.insert(1, 1, 5.0);
-  ASSERT_EQ(m_ident.num_nonzeros(), nzvals2.size() + 1);
-  ASSERT_EQ(m_nonsquare.num_nonzeros(), nzvals2.size());
+  ASSERT_EQ(m_ident.NumNonzeros(), nzvals2.size() + 1);
+  ASSERT_EQ(m_nonsquare.NumNonzeros(), nzvals2.size());
   ASSERT_FLOAT_EQ(m_nonsquare.at(1, 1), 0.0);
   ASSERT_FLOAT_EQ(m_ident.at(1, 1), 5.0);
 }
 
 TEST(SparseMatrixTests, MatrixMutation) {
-  auto nrows = 3;
-  auto ncols = 4;
-  auto mnew  = SparseCompressedMatrix(nrows, ncols);
-  ASSERT_EQ(mnew.num_nonzeros(), 0);
+  int nrows = 3;
+  int ncols = 4;
+  auto mnew = SparseCompressedMatrix(nrows, ncols);
+  ASSERT_EQ(mnew.NumNonzeros(), 0);
   ASSERT_EQ(mnew.num_rows_, nrows);
   ASSERT_EQ(mnew.num_cols_, ncols);
   ASSERT_EQ(mnew.values.size(), 0);
   ASSERT_EQ(mnew.column_indices.size(), ncols + 1);
   ASSERT_EQ(mnew.row_indices.size(), 0);
   mnew.insert(0, 0, 1.0);
-  ASSERT_EQ(mnew.num_nonzeros(), 1);
+  ASSERT_EQ(mnew.NumNonzeros(), 1);
   ASSERT_EQ(mnew.row_indices[0], 0);
   ASSERT_FLOAT_EQ(mnew.values[0], 1.0);
   ASSERT_EQ(mnew.column_indices[0], 0);
@@ -262,25 +265,60 @@ TEST(SparseMatrixTests, MatrixMutation) {
   ASSERT_FLOAT_EQ(mnew.at(0, 0), 1.0);
   // add on same column after
   mnew.insert(2, 0, 3.0);
-  ASSERT_EQ(mnew.num_nonzeros(), 2);
+  ASSERT_EQ(mnew.NumNonzeros(), 2);
   ASSERT_EQ(mnew.row_indices.size(), 2);
   ASSERT_EQ(mnew.values.size(), 2);
   ASSERT_FLOAT_EQ(mnew.at(2, 0), 3.0);
   // inserting 0 over existing entry
   mnew.insert(2, 0, 0.0);
   ASSERT_FLOAT_EQ(mnew.at(2, 0), 0.0);
-  ASSERT_EQ(mnew.num_nonzeros(), 2);
+  ASSERT_EQ(mnew.NumNonzeros(), 2);
   // inserting 0 at new entry is a no-op
   ASSERT_FLOAT_EQ(mnew.at(2, 1), 0.0);
-  ASSERT_EQ(mnew.num_nonzeros(), 2);
+  ASSERT_EQ(mnew.NumNonzeros(), 2);
   ASSERT_FLOAT_EQ(mnew.at(2, 1), 0.0);
 
   // inserting at new column
   mnew.insert(2, 1, 4.0).insert(1, 1, 2.0);
 
-  ASSERT_EQ(mnew.num_nonzeros(), 4);
+  ASSERT_EQ(mnew.NumNonzeros(), 4);
   ASSERT_FLOAT_EQ(mnew.at(2, 1), 4.0);
   ASSERT_FLOAT_EQ(mnew.at(1, 1), 2.0);
+}
+
+TEST(SparseMatrixTests, RowMatrices) {
+  int nrows            = 3;
+  int ncols            = 4;
+  RowSparseMatrix mnew = RowSparseMatrix(nrows, ncols);
+  ASSERT_EQ(mnew.num_rows_, nrows);
+  ASSERT_EQ(mnew.num_cols_, ncols);
+  SparseCompressedMatrix mtranspose = mnew.TransposedView();
+  ASSERT_EQ(mtranspose.num_rows_, ncols);
+  ASSERT_EQ(mtranspose.num_cols_, nrows);
+  mnew.insert(1, 2, 3.5);
+  ASSERT_FLOAT_EQ(mnew.at(1, 2), 3.5);
+  ASSERT_FLOAT_EQ(mnew.at(2, 1), 0.0);
+  ASSERT_FLOAT_EQ(mnew.TransposedView().at(2, 1), 3.5);
+  ASSERT_FLOAT_EQ(mnew.TransposedView().at(1, 2), 0.0);
+  std::vector<SparseViewVector> rows = mnew.RowViews();
+  ASSERT_EQ(rows.size(), nrows);
+  ASSERT_EQ(rows[0].NumNonZeros(), 0);
+  ASSERT_EQ(rows[1].NumNonZeros(), 1);
+  ASSERT_EQ(rows[2].NumNonZeros(), 0);
+  ASSERT_FLOAT_EQ(rows[1].ValueAt(2), 3.5);
+
+  IncrementalSparseMatrix minc = IncrementalSparseMatrix(mnew);
+  ASSERT_EQ(minc.NumRows(), 3);
+  SparseVector row = SparseVector({2, 3}, {1.0, 4.2});
+  minc.AddRow(row);
+  ASSERT_EQ(minc.NumRows(), 4);
+  std::vector<SparseViewVector> current_rows = minc.AllRowViews();
+  ASSERT_EQ(current_rows.size(), 4);
+  std::vector<SparseVector>* extravec = minc.ExtraRows();
+  ASSERT_EQ(extravec->size(), 1);
+  ASSERT_FLOAT_EQ((*extravec)[0].ValueAt(2), 1.0);
+  (*extravec)[0].InsertSorted(2, 4.0);
+  ASSERT_FLOAT_EQ((*extravec)[0].ValueAt(2), 4.0);
 }
 
 }  // namespace minimip
