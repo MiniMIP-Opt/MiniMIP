@@ -2,7 +2,7 @@
 build --show_timestamps
 build --color=yes
 build --keep_going
-build --cxxopt="--std=c++17"
+build --cxxopt="--std=c++2a"
 
 build:debug -c dbg
 build:debug --copt="-g"

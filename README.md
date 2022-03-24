@@ -8,7 +8,7 @@ A modular, minimalistic, robust MILP solver.
 The `bazel` build environment composes of:
 * The file `WORKSPACE` that tells from where to fetch all the dependencies
 * The gile `.bazelrc` that defines commonly used options while building
-(e.g., in MiniMIP we always complile with a flag `--cxxopt=-std=c++17`)
+(e.g., in MiniMIP we always complile with a flag `--cxxopt=-std=c++2a`)
 * The build rules for all targets, which are stated explicitly in each
 (sub-)directory's `BUILD.bazel` file.
 
