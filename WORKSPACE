@@ -101,12 +101,13 @@ http_archive(
 # In particular, OR-Tools includes logging routines, which are not part of
 # abseil yet. Importantly, we do not depend on and use "glog", because it's old
 # and depends on  "gflags" (now replaced by abseil/Flags).
-
-http_archive(
+git_repository(
     name = "com_google_ortools",
-    urls = ["https://github.com/google/or-tools/archive/refs/tags/v8.2.zip"],
-    strip_prefix = "or-tools-8.2",
-    sha256 = "059af0e0eea8eb333b9cfd4b94815f3e4b5b550e6875a76315faa7eb7da0872a",
+    #branch = "master",
+    commit = "525162feaadaeef640783b2eaea38cf4b623877f",
+    shallow_since = "1647023481 +0100",
+    #tag = "v9.3",
+    remote = "https://github.com/google/or-tools.git",
 )
 
 # zlib -- needed to compile SCIP.
