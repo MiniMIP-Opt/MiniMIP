@@ -2,7 +2,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
 
-# All other packages in MiniMIP may use any of the testing utils.
 package(default_visibility = ["//visibility:public"])
 
 cmake(
@@ -74,4 +73,27 @@ cc_library(
 cc_library(
     name = "lp_types",
     hdrs = ["lp_types.h", "sparse_types.h"]
+)
+
+cc_library(
+    name = "strong_sparse_vector",
+    hdrs = ["strong_sparse_vector.h"],
+    deps = [
+        "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/base:strong_vector",
+        "@com_google_ortools//ortools/util:strong_integers",
+    ],
+)
+
+cc_test(
+    name = "strong_sparse_vector_test",
+    size = "small",
+    srcs = ["strong_sparse_vector_test.cc"],
+    deps = [
+        ":strong_sparse_vector",
+        "//minimip/testing:gtest_main",
+        "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/base:strong_vector",
+        "@com_google_ortools//ortools/util:strong_integers",
+    ],
 )
