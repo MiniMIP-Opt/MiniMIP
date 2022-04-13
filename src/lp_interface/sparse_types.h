@@ -434,7 +434,7 @@ class RowSparseMatrix : public AbstractSparseMatrix {
   // return a copy of all entries in the form (row_idx, col_idx, value)
   std::vector<std::tuple<int, int, double>> all_entries() const override {
     auto entries = transposed_->all_entries();
-    for (size_t idx; idx < entries.size(); ++idx) {
+    for (size_t idx = 0; idx < entries.size(); ++idx) {
       entries[idx] = std::tuple<int, int, double>(std::get<1>(entries[idx]),
                                                   std::get<0>(entries[idx]),
                                                   std::get<2>(entries[idx]));

@@ -15,6 +15,7 @@ using ::testing::ElementsAre;
 
 TEST(StrongSparseRow, InitializeAndGetValue) {
   SparseRow row({{4, 40.0}, {3, 0.0}, {1, 10.0}});
+  EXPECT_FALSE(row.MayNeedCleaning());
   EXPECT_TRUE(row.IsClean());
   EXPECT_THAT(row.entries(), ElementsAre(RowEntry(1, 10.0), RowEntry(4, 40.0)));
   EXPECT_EQ(row.value(ColIndex(1)), 10.0);
@@ -30,7 +31,7 @@ TEST(StrongSparseRow, MakeCopy) {
   // We clear x to make sure y is independent.
   x.Clear();
   EXPECT_TRUE(x.entries().empty());
-  EXPECT_TRUE(y.IsClean());
+  EXPECT_FALSE(y.MayNeedCleaning());
   EXPECT_THAT(y.entries(), ElementsAre(RowEntry(1, 10.0)));
 }
 
@@ -53,26 +54,38 @@ TEST(StrongSparseRow, AndEntryAndvalue) {
   row.AddEntry(ColIndex(3), 30.0);
   row.AddEntry(ColIndex(2), 0.0);
   row.AddEntry(ColIndex(1), 10.0);
-  row.CleanUp();
+  row.CleanUpIfNeeded();
   EXPECT_THAT(row.entries(), ElementsAre(RowEntry(1, 10.0), RowEntry(3, 30.0)));
 }
 
 TEST(StrongSparseRow, IsNotCleanWhenSortedButContainsDuplicatesIndex) {
   SparseRow row({{1, 1.0}});
   row.AddEntry(ColIndex(1), 2.0);
-  EXPECT_FALSE(row.IsClean());
+  EXPECT_TRUE(row.MayNeedCleaning());
 }
 
-TEST(StrongSparseRow, IsNotCleanWhenNotSorted) {
+TEST(StrongSparseRow, IsNotCleanWhenAddsNotSortedNonZero) {
   SparseRow row({{1, 1.0}});
-  row.AddEntry(ColIndex(0), 2.0);
-  EXPECT_FALSE(row.IsClean());
+  row.AddEntry(ColIndex(1), 2.0);
+  EXPECT_TRUE(row.MayNeedCleaning());
 }
 
-TEST(StrongSparseRow, IsNotCleanWhenContainsZeros) {
+TEST(StrongSparseRow, IsNotCleanWhenAddsNotSortedZero) {
+  SparseRow row({{1, 1.0}});
+  row.AddEntry(ColIndex(1), 0.0);
+  EXPECT_TRUE(row.MayNeedCleaning());
+}
+
+TEST(StrongSparseRow, IsCleanWhenAddsSortedZero) {
   SparseRow row({{1, 1.0}});
   row.AddEntry(ColIndex(2), 0.0);
-  EXPECT_FALSE(row.IsClean());
+  EXPECT_FALSE(row.MayNeedCleaning());
+}
+
+TEST(StrongSparseRow, IsCleanWhenAddsSortedNonZero) {
+  SparseRow row({{1, 1.0}});
+  row.AddEntry(ColIndex(2), 1.0);
+  EXPECT_FALSE(row.MayNeedCleaning());
 }
 
 TEST(StrongSparseRow, MutateValuesWithCleanUpNeeded) {
@@ -80,7 +93,8 @@ TEST(StrongSparseRow, MutateValuesWithCleanUpNeeded) {
   for (auto& e : row.mutable_entries()) {
     e.value /= 10.0;
   }
-  row.CleanUp();
+  EXPECT_TRUE(row.MayNeedCleaning());
+  row.CleanUpIfNeeded();
   EXPECT_THAT(row.entries(), ElementsAre(RowEntry(1, 1.0), RowEntry(2, 2.0)));
 }
 
@@ -89,7 +103,8 @@ TEST(StrongSparseRow, MutateIndicesWithCleanUpNeeded) {
   for (auto& e : row.mutable_entries()) {
     e.index = ColIndex(10) - e.index;
   }
-  row.CleanUp();
+  EXPECT_TRUE(row.MayNeedCleaning());
+  row.CleanUpIfNeeded();
   EXPECT_THAT(row.entries(), ElementsAre(RowEntry(8, 20.0), RowEntry(9, 10.0)));
 }
 

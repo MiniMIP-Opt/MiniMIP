@@ -7,7 +7,7 @@
 //
 // "Lazy" means that the entries are actually appended in O(1), thus - in the
 // interim - we may store store zeros, duplicated and/or unsorted entries.
-// A client calls `CleanUp()` to sort and remove zeros and duplicates.
+// A client calls `CleanUpIfNeeded()` to sort and remove zeros and duplicates.
 //
 // "Strong" means we use strongly typed ints to distinguish between col, row and
 // entry at compile time (i.e., provide strong type safety guarantees).
@@ -17,7 +17,7 @@
 //   row.AddEntry(RowIndex(2), 20.);
 //   row.AddEntry(RowIndex(1), 0.);
 //   row.AddEntry(RowIndex(5), 25.0);
-//   row.CleanUp();
+//   row.CleanUpIfNeeded();
 //   for (const auto& e : row.entries()) {
 //     LOG(INFO) << e;
 //   }
@@ -59,6 +59,12 @@ using RowEntry  = SparseEntry<ColIndex>;
 using SparseRow = StrongSparseVectorOfDoubles<ColIndex>;
 using SparseCol = StrongSparseVectorOfDoubles<RowIndex>;
 
+template <typename SparseIndex>
+constexpr SparseIndex kInvalidSparseIndex(-1);
+
+constexpr RowIndex kInvalidRow = kInvalidSparseIndex<RowIndex>;
+constexpr ColIndex kInvalidCol = kInvalidSparseIndex<ColIndex>;
+
 // This is needed for CHECK_EQ(), EXPECT_EQ(), and macros from abseil.
 template <typename SparseIndex>
 bool operator==(const SparseEntry<SparseIndex>& lhs,
@@ -89,27 +95,31 @@ struct SparseEntry {
 template <typename SparseIndex>
 class StrongSparseVectorOfDoubles {
  public:
-  StrongSparseVectorOfDoubles() = default;
+  // The class is copyable.
+  // TODO(lpawel): Re-consider this. Now, it's easy to use a copy in place of a
+  // reference by mistake.
+  StrongSparseVectorOfDoubles(const StrongSparseVectorOfDoubles&) = default;
+  StrongSparseVectorOfDoubles<SparseIndex>& operator=(
+      const StrongSparseVectorOfDoubles<SparseIndex>&) = default;
+
+  // The class is (no-throw) moveable.
+  StrongSparseVectorOfDoubles(StrongSparseVectorOfDoubles&&) noexcept = default;
+  StrongSparseVectorOfDoubles<SparseIndex>& operator=(
+      StrongSparseVectorOfDoubles<SparseIndex>&&) noexcept = default;
+
+  StrongSparseVectorOfDoubles() : may_need_cleaning_(false) {}
 
   explicit StrongSparseVectorOfDoubles(
       absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>> entries)
-      : entries_(std::move(entries)), needs_cleaning_(true) {
-    CleanUp();
+      : entries_(std::move(entries)), may_need_cleaning_(true) {
+    CleanUpIfNeeded();
     DCHECK(IsClean());  // This also verifies whether indices are >= 0.
   }
 
-  // Use the default copy constructor.
-  StrongSparseVectorOfDoubles(const StrongSparseVectorOfDoubles&) = default;
-
-  // Use a default move constructor, but mark it noexcept. The constructor
-  // is defined outside of the body, for details on this technique see
-  // https://akrzemi1.wordpress.com/2015/09/11/declaring-the-move-constructor/.
-  // Thanks to this, C++ will use move constructor on reallocation.
-  StrongSparseVectorOfDoubles(StrongSparseVectorOfDoubles&&) noexcept;
-
   const absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& entries()
       const {
-    DCHECK(!needs_cleaning_) << "The vector is not clean! Call `CleanUp()`.";
+    DCHECK(!may_need_cleaning_)
+        << "The vector is not clean! Call `CleanUpIfNeeded()`.";
     return entries_;
   }
 
@@ -117,19 +127,23 @@ class StrongSparseVectorOfDoubles {
   // To add new entries use `AddEntry()`. Regardless of what modifications are
   // introduced, the vector will be marked for cleaning.
   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& mutable_entries() {
-    DCHECK(!needs_cleaning_) << "The vector is not clean! Call `CleanUp()`.";
+    DCHECK(!may_need_cleaning_)
+        << "The vector is not clean! Call `CleanUpIfNeeded()`.";
     // To be on the safe side, we unconditionally mark the entries for clean up.
     // TODO(lpawel): Reconsider this, if it turns out inefficient.
-    needs_cleaning_ = true;
+    may_need_cleaning_ = true;
     return entries_;
   }
 
   // Adds new entry and marks the vector for cleaning (if needed).
   void AddEntry(SparseIndex index, double value) {
-    if (!needs_cleaning_ && !entries_.empty()) {
+    if (!may_need_cleaning_ && !entries_.empty()) {
       // The entries will be unsorted or duplicated and will require cleaning.
-      if (entries_.back().index >= index) {
-        needs_cleaning_ = true;
+      if (index <= entries_.back().index) {
+        may_need_cleaning_ = true;
+      } else if (value == 0.0) {
+        // If we're here, we are in the clean state, so no need to add 0.0.
+        return;
       }
     }
     // STL resizes the underlying vector exponentially on growth beyond current
@@ -140,7 +154,8 @@ class StrongSparseVectorOfDoubles {
   // Gets the value for a specific value of sparse index. This assumes the
   // vector is cleaned up and runs in O(log(entries().size()).
   double value(SparseIndex index) const {
-    DCHECK(!needs_cleaning_) << "The vector is not clean! Call `CleanUp()`.";
+    DCHECK(!may_need_cleaning_)
+        << "The vector is not clean! Call `CleanUpIfNeeded()`.";
     const auto& ge_entry = std::lower_bound(
         entries_.begin(), entries_.end(), index,
         [](const SparseEntry<SparseIndex>& a, const SparseIndex i) -> bool {
@@ -154,13 +169,13 @@ class StrongSparseVectorOfDoubles {
   // Removes all entries, but does not release memory of the underlying storage.
   void Clear() {
     entries_.clear();
-    needs_cleaning_ = false;
+    may_need_cleaning_ = false;
   }
 
   // Removes duplicates (the last entry takes precedence), removes zero entries,
   // and sorts entries. Runs in O(n log(n)), where n = entries().size()).
-  void CleanUp() {
-    if (!needs_cleaning_) return;
+  void CleanUpIfNeeded() {
+    if (!MayNeedCleaning()) return;
     std::stable_sort(entries_.begin(), entries_.end(),
                      [](const SparseEntry<SparseIndex>& lhs,
                         const SparseEntry<SparseIndex>& rhs) -> bool {
@@ -179,7 +194,28 @@ class StrongSparseVectorOfDoubles {
       entries_[new_pos++] = entries_[pos];
     }
     entries_.resize(new_pos.value());
-    needs_cleaning_ = false;
+    may_need_cleaning_ = false;
+  }
+
+  bool MayNeedCleaning() const {
+    // Note, `!IsClean() => may_need_cleaning_`. In particular,
+    // `may_need_cleaning_` may be true even if `IsClean()` is true (because
+    // we unconditionally mark the entries for cleaning when returning
+    // `mutable_entries()`).
+    DCHECK(IsClean() || may_need_cleaning_);
+    return may_need_cleaning_;
+  }
+
+  SparseIndex last_index() const {
+    DCHECK(!may_need_cleaning_);
+    return entries_.empty() ? kInvalidSparseIndex<SparseIndex>
+                            : entries_.back().index;
+  }
+
+  SparseIndex first_index() const {
+    DCHECK(!may_need_cleaning_);
+    return entries_.empty() ? kInvalidSparseIndex<SparseIndex>
+                            : entries_[0].index;
   }
 
   // Verifies whether `entries()` are clean (i.e., sorted, no duplicates, no
@@ -208,12 +244,15 @@ class StrongSparseVectorOfDoubles {
   // by 25%.
   // TODO(lpawel): Investigate if this becomes an issue.
   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>> entries_;
-  bool needs_cleaning_ = false;
+  bool may_need_cleaning_ = false;
 };
 
-template <typename SparseIndex>
-inline StrongSparseVectorOfDoubles<SparseIndex>::StrongSparseVectorOfDoubles(
-    StrongSparseVectorOfDoubles&&) noexcept = default;
+// Note, we need no-throw moveable so that `std::vector<SparseRow>::resize()`
+// uses move semantics.
+static_assert(std::is_move_assignable<SparseRow>(),
+              "SparseRow is not move assignable.");
+static_assert(std::is_nothrow_move_assignable<SparseRow>(),
+              "SparseRow is not nothrow move assignable.");
 
 }  // namespace minimip
 #endif  // SRC_LP_INTERFACE_STRONG_SPARSE_VECTOR_H_
