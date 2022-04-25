@@ -125,7 +125,8 @@ class StrongSparseMatrix {
       absl::StrongVector<TargetIndex,
                          StrongSparseVectorOfDoubles<TransposeIndex>>& target,
       absl::StrongVector<TransposeIndex,
-                         StrongSparseVectorOfDoubles<TargetIndex>>& transpose) {
+                         StrongSparseVectorOfDoubles<TargetIndex>>& transpose)
+      const {
     for (auto& target_entry : target) {
       target_entry.Clear();
     }
@@ -142,9 +143,10 @@ class StrongSparseMatrix {
     DCHECK(AllColsAreClean());
   }
 
-  // Helper functions to recompute row / col view.
-  void RecomputeRowsFromColsIfNeeded();
-  void RecomputeColsFromRowsIfNeeded();
+  // Helper functions to recompute row / col view. They are marked const so that
+  // getters can be marked const too.
+  void RecomputeRowsFromColsIfNeeded() const;
+  void RecomputeColsFromRowsIfNeeded() const;
 
   // Rows and cols are mutable so that we can automatically clean them (if
   // needed) on access.
@@ -152,7 +154,7 @@ class StrongSparseMatrix {
   mutable absl::StrongVector<RowIndex, SparseRow> rows_;
 
   // Indicates which of the `cols_` and `rows_` needs recomputation (if any).
-  MatrixConsistency consistency_;
+  mutable MatrixConsistency consistency_;
 };
 
 }  // namespace minimip
