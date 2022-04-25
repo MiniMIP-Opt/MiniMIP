@@ -17,6 +17,7 @@ void StrongSparseMatrix::PopulateFromSparseMatrix(StrongSparseMatrix m) {
 const SparseRow& StrongSparseMatrix::row(RowIndex row) const {
   DCHECK_GE(row, RowIndex(0));
   DCHECK_LT(row, num_rows());
+  RecomputeRowsFromColsIfNeeded();
   rows_[row].CleanUpIfNeeded();
   return rows_[row];
 }
@@ -24,6 +25,7 @@ const SparseRow& StrongSparseMatrix::row(RowIndex row) const {
 const SparseCol& StrongSparseMatrix::col(ColIndex col) const {
   DCHECK_GE(col, ColIndex(0));
   DCHECK_LT(col, num_cols());
+  RecomputeColsFromRowsIfNeeded();
   cols_[col].CleanUpIfNeeded();
   return cols_[col];
 }
@@ -168,15 +170,15 @@ void StrongSparseMatrix::Resize(ColIndex new_num_cols, RowIndex new_num_rows) {
   }
 }
 
-void StrongSparseMatrix::RecomputeRowsFromColsIfNeeded() {
-  DCHECK(!cols_need_recomputation());
+void StrongSparseMatrix::RecomputeRowsFromColsIfNeeded() const {
   if (!rows_need_recomputation()) return;
+  DCHECK(!cols_need_recomputation());
   PopulateFromTranspose(rows_, cols_);
 }
 
-void StrongSparseMatrix::RecomputeColsFromRowsIfNeeded() {
-  DCHECK(!rows_need_recomputation());
+void StrongSparseMatrix::RecomputeColsFromRowsIfNeeded() const {
   if (!cols_need_recomputation()) return;
+  DCHECK(!rows_need_recomputation());
   PopulateFromTranspose(cols_, rows_);
 }
 

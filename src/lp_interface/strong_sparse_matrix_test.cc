@@ -49,6 +49,30 @@ TEST(StrongSparseMatrix, InitializeAndGetValues) {
   }
 }
 
+TEST(StrongSparseMatrix, PopulatesColsFromRows) {
+  StrongSparseMatrix sparse(ColIndex(3), RowIndex(2));
+  SparseRow row1({RowEntry(1, 2.0)});
+  sparse.PopulateRow(RowIndex(0), std::move(row1));
+  SparseRow row2({RowEntry(0, 1.0), RowEntry(2, 3.0)});
+  sparse.PopulateRow(RowIndex(1), std::move(row2));
+  EXPECT_THAT(sparse.col(ColIndex(0)).entries(), ElementsAre(ColEntry(1, 1.0)));
+  EXPECT_THAT(sparse.col(ColIndex(1)).entries(), ElementsAre(ColEntry(0, 2.0)));
+  EXPECT_THAT(sparse.col(ColIndex(2)).entries(), ElementsAre(ColEntry(1, 3.0)));
+}
+
+
+TEST(StrongSparseMatrix, PopulatesRowsFromCols) {
+  StrongSparseMatrix sparse(ColIndex(2), RowIndex(3));
+  SparseCol col1({ColEntry(1, 2.0)});
+  sparse.PopulateCol(ColIndex(0), std::move(col1));
+  SparseCol col2({ColEntry(0, 1.0), ColEntry(2, 3.0)});
+  sparse.PopulateCol(ColIndex(1), std::move(col2));
+  EXPECT_THAT(sparse.row(RowIndex(0)).entries(), ElementsAre(RowEntry(1, 1.0)));
+  EXPECT_THAT(sparse.row(RowIndex(1)).entries(), ElementsAre(RowEntry(0, 2.0)));
+  EXPECT_THAT(sparse.row(RowIndex(2)).entries(), ElementsAre(RowEntry(1, 3.0)));
+}
+
+
 // TODO(lpawel): Implement more tests after initial review.
 
 }  // namespace
