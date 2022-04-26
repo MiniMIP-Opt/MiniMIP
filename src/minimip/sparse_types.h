@@ -1,8 +1,21 @@
-#ifndef SRC_LP_INTERFACE_SPARSE_TYPES_H_
-#define SRC_LP_INTERFACE_SPARSE_TYPES_H_
+// Copyright 2022 the MiniMIP Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef SRC_MINIMIP_SPARSE_TYPES_H_
+#define SRC_MINIMIP_SPARSE_TYPES_H_
 
 #include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <numeric>
@@ -10,6 +23,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "ortools/base/logging.h"
 
 namespace minimip {
 
@@ -42,8 +57,8 @@ class AbstractSparseVector {
   }
   // Returns the entry at the idx-th nonzero of the sparse vector.
   virtual SparseEntry EntryAt(size_t idx) {
-    assert(idx >= 0);
-    assert(idx < NumNonZeros());
+    DCHECK_GE(idx, 0);
+    DCHECK_LT(idx, NumNonZeros());
     return SparseEntry{IndicesData()[idx], ValuesData()[idx]};
   }
 };
@@ -55,10 +70,10 @@ class SparseVector : public AbstractSparseVector {
  public:
   SparseVector(std::vector<int> indices, std::vector<double> values) {
 #ifndef NDEBUG
-    assert(indices.size() == values.size());
+    DCHECK_EQ(indices.size(), values.size());
     if (!indices.empty()) {
       for (size_t idx = 0; idx < indices.size() - 1; ++idx) {
-        assert(indices[idx] < indices[idx + 1]);
+        DCHECK(indices[idx] < indices[idx + 1]);
       }
     }
 #endif
@@ -114,7 +129,7 @@ class SparseVector : public AbstractSparseVector {
   // Replaces the nonzero entry at position by (index, value)
   // permutes entries to maintain order
   SparseVector& ReplaceEntry(size_t position, int index, double value) {
-    assert(position < NumNonZeros());
+    DCHECK(position < NumNonZeros());
     this->indices_[position] = index;
     this->values_[position]  = value;
     Resort();
@@ -167,7 +182,7 @@ class SparseViewVector : public AbstractSparseVector {
  public:
   SparseViewVector(int* indices, double* values, int NumNonzeros) {
     for (int idx = 0; idx < NumNonzeros - 1; ++idx) {
-      assert(indices[idx] < indices[idx + 1]);
+      DCHECK(indices[idx] < indices[idx + 1]);
     }
     this->indices_      = indices;
     this->values_       = values;
@@ -183,6 +198,8 @@ class SparseViewVector : public AbstractSparseVector {
       : indices_(that.IndicesData()),
         values_(that.ValuesData()),
         num_nonzeros_(that.NumNonZeros()) {}
+
+  SparseViewVector() : indices_(nullptr), values_(nullptr), num_nonzeros_(0) {}
 
   size_t NumNonZeros() const override { return num_nonzeros_; }
 
@@ -226,7 +243,7 @@ class AbstractSparseMatrix {
 // nonzeros". row_indices contains the row index for each of the nonzeros.
 // values contains the value for each of the nonzeros.
 // Iterating over columns is efficient and can produce views without copies.
-class SparseCompressedMatrix : public AbstractSparseMatrix {
+class ColumnSparseMatrix : public AbstractSparseMatrix {
  public:
   // these fields remain public because they
   // will be necessary for some operations.
@@ -234,22 +251,21 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
   std::vector<int> row_indices;
   std::vector<double> values;
 
-  SparseCompressedMatrix(int num_rows, int num_cols)
+  ColumnSparseMatrix(int num_rows, int num_cols)
       : AbstractSparseMatrix(num_rows, num_cols),
         column_indices(std::vector<int>(num_cols + 1)),
         row_indices({}),
         values({}) {}
 
-  SparseCompressedMatrix(int num_rows, int num_cols,
-                         std::vector<int> column_indices,
-                         std::vector<int> row_indices,
-                         std::vector<double> values)
+  ColumnSparseMatrix(int num_rows, int num_cols,
+                     std::vector<int> column_indices,
+                     std::vector<int> row_indices, std::vector<double> values)
       : AbstractSparseMatrix(num_rows, num_cols),
-        column_indices(column_indices),
-        row_indices(row_indices),
-        values(values) {}
+        column_indices(std::move(column_indices)),
+        row_indices(std::move(row_indices)),
+        values(std::move(values)) {}
 
-  SparseCompressedMatrix(const SparseCompressedMatrix& that)
+  ColumnSparseMatrix(const ColumnSparseMatrix& that)
       : AbstractSparseMatrix(that.num_rows_, that.num_cols_),
         column_indices(that.column_indices),
         row_indices(that.row_indices),
@@ -258,10 +274,10 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
   size_t NumNonzeros() const override { return values.size(); }
 
   double at(int row_idx, int col_idx) const override {
-    assert(row_idx >= 0);
-    assert(col_idx >= 0);
-    assert(row_idx < num_rows_);
-    assert(col_idx < num_cols_);
+    DCHECK(row_idx >= 0);
+    DCHECK(col_idx >= 0);
+    DCHECK(row_idx < num_rows_);
+    DCHECK(col_idx < num_cols_);
 
     auto col_start = this->column_indices[col_idx];
     auto col_end   = this->column_indices[col_idx + 1] - 1;
@@ -286,10 +302,10 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
 
   // Inserts a value in the matrix.
   AbstractSparseMatrix& insert(int row_idx, int col_idx, double val) override {
-    assert(row_idx >= 0);
-    assert(col_idx >= 0);
-    assert(row_idx < num_rows_);
-    assert(col_idx < num_cols_);
+    DCHECK(row_idx >= 0);
+    DCHECK(col_idx >= 0);
+    DCHECK(row_idx < num_rows_);
+    DCHECK(col_idx < num_cols_);
 
     auto col_start = this->column_indices[col_idx];
     auto col_end   = this->column_indices[col_idx + 1] - 1;
@@ -302,9 +318,6 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
       for (search_idx = col_start; search_idx <= col_end; ++search_idx) {
         if (row_indices[search_idx] == row_idx) {
           break;
-        }
-        if (search_idx == col_end) {
-          ++search_idx;
         }
       }
     }
@@ -333,8 +346,6 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
     return *this;
   };
 
-  // TODO(mbesanco) add a method returning an iterator over columns?
-
   // Vector of columns of the matrices.
   // These columns are views over the actual data of the sparse matrix.
   // Mutating the elements of the SparseVectorView will mutate the matrix
@@ -343,18 +354,33 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
     std::vector<SparseViewVector> cols;
     cols.reserve(this->num_cols_);
     for (auto col_idx = 0; col_idx < num_cols_; ++col_idx) {
-      auto col_begin = this->column_indices[col_idx];
-      auto col_end   = this->column_indices[col_idx + 1] - 1;
+      int col_begin = this->column_indices[col_idx];
+      int col_end   = this->column_indices[col_idx + 1] - 1;
       if (col_end < col_begin) {
-        cols.push_back(SparseViewVector({}, {}, 0));
+        cols.push_back(SparseViewVector());
       } else {
-        auto nnonzeros = col_end - col_begin + 1;
+        int nnonzeros = col_end - col_begin + 1;
         cols.push_back(SparseViewVector(this->row_indices.data() + col_begin,
                                         this->values.data() + col_begin,
                                         nnonzeros));
       }
     }
     return cols;
+  }
+
+  // Return a zero-copy view of the column col_idx
+  // errors if col_idx is out of bounds
+  SparseViewVector ColumnViewAt(int col_idx) {
+    DCHECK(col_idx >= 0);
+    DCHECK(col_idx < this->num_cols_);
+    int col_begin = this->column_indices[col_idx];
+    int col_end   = this->column_indices[col_idx + 1] - 1;
+    if (col_end < col_begin) {
+      return SparseViewVector();
+    }
+    int nnonzeros = col_end - col_begin + 1;
+    return SparseViewVector(this->row_indices.data() + col_begin,
+                            this->values.data() + col_begin, nnonzeros);
   }
 
   // return a copy of all entries in the form (row_idx, col_idx, value)
@@ -377,41 +403,59 @@ class SparseCompressedMatrix : public AbstractSparseMatrix {
   };
 };
 
-// The transpose of a SparseCompressedMatrix
+// The transpose of a ColumnSparseMatrix
 // Maintains a pointer to the data of the transposed matrix.
 // And whether the matrix allocation was done during the construction.
 // If this is the case, the destructor cleans up the transpose.
 class RowSparseMatrix : public AbstractSparseMatrix {
  private:
-  SparseCompressedMatrix* transposed_;
+  ColumnSparseMatrix* transposed_;
   bool is_allocated;
 
  public:
   // Allocating constructor creating the underlying transposed matrix.
   RowSparseMatrix(int num_row, int num_col)
       : AbstractSparseMatrix(num_row, num_col),
-        transposed_(new SparseCompressedMatrix(num_col, num_row)),
+        transposed_(new ColumnSparseMatrix(num_col, num_row)),
         is_allocated(true) {}
 
   // Zero-allocation constructor, constructs a RowSparseMatrix from the
   // column matrix to transpose
-  explicit RowSparseMatrix(SparseCompressedMatrix* transposed)
+  explicit RowSparseMatrix(ColumnSparseMatrix* transposed, bool should_allocate)
       : AbstractSparseMatrix(transposed->num_cols_, transposed->num_rows_),
-        transposed_(transposed),
-        is_allocated(false) {}
+        transposed_(should_allocate
+                        ? new ColumnSparseMatrix(transposed->num_rows_,
+                                                 transposed->num_cols_)
+                        : transposed),
+        is_allocated(should_allocate) {
+    if (should_allocate)
+      for (auto entry : transposed->all_entries()) {
+        this->transposed_->insert(std::get<0>(entry), std::get<1>(entry),
+                                  std::get<2>(entry));
+      }
+  }
 
   // Copy constructor using another RowSparseMatrix
   explicit RowSparseMatrix(const RowSparseMatrix& that)
       : AbstractSparseMatrix(that.num_rows_, that.num_cols_),
-        transposed_(new SparseCompressedMatrix(that.TransposedView())),
+        transposed_(new ColumnSparseMatrix(that.TransposedView())),
         is_allocated(true) {}
+
+  explicit RowSparseMatrix(const AbstractSparseMatrix& that)
+      : AbstractSparseMatrix(that.num_rows_, that.num_cols_),
+        transposed_(new ColumnSparseMatrix(that.num_cols_, that.num_rows_)),
+        is_allocated(true) {
+    for (auto entry : that.all_entries()) {
+      this->insert(std::get<0>(entry), std::get<1>(entry), std::get<2>(entry));
+    }
+  }
 
   ~RowSparseMatrix() {
     if (this->is_allocated) {
       delete this->transposed_;
     }
   }
-  SparseCompressedMatrix const& TransposedView() const {
+  ColumnSparseMatrix const& TransposedView() const {
     return *(this->transposed_);
   }
 
@@ -423,10 +467,10 @@ class RowSparseMatrix : public AbstractSparseMatrix {
   }
 
   AbstractSparseMatrix& insert(int row_idx, int col_idx, double val) override {
-    assert(row_idx >= 0);
-    assert(col_idx >= 0);
-    assert(row_idx < num_rows_);
-    assert(col_idx < num_cols_);
+    DCHECK(row_idx >= 0);
+    DCHECK(col_idx >= 0);
+    DCHECK(row_idx < num_rows_);
+    DCHECK(col_idx < num_cols_);
     this->transposed_->insert(col_idx, row_idx, val);
     return *this;
   }
@@ -442,11 +486,17 @@ class RowSparseMatrix : public AbstractSparseMatrix {
     return entries;
   }
 
-  // TODO(mbesanco) add a method returning an iterator over rows?
+  // Return a zero-copy view of the row row_idx
+  // errors if row_idx is out of bounds
+  SparseViewVector RowViewAt(int row_idx) {
+    DCHECK(row_idx >= 0);
+    DCHECK(row_idx < this->num_rows_);
+    return this->transposed_->ColumnViewAt(row_idx);
+  }
 
   // Vector of rows of the matrix.
   // See col_views on CompressedSparseMatrix
-  std::vector<SparseViewVector> RowViews() {
+  std::vector<SparseViewVector> RowViews() const {
     return this->transposed_->ColumnViews();
   }
 };
@@ -466,8 +516,16 @@ class IncrementalSparseMatrix {
         rows_(std::vector<SparseVector>()),
         ncols_(fixed_matrix.num_cols_) {}
 
+  // Returns the RowSparseMatrix member of the incremental matrix
+  const RowSparseMatrix& getRowMatrix() const { return this->fixed_matrix_; }
+
+  // Returns the RowSparseMatrix member of the incremental matrix
+  const ColumnSparseMatrix& getColumnMatrix() const {
+    return this->fixed_matrix_.TransposedView();
+  }
+
   // Returns a vector of all rows of the incremental matrix
-  const std::vector<SparseViewVector> AllRowViews() {
+  std::vector<SparseViewVector> AllRowViews() const {
     std::vector<SparseViewVector> rows = (this->fixed_matrix_).RowViews();
     for (auto row : rows_) {
       rows.push_back(SparseViewVector(row));
@@ -475,12 +533,8 @@ class IncrementalSparseMatrix {
     return rows;
   }
   // Mutable view to the additional rows of the matrix
-  std::vector<SparseVector>* ExtraRows() {
-    return &rows_;
-  }
-  int NumRows() const {
-    return fixed_matrix_.num_rows_ + rows_.size();
-  }
+  std::vector<SparseVector>* ExtraRows() { return &rows_; }
+  int NumRows() const { return fixed_matrix_.num_rows_ + rows_.size(); }
   IncrementalSparseMatrix& AddRow(const AbstractSparseVector& row) {
     this->rows_.push_back(row.CopyToOwned());
     return *this;
@@ -489,7 +543,8 @@ class IncrementalSparseMatrix {
     this->rows_.push_back(row);
     return *this;
   }
-  IncrementalSparseMatrix& AddRows(const std::vector<AbstractSparseVector>& rows) {
+  IncrementalSparseMatrix& AddRows(
+      const std::vector<AbstractSparseVector>& rows) {
     for (const AbstractSparseVector& row : rows) {
       this->rows_.push_back(row.CopyToOwned());
     }
@@ -504,4 +559,4 @@ class IncrementalSparseMatrix {
 };
 
 }  // namespace minimip
-#endif  // SRC_LP_INTERFACE_SPARSE_TYPES_H_
+#endif  // SRC_MINIMIP_SPARSE_TYPES_H_

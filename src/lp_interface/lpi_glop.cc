@@ -1,3 +1,17 @@
+// Copyright 2022 the MiniMIP Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "src/lp_interface/lpi_glop.h"
 
 #include <limits>
@@ -93,9 +107,9 @@ absl::Status LPGlopInterface::AddColumn(
     // perform check that no new rows are added
     RowIndex num_rows = linear_program_.num_constraints();
     for (size_t j = 0; j < col.NumNonZeros(); ++j) {
-      assert(0 <= indices[j]);
-      assert(indices[j] < num_rows.value());
-      assert(values[j] != 0.0);
+      DCHECK_LE(0, indices[j]);
+      DCHECK_LT(indices[j], num_rows.value());
+      DCHECK(values[j] != 0.0);
     }
 #endif
 
@@ -138,9 +152,9 @@ absl::Status LPGlopInterface::DeleteColumns(
     int first_col,  // first column to be deleted
     int last_col    // last column to be deleted
 ) {
-  assert(0 <= first_col);
-  assert(first_col <= last_col);
-  assert(last_col < linear_program_.num_variables());
+  DCHECK_LE(0, first_col);
+  DCHECK_LE(first_col, last_col);
+  DCHECK_LT(last_col, linear_program_.num_variables());
 
   MiniMIPdebugMessage("deleting columns %d to %d.\n", first_col, last_col);
 
@@ -173,9 +187,9 @@ absl::Status LPGlopInterface::AddRow(
     // mistake
     const ColIndex num_cols = linear_program_.num_variables();
     for (size_t j = 0; j < row.NumNonZeros(); ++j) {
-      assert(coefficients[j] != 0.0);
-      assert(0 <= indices[j]);
-      assert(indices[j] < num_cols.value());
+      DCHECK(coefficients[j] != 0.0);
+      DCHECK_LE(0, indices[j]);
+      DCHECK_LT(indices[j], num_cols.value());
     }
 #endif
 
@@ -205,7 +219,7 @@ absl::Status LPGlopInterface::AddRows(
 ) {
   MiniMIPdebugMessage("adding %zu rows.\n", rows.size());
 
-  assert(left_hand_sides.size() == right_hand_sides.size());
+  DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
 
   if (!rows.empty()) {
     for (size_t j = 0; j < rows.size(); j++) {
@@ -257,9 +271,9 @@ absl::Status LPGlopInterface::DeleteRows(
     int first_row,  // first row to be deleted
     int last_row    // last row to be deleted
 ) {
-  assert(0 <= first_row);
-  assert(first_row <= last_row);
-  assert(last_row < linear_program_.num_constraints());
+  DCHECK_LE(0, first_row);
+  DCHECK_LE(first_row, last_row);
+  DCHECK_LT(last_row, linear_program_.num_constraints());
 
   const RowIndex num_rows = linear_program_.num_constraints();
   DenseBooleanColumn rows_to_delete(num_rows, false);
@@ -418,8 +432,8 @@ int LPGlopInterface::GetNumberOfNonZeros() const {
 // either num_non_zeros, begin_cols, indices, and val have to be NULL, or all
 // of them have to be non-NULL.
 SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
-  assert(0 <= col);
-  assert(col < linear_program_.num_variables());
+  DCHECK_LE(0, col);
+  DCHECK_LT(col, linear_program_.num_variables());
 
   SparseVector sparse_column;
   const SparseColumn& column = linear_program_.GetSparseColumn(ColIndex(col));
@@ -438,8 +452,8 @@ SparseVector LPGlopInterface::GetSparseColumnCoefficients(int col) const {
 // have to be non-NULL, either num_non_zeros, begin_rows, indices, and val
 // have to be NULL, or all of them have to be non-NULL.
 SparseVector LPGlopInterface::GetSparseRowCoefficients(int row) const {
-  assert(0 <= row);
-  assert(row < linear_program_.num_constraints());
+  DCHECK_LE(0, row);
+  DCHECK_LT(row, linear_program_.num_constraints());
 
   const SparseMatrix& matrixtrans = linear_program_.GetTransposeSparseMatrix();
   const SparseColumn& column =
@@ -928,7 +942,7 @@ bool LPGlopInterface::ObjectiveLimitIsExceeded() const {
 
 // returns true if the iteration limit was reached
 bool LPGlopInterface::IterationLimitIsExceeded() const {
-  assert(niterations_ >= static_cast<int>(solver_.GetNumberOfIterations()));
+  DCHECK_GE(niterations_, static_cast<int>(solver_.GetNumberOfIterations()));
 
   int maxiter = static_cast<int>(parameters_.max_number_of_iterations());
   return maxiter >= 0 && niterations_ >= maxiter;
@@ -1152,7 +1166,7 @@ LPGlopInterface::GetColumnBasisStatus() const {
   MiniMIPdebugMessage("GetColumnBasisStatus\n");
   std::vector<LPBasisStatus> column_basis_status;
 
-  assert(solver_.GetProblemStatus() == ProblemStatus::OPTIMAL);
+  DCHECK_EQ(solver_.GetProblemStatus(), ProblemStatus::OPTIMAL);
   const ColIndex num_cols = linear_program_.num_variables();
   for (ColIndex col(0); col < num_cols; ++col) {
     column_basis_status.push_back((LPBasisStatus)ConvertGlopVariableStatus(
@@ -1219,7 +1233,7 @@ std::vector<int> LPGlopInterface::GetBasisIndices() const {
     if (col < num_cols) {
       basis_indices[row.value()] = col.value();
     } else {
-      assert(col < num_cols.value() + num_rows.value());
+      DCHECK_LT(col, num_cols.value() + num_rows.value());
       basis_indices[row.value()] = -1 - (col - num_cols).value();
     }
   }
@@ -1248,7 +1262,7 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
                                   tmp_row_);
 
   const ColIndex size = tmp_row_->values.size();
-  assert(size.value() == linear_program_.num_constraints());
+  DCHECK_EQ(size.value(), linear_program_.num_constraints());
 
   // Vectors in Glop might be stored in dense or sparse format
   // depending on the values. If non_zeros are given,
@@ -1258,8 +1272,8 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseRowOfBInverted(
     ScatteredRowIterator end = tmp_row_->end();
     for (ScatteredRowIterator iter = tmp_row_->begin(); iter != end; ++iter) {
       int idx = (*iter).column().value();
-      assert(0 <= idx);
-      assert(idx < linear_program_.num_constraints());
+      DCHECK_LE(0, idx);
+      DCHECK_LT(idx, linear_program_.num_constraints());
       sparse_row.InsertSorted(idx, (*iter).coefficient());
     }
   } else {
@@ -1366,8 +1380,8 @@ absl::StatusOr<SparseVector> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
     for (ScatteredColumnIterator iter = tmp_column_->begin(); iter != end;
          ++iter) {
       int idx = (*iter).row().value();
-      assert(0 <= idx);
-      assert(idx < num_rows);
+      DCHECK_LE(0, idx);
+      DCHECK_LT(idx, num_rows);
       sparse_column.InsertSorted(idx, (*iter).coefficient());
     }
   } else {
@@ -1529,7 +1543,7 @@ absl::Status LPGlopInterface::SetIntegerParameter(
     case LPParameter::kTiming:
       MiniMIPdebugMessage("SetIntegerParameter: LPParameter::kTiming -> %d.\n",
                           param_val);
-      assert(param_val <= 2);
+      DCHECK_LE(param_val, 2);
       timing_ = param_val;
       if (param_val == 1)
         absl::SetFlag(&FLAGS_time_limit_use_usertime, true);
@@ -1657,7 +1671,7 @@ bool LPGlopInterface::IsInfinity(
 // reads LP from a file
 absl::Status LPGlopInterface::ReadLP(const char* file_name  // file name
 ) {
-  assert(file_name != nullptr);
+  DCHECK(file_name != nullptr);
 
   const char* filespec(file_name);
   MPModelProto proto;
@@ -1674,7 +1688,7 @@ absl::Status LPGlopInterface::ReadLP(const char* file_name  // file name
 // writes LP to a file
 absl::Status LPGlopInterface::WriteLP(const char* file_name  // file name
 ) const {
-  assert(file_name != nullptr);
+  DCHECK(file_name != nullptr);
 
   MPModelProto proto;
   LinearProgramToMPModelProto(linear_program_, &proto);
