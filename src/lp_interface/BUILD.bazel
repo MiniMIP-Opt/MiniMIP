@@ -10,7 +10,7 @@ cmake(
         "CMAKE_CXX_FLAGS": "-Wno-psabi",
         "CMAKE_DISABLE_FIND_PACKAGE_GMP": "True",
         "CMAKE_DISABLE_FIND_PACKAGE_ZLIB": "True",
-        "BOOST": "off"
+        "BOOST": "off",
     },
     lib_source = "@soplex//:all_srcs",
     out_static_libs = ["libsoplex.a"],
@@ -21,20 +21,26 @@ cc_library(
     srcs = ["lpi.cc"],
     hdrs = ["lpi.h"],
     deps = [
-         "//src/lp_interface:lp_types",
-         "//src/messagehandler:message_handler",
+        "//src/lp_interface:lp_types",
+        "//src/messagehandler:message_handler",
         "//src/minimip:minimip_def",
+        "//src/minimip:sparse_types",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
+        "@com_google_ortools//ortools/base",
     ],
- )
+)
 
 cc_library(
     name = "lpi_glop",
     srcs = ["lpi_glop.cc"],
     hdrs = ["lpi_glop.h"],
     deps = [
+        ":lpi",
+        "//src/minimip:minimip_def",
         "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/glop:lp_solver",
+        "@com_google_ortools//ortools/glop:revised_simplex",
         "@com_google_ortools//ortools/lp_data:lp_data_utils",
         "@com_google_ortools//ortools/lp_data:lp_print_utils",
         "@com_google_ortools//ortools/lp_data:proto_utils",
@@ -42,10 +48,6 @@ cc_library(
         "@com_google_ortools//ortools/util:file_util",
         "@com_google_ortools//ortools/util:stats",
         "@com_google_ortools//ortools/util:time_limit",
-        "@com_google_ortools//ortools/glop:revised_simplex",
-        "@com_google_ortools//ortools/glop:lp_solver",
-        "//src/minimip:minimip_def",
-        ":lpi",
     ],
 )
 
@@ -53,12 +55,12 @@ cc_library(
     name = "lpi_soplex",
     srcs = ["lpi_soplex.cc"],
     hdrs = ["lpi_soplex.h"],
+    linkstatic = True,
     deps = [
+        ":lpi",
         ":soplex",
         "//src/minimip:minimip_def",
-        ":lpi",
     ],
-    linkstatic = True,
 )
 
 cc_library(
@@ -67,12 +69,12 @@ cc_library(
     deps = [
         ":lpi_glop",
         ":lpi_soplex",
-    ]
+    ],
 )
 
 cc_library(
     name = "lp_types",
-    hdrs = ["lp_types.h", "sparse_types.h"]
+    hdrs = ["lp_types.h"],
 )
 
 cc_library(

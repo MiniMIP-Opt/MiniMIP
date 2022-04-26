@@ -1,11 +1,24 @@
+// Copyright 2022 the MiniMIP Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <gtest/gtest.h>
 
-#include <cassert>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
-#include "src/lp_interface/sparse_types.h"
+#include "src/minimip/sparse_types.h"
 #include "unit_tests/utils.h"
 
 #define DEF_INTERFACE \
@@ -173,7 +186,7 @@ TEST(SparseVectorTests, CreateFromEmpty) {
 }
 
 TEST(SparseMatrixTests, ConstructionAndAccessors) {
-  auto m = SparseCompressedMatrix(3, 3);
+  auto m = ColumnSparseMatrix(3, 3);
   ASSERT_EQ(m.NumNonzeros(), 0);
   ASSERT_EQ(m.values.size(), 0);
   ASSERT_EQ(m.column_indices.size(), 4);
@@ -187,8 +200,7 @@ TEST(SparseMatrixTests, ConstructionAndAccessors) {
   std::vector<int> column_indices = {0, 3, 4, 5};
   std::vector<double> vals        = {1.0, 3.0, 5.0, 2.0, 7.0};
 
-  auto m_filled =
-      SparseCompressedMatrix(3, 3, column_indices, row_indices, vals);
+  auto m_filled = ColumnSparseMatrix(3, 3, column_indices, row_indices, vals);
 
   // elements match with a (row, col, val) ordering
   std::vector<int> col_ordering = {0, 0, 0, 1, 2};
@@ -213,7 +225,7 @@ TEST(SparseMatrixTests, ConstructionAndAccessors) {
   std::vector<double> nzvals2   = {1.0, 3.0, 5.0, 5.0, 2.0, 7.0, 7.0};
 
   auto m_nonsquare =
-      SparseCompressedMatrix(4, 3, col_indices2, row_indices2, nzvals2);
+      ColumnSparseMatrix(4, 3, col_indices2, row_indices2, nzvals2);
   std::vector<int> col_entries = {0, 0, 0, 0, 1, 2, 2};
   for (size_t elem_idx = 0; elem_idx < nzvals2.size(); ++elem_idx) {
     ASSERT_FLOAT_EQ(
@@ -226,8 +238,14 @@ TEST(SparseMatrixTests, ConstructionAndAccessors) {
   ASSERT_FLOAT_EQ(m_nonsquare.at(1, 2), 0.0);
   ASSERT_FLOAT_EQ(m_nonsquare.at(3, 1), 0.0);
 
+  // Produces views for each column
+  for (int col_idx = 0; col_idx < 2; ++col_idx) {
+    SparseViewVector col = m_nonsquare.ColumnViewAt(col_idx);
+    ASSERT_TRUE(col.NumNonZeros() >= 1);
+  }
+
   // copy constructor
-  SparseCompressedMatrix m_ident = m_nonsquare;
+  ColumnSparseMatrix m_ident = m_nonsquare;
   for (size_t elem_idx = 0; elem_idx < nzvals2.size(); ++elem_idx) {
     ASSERT_FLOAT_EQ(m_ident.at(row_indices2[elem_idx], col_entries[elem_idx]),
                     nzvals2[elem_idx]);
@@ -248,7 +266,7 @@ TEST(SparseMatrixTests, ConstructionAndAccessors) {
 TEST(SparseMatrixTests, MatrixMutation) {
   int nrows = 3;
   int ncols = 4;
-  auto mnew = SparseCompressedMatrix(nrows, ncols);
+  auto mnew = ColumnSparseMatrix(nrows, ncols);
   ASSERT_EQ(mnew.NumNonzeros(), 0);
   ASSERT_EQ(mnew.num_rows_, nrows);
   ASSERT_EQ(mnew.num_cols_, ncols);
@@ -292,7 +310,7 @@ TEST(SparseMatrixTests, RowMatrices) {
   RowSparseMatrix mnew = RowSparseMatrix(nrows, ncols);
   ASSERT_EQ(mnew.num_rows_, nrows);
   ASSERT_EQ(mnew.num_cols_, ncols);
-  SparseCompressedMatrix mtranspose = mnew.TransposedView();
+  ColumnSparseMatrix mtranspose = mnew.TransposedView();
   ASSERT_EQ(mtranspose.num_rows_, ncols);
   ASSERT_EQ(mtranspose.num_cols_, nrows);
   mnew.insert(1, 2, 3.5);
@@ -319,6 +337,31 @@ TEST(SparseMatrixTests, RowMatrices) {
   ASSERT_FLOAT_EQ((*extravec)[0].ValueAt(2), 1.0);
   (*extravec)[0].InsertSorted(2, 4.0);
   ASSERT_FLOAT_EQ((*extravec)[0].ValueAt(2), 4.0);
+
+  // allocation creates copy
+  ColumnSparseMatrix colsparse = ColumnSparseMatrix(4, 3);
+  colsparse.insert(0, 1, 42.0);
+  RowSparseMatrix rowsparse_copied    = RowSparseMatrix(&colsparse, true);
+  RowSparseMatrix rowsparse_noncopied = RowSparseMatrix(&colsparse, false);
+  ASSERT_FLOAT_EQ(rowsparse_noncopied.at(0, 1), 0.0);
+  ASSERT_FLOAT_EQ(rowsparse_copied.at(0, 1), 0.0);
+  rowsparse_noncopied.insert(0, 1, 22.0);
+  rowsparse_copied.insert(0, 1, 33.0);
+  ASSERT_FLOAT_EQ(rowsparse_noncopied.at(0, 1), 22.0);
+  ASSERT_FLOAT_EQ(rowsparse_copied.at(0, 1), 33.0);
+  ASSERT_FLOAT_EQ(colsparse.at(1, 0), 22.0);
+}
+
+TEST(SparseMatrixTests, ColInsert) {
+  int ncols = 3;
+  int nrows = 3;
+  auto m    = ColumnSparseMatrix(ncols, nrows);
+  m.insert(0, 0, 1.0).insert(0, 1, 2.0).insert(0, 2, 3.0).insert(1, 1, 4.0);
+
+  for (int idx = 0; idx < 3; ++idx) {
+    ASSERT_FLOAT_EQ(m.at(0, idx), idx + 1.0);
+  }
+  ASSERT_FLOAT_EQ(m.at(1, 1), 4.0);
 }
 
 }  // namespace minimip

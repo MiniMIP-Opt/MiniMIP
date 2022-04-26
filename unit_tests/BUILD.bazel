@@ -8,8 +8,8 @@ cc_library(
     name = "utils",
     hdrs = ["utils.h"],
     deps = [
-        "@com_google_googletest//:gtest_main",
         "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -18,11 +18,11 @@ cc_test(
     size = "small",
     srcs = ["bases.cc"],
     deps = [
-        "//src/lp_interface:lpi_factory",
-        "//src/lp_interface:lp_types",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_absl//absl/status",
         ":utils",
+        "//src/lp_interface:lp_types",
+        "//src/lp_interface:lpi_factory",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -31,11 +31,12 @@ cc_test(
     size = "small",
     srcs = ["matrix.cc"],
     deps = [
-        "//src/lp_interface:lpi_factory",
-        "//src/lp_interface:lp_types",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_absl//absl/status",
         ":utils",
+        "//src/lp_interface:lp_types",
+        "//src/lp_interface:lpi_factory",
+        "//src/minimip:sparse_types",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -44,10 +45,10 @@ cc_test(
     size = "small",
     srcs = ["bound_changes.cc"],
     deps = [
-        "//src/lp_interface:lpi_factory",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_absl//absl/status",
         ":utils",
+        "//src/lp_interface:lpi_factory",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -56,10 +57,10 @@ cc_test(
     size = "small",
     srcs = ["solve.cc"],
     deps = [
-        "//src/lp_interface:lpi_factory",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_absl//absl/status",
         ":utils",
+        "//src/lp_interface:lpi_factory",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -68,9 +69,21 @@ cc_test(
     size = "small",
     srcs = ["change.cc"],
     deps = [
-        "//src/lp_interface:lpi_factory",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_absl//absl/status",
         ":utils",
+        "//src/lp_interface:lpi_factory",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "mip_data_test",
+    size = "small",
+    srcs = ["mip_data_test.cc"],
+    deps = [
+        ":utils",
+        "//src/minimip:mip_data",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
     ],
 )
