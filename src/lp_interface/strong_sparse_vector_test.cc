@@ -37,6 +37,8 @@ TEST(StrongSparseRow, InitializeAndGetValue) {
   EXPECT_EQ(row.value(ColIndex(3)), 0.0);
   EXPECT_EQ(row.value(ColIndex(4)), 40.0);
   EXPECT_EQ(row.value(ColIndex(5)), 0.0);
+  EXPECT_THAT(row.indices(), ElementsAre(ColIndex(1), ColIndex(4)));
+  EXPECT_THAT(row.values(), ElementsAre(10.0, 40.0));
 }
 
 TEST(StrongSparseRow, MakeCopy) {

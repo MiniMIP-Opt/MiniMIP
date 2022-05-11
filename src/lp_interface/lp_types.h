@@ -15,17 +15,7 @@
 #ifndef SRC_LP_INTERFACE_LP_TYPES_H_
 #define SRC_LP_INTERFACE_LP_TYPES_H_
 
-#include <cstddef>
-#include <string>
-#include <vector>
-
 namespace minimip {
-
-// LP objective sense
-enum class LPObjectiveSense {
-  kMaximization = -1,  // maximize objective function
-  kMinimization = +1,  // minimize objective function
-};
 
 // LP solver parameters
 enum class LPParameter {

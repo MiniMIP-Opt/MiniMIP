@@ -15,27 +15,25 @@
 #ifndef SRC_LP_INTERFACE_LPI_FACTORY_H_
 #define SRC_LP_INTERFACE_LPI_FACTORY_H_
 
+#include <memory>
+
+#include "ortools/base/logging.h"
 #include "src/lp_interface/lpi_glop.h"
-#include "src/lp_interface/lpi_soplex.h"
 
 namespace minimip {
 
-enum class InterfaceCode {
+enum class LPInterfaceCode {
   kGlop   = 0,
   kSoplex = 1,
 };
 
-class LPInterfaceFactory {
- public:
-  LPInterface* CreateLPInterface(InterfaceCode interface_code) {
-    switch (interface_code) {
-      case InterfaceCode::kSoplex:
-        return new LPSoplexInterface();
-      default:
-        return new LPGlopInterface();
-    }
-  }
-};
+std::ostream& operator<<(std::ostream& os, const LPInterfaceCode& code) {
+  os << static_cast<int>(code);
+  return os;
+}
+
+std::unique_ptr<LPInterface> CreateLPInterface(LPInterfaceCode interface_code);
 
 }  // namespace minimip
+
 #endif  // SRC_LP_INTERFACE_LPI_FACTORY_H_

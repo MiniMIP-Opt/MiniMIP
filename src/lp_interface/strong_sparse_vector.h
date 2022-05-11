@@ -134,7 +134,7 @@ class StrongSparseVectorOfDoubles {
 
   const absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& entries()
       const {
-    DCHECK(!may_need_cleaning_)
+    DCHECK(!MayNeedCleaning())
         << "The vector is not clean! Call `CleanUpIfNeeded()`.";
     return entries_;
   }
@@ -143,12 +143,34 @@ class StrongSparseVectorOfDoubles {
   // To add new entries use `AddEntry()`. Regardless of what modifications are
   // introduced, the vector will be marked for cleaning.
   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& mutable_entries() {
-    DCHECK(!may_need_cleaning_)
+    DCHECK(!MayNeedCleaning())
         << "The vector is not clean! Call `CleanUpIfNeeded()`.";
     // To be on the safe side, we unconditionally mark the entries for clean up.
     // TODO(lpawel): Reconsider this, if it turns out inefficient.
     may_need_cleaning_ = true;
     return entries_;
+  }
+
+  std::vector<SparseIndex> indices() const {
+    DCHECK(!MayNeedCleaning())
+        << "The vector is not clean! Call `CleanUpIfNeeded()`.";
+    std::vector<SparseIndex> indices;
+    indices.reserve(entries_.size());
+    for (const auto& entry : entries_) {
+      indices.push_back(entry.index);
+    }
+    return indices;
+  }
+
+  std::vector<SparseIndex> values() const {
+    DCHECK(!MayNeedCleaning())
+        << "The vector is not clean! Call `CleanUpIfNeeded()`.";
+    std::vector<SparseIndex> values;
+    values.reserve(entries_.size());
+    for (const auto& entry : entries_) {
+      values.push_back(entry.value);
+    }
+    return values;
   }
 
   // Adds new entry and marks the vector for cleaning (if needed).

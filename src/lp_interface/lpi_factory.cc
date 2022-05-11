@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/lp_interface/lpi.h"
+#include "src/lp_interface/lpi_factory.h"
 
-#include "src/minimip/minimip_def.h"
+#include <memory>
+
+#include "ortools/base/logging.h"
+#include "src/lp_interface/lpi_glop.h"
 
 namespace minimip {
 
-absl::Status LPInterface::SetObjectiveCoefficients(
-    const std::vector<int>&
-        indices,  // column indices to change objective value for
-    const std::vector<double>&
-        objective_coefficients  // new objective values for columns
-) {
-  for (size_t idx = 0; idx < indices.size(); ++idx) {
-    MINIMIP_CALL(this->SetObjectiveCoefficient(indices[idx],
-                                               objective_coefficients[idx]));
+std::unique_ptr<LPInterface> CreateLPInterface(LPInterfaceCode interface_code) {
+  switch (interface_code) {
+    case LPInterfaceCode::kGlop:
+      return std::make_unique<LPGlopInterface>();
+    default:
+      LOG(FATAL) << "Unsupported inferface code " << interface_code;
   }
-  return absl::OkStatus();
 }
 
 }  // namespace minimip

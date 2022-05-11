@@ -12,6 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Linear Programming Solver interface (aka LP interface, or lpi) in MiniMip.
+//
+// Any external LP solver that implements this interface can - in principle -
+// be used by MiniMip. This interface is strongly typed, i.e., we use
+// `minimip::RowIndex` and `minimip::ColIndex` to index rows (constraints)
+// and columns (variables), respectively. Wherever appropriate we use dense
+// `absl::StrongVector`, or sparse `minimip::SparseCol` and
+// `minimip::SparseRow`, all of which are strongly typed.
+//
+// If a function can fail, we use `absl::Status` and `absl::StatusOr` to
+// indicate the error (note, MiniMip is exception free).
+
 #ifndef SRC_LP_INTERFACE_LPI_H_
 #define SRC_LP_INTERFACE_LPI_H_
 
@@ -20,16 +32,30 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "ortools/base/logging.h"
 #include "src/lp_interface/lp_types.h"
-#include "src/messagehandler/message_handler.h"
-#include "src/minimip/sparse_types.h"
+#include "src/lp_interface/strong_sparse_vector.h"
 
 namespace minimip {
 
-// LPInterface abstract class. This is used by MiniMIP to communicate with an
-// underlying LP solver.
-class LPInterface : private messagehandler {
+// This representes an element of the basis which may be either a column or
+// a row of the original problem.
+class ColOrRowIndex {
+ public:
+  explicit ColOrRowIndex(ColIndex only_col)
+      : col_(only_col), row_(kInvalidRow) {}
+  explicit ColOrRowIndex(RowIndex only_row)
+      : col_(kInvalidCol), row_(only_row) {}
+
+  ColIndex col() const { return col_; }
+  RowIndex row() const { return row_; }
+
+ private:
+  ColIndex col_;
+  RowIndex row_;
+};
+
+// LPInterface is used by MiniMIP to communicate with an underlying LP solver.
+class LPInterface {
  public:
   virtual ~LPInterface() = default;
 
@@ -37,404 +63,405 @@ class LPInterface : private messagehandler {
   // LP model setters.
   // ==========================================================================
 
+  // Sets the entire problem: variables, constraints, objective, bounds, sides,
+  // and names.
+  // TODO(lpawel): Replace with `PopulateFromMipData(const MipData& mip)` once
+  // MipData is ready.
   virtual absl::Status LoadSparseColumnLP(
-      LPObjectiveSense obj_sense,  // objective sense
-      const std::vector<double>&
-          objective_values,  // objective function values of columns
-      const std::vector<double>& lower_bounds,      // lower bounds of columns
-      const std::vector<double>& upper_bounds,      // upper bounds of columns
-      std::vector<std::string>& col_names,          // column names
-      const std::vector<double>& left_hand_sides,   // left hand sides of rows
-      const std::vector<double>& right_hand_sides,  // right hand sides of rows
-      std::vector<std::string>& row_names,          // row names
-      const std::vector<SparseVector>& cols         // sparse columns
-      ) = 0;
+      bool is_maximization, const absl::StrongVector<ColIndex, SparseCol>& cols,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& col_names,
+      const absl::StrongVector<RowIndex, double>& left_hand_sides,
+      const absl::StrongVector<RowIndex, double>& right_hand_sides,
+      const absl::StrongVector<RowIndex, std::string>& row_names) = 0;
 
-  // add column to the LP
-  virtual absl::Status AddColumn(
-      const AbstractSparseVector& col,  // column to be added
-      const double lower_bound,         // lower bound of new column
-      const double upper_bound,         // upper bound of new column
-      const double objective_value,  // objective function value of new column
-      const std::string& col_name    // column name
-      ) = 0;
+  // Adds a new column (aka "variable") to the LP problem stored in the
+  // underlying LP solver. The newly created variable gets the next available
+  // ColIndex, i.e., in the snippet below the newly created variable can be
+  // referenced by `next_free_index`.
+  //
+  //   const ColIndex next_free_index = lp_interface.GetNumberOfColumns();
+  //   lp_interface.AddColumn(...);
+  //
+  // The `column` is simply appended to the coefficient matrix from the right.
+  // Use `lower_bound = -Infinity()` and `upper_bound = Infinity()` for imposing
+  // no lower and upper bounds on the added variable, respectively. Use
+  // `objective_coefficient=0.0` if the variable is not present in the
+  // objective. `name` can be empty.
+  virtual absl::Status AddColumn(const SparseCol& column, double lower_bound,
+                                 double upper_bound,
+                                 double objective_coefficient,
+                                 const std::string& name) = 0;
 
-  // add columns to the LP
+  // Like `AddColumn()`, but adds multiple columns at once. This is useful if
+  // the underlying LP solver supports batched operations.
   virtual absl::Status AddColumns(
-      const std::vector<SparseVector>& cols,    // columns to be added
-      const std::vector<double>& lower_bounds,  // lower bounds of new columns
-      const std::vector<double>& upper_bounds,  // upper bounds of new columns
-      const std::vector<double>&
-          objective_values,  // objective function values of new columns
-      const std::vector<std::string>& col_names  // column names
-      ) = 0;
+      const std::vector<SparseCol>& cols,
+      const std::vector<double>& lower_bounds,
+      const std::vector<double>& upper_bounds,
+      const std::vector<double>& objective_coefficients,
+      const std::vector<std::string>& names) = 0;
 
-  // deletes all columns in the given range from LP
-  virtual absl::Status DeleteColumns(
-      int first_col,  // first column to be deleted
-      int last_col    // last column to be deleted
-      ) = 0;
+  // Deletes all columns from `first_col` to `last_col` inclusive on both ends.
+  // The column indices larger than `last_col` are decremented by `last_col -
+  // first_col + 1`. E.g., assume an LP with columns from 0 to 7, then
+  // `DeleteColumns(2, 5)` will result in re-indexing column 6 as column 2, and
+  // column 7 as column 3.
+  virtual absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) = 0;
 
-  // add row to the LP
-  virtual absl::Status AddRow(
-      const AbstractSparseVector& row,  // row to be added
-      double left_hand_side,            // left hand side of new row
-      double right_hand_side,           // right hand side of new row
-      const std::string& row_name       // row name
-      ) = 0;
+  // Adds a new row (aka constraint) to the LP problem stored in the underlying
+  // LP solver. The newly created constriants get the next available RowIndex,
+  // i.e., in the snippet below the newly created constraint can be referenced
+  // by `next_free_index`.
+  //
+  // const RowIndex next_free_index = lp_interface.GetNumberOfRows();
+  // lp_interface.AddRow(...);
+  //
+  // The `row` is simply appended to the coefficient matrix from the bottom. Use
+  // `lower_bound = -Infinity()` and `upper_bound = Infinity()` for imposing no
+  // limit on the left and right hand sides, respectively, of the added
+  // constraint. `name` can be empty.
+  virtual absl::Status AddRow(const SparseRow& row, double left_hand_side,
+                              double right_hand_side,
+                              const std::string& name) = 0;
 
-  // adds rows to the LP
-  virtual absl::Status AddRows(
-      const std::vector<SparseVector>& rows,  // number of rows to be added
-      const std::vector<double>&
-          left_hand_sides,  // left hand sides of new rows
-      const std::vector<double>&
-          right_hand_sides,                // right hand sides of new rows
-      std::vector<std::string>& row_names  // row names
-      ) = 0;
+  // Like `AddRow()`, but adds multiple rows at once. This is useful if
+  // the underlying LP solver supports batched operations.
+  virtual absl::Status AddRows(const std::vector<SparseRow>& rows,
+                               const std::vector<double>& left_hand_sides,
+                               const std::vector<double>& right_hand_sides,
+                               const std::vector<std::string>& names) = 0;
 
-  // deletes all rows in the given range from LP
-  virtual absl::Status DeleteRows(int first_row,  // first row to be deleted
-                                  int last_row    // last row to be deleted
-                                  ) = 0;
+  // Deletes all rows from `first_row` to `last_row` inclusive on both ends.
+  // The rowindices larger than `last_row` are decremented by `last_row -
+  // first_row + 1`. E.g., assume an LP with rows from 0 to 7, then
+  // `DeleteRows(2, 5)` will result in re-indexing row 6 as row 2, and
+  // row 7 as row 3.
+  virtual absl::Status DeleteRows(RowIndex first_row, RowIndex last_row) = 0;
 
-  // deletes rows from LP; the new position of a row must not be greater that
-  // its old position
-  virtual absl::Status DeleteRowSet(
-      std::vector<bool>& deletion_status  // deletion status of rows
-      ) = 0;
+  // Deletes all rows `r` for which `rows_to_delete[r]` is true. Computes and
+  // returns the "row_mapping":
+  //   row_mapping[old_index] == kInvalidRow if a row at `old_index` was deleted
+  //   row_mapping[old_index] == new_index, otherwise.
+  // Note, it is guaranteed that always new_index <= old_index (rows are not
+  // reshuffled on deletion, but the matrix gets "compacted").
+  virtual absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>> DeleteRowSet(
+      absl::StrongVector<RowIndex, bool>& rows_to_delete) = 0;
 
-  // clears the whole LP
+  // Clears the whole LP solver (including the loaded model).
   virtual absl::Status Clear() = 0;
 
-  // clears current LPInterface state (like basis information) of the solver
+  // Clears only the current state (e.g., basis information) of the LP solver,
+  // but not the loaded model.
   virtual absl::Status ClearState() = 0;
 
-  // change lower bound and upper bound of column
-  virtual absl::Status SetColumnBounds(int col, double lower_bound,
+  // Sets lower and upper bounds for `col`.
+  virtual absl::Status SetColumnBounds(ColIndex col, double lower_bound,
                                        double upper_bound) = 0;
 
-  // change left- and right-hand side of row
-  virtual absl::Status SetRowSides(int row, double left_hand_side,
+  // Sets left and right hand sides for `row`, assuming lower-or-equal
+  // relationship. I.e., left_hand_side <= constraint[row] <= right_hand_side.
+  // Use '-Infinity()` and `Infinity()` to impose no left and right hand side
+  // limit, respectively.
+  virtual absl::Status SetRowSides(RowIndex row, double left_hand_side,
                                    double right_hand_side) = 0;
 
-  // changes the objective sense
-  virtual absl::Status SetObjectiveSense(
-      LPObjectiveSense obj_sense  // new objective sense
-      ) = 0;
+  // Sets the objective sense.
+  virtual absl::Status SetObjectiveSense(bool is_maximization) = 0;
 
-  // changes a single objective value of a column in the LP
+  // Sets the objective coefficient for `col`.
   virtual absl::Status SetObjectiveCoefficient(
-      int col,  // column index to change objective value for
-      double objective_coefficient  // new objective value
-      ) = 0;
+      ColIndex col, double objective_coefficient) = 0;
 
-  // changes multiple objective values of columns in the LP
-  virtual absl::Status SetObjectiveCoefficients(
-      const std::vector<int>&
-          indices,  // column indices to change objective value for
-      const std::vector<double>&
-          objective_coefficients  // new objective values for columns
-  );
   // ==========================================================================
   // LP model getters.
+  //
+  // In all calls taking `col` and/or `row` as arguments, these indices must be
+  // valid, i.e.,
+  // `col` must be a valid column index, i.e., 0 <= col < GetNumberOfColumns()
+  // `row` must be a valid row index, i.e., 0 <= row < GetNumberOfRows()
   // ==========================================================================
 
-  // gets the number of rows in the LP
-  virtual int GetNumberOfRows() const = 0;
+  // Returns the number of rows stored in the LP solver.
+  virtual RowIndex GetNumberOfRows() const = 0;
 
-  // gets the number of columns in the LP
-  virtual int GetNumberOfColumns() const = 0;
+  // Returns the number of columns stored in the LP solver.
+  virtual ColIndex GetNumberOfColumns() const = 0;
 
-  // gets the number of non-zero elements in the LP constraint matrix
-  virtual int GetNumberOfNonZeros() const = 0;
+  // Returns the total number of non-zeros in the constraint matrix stored in
+  // the LP solver (i.e., across all rows and columns).
+  virtual int64_t GetNumberOfNonZeros() const = 0;
 
-  // gets the objective sense of the LP
-  virtual LPObjectiveSense GetObjectiveSense() const = 0;
+  // Returns the objective sense.
+  virtual bool IsMaximization() const = 0;
 
-  // gets columns from LP problem object
-  virtual SparseVector GetSparseColumnCoefficients(int col) const = 0;
+  // Returns the coefficients from the constraint matrix for `col`.
+  virtual SparseCol GetSparseColumnCoefficients(ColIndex col) const = 0;
 
-  // gets rows from LP problem object
-  virtual SparseVector GetSparseRowCoefficients(int row) const = 0;
+  // Returns the coefficients from the constraint matrix for `row`.
+  virtual SparseRow GetSparseRowCoefficients(RowIndex row) const = 0;
 
-  // gets objective coefficient of column from LP problem object
-  virtual double GetObjectiveCoefficient(int col) const = 0;
+  // Returns the objective coefficient for `col`. Returns 0.0 if the column
+  // (variable) is not present in the objective.
+  virtual double GetObjectiveCoefficient(ColIndex col) const = 0;
 
-  // gets current lower bound of column from LP problem object
-  virtual double GetLowerBound(int col) const = 0;
+  // Returns the lower bound for `col` (aka variable lower bound).
+  virtual double GetLowerBound(ColIndex col) const = 0;
 
-  // gets current upper bound of column from LP problem object
-  virtual double GetUpperBound(int col) const = 0;
+  // Returns the upper bound for `col` (aka variable upper bound).
+  virtual double GetUpperBound(ColIndex col) const = 0;
 
-  // gets current left hand sides of row from LP problem object
-  virtual double GetLeftHandSide(int row) const = 0;
+  // Returns the left hand side for `row` (aka constraint lower bound).
+  virtual double GetLeftHandSide(RowIndex row) const = 0;
 
-  // gets current right hand sides of row from LP problem object
-  virtual double GetRightHandSide(int row) const = 0;
+  // Returns the right hand side for `row` (aka constraint upper bound).
+  virtual double GetRightHandSide(RowIndex row) const = 0;
 
-  // gets the matrix coefficient of column and row from LP problem object
-  virtual double GetMatrixCoefficient(int col,  // column number of coefficient
-                                      int row   // row number of coefficient
-  ) const = 0;
+  // Returns a single coefficient from the constraint matrix for `col` and
+  // `row`. Depending on the underlying LP solver this may be "relatively
+  // inefficient" and should not be used for batch accesses. Instead, iterate
+  // over entries of SparseRow (resp. SparseCol) obtained with
+  // `GetSparseRowCoefficients()` (resp. `GetSparseColumnCoefficients()`).
+  virtual double GetMatrixCoefficient(ColIndex col, RowIndex row) const = 0;
 
   // ==========================================================================
   // Solving methods.
   // ==========================================================================
 
-  // calls primal simplex to solve the LP
+  // Calls primal simplex to solve the currently loaded LP.
   virtual absl::Status SolveLPWithPrimalSimplex() = 0;
 
-  // calls dual simplex to solve the LP
+  // Calls dual simplex to solve the currently loaded LP.
   virtual absl::Status SolveLPWithDualSimplex() = 0;
 
-  // start strong branching - call before any strong branching
+  // Informs the LP solver to enter "strong branching" mode. This may entail
+  // setting loose precision requirements, stringent iteration / time limits,
+  // etc. Call this before performing any strong branching, otherwise strong
+  // branching will be inefficient.
   virtual absl::Status StartStrongBranching() = 0;
 
-  // end strong branching - call after any strong branching
+  // Informs the LP solver to quit "strong branching" mode. Call this once
+  // strong branching is over, and the LP solver is used to solve "regular"
+  // nodes' LP relaxations, otherwise LP relaxation of the nodes in the MIP
+  // search tree may be inaccurate or remain not solved at all.
   virtual absl::Status EndStrongBranching() = 0;
 
-  // performs strong branching iterations on one branching candidate
+  // Result of strong branching on a single variable.
   struct StrongBranchResult {
-    double dual_bound_down_branch;  // stores dual bound after branching
-                                    // column down
-    double dual_bound_up_branch;    // stores dual bound after branching
-                                    // column up
-    bool down_valid;  // whether the returned down value is a valid dual
-                      // bound; otherwise, it can only be used as an
-                      // estimate value
-    bool up_valid;    // whether the returned up value is a valid dual bound;
-                      // otherwise, it can only be used as an estimate value
-    int iterations;   // stores total number of strong branching iterations
+    // The objective value of the LP relaxation after branching down.
+    double dual_bound_down_branch;
+
+    // The objective value of the LP relaxation after branching up.
+    double dual_bound_up_branch;
+
+    // Whether `dual_bound_down_branch` is precise. If not, it can only be used
+    // as an estimate (which may still be fine, depending on the use case).
+    bool down_valid;
+
+    // Whether `dual_bound_up_branch` is precise. If not, it can only be used
+    // as an estimate (which may still be fine, depending on the use case).
+    bool up_valid;
+
+    // The total number of strong branching iterations. Must be non-negative.
+    int64_t iterations;
   };
 
-  virtual absl::StatusOr<StrongBranchResult> StrongBranchValue(
-      int col,             // column to apply strong branching on
-      double primal_sol,   // current primal solution value of column
-      int iteration_limit  // iteration limit for strong branchings
-      ) = 0;
+  // Performs strong branching iterations on a single strong branching
+  // candidate.
+  virtual absl::StatusOr<StrongBranchResult> SolveDownAndUpStrongBranch(
+      ColIndex col, double primal_value, int iteration_limit) = 0;
 
   // ==========================================================================
   // Solution information getters.
   // ==========================================================================
 
-  // returns whether a solve method was called after the last modification of
-  // the LP
+  // Whether a solve method was called after the last modification of the LP.
+  // This does not mean the solve was successful, only that it was called.
   virtual bool IsSolved() const = 0;
 
-  // returns true if current LP solution is stable
+  // Whether current LP solution is stable.
   //
   // This function should return true if the solution is reliable, i.e.,
   // feasible and optimal (or proven infeasible/unbounded) with respect to the
   // original problem. The optimality status might be with respect to a scaled
   // version of the problem, but the solution might not be feasible to the
-  // unscaled original problem; in this case, minimip::LPInterface.IsStable()
-  // should return false.
+  // unscaled original problem; in this case, IsStable() should return false.
+  //
+  // TODO(lpawel): Explain more precisely what stability means.
   virtual bool IsStable() const = 0;
 
-  // returns true if LP was solved to optimality
-  virtual bool IsOptimal() const = 0;
-
-  // returns true if LP is proven to be primal feasible
-  virtual bool IsPrimalFeasible() const = 0;
-
-  // returns true if LP is proven to be primal infeasible
+  // LP solve statuses.
+  virtual bool IsOptimal() const          = 0;
+  virtual bool IsPrimalFeasible() const   = 0;
   virtual bool IsPrimalInfeasible() const = 0;
+  virtual bool IsPrimalUnbounded() const  = 0;
+  virtual bool IsDualFeasible() const     = 0;
+  virtual bool IsDualInfeasible() const   = 0;
+  virtual bool IsDualUnbounded() const    = 0;
 
-  // returns true if LP is proven to be primal unbounded
-  virtual bool IsPrimalUnbounded() const = 0;
-
-  // returns true if LP is proven to be dual feasible
-  virtual bool IsDualFeasible() const = 0;
-
-  // returns true if LP is proven to be dual infeasible
-  virtual bool IsDualInfeasible() const = 0;
-
-  // returns true if LP is proven to be dual unbounded
-  virtual bool IsDualUnbounded() const = 0;
-
-  // returns true if LP is proven to have a primal unbounded ray (but not
-  // necessary a primal feasible point);
-  //  this does not necessarily mean that the solver knows and can return the
-  //  primal ray
+  // Returns true if the LP is proven to have a primal unbounded ray (but not
+  // necessary a primal feasible point). This does not mean that the solver
+  // knows and can return the primal ray.
   virtual bool ExistsPrimalRay() const = 0;
 
-  // returns true if LP is proven to have a primal unbounded ray (but not
-  // necessary a primal feasible point),
-  //  and the solver knows and can return the primal ray
+  // Returns true if LP is proven to have a primal unbounded ray (but not
+  // necessary a primal feasible point). The LP solver knows and can return the
+  // primal ray.
   virtual bool HasPrimalRay() const = 0;
 
-  // returns true if LP is proven to have a dual unbounded ray (but not
-  // necessary a dual feasible point); this does not necessarily mean that the
-  // solver knows and can return the dual ray
+  // Returns true if LP is proven to have a dual unbounded ray (but not
+  // necessary a dual feasible point). This does not necessarily mean that the
+  // solver knows and can return the dual ray.
   virtual bool ExistsDualRay() const = 0;
 
-  // returns true if LP is proven to have a dual unbounded ray (but not
+  // Returns true if LP is proven to have a dual unbounded ray (but not
   // necessary a dual feasible point), and the solver knows and can return the
-  // dual ray
+  // dual ray.
   virtual bool HasDualRay() const = 0;
 
-  // returns true if the objective limit was reached
+  // Returns true if the objective limit was reached.
   virtual bool ObjectiveLimitIsExceeded() const = 0;
 
-  // returns true if the iteration limit was reached
-  virtual bool IterationLimitIsExceeded() const = 0;
-
-  // returns true if the time limit was reached
+  // Returns true if the time limit was reached.
   virtual bool TimeLimitIsExceeded() const = 0;
 
-  // gets objective value of solution
+  // Returns true if the iteration limit was reached.
+  virtual bool IterationLimitIsExceeded() const = 0;
+
+  // Gets the number of LP iterations of the last solve call.
+  virtual int64_t GetNumIterations() const = 0;
+
+  // Returns the objective value corresponding to `GetPrimalValues()`.
+  // `IsOptimal()` must be true when calling this.
   virtual double GetObjectiveValue() = 0;
 
-  // gets primal and dual solution vectors for feasible LPs
-  //
-  // Before calling these functions, the caller must ensure that the LP has been
-  // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
-  // true.
-
-  // gets primal solution vector
-  virtual absl::StatusOr<std::vector<double>> GetPrimalSolution() const = 0;
-
-  // gets row activity vector
-  virtual absl::StatusOr<std::vector<double>> GetRowActivity() const = 0;
-
-  // gets dual solution vector
-  virtual absl::StatusOr<std::vector<double>> GetDualSolution() const = 0;
-
-  // gets reduced cost vector
-  virtual absl::StatusOr<std::vector<double>> GetReducedCost() const = 0;
-
-  // gets primal ray for unbounded LPs
-  virtual absl::StatusOr<std::vector<double>> GetPrimalRay() const = 0;
-
-  // gets dual Farkas proof for infeasibility
-  virtual absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier()
+  // Returns the primal values for all columns (i.e., the solution).
+  // `IsOptimal()` must be true when calling this.
+  virtual absl::StatusOr<absl::StrongVector<ColIndex, double>> GetPrimalValues()
       const = 0;
 
-  // gets the number of LP iterations of the last solve call
-  virtual int GetIterations() const = 0;
+  // Returns dual values for all rows. `IsOptimal() must be true when calling
+  // this.
+  virtual absl::StatusOr<absl::StrongVector<RowIndex, double>> GetDualValues()
+      const = 0;
+
+  // Returns reduced costs for all columns. `IsOptimal() must be true when
+  // calling this.
+  virtual absl::StatusOr<absl::StrongVector<ColIndex, double>> GetReducedCosts()
+      const = 0;
+
+  // Returns constraint activities corresponding to `GetPrimalValues()`.
+  // `IsOptimal()` must be true when calling this.
+  virtual absl::StatusOr<absl::StrongVector<RowIndex, double>>
+  GetRowActivities() const = 0;
+
+  // Returns primal and dual rays. `HasPrimalRay()` and `HasDualRay() must be
+  // true, respectively, before calling these.
+  virtual absl::StatusOr<absl::StrongVector<ColIndex, double>> GetPrimalRay()
+      const = 0;
+  virtual absl::StatusOr<absl::StrongVector<RowIndex, double>> GetDualRay()
+      const = 0;
 
   // ==========================================================================
   // Getters and setters of the basis.
   // ==========================================================================
 
-  // gets current basis status for columns and rows
-  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
-      const = 0;
-  virtual absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus()
-      const = 0;
+  // Returns the basis status for all variables.
+  virtual absl::StatusOr<absl::StrongVector<ColIndex, LPBasisStatus>>
+  GetBasisStatusForColumns() const = 0;
 
-  // sets current basis status for columns and rows
-  virtual absl::Status SetBasisStatus(
-      const std::vector<LPBasisStatus>& column_basis_status,
-      const std::vector<LPBasisStatus>& row_basis_status) = 0;
+  // Returns the basis status for all constraints.
+  virtual absl::StatusOr<absl::StrongVector<RowIndex, LPBasisStatus>>
+  GetBasisStatusForRows() const = 0;
 
-  // returns the indices of the basic columns and rows; basic column n gives
-  // value n, basic row m gives value -1-m
-  virtual std::vector<int> GetBasisIndices() const = 0;
+  virtual absl::Status SetBasisStatusForColumnsAndRows(
+      const absl::StrongVector<ColIndex, LPBasisStatus>& col_statuses,
+      const absl::StrongVector<RowIndex, LPBasisStatus>& row_statuses) = 0;
+
+  // Returns the indices of the basic columns and rows. The size of the returned
+  // vector is always `GetNumberOfRows()`.
+  virtual std::vector<ColOrRowIndex> GetColumnsAndRowsInBasis() const = 0;
 
   // ==========================================================================
   // Getters of vectors in the inverted basis matrix.
+  //
+  // Note 1, all these functions take `col_in_basis` or `row_in_basis` as
+  // arguments. These are *not* columns and rows of the coefficient matrix
+  // (i.e., A). These are columns and rows of the inverted basis. To get a
+  // column or row index in A corresponding to `*_in_basis` index use
+  // `GetColsAndRowsInBasis()[*_in_basis.value()`.]
+  //
+  // Note 2, the LP interface assumes slack variables were added with +1.0
+  // coefficient. If the underlying LP solver adds slacks with -1.0 coefficients
+  // then rows associated with the slack variables must be negated before
+  // returning!
+  //
   // ==========================================================================
 
-  // get row of inverse basis matrix B^-1
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated; see also the explanation
-  //       in lpi.h.
+  // Gets a row of the inverse basis matrix, i.e., B^-1[row_in_basis][*]).
+  virtual absl::StatusOr<SparseRow> GetSparseRowOfBInverted(
+      RowIndex row_in_basis) const = 0;
 
-  // make only dense available
-  // virtual absl::StaturOr<const std::vector<double>&> GetSparseRowOfBInverted(
+  // Gets a column of the inverse basis matrix, i.e., B^-1[*][col_in_basis].
+  virtual absl::StatusOr<SparseCol> GetSparseColumnOfBInverted(
+      ColIndex col_in_basis) const = 0;
 
-  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInverted(
-      int row_number) const = 0;
+  // Gets a row of the inverse basis matrix multiplied by the constraint matrix,
+  // i.e., (B^-1 * A)[row_in_basis][*].
+  virtual absl::StatusOr<SparseRow> GetSparseRowOfBInvertedTimesA(
+      RowIndex row_in_basis) const = 0;
 
-  // get column of inverse basis matrix B^-1
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated
-  //
-  // column number of B^-1; this is NOT the number of the
-  // column in the LP; you have to call
-  // minimip::LPInterface.GetBasisIndices() to get the
-  // array which links the B^-1 column numbers to the row
-  // and column numbers of the LP! c must be between 0 and
-  // num_rows-1, since the basis has the size num_rows *
-  // num_rows
-  virtual absl::StatusOr<SparseVector> GetSparseColumnOfBInverted(
-      int col_number) const = 0;
-
-  // get row of inverse basis matrix times constraint matrix B^-1 * A
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated; see also the explanation
-  //       in lpi.h.
-  virtual absl::StatusOr<SparseVector> GetSparseRowOfBInvertedTimesA(
-      int row_number) const = 0;
-
-  // get column of inverse basis matrix times constraint matrix B^-1 * A
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated; see also the explanation
-  //       in lpi.h.
-  virtual absl::StatusOr<SparseVector> GetSparseColumnOfBInvertedTimesA(
-      int col_number) const = 0;
+  // Gets a column of the inverse basis matrix multiplied by constraint matrix,
+  // i.e., (B^-1 * A)[*][col_in_basis].
+  virtual absl::StatusOr<SparseCol> GetSparseColumnOfBInvertedTimesA(
+      ColIndex col_in_basis) const = 0;
 
   // ==========================================================================
   // Getters and setters of the parameters.
   // ==========================================================================
 
-  // gets integer parameter of LP
-  virtual absl::StatusOr<int> GetIntegerParameter(
-      LPParameter type  // parameter number
-  ) const = 0;
+  // Gets an integer parameter of LP.
+  // TODO(lpawel): Setting boolean parameters is currently done via "integer"
+  // parameters. Fix this.
+  virtual absl::StatusOr<int> GetIntegerParameter(LPParameter type) const = 0;
 
-  // sets integer parameter of LP
-  virtual absl::Status SetIntegerParameter(
-      LPParameter type,  // parameter number
-      int param_val      // parameter value
-      ) = 0;
+  // Sets an integer parameter of LP.
+  virtual absl::Status SetIntegerParameter(LPParameter type, int param_val) = 0;
 
-  // gets floating point parameter of LP
-  virtual absl::StatusOr<double> GetRealParameter(
-      LPParameter type  // parameter number
-  ) const = 0;
+  // Gets a floating point parameter of LP.
+  virtual absl::StatusOr<double> GetRealParameter(LPParameter type) const = 0;
 
-  // sets floating point parameter of LP
-  virtual absl::Status SetRealParameter(LPParameter type,  // parameter number
-                                        double param_val   // parameter value
-                                        ) = 0;
+  // Sets a floating point parameter of LP.
+  virtual absl::Status SetRealParameter(LPParameter type, double param_val) = 0;
 
   // ==========================================================================
   // Numerical methods.
   // ==========================================================================
 
-  // returns value treated as infinity in the LP solver
+  // The "canonical" value interpreted as positive infinity in the LP solver.
   virtual double Infinity() const = 0;
 
-  // checks if given value is treated as infinity in the LP solver
-  virtual bool IsInfinity(double value  // value to be checked for infinity
-  ) const = 0;
+  // Checks if LP solver treats `value` as positive infinity.
+  // Note 1: The LP solver may interpret more values than just `Infinity()` as
+  //         infinity. Thus, to detect whether a value is treated as infinity
+  //         use `IsInfinity(value)` and *not* `value == Infinity()`.
+  // Note 2: To check whether the LP solver interprets a value as negative
+  //         infinity use `IsInfinity(-value)`.
+  virtual bool IsInfinity(double value) const = 0;
 
   // ==========================================================================
   // File interface methods.
   // ==========================================================================
 
-  // reads LP from a file
-  virtual absl::Status ReadLP(const char* file_name  // file name
-                              ) = 0;
+  // Reads an LP from a file in the format supported by the underlying LP solver
+  // (may differ between implementations).
+  virtual absl::Status ReadLP(const std::string& file_path) = 0;
 
-  // writes LP to a file
-  virtual absl::Status WriteLP(const char* file_name  // file name
-  ) const = 0;
+  // Writes an LP to a file in the format supported by the underlying LP solver
+  // (may differ between implementations).
+  virtual absl::Status WriteLP(const std::string& file_path) const = 0;
 };
 
 }  // namespace minimip
