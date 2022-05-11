@@ -18,18 +18,17 @@ cmake(
 
 cc_library(
     name = "lpi",
-    srcs = ["lpi.cc"],
     hdrs = ["lpi.h"],
     deps = [
-        "//src/lp_interface:lp_types",
-        "//src/messagehandler:message_handler",
-        "//src/minimip:minimip_def",
-        "//src/minimip:sparse_types",
+        ":lp_types",
+        ":strong_sparse_vector",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/base:strong_vector",
+        "@com_google_ortools//ortools/util:strong_integers",
     ],
-)
+ )
 
 cc_library(
     name = "lpi_glop",
@@ -37,10 +36,7 @@ cc_library(
     hdrs = ["lpi_glop.h"],
     deps = [
         ":lpi",
-        "//src/minimip:minimip_def",
         "@com_google_ortools//ortools/base",
-        "@com_google_ortools//ortools/glop:lp_solver",
-        "@com_google_ortools//ortools/glop:revised_simplex",
         "@com_google_ortools//ortools/lp_data:lp_data_utils",
         "@com_google_ortools//ortools/lp_data:lp_print_utils",
         "@com_google_ortools//ortools/lp_data:proto_utils",
@@ -48,27 +44,32 @@ cc_library(
         "@com_google_ortools//ortools/util:file_util",
         "@com_google_ortools//ortools/util:stats",
         "@com_google_ortools//ortools/util:time_limit",
+        "@com_google_ortools//ortools/glop:revised_simplex",
+        "@com_google_ortools//ortools/glop:lp_solver",
     ],
 )
 
-cc_library(
-    name = "lpi_soplex",
-    srcs = ["lpi_soplex.cc"],
-    hdrs = ["lpi_soplex.h"],
-    linkstatic = True,
-    deps = [
-        ":lpi",
-        ":soplex",
-        "//src/minimip:minimip_def",
-    ],
-)
+# TODO(cgraczy): Reenable lpi_soplex once ready.
+
+#cc_library(
+#    name = "lpi_soplex",
+#    srcs = ["lpi_soplex.cc"],
+#    hdrs = ["lpi_soplex.h"],
+#    linkstatic = True,
+#    deps = [
+#        ":lpi",
+#        ":soplex",
+#        "//src/minimip:minimip_def",
+#    ],
+#)
 
 cc_library(
     name = "lpi_factory",
+    srcs = ["lpi_factory.cc"],
     hdrs = ["lpi_factory.h"],
     deps = [
         ":lpi_glop",
-        ":lpi_soplex",
+        "@com_google_ortools//ortools/base",
     ],
 )
 
