@@ -211,14 +211,11 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
       ElementsAre(RowEntry(0, 5.0), RowEntry(1, 2.0), RowEntry(2, 7.0)));
 
   EXPECT_THAT(constraint_matrix.col(ColIndex(0)).entries(),
-              ElementsAre(ColEntry(0, 3.0),
-                          ColEntry(1, 5.0)));
+              ElementsAre(ColEntry(0, 3.0), ColEntry(1, 5.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(1)).entries(),
-              ElementsAre(ColEntry(0, 5.0),
-                          ColEntry(1, 2.0)));
+              ElementsAre(ColEntry(0, 5.0), ColEntry(1, 2.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(2)).entries(),
               ElementsAre(ColEntry(1, 7.0)));
-
 
   for (int row_idx = 0; row_idx < constraints.size(); ++row_idx) {
     for (int col_idx = 0; col_idx < constraints[row_idx].coefficients.size();
@@ -326,16 +323,13 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
       constraint_matrix.row(RowIndex(2)).entries(),
       ElementsAre(RowEntry(0, 5.0), RowEntry(1, 2.0), RowEntry(2, 7.0)));
 
-  EXPECT_THAT(constraint_matrix.col(ColIndex(0)).entries(),
-              ElementsAre(ColEntry(0, 1.0),
-                          ColEntry(1, 3.0),
-                          ColEntry(2, 5.0)));
+  EXPECT_THAT(
+      constraint_matrix.col(ColIndex(0)).entries(),
+      ElementsAre(ColEntry(0, 1.0), ColEntry(1, 3.0), ColEntry(2, 5.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(1)).entries(),
-              ElementsAre(ColEntry(1, 5.0),
-                          ColEntry(2, 2.0)));
+              ElementsAre(ColEntry(1, 5.0), ColEntry(2, 2.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(2)).entries(),
-              ElementsAre(ColEntry(0, 1.0),
-                          ColEntry(2, 7.0)));
+              ElementsAre(ColEntry(0, 1.0), ColEntry(2, 7.0)));
 
   for (int row_idx = 0; row_idx < constraints.size(); ++row_idx) {
     for (int col_idx = 0; col_idx < constraints[row_idx].coefficients.size();

@@ -18,6 +18,7 @@
 
 #include "ortools/base/logging.h"
 #include "src/lp_interface/lpi_glop.h"
+#include "src/lp_interface/lpi_soplex.h"
 
 namespace minimip {
 
@@ -25,6 +26,8 @@ std::unique_ptr<LPInterface> CreateLPInterface(LPInterfaceCode interface_code) {
   switch (interface_code) {
     case LPInterfaceCode::kGlop:
       return std::make_unique<LPGlopInterface>();
+    case LPInterfaceCode::kSoplex:
+      return std::make_unique<LPSoplexInterface>();
     default:
       LOG(FATAL) << "Unsupported inferface code " << interface_code;
   }

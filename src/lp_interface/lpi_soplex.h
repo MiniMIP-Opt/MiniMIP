@@ -20,58 +20,228 @@
 #include <string>
 #include <vector>
 
+#include "ortools/util/file_util.h"
 #include "soplex.h"
-#include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
-#include "src/messagehandler/message_handler.h"
-#include "src/messagehandler/message_macros.h"
-#include "src/minimip/minimip_def.h"
-#include "src/minimip/sparse_types.h"
 
 namespace minimip {
 
 class LPSoplexInterface : public LPInterface {
+ public:
+  LPSoplexInterface();
+
+  ~LPSoplexInterface() override;
+
+  // ==========================================================================
+  // LP model setters.
+  // ==========================================================================
+
+  // Sets the entire problem: variables, constraints, objective, bounds, sides,
+  // and names.
+  // TODO(cgraczy): Replace with `PopulateFromMipData(const MipData& mip)` once
+  // MipData is ready.
+  absl::Status LoadSparseColumnLP(
+      bool is_maximization, const absl::StrongVector<ColIndex, SparseCol>& cols,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& col_names,
+      const absl::StrongVector<RowIndex, double>& left_hand_sides,
+      const absl::StrongVector<RowIndex, double>& right_hand_sides,
+      const absl::StrongVector<RowIndex, std::string>& row_names) final;
+
+  absl::Status AddColumn(const SparseCol& col, double lower_bound,
+                         double upper_bound, double objective_coefficient,
+                         const std::string& name) final;
+
+  absl::Status AddColumns(
+      const absl::StrongVector<ColIndex, SparseCol>& cols,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) final;
+
+  absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) final;
+
+  absl::Status AddRow(const SparseRow& row, double left_hand_side,
+                      double right_hand_side, const std::string& name) final;
+
+  absl::Status AddRows(
+      const absl::StrongVector<RowIndex, SparseRow>& rows,
+      const absl::StrongVector<RowIndex, double>& left_hand_sides,
+      const absl::StrongVector<RowIndex, double>& right_hand_sides,
+      const absl::StrongVector<RowIndex, std::string>& names) final;
+
+  absl::Status DeleteRows(RowIndex first_row, RowIndex last_row) final;
+
+  absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>> DeleteRowSet(
+      absl::StrongVector<RowIndex, bool>& rows_to_delete) final;
+
+  absl::Status Clear() final;
+
+  absl::Status ClearState() final;
+
+  absl::Status SetColumnBounds(ColIndex col, double lower_bound,
+                               double upper_bound) final;
+
+  absl::Status SetRowSides(RowIndex row, double left_hand_side,
+                           double right_hand_side) final;
+
+  absl::Status SetObjectiveSense(bool is_maximization) final;
+
+  absl::Status SetObjectiveCoefficient(ColIndex col,
+                                       double objective_coefficient) final;
+
+  // ==========================================================================
+  // LP model getters.
+  // ==========================================================================
+
+  RowIndex GetNumberOfRows() const final;
+  ColIndex GetNumberOfColumns() const final;
+  int64_t GetNumberOfNonZeros() const final;
+
+  bool IsMaximization() const final;
+  SparseCol GetSparseColumnCoefficients(ColIndex col) const final;
+  SparseRow GetSparseRowCoefficients(RowIndex row) const final;
+
+  double GetObjectiveCoefficient(ColIndex col) const final;
+  double GetLowerBound(ColIndex col) const final;
+  double GetUpperBound(ColIndex col) const final;
+  double GetLeftHandSide(RowIndex row) const final;
+  double GetRightHandSide(RowIndex row) const final;
+  double GetMatrixCoefficient(ColIndex col, RowIndex row) const final;
+
+  // ==========================================================================
+  // Solving methods.
+  // ==========================================================================
+
+  absl::Status SolveLPWithPrimalSimplex() final;
+  absl::Status SolveLPWithDualSimplex() final;
+  absl::Status StartStrongBranching() final;
+  absl::Status EndStrongBranching() final;
+
+  absl::StatusOr<StrongBranchResult> SolveDownAndUpStrongBranch(
+      ColIndex col, double primal_value, int iteration_limit) final;
+
+  // ==========================================================================
+  // Solution information getters.
+  // ==========================================================================
+
+  bool IsSolved() const final;
+  bool IsStable() const final;
+  bool IsOptimal() const final;
+  bool IsPrimalFeasible() const final;
+  bool IsPrimalInfeasible() const final;
+  bool IsPrimalUnbounded() const final;
+  bool IsDualFeasible() const final;
+  bool IsDualInfeasible() const final;
+  bool IsDualUnbounded() const final;
+
+  bool ExistsPrimalRay() const final;
+  bool HasPrimalRay() const final;
+  bool ExistsDualRay() const final;
+  bool HasDualRay() const final;
+
+  bool ObjectiveLimitIsExceeded() const final;
+  bool TimeLimitIsExceeded() const final;
+  bool IterationLimitIsExceeded() const final;
+  int64_t GetNumIterations() const final;
+
+  double GetObjectiveValue() final;
+
+  absl::StatusOr<absl::StrongVector<ColIndex, double>> GetPrimalValues()
+      const final;
+  absl::StatusOr<absl::StrongVector<RowIndex, double>> GetDualValues()
+      const final;
+
+  absl::StatusOr<absl::StrongVector<ColIndex, double>> GetReducedCosts()
+      const final;
+  absl::StatusOr<absl::StrongVector<RowIndex, double>> GetRowActivities()
+      const final;
+
+  absl::StatusOr<absl::StrongVector<ColIndex, double>> GetPrimalRay()
+      const final;
+  absl::StatusOr<absl::StrongVector<RowIndex, double>> GetDualRay() const final;
+
+  // ==========================================================================
+  // Getters and setters of the basis.
+  // ==========================================================================
+
+  absl::StatusOr<absl::StrongVector<ColIndex, LPBasisStatus>>
+  GetBasisStatusForColumns() const final;
+  absl::StatusOr<absl::StrongVector<RowIndex, LPBasisStatus>>
+  GetBasisStatusForRows() const final;
+
+  absl::Status SetBasisStatusForColumnsAndRows(
+      const absl::StrongVector<ColIndex, LPBasisStatus>& column_basis_statuses,
+      const absl::StrongVector<RowIndex, LPBasisStatus>& row_basis_statuses)
+      final;
+
+  std::vector<ColOrRowIndex> GetColumnsAndRowsInBasis() const final;
+
+  // ==========================================================================
+  // Getters of vectors in the inverted basis matrix.
+  // ==========================================================================
+
+  absl::StatusOr<SparseRow> GetSparseRowOfBInverted(
+      RowIndex row_in_basis) const final;
+
+  absl::StatusOr<SparseCol> GetSparseColumnOfBInverted(
+      ColIndex col_in_basis) const final;
+
+  absl::StatusOr<SparseRow> GetSparseRowOfBInvertedTimesA(
+      RowIndex row_in_basis) const final;
+
+  absl::StatusOr<SparseCol> GetSparseColumnOfBInvertedTimesA(
+      ColIndex col_in_basis) const final;
+
+  // ==========================================================================
+  // Getters and setters of the parameters.
+  // ==========================================================================
+
+  absl::StatusOr<int> GetIntegerParameter(LPParameter type) const final;
+
+  absl::Status SetIntegerParameter(LPParameter type, int param_value) final;
+
+  absl::StatusOr<double> GetRealParameter(LPParameter type) const final;
+
+  absl::Status SetRealParameter(LPParameter type, double param_value) final;
+
+  // ==========================================================================
+  // Numerical methods.
+  // ==========================================================================
+
+  double Infinity() const final;
+  bool IsInfinity(double value) const final;
+
+  // ==========================================================================
+  // File interface methods.
+  // ==========================================================================
+
+  absl::Status ReadLPFromFile(const std::string& file_path) final;
+
+  absl::Status WriteLPToFile(const std::string& file_path) const final;
+
+  // ==========================================================================
+  // Private interface methods.
+  // ==========================================================================
+
  private:
-  soplex::SoPlex* spx_;  // our SoPlex implementation
-  LPPricing pricing_;    // current pricing strategy
-  int solved_;           // was the current LP solved?
-  bool lp_info_;
-  bool from_scratch_;
-  soplex::DataArray<soplex::SPxSolver::VarStatus>
-      col_basis_status_;  // column basis status used for strong branching
-  soplex::DataArray<soplex::SPxSolver::VarStatus>
-      row_basis_status_;  // row basis status used for strong branching
+  double objective_limit() const;
 
-  // return feastol set by SoPlex
-  double FeasibilityTolerance() const;
+  double feasibility_tolerance() const;
 
-  // get objective limit according to objective sense
-  double GetObjectiveLimit() const;
+  double optimality_tolerance() const;
 
-  // return optimality tolerance
-  double OptimalityTolerance() const;
-
-  // set feasibility tolerance and store value in case SoPlex only accepts a
-  // larger tolerance
-  void SetFeasibilityTolerance(const soplex::Real d);
-
-  // set optimality tolerance and store value in case SoPlex only accepts a
-  // larger tolerance
-  void SetOptimalityTolerance(const soplex::Real d);
-
-  // marks the current LP to be unsolved
+  // Marks the current LP to be unsolved.
   void InvalidateSolution();
 
-  // is pre-strong-branching basis freed?
   bool PreStrongBranchingBasisFreed() const;
 
-  // if basis is in store, delete it without restoring it
   void FreePreStrongBranchingBasis();
 
-  // restore basis
   void RestorePreStrongbranchingBasis();
 
-  // save the current basis
   void SavePreStrongbranchingBasis();
 
   bool GetLPInfo() const;
@@ -82,422 +252,54 @@ class LPSoplexInterface : public LPInterface {
 
   bool CheckConsistentSides() const;
 
-  void TrySolve(bool print_warning);
-
-  // returns, whether the given file exists
-  bool FileExists(const char* file_name  // file name
-  ) const;
-
-  // provides access for temporary storage of basis status of rows
   soplex::DataArray<soplex::SPxSolver::VarStatus>& RowsBasisStatus();
 
-  // provides access for temporary storage of basis status or columns
   soplex::DataArray<soplex::SPxSolver::VarStatus>& ColumnsBasisStatus();
 
   void SetFromScratch(bool from_scratch);
 
   void SetLPInfo(bool lp_info);
 
-  soplex::SPxSolver::Status doSolve(bool print_warning);
+  soplex::SPxSolver::Status LPSolve(bool print_warning);
 
   // solves LP -- used for both, primal and dual simplex, because SoPlex doesn't
   // distinct the two cases
   absl::Status SoPlexSolve();
 
-  // performs strong branching iterations on one arbitrary candidate
+  // Strongbranching is applied to the given column, with the corresponding current primal solution value.
+  // The double referenes are used to store the dual bound after branching up and down.
+  // Additionally the validity of both bounds is stored, if one bound is not valid it can be used as an estimate.
   absl::Status StrongBranch(
-      int col,              // column to apply strong branching on
-      double primal_sol,    // current primal solution value of column
-      int iteration_limit,  // iteration limit for strong branchings
-      double& dual_bound_down_branch,  // stores dual bound after branching
-                                       // column down
-      double&
-          dual_bound_up_branch,  // stores dual bound after branching column up
-      bool& down_valid,  // stores whether the returned down value is a valid
-                         // dual bound; otherwise, it can only be used as an
-                         // estimate value
-      bool& up_valid,    // stores whether the returned up value is a valid dual
-                         // bound; otherwise, it can only be used as an estimate
-                         // value
-      int& iterations  // stores total number of strong branching iterations, or
-                       // -1
-  );
-
- public:
-  LPSoplexInterface();
-
-  ~LPSoplexInterface();
+      int col,
+      double primal_sol,
+      int iteration_limit,
+      StrongBranchResult result);
 
   // ==========================================================================
-  // LP model setters.
+  // Member variables of the SoplexLPInterface.
   // ==========================================================================
 
-  // copies LP data with column matrix into LP solver
-  absl::Status LoadSparseColumnLP(
-      LPObjectiveSense obj_sense,  // objective sense
-      const std::vector<double>&
-          objective_values,  // objective function values of columns
-      const std::vector<double>& lower_bounds,      // lower bounds of columns
-      const std::vector<double>& upper_bounds,      // upper bounds of columns
-      std::vector<std::string>& col_names,          // column names
-      const std::vector<double>& left_hand_sides,   // left hand sides of rows
-      const std::vector<double>& right_hand_sides,  // right hand sides of rows
-      std::vector<std::string>& row_names,          // row names
-      const std::vector<SparseVector>& cols         // sparse columns
-      ) override;
+  // SoPlex solver implementing primal and dual simplex algorithm.
+  std::unique_ptr<soplex::SoPlex> spx_;
 
-  // adds column to the LP
-  absl::Status AddColumn(
-      const AbstractSparseVector& col,  // column to be added
-      double lower_bound,               // lower bound of new column
-      double upper_bound,               // upper bound of new column
-      double objective_value,      // objective function value of new column
-      const std::string& col_name  // column name
-      ) override;
+  // Currently used pricing strategy.
+  LPPricing pricing_;
 
-  // adds columns to the LP
-  absl::Status AddColumns(
-      const std::vector<SparseVector>& cols,    // columns to be added
-      const std::vector<double>& lower_bounds,  // lower bounds of new columns
-      const std::vector<double>& upper_bounds,  // upper bounds of new columns
-      const std::vector<double>&
-          objective_values,  // objective function values of new columns
-      const std::vector<std::string>& col_names  // column names
-      ) override;
+  // Whether the LP that is currently loaded inside `spx_` has already been
+  // solved.
+  bool is_solved_;
 
-  // deletes all columns in the given range from LP
-  absl::Status DeleteColumns(int first_col,  // first column to be deleted
-                             int last_col    // last column to be deleted
-                             ) override;
+  // Sets the verbosity to kSoPlexVerbosityLevel if true or zero otherwise.
+  bool lp_info_;
 
-  // add row to the LP
-  absl::Status AddRow(const AbstractSparseVector& row,  // row to be added
-                      double left_hand_side,       // left hand side of new row
-                      double right_hand_side,      // right hand side of new row
-                      const std::string& row_name  // row name
-                      ) override;
+  // Sets if starting basis should be deleted.
+  bool from_scratch_;
 
-  // adds rows to the LP
-  absl::Status AddRows(
-      const std::vector<SparseVector>& rows,  // number of rows to be added
-      const std::vector<double>&
-          left_hand_sides,  // left hand sides of new rows
-      const std::vector<double>&
-          right_hand_sides,                // right hand sides of new rows
-      std::vector<std::string>& row_names  // row names
-      ) override;
+  // The column basis status used for strong branching.
+  soplex::DataArray<soplex::SPxSolver::VarStatus> col_basis_status_;
 
-  // deletes all rows in the given range from LP
-  absl::Status DeleteRows(int first_row,  // first row to be deleted
-                          int last_row    // last row to be deleted
-                          ) override;
-
-  // Delete rows from LP; the new position of a row must not be greater that
-  // its old position
-  absl::Status DeleteRowSet(
-      std::vector<bool>& deletion_status  // deletion status of rows
-      ) override;
-
-  // clears the whole LP
-  absl::Status Clear() override;
-
-  // clears current LPInterface state (like basis information) of the solver
-  absl::Status ClearState() override;
-
-  // change lower bound and upper bound of column
-  absl::Status SetColumnBounds(int col, double lower_bound,
-                               double upper_bound) override;
-
-  // change left- and right-hand side of row
-  absl::Status SetRowSides(int row, double left_hand_side,
-                           double right_hand_side) override;
-
-  // changes the objective sense
-  absl::Status SetObjectiveSense(
-      LPObjectiveSense obj_sense  // new objective sense
-      ) override;
-
-  // changes objective value of column in the LP
-  absl::Status SetObjectiveCoefficient(int col,
-                                       double objective_coefficient) override;
-
-  // changes objective values of columns in the LP
-  absl::Status SetObjectiveCoefficients(
-      const std::vector<int>&
-          indices,  // column indices to change objective value for
-      const std::vector<double>&
-          objective_coefficients  // new objective values for columns
-      ) override;
-
-  // ==========================================================================
-  // LP model getters.
-  // ==========================================================================
-
-  // gets the number of rows in the LP
-  int GetNumberOfRows() const override;
-
-  // gets the number of columns in the LP
-  int GetNumberOfColumns() const override;
-
-  // gets the number of non-zero elements in the LP constraint matrix
-  int GetNumberOfNonZeros() const override;
-
-  // gets the objective sense of the LP
-  LPObjectiveSense GetObjectiveSense() const override;
-
-  // gets the sparse coefficients of the column from LP problem object
-  SparseVector GetSparseColumnCoefficients(int col) const override;
-
-  // gets the sparse coefficients of the row from LP problem object
-  SparseVector GetSparseRowCoefficients(int row) const override;
-
-  // gets objective coefficient of column from LP problem object
-  double GetObjectiveCoefficient(int col) const override;
-
-  // gets current lower bound of column from LP problem object
-  double GetLowerBound(int col) const override;
-
-  // gets current upper bound of column from LP problem object
-  double GetUpperBound(int col) const override;
-
-  // gets current left-hand sides of row from LP problem object
-  double GetLeftHandSide(int row) const override;
-
-  // gets current right-hand sides of row from LP problem object
-  double GetRightHandSide(int row) const override;
-
-  // gets the matrix coefficient of column and row from LP problem object
-  double GetMatrixCoefficient(int col,  // column number of coefficient
-                              int row   // row number of coefficient
-  ) const override;
-
-  // ==========================================================================
-  // Solving methods.
-  // ==========================================================================
-
-  // calls primal simplex to solve the LP
-  absl::Status SolveLPWithPrimalSimplex() override;
-
-  // calls dual simplex to solve the LP
-  absl::Status SolveLPWithDualSimplex() override;
-
-  // start strong branching - call before any strong branching
-  absl::Status StartStrongBranching() override;
-
-  // end strong branching - call after any strong branching
-  absl::Status EndStrongBranching() override;
-
-  // performs strong branching iterations on one branching candidate
-  absl::StatusOr<StrongBranchResult> StrongBranchValue(
-      int col,             // column to apply strong branching on
-      double primal_sol,   // current primal solution value of column
-      int iteration_limit  // iteration limit for strong branchings
-      ) override;
-
-  // ==========================================================================
-  // Solution information getters.
-  // ==========================================================================
-
-  // returns whether a solve method was called after the last modification of
-  // the LP
-  bool IsSolved() const override;
-
-  // returns true if current LP solution is stable
-  //
-  // This function should return true if the solution is reliable, i.e.,
-  // feasible and optimal (or proven infeasible/unbounded) with respect to the
-  // original problem. The optimality status might be with respect to a scaled
-  // version of the problem, but the solution might not be feasible to the
-  // unscaled original problem; in this case, minimip::LPInterface.IsStable()
-  // should return false.
-  bool IsStable() const override;
-
-  // returns true if LP was solved to optimality
-  bool IsOptimal() const override;
-
-  // returns true if LP is proven to be primal feasible
-  bool IsPrimalFeasible() const override;
-
-  // returns true if LP is proven to be primal infeasible
-  bool IsPrimalInfeasible() const override;
-
-  // returns true if LP is proven to be primal unbounded
-  bool IsPrimalUnbounded() const override;
-
-  // returns true if LP is proven to be dual feasible
-  bool IsDualFeasible() const override;
-
-  // returns true if LP is proven to be dual infeasible
-  bool IsDualInfeasible() const override;
-
-  // returns true if LP is proven to be dual unbounded
-  bool IsDualUnbounded() const override;
-
-  // returns true if LP is proven to have a primal unbounded ray (but not
-  // necessary a primal feasible point);
-  //  this does not necessarily mean that the solver knows and can return the
-  //  primal ray
-  bool ExistsPrimalRay() const override;
-
-  // returns true if LP is proven to have a primal unbounded ray (but not
-  // necessary a primal feasible point),
-  //  and the solver knows and can return the primal ray
-  bool HasPrimalRay() const override;
-
-  // returns true if LP is proven to have a dual unbounded ray (but not
-  // necessary a dual feasible point); this does not necessarily mean that the
-  // solver knows and can return the dual ray
-  bool ExistsDualRay() const override;
-
-  // returns true if LP is proven to have a dual unbounded ray (but not
-  // necessary a dual feasible point), and the solver knows and can return the
-  // dual ray
-  bool HasDualRay() const override;
-
-  // returns true if the objective limit was reached
-  bool ObjectiveLimitIsExceeded() const override;
-
-  // returns true if the iteration limit was reached
-  bool IterationLimitIsExceeded() const override;
-
-  // returns true if the time limit was reached
-  bool TimeLimitIsExceeded() const override;
-
-  // gets objective value of solution
-  double GetObjectiveValue() override;
-
-  // gets primal and dual solution vectors for feasible LPs
-  //
-  // Before calling this function, the caller must ensure that the LP has been
-  // solved to optimality, i.e., that minimip::LPInterface.IsOptimal() returns
-  // true.
-  // gets primal solution vector
-
-  absl::StatusOr<std::vector<double>> GetPrimalSolution() const override;
-
-  // gets row activity vector
-  absl::StatusOr<std::vector<double>> GetRowActivity() const override;
-
-  // gets dual solution vector
-  absl::StatusOr<std::vector<double>> GetDualSolution() const override;
-
-  // gets reduced cost vector
-  absl::StatusOr<std::vector<double>> GetReducedCost() const override;
-
-  // gets primal ray for unbounded LPs
-  absl::StatusOr<std::vector<double>> GetPrimalRay() const override;
-
-  // gets dual Farkas proof for infeasibility
-  absl::StatusOr<std::vector<double>> GetDualFarkasMultiplier() const override;
-
-  // gets the number of LP iterations of the last solve call
-  int GetIterations() const override;
-
-  // ==========================================================================
-  // Getters and setters of the basis.
-  // ==========================================================================
-
-  // gets current basis status for columns and rows
-  absl::StatusOr<std::vector<LPBasisStatus>> GetColumnBasisStatus()
-      const override;
-  absl::StatusOr<std::vector<LPBasisStatus>> GetRowBasisStatus() const override;
-
-  // sets current basis status for columns and rows
-  absl::Status SetBasisStatus(
-      const std::vector<LPBasisStatus>& column_basis_status,
-      const std::vector<LPBasisStatus>& row_basis_status) override;
-
-  // returns the indices of the basic columns and rows; basic column n gives
-  // value n, basic row m gives value -1-m
-  std::vector<int> GetBasisIndices() const override;
-
-  // ==========================================================================
-  // Getters of vectors in the inverted basis matrix.
-  // ==========================================================================
-
-  // get row of inverse basis matrix B^-1
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated; see also the explanation
-  //       in lpi.h.
-  absl::StatusOr<SparseVector> GetSparseRowOfBInverted(
-      int row_number) const override;
-
-  // get column of inverse basis matrix B^-1
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated
-  absl::StatusOr<SparseVector> GetSparseColumnOfBInverted(
-      int col_number) const override;
-
-  // get row of inverse basis matrix times constraint matrix B^-1 * A
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated; see also the explanation
-  //       in lpi.h.
-  absl::StatusOr<SparseVector> GetSparseRowOfBInvertedTimesA(
-      int row_number) const override;
-
-  // get column of inverse basis matrix times constraint matrix B^-1 * A
-  //
-  // NOTE: The LP interface defines slack variables to have coefficient +1. This
-  // means that if, internally, the LP solver
-  //       uses a -1 coefficient, then rows associated with slacks variables
-  //       whose coefficient is -1, should be negated; see also the explanation
-  //       in lpi.h.
-  absl::StatusOr<SparseVector> GetSparseColumnOfBInvertedTimesA(
-      int col_number) const override;
-
-  // ==========================================================================
-  // Getters and setters of the parameters.
-  // ==========================================================================
-
-  // gets integer parameter of LP
-  absl::StatusOr<int> GetIntegerParameter(LPParameter type  // parameter number
-  ) const override;
-
-  // sets integer parameter of LP
-  absl::Status SetIntegerParameter(LPParameter type,  // parameter number
-                                   int param_val      // parameter value
-                                   ) override;
-
-  // gets floating point parameter of LP
-  absl::StatusOr<double> GetRealParameter(LPParameter type  // parameter number
-  ) const override;
-
-  // sets floating point parameter of LP
-  absl::Status SetRealParameter(LPParameter type,  // parameter number
-                                double param_val   // parameter value
-                                ) override;
-
-  // ==========================================================================
-  // Numerical methods.
-  // ==========================================================================
-
-  // returns value treated as infinity in the LP solver
-  double Infinity() const override;
-
-  // checks if given value is treated as infinity in the LP solver
-  bool IsInfinity(double value  // value to be checked for infinity
-  ) const override;
-
-  // ==========================================================================
-  // File interface methods.
-  // ==========================================================================
-
-  // reads LP from a file
-  absl::Status ReadLP(const char* file_name  // file name
-                      ) override;
-
-  // writes LP to a file
-  absl::Status WriteLP(const char* file_name  // file name
-  ) const override;
+  // The row basis status used for strong branching.
+  soplex::DataArray<soplex::SPxSolver::VarStatus> row_basis_status_;
 };
 
 }  // namespace minimip
