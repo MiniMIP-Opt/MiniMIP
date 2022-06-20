@@ -115,12 +115,12 @@ class StrongSparseVectorOfDoubles {
   // TODO(lpawel): Re-consider this. Now, it's easy to use a copy in place of a
   // reference by mistake.
   StrongSparseVectorOfDoubles(const StrongSparseVectorOfDoubles&) = default;
-  StrongSparseVectorOfDoubles<SparseIndex>& operator=(
+  StrongSparseVectorOfDoubles<SparseIndex>& operator              =(
       const StrongSparseVectorOfDoubles<SparseIndex>&) = default;
 
   // The class is (no-throw) moveable.
   StrongSparseVectorOfDoubles(StrongSparseVectorOfDoubles&&) noexcept = default;
-  StrongSparseVectorOfDoubles<SparseIndex>& operator=(
+  StrongSparseVectorOfDoubles<SparseIndex>& operator                  =(
       StrongSparseVectorOfDoubles<SparseIndex>&&) noexcept = default;
 
   StrongSparseVectorOfDoubles() : may_need_cleaning_(false) {}

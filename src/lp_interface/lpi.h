@@ -98,11 +98,11 @@ class LPInterface {
   // Like `AddColumn()`, but adds multiple columns at once. This is useful if
   // the underlying LP solver supports batched operations.
   virtual absl::Status AddColumns(
-      const std::vector<SparseCol>& cols,
-      const std::vector<double>& lower_bounds,
-      const std::vector<double>& upper_bounds,
-      const std::vector<double>& objective_coefficients,
-      const std::vector<std::string>& names) = 0;
+      const absl::StrongVector<ColIndex, SparseCol>& cols,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) = 0;
 
   // Deletes all columns from `first_col` to `last_col` inclusive on both ends.
   // The column indices larger than `last_col` are decremented by `last_col -
@@ -129,10 +129,11 @@ class LPInterface {
 
   // Like `AddRow()`, but adds multiple rows at once. This is useful if
   // the underlying LP solver supports batched operations.
-  virtual absl::Status AddRows(const std::vector<SparseRow>& rows,
-                               const std::vector<double>& left_hand_sides,
-                               const std::vector<double>& right_hand_sides,
-                               const std::vector<std::string>& names) = 0;
+  virtual absl::Status AddRows(
+      const absl::StrongVector<RowIndex, SparseRow>& rows,
+      const absl::StrongVector<RowIndex, double>& left_hand_sides,
+      const absl::StrongVector<RowIndex, double>& right_hand_sides,
+      const absl::StrongVector<RowIndex, std::string>& names) = 0;
 
   // Deletes all rows from `first_row` to `last_row` inclusive on both ends.
   // The rowindices larger than `last_row` are decremented by `last_row -
@@ -457,11 +458,11 @@ class LPInterface {
 
   // Reads an LP from a file in the format supported by the underlying LP solver
   // (may differ between implementations).
-  virtual absl::Status ReadLP(const std::string& file_path) = 0;
+  virtual absl::Status ReadLPFromFile(const std::string& file_path) = 0;
 
   // Writes an LP to a file in the format supported by the underlying LP solver
   // (may differ between implementations).
-  virtual absl::Status WriteLP(const std::string& file_path) const = 0;
+  virtual absl::Status WriteLPToFile(const std::string& file_path) const = 0;
 };
 
 }  // namespace minimip

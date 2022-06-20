@@ -49,19 +49,17 @@ cc_library(
     ],
 )
 
-# TODO(cgraczy): Reenable lpi_soplex once ready.
-
-#cc_library(
-#    name = "lpi_soplex",
-#    srcs = ["lpi_soplex.cc"],
-#    hdrs = ["lpi_soplex.h"],
-#    linkstatic = True,
-#    deps = [
-#        ":lpi",
-#        ":soplex",
-#        "//src/minimip:minimip_def",
-#    ],
-#)
+cc_library(
+    name = "lpi_soplex",
+    srcs = ["lpi_soplex.cc"],
+    hdrs = ["lpi_soplex.h"],
+    linkstatic = True,
+    deps = [
+        ":lpi",
+        ":soplex",
+        "@com_google_ortools//ortools/util:file_util",
+    ],
+)
 
 cc_library(
     name = "lpi_factory",
@@ -69,6 +67,7 @@ cc_library(
     hdrs = ["lpi_factory.h"],
     deps = [
         ":lpi_glop",
+        ":lpi_soplex",
         "@com_google_ortools//ortools/base",
     ],
 )

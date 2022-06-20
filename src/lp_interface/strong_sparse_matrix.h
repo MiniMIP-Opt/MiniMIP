@@ -44,7 +44,7 @@ class StrongSparseMatrix {
   // StrongSparseMatrix is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
   // StrongSparseMatrix is (no-throw) moveable.
-  StrongSparseMatrix(StrongSparseMatrix&&) noexcept            = default;
+  StrongSparseMatrix(StrongSparseMatrix&&) noexcept = default;
   StrongSparseMatrix& operator=(StrongSparseMatrix&&) noexcept = default;
 
   // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
@@ -132,7 +132,7 @@ class StrongSparseMatrix {
 
   // We keep the copy constructor and copy assing operator around to use in
   // `PopulateFromSparseMatrix()`.
-  StrongSparseMatrix(const StrongSparseMatrix&)            = default;
+  StrongSparseMatrix(const StrongSparseMatrix&) = default;
   StrongSparseMatrix& operator=(const StrongSparseMatrix&) = default;
 
   // Helper function to compute the transpose in both directions.

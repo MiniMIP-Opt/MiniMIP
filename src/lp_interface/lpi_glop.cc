@@ -14,11 +14,8 @@
 
 #include "src/lp_interface/lpi_glop.h"
 
-#include <cstdarg>
 #include <limits>
 #include <memory>
-
-#include "lpi_glop.h"
 
 using operations_research::MPModelProto;
 using operations_research::TimeLimit;
@@ -101,7 +98,7 @@ VariableStatus ConvertMiniMIPVariableStatus(LPBasisStatus status) {
     case LPBasisStatus::kFree:
       return VariableStatus::FREE;
     default:
-      LOG(FATAL) << "Uknown MiniMip col basis status.";
+      LOG(FATAL) << "Unknown MiniMip col basis status.";
   }
 }
 
@@ -121,7 +118,7 @@ VariableStatus ConvertMiniMIPConstraintStatusToSlackStatus(
     case LPBasisStatus::kFree:
       return VariableStatus::FREE;
     default:
-      LOG(FATAL) << "Uknown MiniMip row basis status.";
+      LOG(FATAL) << "Unknown MiniMip row basis status.";
   }
 }
 
@@ -208,14 +205,15 @@ absl::Status LPGlopInterface::AddColumn(const SparseCol& col_data,
 }
 
 absl::Status LPGlopInterface::AddColumns(
-    const std::vector<SparseCol>& cols, const std::vector<double>& lower_bounds,
-    const std::vector<double>& upper_bounds,
-    const std::vector<double>& objective_coefficients,
-    const std::vector<std::string>& names) {
+    const absl::StrongVector<ColIndex, SparseCol>& cols,
+    const absl::StrongVector<ColIndex, double>& lower_bounds,
+    const absl::StrongVector<ColIndex, double>& upper_bounds,
+    const absl::StrongVector<ColIndex, double>& objective_coefficients,
+    const absl::StrongVector<ColIndex, std::string>& names) {
   DCHECK_EQ(names.size(), lower_bounds.size());
   DCHECK_EQ(lower_bounds.size(), upper_bounds.size());
   DCHECK_EQ(upper_bounds.size(), objective_coefficients.size());
-  for (int col = 0; col < cols.size(); ++col) {
+  for (ColIndex col(0); col < cols.size(); ++col) {
     RETURN_IF_ERROR(AddColumn(cols[col], lower_bounds[col], upper_bounds[col],
                               objective_coefficients[col], names[col]));
   }
@@ -267,13 +265,13 @@ absl::Status LPGlopInterface::AddRow(const SparseRow& row_data,
 }
 
 absl::Status LPGlopInterface::AddRows(
-    const std::vector<SparseRow>& rows,
-    const std::vector<double>& left_hand_sides,
-    const std::vector<double>& right_hand_sides,
-    const std::vector<std::string>& names) {
+    const absl::StrongVector<RowIndex, SparseRow>& rows,
+    const absl::StrongVector<RowIndex, double>& left_hand_sides,
+    const absl::StrongVector<RowIndex, double>& right_hand_sides,
+    const absl::StrongVector<RowIndex, std::string>& names) {
   DCHECK_EQ(names.size(), left_hand_sides.size());
   DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
-  for (int row = 0; row < rows.size(); ++row) {
+  for (RowIndex row = 0; row < rows.size(); ++row) {
     RETURN_IF_ERROR(AddRow(rows[row], left_hand_sides[row],
                            right_hand_sides[row], names[row]));
   }
@@ -1213,7 +1211,7 @@ bool LPGlopInterface::IsInfinity(double value) const {
 // File interface methods.
 // ==========================================================================
 
-absl::Status LPGlopInterface::ReadLP(const std::string& file_path) {
+absl::Status LPGlopInterface::ReadLPFromFile(const std::string& file_path) {
   MPModelProto proto;
   if (!ReadFileToProto(file_path, &proto)) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -1224,7 +1222,8 @@ absl::Status LPGlopInterface::ReadLP(const std::string& file_path) {
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::WriteLP(const std::string& file_path) const {
+absl::Status LPGlopInterface::WriteLPToFile(
+    const std::string& file_path) const {
   MPModelProto proto;
   LinearProgramToMPModelProto(lp_, &proto);
   if (!WriteProtoToFile(file_path, proto,

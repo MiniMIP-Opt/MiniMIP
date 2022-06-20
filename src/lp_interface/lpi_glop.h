@@ -58,21 +58,23 @@ class LPGlopInterface : public LPInterface {
                          double upper_bound, double objective_coefficient,
                          const std::string& name) final;
 
-  absl::Status AddColumns(const std::vector<SparseCol>& cols,
-                          const std::vector<double>& lower_bounds,
-                          const std::vector<double>& upper_bounds,
-                          const std::vector<double>& objective_coefficients,
-                          const std::vector<std::string>& names) final;
+  absl::Status AddColumns(
+      const absl::StrongVector<ColIndex, SparseCol>& cols,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) final;
 
   absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) final;
 
   absl::Status AddRow(const SparseRow& row, double left_hand_side,
                       double right_hand_side, const std::string& name) final;
 
-  absl::Status AddRows(const std::vector<SparseRow>& rows,
-                       const std::vector<double>& left_hand_sides,
-                       const std::vector<double>& right_hand_sides,
-                       const std::vector<std::string>& names) final;
+  absl::Status AddRows(
+      const absl::StrongVector<RowIndex, SparseRow>& rows,
+      const absl::StrongVector<RowIndex, double>& left_hand_sides,
+      const absl::StrongVector<RowIndex, double>& right_hand_sides,
+      const absl::StrongVector<RowIndex, std::string>& names) final;
 
   absl::Status DeleteRows(RowIndex first_row, RowIndex last_row) final;
 
@@ -219,11 +221,9 @@ class LPGlopInterface : public LPInterface {
   // File interface methods.
   // ==========================================================================
 
-  // reads LP from a file
-  absl::Status ReadLP(const std::string& file_path) final;
+  absl::Status ReadLPFromFile(const std::string& file_path) final;
 
-  // writes LP to a file
-  absl::Status WriteLP(const std::string& file_path) const final;
+  absl::Status WriteLPToFile(const std::string& file_path) const final;
 
  private:
   // Helper function to delete rows from LP and update the current basis.

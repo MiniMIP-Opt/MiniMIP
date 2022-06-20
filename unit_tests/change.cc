@@ -22,7 +22,7 @@
 // GetNumberOfColumns, GetNumberOfRows, GetNumberOfNonZeros,
 // GetSparseColumnCoefficients, GetSparseRowCoefficients,
 // ClearState,
-// WriteLP, ReadLP, Clear
+// WriteLPToFile, ReadLPFromFile, Clear
 
 #include <gtest/gtest.h>
 
@@ -324,12 +324,12 @@ TEST_P(ChangeObjective, checkChangeObjective) {
   if (DEF_INTERFACE == 0) {
     if (TEST_ERRORS) {
       for (int i = 0; i < num_columns; i++) {
-        if (lp_interface_->IsInfinity(fabs(set_objective_coefficients[i])))
+        if (lp_interface_->IsInfinity(std::abs(set_objective_coefficients[i])))
           deathflag = true;
       }
     } else {
       for (int i = 0; i < num_columns; i++) {
-        if (lp_interface_->IsInfinity(fabs(set_objective_coefficients[i])))
+        if (lp_interface_->IsInfinity(std::abs(set_objective_coefficients[i])))
           GTEST_SKIP();
       }
     }
@@ -498,15 +498,15 @@ TEST_P(ChangeSides, checkChangedSides) {
   if (TEST_ERRORS) {
     for (int i = 0; i < num_rows; i++) {
       if (set_right_hand_sides[i] < set_left_hand_sides[i]) deathflag = true;
-      if (lp_interface_->IsInfinity(fabs(set_left_hand_sides[i])) &&
-          lp_interface_->IsInfinity(fabs(set_right_hand_sides[i])))
+      if (lp_interface_->IsInfinity(std::abs(set_left_hand_sides[i])) &&
+          lp_interface_->IsInfinity(std::abs(set_right_hand_sides[i])))
         deathflag = true;
     }
   } else {
     for (int i = 0; i < num_rows; i++) {
       if (set_right_hand_sides[i] < set_left_hand_sides[i]) GTEST_SKIP();
-      if (lp_interface_->IsInfinity(fabs(set_left_hand_sides[i])) &&
-          lp_interface_->IsInfinity(fabs(set_right_hand_sides[i])))
+      if (lp_interface_->IsInfinity(std::abs(set_left_hand_sides[i])) &&
+          lp_interface_->IsInfinity(std::abs(set_right_hand_sides[i])))
         GTEST_SKIP();
     }
   }
@@ -636,12 +636,12 @@ TEST_F(Change, TestRowMethods) {
 
       // check each row seperately
       for (int j = 0; j < num_rows; j++) {
-        if (fabs(left_hand_sides[j]) < 1e30 &&
-            fabs(new_left_hand_sides[j]) < 1e30) {
+        if (std::abs(left_hand_sides[j]) < 1e30 &&
+            std::abs(new_left_hand_sides[j]) < 1e30) {
           ASSERT_DOUBLE_EQ(left_hand_sides[j], new_left_hand_sides[j]);
         }
-        if (fabs(right_hand_sides[j]) < 1e30 &&
-            fabs(new_right_hand_sides[j]) < 1e30) {
+        if (std::abs(right_hand_sides[j]) < 1e30 &&
+            std::abs(new_right_hand_sides[j]) < 1e30) {
           ASSERT_DOUBLE_EQ(right_hand_sides[j], new_right_hand_sides[j]);
         }
 
@@ -838,7 +838,7 @@ TEST_F(Change, TestZerosInRows) {
 #endif
 }
 
-// Test WriteLP, ReadLP, Clear
+// Test WriteLPToFile, ReadLPFromFile, Clear
 TEST_F(Change, TestWriteReadLPMethods) {
   int num_rows, num_columns, num_nonzeros;
   LPObjectiveSense objective_sense;
@@ -872,13 +872,13 @@ TEST_F(Change, TestWriteReadLPMethods) {
   ASSERT_OK(absl_tmp.status());
   reduced_costs = *absl_tmp;
 
-  ASSERT_OK(lp_interface_->WriteLP("lpi_change_test_problem.lp"));
+  ASSERT_OK(lp_interface_->WriteLPToFile("lpi_change_test_problem.lp"));
   ASSERT_OK(lp_interface_->Clear());
 
   if (DEF_INTERFACE == 0) {
-    ASSERT_OK(lp_interface_->ReadLP("lpi_change_test_problem.lp.gz"));
+    ASSERT_OK(lp_interface_->ReadLPFromFile("lpi_change_test_problem.lp.gz"));
   } else {
-    ASSERT_OK(lp_interface_->ReadLP("lpi_change_test_problem.lp"));
+    ASSERT_OK(lp_interface_->ReadLPFromFile("lpi_change_test_problem.lp"));
   }
   ASSERT_OK(lp_interface_->SolveLPWithPrimalSimplex());
   double objective_value_2 = lp_interface_->GetObjectiveValue();
@@ -930,7 +930,7 @@ TEST_F(Change, TestWriteReadLPMethods) {
     remove("lpi_change_test_problem.lp.gz");
     SUCCEED();
   } else {
-    ASSERT_OK(lp_interface_->WriteLP("lpi_change_test_problem2.lp"));
+    ASSERT_OK(lp_interface_->WriteLPToFile("lpi_change_test_problem2.lp"));
     ASSERT_OK(lp_interface_->Clear());
 
     std::ifstream t1("lpi_change_test_problem.lp");

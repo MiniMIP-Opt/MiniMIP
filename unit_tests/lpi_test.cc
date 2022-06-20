@@ -43,9 +43,9 @@ class LPInterfaceImplementationTest
   std::unique_ptr<LPInterface> lpi_;
 };
 
-// TODO(cgraczy): Add `kSoplex` to the list once it's ready.
 INSTANTIATE_TEST_SUITE_P(All, LPInterfaceImplementationTest,
-                         testing::ValuesIn({LPInterfaceCode::kGlop}));
+                         testing::ValuesIn({LPInterfaceCode::kGlop,
+                                            LPInterfaceCode::kSoplex}));
 
 TEST_P(LPInterfaceImplementationTest, CreateSimpleLp) {
   PopulateSmallLp();

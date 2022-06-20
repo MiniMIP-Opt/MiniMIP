@@ -385,12 +385,12 @@ class Solve : public ::testing::Test {
 
     // compare data
     for (int j = 0; j < num_columns; ++j) {
-      if (fabs(expected_lower_bounds[j]) < 1e30 &&
-          fabs(lower_bounds[j]) < 1e30) {
+      if (std::abs(expected_lower_bounds[j]) < 1e30 &&
+          std::abs(lower_bounds[j]) < 1e30) {
         ASSERT_FLOAT_EQ(expected_lower_bounds[j], lower_bounds[j]);
       }
-      if (fabs(expected_upper_bounds[j]) < 1e30 &&
-          fabs(upper_bounds[j]) < 1e30) {
+      if (std::abs(expected_upper_bounds[j]) < 1e30 &&
+          std::abs(upper_bounds[j]) < 1e30) {
         ASSERT_FLOAT_EQ(expected_upper_bounds[j], upper_bounds[j]);
       }
 
@@ -421,12 +421,12 @@ class Solve : public ::testing::Test {
     }
 
     for (int i = 0; i < num_rows; ++i) {
-      if (fabs(expected_left_hand_sides[i]) < 1e30 &&
-          fabs(left_hand_sides[i]) < 1e30) {
+      if (std::abs(expected_left_hand_sides[i]) < 1e30 &&
+          std::abs(left_hand_sides[i]) < 1e30) {
         ASSERT_FLOAT_EQ(expected_left_hand_sides[i], left_hand_sides[i]);
       }
-      if (fabs(expected_left_hand_sides[i]) < 1e30 &&
-          fabs(left_hand_sides[i]) < 1e30) {
+      if (std::abs(expected_left_hand_sides[i]) < 1e30 &&
+          std::abs(left_hand_sides[i]) < 1e30) {
         ASSERT_FLOAT_EQ(expected_right_hand_sides[i], right_hand_sides[i]);
       }
     }
