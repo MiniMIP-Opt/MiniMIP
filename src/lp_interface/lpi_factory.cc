@@ -29,7 +29,7 @@ std::unique_ptr<LPInterface> CreateLPInterface(LPInterfaceCode interface_code) {
     case LPInterfaceCode::kSoplex:
       return std::make_unique<LPSoplexInterface>();
     default:
-      LOG(FATAL) << "Unsupported inferface code " << interface_code;
+      LOG(FATAL) << "Unsupported interface code " << interface_code;
   }
 }
 

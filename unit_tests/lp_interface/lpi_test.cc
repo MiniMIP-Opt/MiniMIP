@@ -18,7 +18,7 @@
 
 #include "absl/status/status.h"
 #include "src/lp_interface/lpi_factory.h"
-#include "src/lp_interface/strong_sparse_vector.h"
+#include "src/data_structures/strong_sparse_vector.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {

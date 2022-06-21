@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/lp_interface/strong_sparse_matrix.h"
+#include "src/data_structures/strong_sparse_matrix.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
