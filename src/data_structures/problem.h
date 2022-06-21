@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_MINIMIP_PROBLEM_H_
-#define SRC_MINIMIP_PROBLEM_H_
+#ifndef SRC_DATA_STRUCTURES_PROBLEM_H_
+#define SRC_DATA_STRUCTURES_PROBLEM_H_
 
 #include <limits>
 #include <set>
@@ -164,4 +164,4 @@ MiniMipResult MiniMipSolve(const MiniMipProblem& problem,
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem);
 
 }  // namespace minimip
-#endif  // SRC_MINIMIP_PROBLEM_H_
+#endif  // SRC_DATA_STRUCTURES_PROBLEM_H_

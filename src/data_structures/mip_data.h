@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_MINIMIP_MIP_DATA_H_
-#define SRC_MINIMIP_MIP_DATA_H_
+#ifndef SRC_DATA_STRUCTURES_MIP_DATA_H_
+#define SRC_DATA_STRUCTURES_MIP_DATA_H_
 
 #include <limits>
 #include <set>
@@ -21,8 +21,8 @@
 #include <utility>
 #include <vector>
 
-#include "src/lp_interface/strong_sparse_matrix.h"
-#include "src/minimip/problem.h"
+#include "src/data_structures/strong_sparse_matrix.h"
+#include "src/data_structures/problem.h"
 
 namespace minimip {
 
@@ -112,4 +112,4 @@ class MipData {
 };
 
 }  // namespace minimip
-#endif  // SRC_MINIMIP_MIP_DATA_H_
+#endif  // SRC_DATA_STRUCTURES_MIP_DATA_H_

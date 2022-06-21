@@ -20,8 +20,8 @@
 // `SparseRow`, which are strongly typed by `RowIndex` and `ColIndex`,
 // respectively.
 
-#ifndef SRC_LP_INTERFACE_STRONG_SPARSE_MATRIX_H_
-#define SRC_LP_INTERFACE_STRONG_SPARSE_MATRIX_H_
+#ifndef SRC_DATA_STRUCTURES_STRONG_SPARSE_MATRIX_H_
+#define SRC_DATA_STRUCTURES_STRONG_SPARSE_MATRIX_H_
 
 #include <algorithm>
 #include <string>
@@ -30,7 +30,7 @@
 
 #include "ortools/base/logging.h"
 #include "ortools/base/strong_vector.h"
-#include "src/lp_interface/strong_sparse_vector.h"
+#include "src/data_structures/strong_sparse_vector.h"
 
 namespace minimip {
 
@@ -175,4 +175,4 @@ class StrongSparseMatrix {
 
 }  // namespace minimip
 
-#endif  // SRC_LP_INTERFACE_STRONG_SPARSE_MATRIX_H_
+#endif  // SRC_DATA_STRUCTURES_STRONG_SPARSE_MATRIX_H_

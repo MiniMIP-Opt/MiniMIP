@@ -42,8 +42,8 @@
 //   index=2, value=20.
 //   index=5, value=25.
 
-#ifndef SRC_LP_INTERFACE_STRONG_SPARSE_VECTOR_H_
-#define SRC_LP_INTERFACE_STRONG_SPARSE_VECTOR_H_
+#ifndef SRC_DATA_STRUCTURES_STRONG_SPARSE_VECTOR_H_
+#define SRC_DATA_STRUCTURES_STRONG_SPARSE_VECTOR_H_
 
 #include <algorithm>
 #include <string>
@@ -293,4 +293,4 @@ static_assert(std::is_nothrow_move_assignable<SparseRow>(),
               "SparseRow is not nothrow move assignable.");
 
 }  // namespace minimip
-#endif  // SRC_LP_INTERFACE_STRONG_SPARSE_VECTOR_H_
+#endif  // SRC_DATA_STRUCTURES_STRONG_SPARSE_VECTOR_H_

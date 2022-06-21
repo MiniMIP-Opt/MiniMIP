@@ -33,7 +33,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/lp_interface/lp_types.h"
-#include "src/lp_interface/strong_sparse_vector.h"
+#include "src/data_structures/strong_sparse_vector.h"
 
 namespace minimip {
 
