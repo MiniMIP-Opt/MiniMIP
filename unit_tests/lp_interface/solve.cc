@@ -33,9 +33,9 @@ namespace minimip {
 
 // expected feasibility status for primal or dual problem
 enum LPFeasibilityStat {
-  FEASIBLE   = 0,  // the problem is feasible
-  UNBOUNDED  = 1,  // the problem is unbounded
-  INFEASIBLE = 2   // the problem is infeasible
+  FEASIBLE = 0,   // the problem is feasible
+  UNBOUNDED = 1,  // the problem is unbounded
+  INFEASIBLE = 2  // the problem is infeasible
 };
 typedef enum LPFeasibilityStat LPFeasibilityStat;
 
@@ -96,7 +96,7 @@ class Solve : public ::testing::Test {
 
     // check feasibility status
     bool primal_feasible = lp_interface_->IsPrimalFeasible();
-    bool dual_feasible   = lp_interface_->IsDualFeasible();
+    bool dual_feasible = lp_interface_->IsDualFeasible();
 
     // if we are feasible, we should be optimal
     if (expected_primal_feasibility_status == LPFeasibilityStat::FEASIBLE &&
@@ -349,7 +349,7 @@ class Solve : public ::testing::Test {
     int expected_num_nonzeros;
 
     // check number of rows and columns
-    expected_num_rows    = lp_interface_->GetNumberOfRows();
+    expected_num_rows = lp_interface_->GetNumberOfRows();
     expected_num_columns = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(expected_num_rows, num_rows);
     ASSERT_EQ(expected_num_columns, num_columns);
@@ -450,22 +450,22 @@ class Solve : public ::testing::Test {
 TEST_F(Solve, test1) {
   // LP data
   std::vector<double> objective_coefficients = {3.0, 1.0};
-  std::vector<double> lower_bounds           = {0.0, 0.0};
-  std::vector<double> upper_bounds           = {lp_interface_->Infinity(),
+  std::vector<double> lower_bounds = {0.0, 0.0};
+  std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                       lp_interface_->Infinity()};
-  std::vector<double> right_hand_sides       = {10.0, 15.0};
-  std::vector<double> left_hand_sides        = {-lp_interface_->Infinity(),
+  std::vector<double> right_hand_sides = {10.0, 15.0};
+  std::vector<double> left_hand_sides = {-lp_interface_->Infinity(),
                                          -lp_interface_->Infinity()};
 
-  SparseVector sparse_col_1                = {{0, 1}, {2, 1}};
-  SparseVector sparse_col_2                = {{0, 1}, {1, 3}};
+  SparseVector sparse_col_1 = {{0, 1}, {2, 1}};
+  SparseVector sparse_col_2 = {{0, 1}, {1, 3}};
   std::vector<SparseVector> sparse_columns = {sparse_col_1, sparse_col_2};
 
   // expected solutions
   std::vector<double> expected_primal_solution = {5.0, 0.0};
-  std::vector<double> expected_dual_solution   = {1.5, 0.0};
-  std::vector<double> expected_row_activities  = {10.0, 5.0};
-  std::vector<double> expected_reduced_costs   = {0.0, -0.5};
+  std::vector<double> expected_dual_solution = {1.5, 0.0};
+  std::vector<double> expected_row_activities = {10.0, 5.0};
+  std::vector<double> expected_reduced_costs = {0.0, -0.5};
 
   // assert infinity values
   for (int j = 0; j < 2; j++) {
@@ -511,11 +511,11 @@ TEST_F(Solve, test1) {
   // change expected solution
   expected_primal_solution[0] = 3;
   expected_primal_solution[1] = 4;
-  expected_dual_solution[0]   = 0.4;
-  expected_dual_solution[1]   = 0.2;
-  expected_row_activities[0]  = 10;
-  expected_row_activities[1]  = 15;
-  expected_reduced_costs[1]   = 0;
+  expected_dual_solution[0] = 0.4;
+  expected_dual_solution[1] = 0.2;
+  expected_row_activities[0] = 10;
+  expected_row_activities[1] = 15;
+  expected_reduced_costs[1] = 0;
 
   // check changed problem with primal simplex
   ASSERT_NO_FATAL_FAILURE(performTest(
@@ -546,16 +546,16 @@ TEST_F(Solve, test1) {
 TEST_F(Solve, test2) {
   // data to be filled
   std::vector<double> objective_coefficients = {3.0, 1.0};
-  std::vector<double> lower_bounds           = {-lp_interface_->Infinity(),
+  std::vector<double> lower_bounds = {-lp_interface_->Infinity(),
                                       -lp_interface_->Infinity()};
-  std::vector<double> upper_bounds           = {lp_interface_->Infinity(),
+  std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                       lp_interface_->Infinity()};
-  std::vector<double> right_hand_sides       = {10.0, 15.0};
-  std::vector<double> left_hand_sides        = {-lp_interface_->Infinity(),
+  std::vector<double> right_hand_sides = {10.0, 15.0};
+  std::vector<double> left_hand_sides = {-lp_interface_->Infinity(),
                                          -lp_interface_->Infinity()};
 
-  SparseVector sparse_col_1                = {{0, 1}, {2, 1}};
-  SparseVector sparse_col_2                = {{0, 1}, {1, 3}};
+  SparseVector sparse_col_1 = {{0, 1}, {2, 1}};
+  SparseVector sparse_col_2 = {{0, 1}, {1, 3}};
   std::vector<SparseVector> sparse_columns = {sparse_col_1, sparse_col_2};
 
   // expected ray for first run
@@ -563,15 +563,15 @@ TEST_F(Solve, test2) {
 
   // expected solutions
   std::vector<double> expected_primal_solution = {3, 4};
-  std::vector<double> expected_dual_solution   = {0.4, 0.2};
-  std::vector<double> expected_row_activities  = {10, 15};
-  std::vector<double> expected_reduced_costs   = {0, 0};
+  std::vector<double> expected_dual_solution = {0.4, 0.2};
+  std::vector<double> expected_row_activities = {10, 15};
+  std::vector<double> expected_reduced_costs = {0, 0};
 
   // fill variable data
-  lower_bounds[0]    = -lp_interface_->Infinity();
-  lower_bounds[1]    = -lp_interface_->Infinity();
-  upper_bounds[0]    = lp_interface_->Infinity();
-  upper_bounds[1]    = lp_interface_->Infinity();
+  lower_bounds[0] = -lp_interface_->Infinity();
+  lower_bounds[1] = -lp_interface_->Infinity();
+  upper_bounds[0] = lp_interface_->Infinity();
+  upper_bounds[1] = lp_interface_->Infinity();
   left_hand_sides[0] = -lp_interface_->Infinity();
   left_hand_sides[1] = -lp_interface_->Infinity();
 
@@ -638,14 +638,14 @@ TEST_F(Solve, test2) {
 TEST_F(Solve, test3) {
   // LP data
   std::vector<double> objective_coefficients = {10, 15};
-  std::vector<double> lower_bounds           = {0, 0};
-  std::vector<double> upper_bounds           = {lp_interface_->Infinity(),
+  std::vector<double> lower_bounds = {0, 0};
+  std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                       lp_interface_->Infinity()};
-  std::vector<double> right_hand_sides       = {3.0, 1.0};
-  std::vector<double> left_hand_sides        = {3.0, 1.0};
+  std::vector<double> right_hand_sides = {3.0, 1.0};
+  std::vector<double> left_hand_sides = {3.0, 1.0};
 
-  SparseVector sparse_col_1                = {{0, 1}, {2, 1}};
-  SparseVector sparse_col_2                = {{0, 1}, {1, 3}};
+  SparseVector sparse_col_1 = {{0, 1}, {2, 1}};
+  SparseVector sparse_col_2 = {{0, 1}, {1, 3}};
   std::vector<SparseVector> sparse_columns = {sparse_col_1, sparse_col_2};
 
   // expected ray
@@ -653,9 +653,9 @@ TEST_F(Solve, test3) {
 
   // expected solutions
   std::vector<double> expected_primal_solution = {0.4, 0.2};
-  std::vector<double> expected_dual_solution   = {3, 4};
-  std::vector<double> expected_row_activities  = {1, 1};
-  std::vector<double> expected_reduced_costs   = {0, 0};
+  std::vector<double> expected_dual_solution = {3, 4};
+  std::vector<double> expected_row_activities = {1, 1};
+  std::vector<double> expected_reduced_costs = {0, 0};
 
   // empty placeholders
   std::vector<double> empty_vals;
@@ -690,7 +690,7 @@ TEST_F(Solve, test3) {
   ASSERT_OK(lp_interface_->ClearState());
 
   // change left_hand_sides/right_hand_sides
-  left_hand_sides[0]  = 1.0;
+  left_hand_sides[0] = 1.0;
   right_hand_sides[0] = 1.0;
   ASSERT_OK(
       lp_interface_->SetRowSides(0, left_hand_sides[0], right_hand_sides[0]));
@@ -716,16 +716,16 @@ TEST_F(Solve, test3) {
 TEST_F(Solve, test4) {
   // LP data
   std::vector<double> objective_coefficients{1, 1};
-  std::vector<double> lower_bounds     = {-lp_interface_->Infinity(),
+  std::vector<double> lower_bounds = {-lp_interface_->Infinity(),
                                       -lp_interface_->Infinity()};
-  std::vector<double> upper_bounds     = {lp_interface_->Infinity(),
+  std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                       lp_interface_->Infinity()};
   std::vector<double> right_hand_sides = {0, -1};
-  std::vector<double> left_hand_sides  = {-lp_interface_->Infinity(),
+  std::vector<double> left_hand_sides = {-lp_interface_->Infinity(),
                                          -lp_interface_->Infinity()};
 
-  SparseVector sparse_col_1                = {{0, 1}, {1, -1}};
-  SparseVector sparse_col_2                = {{0, 1}, {-1, 1}};
+  SparseVector sparse_col_1 = {{0, 1}, {1, -1}};
+  SparseVector sparse_col_2 = {{0, 1}, {-1, 1}};
   std::vector<SparseVector> sparse_columns = {sparse_col_1, sparse_col_2};
 
   // empty placeholders
@@ -764,11 +764,11 @@ TEST_F(Solve, test4) {
 TEST_F(Solve, test5) {
   // LP data
   std::vector<double> objective_coefficients = {1, 1};
-  std::vector<double> lower_bounds           = {0, 0};
-  std::vector<double> upper_bounds           = {lp_interface_->Infinity(),
+  std::vector<double> lower_bounds = {0, 0};
+  std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                       lp_interface_->Infinity()};
-  std::vector<double> right_hand_sides       = {10, 15};
-  std::vector<double> left_hand_sides        = {-lp_interface_->Infinity(),
+  std::vector<double> right_hand_sides = {10, 15};
+  std::vector<double> left_hand_sides = {-lp_interface_->Infinity(),
                                          -lp_interface_->Infinity()};
 
   double objective_value;
@@ -776,20 +776,20 @@ TEST_F(Solve, test5) {
   std::vector<LPBasisStatus> row_basis_status(2);
   column_basis_status = {LPBasisStatus::kAtLowerBound,
                          LPBasisStatus::kAtLowerBound};
-  row_basis_status    = {LPBasisStatus::kBasic, LPBasisStatus::kBasic};
+  row_basis_status = {LPBasisStatus::kBasic, LPBasisStatus::kBasic};
   double expected_objective_value = 5.0;
 
   // expected solutions
   std::vector<double> expected_primal_solution = {0.4, 0.2};
-  std::vector<double> expected_dual_solution   = {3, 4};
-  std::vector<double> expected_row_activities  = {1, 1};
-  std::vector<double> expected_reduced_costs   = {0, 0};
+  std::vector<double> expected_dual_solution = {3, 4};
+  std::vector<double> expected_row_activities = {1, 1};
+  std::vector<double> expected_reduced_costs = {0, 0};
 
   // empty placeholders
   std::vector<std::string> empty_names;
 
-  SparseVector sparse_col_1                = {{0, 1}, {2, 1}};
-  SparseVector sparse_col_2                = {{0, 1}, {1, 3}};
+  SparseVector sparse_col_1 = {{0, 1}, {2, 1}};
+  SparseVector sparse_col_2 = {{0, 1}, {1, 3}};
   std::vector<SparseVector> sparse_columns = {sparse_col_1, sparse_col_2};
 
   // load problem
@@ -893,22 +893,22 @@ TEST_F(Solve, test6) {
   std::vector<double> upper_bounds = {1,   0,   -0.0625, 0.5,  1e20, 1e20,
                                       0.0, 0.0, 1e20,    1e20, 1.75, 0.5};
 
-  std::vector<double> left_hand_sides  = {0,     0.75,   0,     0.25,
+  std::vector<double> left_hand_sides = {0,     0.75,   0,     0.25,
                                          -1e20, 2.6875, -1e20, 4.4375};
   std::vector<double> right_hand_sides = {0,      0.75, 0,      0.25,
                                           5.0496, 1e20, 4.2056, 1e20};
 
-  SparseVector sparse_col_1  = {{1, 3, 4, 5, 6, 7},
+  SparseVector sparse_col_1 = {{1, 3, 4, 5, 6, 7},
                                {-1, -1, 2.75, 1.25, 0.75, 2.75}};
-  SparseVector sparse_col_2  = {{1, 3, 4, 5, 6, 7},
+  SparseVector sparse_col_2 = {{1, 3, 4, 5, 6, 7},
                                {-1, -1, -3.75, -0.25, -0.25, -0.25}};
-  SparseVector sparse_col_3  = {{4, 5, 6, 7}, {1, 1, 1, 1}};
-  SparseVector sparse_col_4  = {{1}, {1}};
-  SparseVector sparse_col_5  = {{2}, {-1}};
-  SparseVector sparse_col_6  = {{2}, {1}};
-  SparseVector sparse_col_7  = {{2}, {1}};
-  SparseVector sparse_col_8  = {{0}, {-1}};
-  SparseVector sparse_col_9  = {{0}, {1}};
+  SparseVector sparse_col_3 = {{4, 5, 6, 7}, {1, 1, 1, 1}};
+  SparseVector sparse_col_4 = {{1}, {1}};
+  SparseVector sparse_col_5 = {{2}, {-1}};
+  SparseVector sparse_col_6 = {{2}, {1}};
+  SparseVector sparse_col_7 = {{2}, {1}};
+  SparseVector sparse_col_8 = {{0}, {-1}};
+  SparseVector sparse_col_9 = {{0}, {1}};
   SparseVector sparse_col_10 = {{0}, {1}};
   SparseVector sparse_col_11 = {{1, 3, 4, 5, 6, 7}, {1, 1, 2.28, 2, 0.68, 3}};
   SparseVector sparse_col_12 = {{3}, {-1.0}};
@@ -996,18 +996,18 @@ TEST_F(Solve, test6) {
       upper_bounds, 8, left_hand_sides, right_hand_sides, 30, sparse_columns));
 
   // change some bounds
-  lower_bounds[0]  = 1;
-  upper_bounds[0]  = 1;
-  lower_bounds[1]  = 0;
-  upper_bounds[1]  = 0;
-  lower_bounds[2]  = -2.06255;
-  upper_bounds[2]  = -2.0625;
-  lower_bounds[3]  = 0;
-  upper_bounds[3]  = 4.94694e-05;
-  lower_bounds[6]  = 0;
-  upper_bounds[6]  = 0;
-  lower_bounds[7]  = 0;
-  upper_bounds[7]  = 0;
+  lower_bounds[0] = 1;
+  upper_bounds[0] = 1;
+  lower_bounds[1] = 0;
+  upper_bounds[1] = 0;
+  lower_bounds[2] = -2.06255;
+  upper_bounds[2] = -2.0625;
+  lower_bounds[3] = 0;
+  upper_bounds[3] = 4.94694e-05;
+  lower_bounds[6] = 0;
+  upper_bounds[6] = 0;
+  lower_bounds[7] = 0;
+  upper_bounds[7] = 0;
   lower_bounds[10] = 1.74995;
   upper_bounds[10] = 1.750;
   lower_bounds[11] = 0.499951;
@@ -1050,14 +1050,14 @@ TEST_F(Solve, test6) {
 TEST_F(Solve, test7) {
   // LP data
   std::vector<double> objective_coefficients{10, 15};
-  std::vector<double> lower_bounds     = {0, 0};
-  std::vector<double> upper_bounds     = {lp_interface_->Infinity(),
+  std::vector<double> lower_bounds = {0, 0};
+  std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                       lp_interface_->Infinity()};
   std::vector<double> right_hand_sides = {lp_interface_->Infinity(), 1};
-  std::vector<double> left_hand_sides  = {3, -lp_interface_->Infinity()};
+  std::vector<double> left_hand_sides = {3, -lp_interface_->Infinity()};
 
-  SparseVector sparse_col_1                = {{0, 1}, {2, 1}};
-  SparseVector sparse_col_2                = {{0, 1}, {1, 3}};
+  SparseVector sparse_col_1 = {{0, 1}, {2, 1}};
+  SparseVector sparse_col_2 = {{0, 1}, {1, 3}};
   std::vector<SparseVector> sparse_columns = {sparse_col_1, sparse_col_2};
 
   // expected ray

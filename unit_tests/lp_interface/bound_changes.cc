@@ -60,8 +60,8 @@ class BoundChanges : public ::testing::Test {
         lp_interface_->SetObjectiveSense(LPObjectiveSense::kMaximization));
 
     objective_coefficients_ = 1.0;
-    lower_bound_            = 0.0;
-    upper_bound_            = 1.0;
+    lower_bound_ = 0.0;
+    upper_bound_ = 1.0;
 
     SparseVector empty_coefficients = {{}, {}};
 

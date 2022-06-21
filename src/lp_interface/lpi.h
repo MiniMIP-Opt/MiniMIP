@@ -32,8 +32,8 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/lp_interface/lp_types.h"
 #include "src/data_structures/strong_sparse_vector.h"
+#include "src/lp_interface/lp_types.h"
 
 namespace minimip {
 
@@ -294,13 +294,13 @@ class LPInterface {
   virtual bool IsStable() const = 0;
 
   // LP solve statuses.
-  virtual bool IsOptimal() const          = 0;
-  virtual bool IsPrimalFeasible() const   = 0;
+  virtual bool IsOptimal() const = 0;
+  virtual bool IsPrimalFeasible() const = 0;
   virtual bool IsPrimalInfeasible() const = 0;
-  virtual bool IsPrimalUnbounded() const  = 0;
-  virtual bool IsDualFeasible() const     = 0;
-  virtual bool IsDualInfeasible() const   = 0;
-  virtual bool IsDualUnbounded() const    = 0;
+  virtual bool IsPrimalUnbounded() const = 0;
+  virtual bool IsDualFeasible() const = 0;
+  virtual bool IsDualInfeasible() const = 0;
+  virtual bool IsDualUnbounded() const = 0;
 
   // Returns true if the LP is proven to have a primal unbounded ray (but not
   // necessary a primal feasible point). This does not mean that the solver

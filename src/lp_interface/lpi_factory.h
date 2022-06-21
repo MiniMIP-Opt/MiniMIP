@@ -23,7 +23,7 @@
 namespace minimip {
 
 enum class LPInterfaceCode {
-  kGlop   = 0,
+  kGlop = 0,
   kSoplex = 1,
 };
 

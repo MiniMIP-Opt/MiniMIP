@@ -273,15 +273,15 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
   VLOG(3) << "calling StrongBranch() on variable " << col << "("
           << iteration_limit << " iterations).";
 
-  bool error         = false;
+  bool error = false;
   int old_iter_limit = spx_->intParam(soplex::SoPlex::ITERLIMIT);
 
   // Get the current bounds of the column.
   const double old_lb = spx_->lowerReal(col);
   const double old_ub = spx_->upperReal(col);
-  result.down_valid   = false;
-  result.up_valid     = false;
-  result.iterations   = 0;
+  result.down_valid = false;
+  result.up_valid = false;
+  result.iterations = 0;
 
   // Set the algorithm type to use the dual simplex.
   static_cast<void>(spx_->setIntParam(soplex::SoPlex::ALGORITHM,
@@ -307,7 +307,7 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
       switch (status) {
         case soplex::SPxSolver::OPTIMAL:
           result.dual_bound_down_branch = spx_->objValueReal();
-          result.down_valid             = true;
+          result.down_valid = true;
           VLOG(3) << " --> Terminate with value "
                   << result.dual_bound_down_branch << ".";
           break;
@@ -321,7 +321,7 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
         case soplex::SPxSolver::ABORT_VALUE:
         case soplex::SPxSolver::INFEASIBLE:
           result.dual_bound_down_branch = objective_limit();
-          result.down_valid             = true;
+          result.down_valid = true;
           break;
         default:
           error = true;
@@ -340,7 +340,7 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
     DCHECK_LE(spx_->lowerReal(col), spx_->upperReal(col));
   } else {
     result.dual_bound_down_branch = objective_limit();
-    result.down_valid             = true;
+    result.down_valid = true;
   }
 
   // Computation for the up branch.
@@ -361,7 +361,7 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
         switch (status) {
           case soplex::SPxSolver::OPTIMAL:
             result.dual_bound_up_branch = spx_->objValueReal();
-            result.up_valid             = true;
+            result.up_valid = true;
             VLOG(3) << " --> Terminate with value " << spx_->objValueReal()
                     << ".";
             break;
@@ -375,7 +375,7 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
           case soplex::SPxSolver::ABORT_VALUE:
           case soplex::SPxSolver::INFEASIBLE:
             result.dual_bound_up_branch = objective_limit();
-            result.up_valid             = true;
+            result.up_valid = true;
             break;
           default:
             error = true;
@@ -394,7 +394,7 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
       DCHECK_LE(spx_->lowerReal(col), spx_->upperReal(col));
     } else {
       result.dual_bound_up_branch = objective_limit();
-      result.up_valid             = true;
+      result.up_valid = true;
     }
   }
   // Reset the old iteration limit.

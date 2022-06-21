@@ -21,15 +21,15 @@
 #include <utility>
 #include <vector>
 
-#include "src/data_structures/strong_sparse_matrix.h"
 #include "src/data_structures/problem.h"
+#include "src/data_structures/strong_sparse_matrix.h"
 
 namespace minimip {
 
 enum class VariableType {
-  kFractional     = 0,
-  kBinary         = 1,
-  kInteger        = 2,
+  kFractional = 0,
+  kBinary = 1,
+  kInteger = 2,
   kImpliedInteger = 3,
 };
 
