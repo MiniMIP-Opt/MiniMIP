@@ -139,7 +139,7 @@ LPGlopInterface::LPGlopInterface()
       from_scratch_(false),
       num_threads_(0),
       timing_(0) {
-  tmp_row_    = std::make_unique<ScatteredRow>();
+  tmp_row_ = std::make_unique<ScatteredRow>();
   tmp_column_ = std::make_unique<ScatteredColumn>();
 }
 
@@ -498,7 +498,7 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
 
   if (!recursive) {
     num_iterations_of_last_solve_ = 0;
-    lp_time_limit_was_reached_    = false;
+    lp_time_limit_was_reached_ = false;
   }
 
   if (from_scratch_) {
@@ -624,7 +624,7 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
       result.down_valid = IsDualBoundValid(solver_.GetProblemStatus());
     } else {
       result.dual_bound_down_branch = 0.0;
-      result.down_valid             = false;
+      result.down_valid = false;
     }
   } else {
     result.down_valid = true;
@@ -645,7 +645,7 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
       result.up_valid = IsDualBoundValid(solver_.GetProblemStatus());
     } else {
       result.dual_bound_up_branch = 0.0;
-      result.down_valid           = false;
+      result.down_valid = false;
     }
   } else {
     result.up_valid = true;

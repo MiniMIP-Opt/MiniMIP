@@ -52,8 +52,8 @@ MipData::MipData(const MiniMipProblem& problem)
       constraint_names_(problem.constraints.size()) {
   DCHECK(FindErrorInMiniMipProblem(problem).empty());
 
-  problem_name_     = problem.name;
-  is_maximization_  = problem.is_maximization;
+  problem_name_ = problem.name;
+  is_maximization_ = problem.is_maximization;
   objective_offset_ = problem.objective_offset;
 
   for (int col_idx = 0; col_idx < problem.variables.size(); ++col_idx) {
@@ -82,7 +82,7 @@ MipData::MipData(const MiniMipProblem& problem)
     SparseRow sparse_constraint;
     const MiniMipConstraint& constraint = problem.constraints[row_idx];
 
-    left_hand_sides_[row_idx]  = constraint.left_hand_side;
+    left_hand_sides_[row_idx] = constraint.left_hand_side;
     right_hand_sides_[row_idx] = constraint.right_hand_side;
     constraint_names_[row_idx] = constraint.name;
 

@@ -67,12 +67,12 @@ class Change : public ::testing::Test {
   static void initProb(int pos, int& num_columns, int& num_rows,
                        int& num_nonzeros, LPObjectiveSense& objective_sense) {
     std::vector<double> objective_coefficients = {1.0, 1.0};
-    std::vector<double> lower_bounds           = {0.0, 0.0};
-    std::vector<double> upper_bounds           = {lp_interface_->Infinity(),
+    std::vector<double> lower_bounds = {0.0, 0.0};
+    std::vector<double> upper_bounds = {lp_interface_->Infinity(),
                                         lp_interface_->Infinity()};
-    std::vector<double> left_hand_sides        = {-lp_interface_->Infinity(),
+    std::vector<double> left_hand_sides = {-lp_interface_->Infinity(),
                                            -lp_interface_->Infinity()};
-    std::vector<double> right_hand_sides       = {1.0, 1.0};
+    std::vector<double> right_hand_sides = {1.0, 1.0};
     std::vector<SparseVector> sparse_rows;
 
     // maximization problems, num_columns is 1, num_rows is 1
@@ -86,11 +86,11 @@ class Change : public ::testing::Test {
         // (D):  min y
         // 1 <= -y (constr)
         // 0 <= y (bound)
-        num_columns     = 1;
-        num_rows        = 1;
-        num_nonzeros    = 1;
+        num_columns = 1;
+        num_rows = 1;
+        num_nonzeros = 1;
         objective_sense = LPObjectiveSense::kMaximization;
-        sparse_rows     = {{{0}, {-1}}};
+        sparse_rows = {{{0}, {-1}}};
         break;
 
       case 1:
@@ -102,34 +102,34 @@ class Change : public ::testing::Test {
         // (D):  min 0
         // 1 <= y (constr)
         // 0 <= y (bound)
-        num_columns         = 1;
-        num_rows            = 1;
-        num_nonzeros        = 1;
-        objective_sense     = LPObjectiveSense::kMaximization;
-        sparse_rows         = {{{0}, {1}}};
+        num_columns = 1;
+        num_rows = 1;
+        num_nonzeros = 1;
+        objective_sense = LPObjectiveSense::kMaximization;
+        sparse_rows = {{{0}, {1}}};
         right_hand_sides[0] = 0.0;
         break;
 
       case 2:
         // minimization problems (duals of the above)
-        num_columns         = 1;
-        num_rows            = 1;
-        num_nonzeros        = 1;
-        objective_sense     = LPObjectiveSense::kMinimization;
+        num_columns = 1;
+        num_rows = 1;
+        num_nonzeros = 1;
+        objective_sense = LPObjectiveSense::kMinimization;
         right_hand_sides[0] = lp_interface_->Infinity();
-        left_hand_sides[0]  = 1;
-        sparse_rows         = {{{0}, {-1}}};
+        left_hand_sides[0] = 1;
+        sparse_rows = {{{0}, {-1}}};
         break;
 
       case 3:
-        num_columns               = 1;
-        num_rows                  = 1;
-        num_nonzeros              = 1;
-        objective_sense           = LPObjectiveSense::kMinimization;
-        right_hand_sides[0]       = lp_interface_->Infinity();
-        left_hand_sides[0]        = 1;
+        num_columns = 1;
+        num_rows = 1;
+        num_nonzeros = 1;
+        objective_sense = LPObjectiveSense::kMinimization;
+        right_hand_sides[0] = lp_interface_->Infinity();
+        left_hand_sides[0] = 1;
         objective_coefficients[0] = 0.0;
-        sparse_rows               = {{{0}, {1}}};
+        sparse_rows = {{{0}, {1}}};
         break;
 
       case 4:
@@ -148,11 +148,11 @@ class Change : public ::testing::Test {
         //
         // 0 <= x (bound)
         // 0 <= y (bound)
-        num_columns     = 2;
-        num_rows        = 2;
-        num_nonzeros    = 2;
+        num_columns = 2;
+        num_rows = 2;
+        num_nonzeros = 2;
         objective_sense = LPObjectiveSense::kMaximization;
-        sparse_rows     = {{{0}, {-1.0}}, {{1}, {-1.0}}};
+        sparse_rows = {{{0}, {-1.0}}, {{1}, {-1.0}}};
         break;
 
       case 5:
@@ -170,11 +170,11 @@ class Change : public ::testing::Test {
         //
         // 0 <= x (bound)
         // 0 <= y (bound)
-        num_columns     = 2;
-        num_rows        = 2;
-        num_nonzeros    = 2;
+        num_columns = 2;
+        num_rows = 2;
+        num_nonzeros = 2;
         objective_sense = LPObjectiveSense::kMaximization;
-        sparse_rows     = {{{0}, {1.0}}, {{1}, {1.0}}};
+        sparse_rows = {{{0}, {1.0}}, {{1}, {1.0}}};
         break;
 
       case 6:
@@ -192,52 +192,52 @@ class Change : public ::testing::Test {
         //
         // 0 <= x (bound)
         // 0 <= y (bound)
-        num_columns         = 2;
-        num_rows            = 2;
-        num_nonzeros        = 2;
-        objective_sense     = LPObjectiveSense::kMaximization;
+        num_columns = 2;
+        num_rows = 2;
+        num_nonzeros = 2;
+        objective_sense = LPObjectiveSense::kMaximization;
         right_hand_sides[0] = -1.0;
         right_hand_sides[1] = -1.0;
-        sparse_rows         = {{{0}, {-1.0}}, {{1}, {1.0}}};
+        sparse_rows = {{{0}, {-1.0}}, {{1}, {1.0}}};
         break;
 
       case 7:
         // minimization problems (duals of the above)
-        num_columns         = 2;
-        num_rows            = 2;
-        num_nonzeros        = 2;
-        objective_sense     = LPObjectiveSense::kMinimization;
+        num_columns = 2;
+        num_rows = 2;
+        num_nonzeros = 2;
+        objective_sense = LPObjectiveSense::kMinimization;
         right_hand_sides[0] = lp_interface_->Infinity();
         right_hand_sides[1] = lp_interface_->Infinity();
-        left_hand_sides[0]  = 1.0;
-        left_hand_sides[1]  = 1.0;
-        sparse_rows         = {{{0}, {-1}}, {{1}, {-1}}};
+        left_hand_sides[0] = 1.0;
+        left_hand_sides[1] = 1.0;
+        sparse_rows = {{{0}, {-1}}, {{1}, {-1}}};
         break;
 
       case 8:
-        num_columns         = 2;
-        num_rows            = 2;
-        num_nonzeros        = 2;
-        objective_sense     = LPObjectiveSense::kMinimization;
+        num_columns = 2;
+        num_rows = 2;
+        num_nonzeros = 2;
+        objective_sense = LPObjectiveSense::kMinimization;
         right_hand_sides[0] = lp_interface_->Infinity();
         right_hand_sides[1] = lp_interface_->Infinity();
-        left_hand_sides[0]  = 1.0;
-        left_hand_sides[1]  = 1.0;
-        sparse_rows         = {{{0}, {1}}, {{1}, {1}}};
+        left_hand_sides[0] = 1.0;
+        left_hand_sides[1] = 1.0;
+        sparse_rows = {{{0}, {1}}, {{1}, {1}}};
         break;
 
       case 9:
-        num_columns               = 2;
-        num_rows                  = 2;
-        num_nonzeros              = 2;
-        objective_sense           = LPObjectiveSense::kMinimization;
-        right_hand_sides[0]       = lp_interface_->Infinity();
-        right_hand_sides[1]       = lp_interface_->Infinity();
-        left_hand_sides[0]        = 1.0;
-        left_hand_sides[1]        = 1.0;
+        num_columns = 2;
+        num_rows = 2;
+        num_nonzeros = 2;
+        objective_sense = LPObjectiveSense::kMinimization;
+        right_hand_sides[0] = lp_interface_->Infinity();
+        right_hand_sides[1] = lp_interface_->Infinity();
+        left_hand_sides[0] = 1.0;
+        left_hand_sides[1] = 1.0;
         objective_coefficients[0] = -1.0;
         objective_coefficients[1] = -1.0;
-        sparse_rows               = {{{0}, {-1}}, {{1}, {1}}};
+        sparse_rows = {{{0}, {-1}}, {{1}, {1}}};
         break;
 
       default:
@@ -465,7 +465,7 @@ class ChangeSides : public Change,
     ASSERT_TRUE(!lp_interface_->IsSolved());
 
     for (int i = 0; i < lastrow; i++) {
-      left_hand_sides[i]  = lp_interface_->GetLeftHandSide(i);
+      left_hand_sides[i] = lp_interface_->GetLeftHandSide(i);
       right_hand_sides[i] = lp_interface_->GetRightHandSide(i);
     }
 
@@ -479,18 +479,18 @@ class ChangeSides : public Change,
 };
 
 TEST_P(ChangeSides, checkChangedSides) {
-  double left_1  = substituteInfinity(std::get<0>(GetParam()));
-  double left_2  = substituteInfinity(std::get<1>(GetParam()));
+  double left_1 = substituteInfinity(std::get<0>(GetParam()));
+  double left_2 = substituteInfinity(std::get<1>(GetParam()));
   double right_1 = substituteInfinity(std::get<2>(GetParam()));
   double right_2 = substituteInfinity(std::get<3>(GetParam()));
-  int prob       = std::get<4>(GetParam());
+  int prob = std::get<4>(GetParam());
 
   int num_rows, num_columns, num_nonzeros;
   std::vector<int> ind = {0, 1};
   LPObjectiveSense objective_sense;
-  std::vector<double> set_left_hand_sides  = {left_1, left_2};
+  std::vector<double> set_left_hand_sides = {left_1, left_2};
   std::vector<double> set_right_hand_sides = {right_1, right_2};
-  bool deathflag                           = false;
+  bool deathflag = false;
 
   ASSERT_NO_FATAL_FAILURE(
       initProb(prob, num_columns, num_rows, num_nonzeros, objective_sense));
@@ -536,7 +536,7 @@ class ChangeObjectiveSense
 
 TEST_P(ChangeObjectiveSense, ChangeObjectiveSense) {
   LPObjectiveSense newsense = std::get<0>(GetParam());
-  int prob                  = std::get<1>(GetParam());
+  int prob = std::get<1>(GetParam());
 
   int num_rows, num_columns, num_nonzeros;
   LPObjectiveSense objective_sense;
@@ -601,7 +601,7 @@ TEST_F(Change, TestRowMethods) {
 
   for (int k = 0; k < 5; k++) {
     // get data before modification
-    int num_rows    = set_num_rows[k];
+    int num_rows = set_num_rows[k];
     num_rows_before = lp_interface_->GetNumberOfRows();
 
     if (num_rows < 0) {

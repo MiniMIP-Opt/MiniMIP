@@ -56,12 +56,12 @@ TEST(MipDataTests, PopulatesProblemName) {
 }
 
 TEST(MipDataTests, PopulatesVariables) {
-  const MiniMipVariable variable = {.name                  = "Bar",
+  const MiniMipVariable variable = {.name = "Bar",
                                     .objective_coefficient = 13.0,
-                                    .lower_bound           = 0.0,
-                                    .upper_bound           = 1.0,
-                                    .is_integer            = true};
-  const MiniMipProblem problem   = {.variables = {variable}};
+                                    .lower_bound = 0.0,
+                                    .upper_bound = 1.0,
+                                    .is_integer = true};
+  const MiniMipProblem problem = {.variables = {variable}};
 
   const MipData mip_data(problem);
   EXPECT_EQ(mip_data.lower_bounds().size(), 1);
@@ -77,19 +77,19 @@ TEST(MipDataTests, PopulatesVariables) {
 }
 
 TEST(MipDataTests, PopulatesConstraints) {
-  const MiniMipVariable variable     = {.name                  = "Bar",
+  const MiniMipVariable variable = {.name = "Bar",
                                     .objective_coefficient = 13.0,
-                                    .lower_bound           = 0.0,
-                                    .upper_bound           = 1.0,
-                                    .is_integer            = true};
-  const MiniMipConstraint constraint = {.name            = "Baz",
-                                        .var_indices     = {0},
-                                        .coefficients    = {1},
-                                        .left_hand_side  = -1.0,
+                                    .lower_bound = 0.0,
+                                    .upper_bound = 1.0,
+                                    .is_integer = true};
+  const MiniMipConstraint constraint = {.name = "Baz",
+                                        .var_indices = {0},
+                                        .coefficients = {1},
+                                        .left_hand_side = -1.0,
                                         .right_hand_side = 0.5};
-  const MiniMipProblem problem       = {.variables   = {variable},
+  const MiniMipProblem problem = {.variables = {variable},
                                   .constraints = {constraint}};
-  const MipData mip_data             = MipData(problem);
+  const MipData mip_data = MipData(problem);
 
   EXPECT_THAT(mip_data.left_hand_sides(), ElementsAreArray({-1.0}));
   EXPECT_THAT(mip_data.right_hand_sides(), ElementsAreArray({0.5}));
@@ -101,8 +101,8 @@ TEST(MipDataTests, PopulatesConstraints) {
 
 TEST(MipDataTests, PopulatesHints) {
   const MiniMipSolutionHint hint = {.var_indices = {0}, .values = {0.5}};
-  const MiniMipProblem problem   = {.hints = {hint}};
-  const MipData mip_data         = MipData(problem);
+  const MiniMipProblem problem = {.hints = {hint}};
+  const MipData mip_data = MipData(problem);
 
   EXPECT_THAT(mip_data.hints()[0].values, ElementsAreArray({0.5}));
   EXPECT_THAT(mip_data.hints()[0].var_indices, ElementsAreArray({0.0}));
@@ -110,14 +110,14 @@ TEST(MipDataTests, PopulatesHints) {
 
 TEST(MipDataTests, PopulatesMipDataDirection) {
   const MiniMipProblem problem = {.is_maximization = true};
-  const MipData mip_data       = MipData(problem);
+  const MipData mip_data = MipData(problem);
 
   EXPECT_EQ(mip_data.is_maximization(), true);
 }
 
 TEST(MipDataTests, PopulatesMipDataOffset) {
   const MiniMipProblem problem = {.objective_offset = 12.0};
-  const MipData mip_data       = MipData(problem);
+  const MipData mip_data = MipData(problem);
 
   EXPECT_EQ(mip_data.objective_offset(), 12.0);
 }
@@ -132,39 +132,39 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
   //                 x1,x2 Integer, x3 Real
 
   const std::vector<MiniMipVariable> variables = {
-      {.name                  = "x1",
+      {.name = "x1",
        .objective_coefficient = 1.0,
-       .lower_bound           = 0,
-       .upper_bound           = std::numeric_limits<double>::infinity(),
-       .is_integer            = true},
-      {.name                  = "x2",
+       .lower_bound = 0,
+       .upper_bound = std::numeric_limits<double>::infinity(),
+       .is_integer = true},
+      {.name = "x2",
        .objective_coefficient = 2.0,
-       .lower_bound           = -std::numeric_limits<double>::infinity(),
-       .upper_bound           = std::numeric_limits<double>::infinity(),
-       .is_integer            = true},
-      {.name                  = "x3",
+       .lower_bound = -std::numeric_limits<double>::infinity(),
+       .upper_bound = std::numeric_limits<double>::infinity(),
+       .is_integer = true},
+      {.name = "x3",
        .objective_coefficient = 3.0,
-       .lower_bound           = -std::numeric_limits<double>::infinity(),
-       .upper_bound           = std::numeric_limits<double>::infinity(),
-       .is_integer            = false}};
+       .lower_bound = -std::numeric_limits<double>::infinity(),
+       .upper_bound = std::numeric_limits<double>::infinity(),
+       .is_integer = false}};
 
   const std::vector<MiniMipConstraint> constraints = {
-      {.name            = "first",
-       .var_indices     = {0, 1},
-       .coefficients    = {3.0, 5.0},
-       .left_hand_side  = -std::numeric_limits<double>::infinity(),
+      {.name = "first",
+       .var_indices = {0, 1},
+       .coefficients = {3.0, 5.0},
+       .left_hand_side = -std::numeric_limits<double>::infinity(),
        .right_hand_side = -1},
-      {.name            = "second",
-       .var_indices     = {0, 1, 2},
-       .coefficients    = {5.0, 2.0, 7.0},
-       .left_hand_side  = -2,
+      {.name = "second",
+       .var_indices = {0, 1, 2},
+       .coefficients = {5.0, 2.0, 7.0},
+       .left_hand_side = -2,
        .right_hand_side = 3}};
 
-  const MiniMipProblem problem = {.name             = "Test",
-                                  .variables        = variables,
-                                  .constraints      = constraints,
-                                  .hints            = {},
-                                  .is_maximization  = false,
+  const MiniMipProblem problem = {.name = "Test",
+                                  .variables = variables,
+                                  .constraints = constraints,
+                                  .hints = {},
+                                  .is_maximization = false,
                                   .objective_offset = 1.0};
 
   const MipData mip_data = MipData(problem);
@@ -236,44 +236,44 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   //                 x1,x2 Integer, x3 Real
 
   std::vector<MiniMipVariable> variables = {
-      {.name                  = "x1",
+      {.name = "x1",
        .objective_coefficient = 1.0,
-       .lower_bound           = -std::numeric_limits<double>::infinity(),
-       .upper_bound           = std::numeric_limits<double>::infinity(),
-       .is_integer            = true},
-      {.name                  = "x2",
+       .lower_bound = -std::numeric_limits<double>::infinity(),
+       .upper_bound = std::numeric_limits<double>::infinity(),
+       .is_integer = true},
+      {.name = "x2",
        .objective_coefficient = 2.0,
-       .lower_bound           = -std::numeric_limits<double>::infinity(),
-       .upper_bound           = std::numeric_limits<double>::infinity(),
-       .is_integer            = true},
-      {.name                  = "x3",
+       .lower_bound = -std::numeric_limits<double>::infinity(),
+       .upper_bound = std::numeric_limits<double>::infinity(),
+       .is_integer = true},
+      {.name = "x3",
        .objective_coefficient = 3.0,
-       .lower_bound           = -std::numeric_limits<double>::infinity(),
-       .upper_bound           = std::numeric_limits<double>::infinity(),
-       .is_integer            = false}};
+       .lower_bound = -std::numeric_limits<double>::infinity(),
+       .upper_bound = std::numeric_limits<double>::infinity(),
+       .is_integer = false}};
 
   std::vector<MiniMipConstraint> constraints = {
-      {.name            = "first",
-       .var_indices     = {0, 2},
-       .coefficients    = {1.0, 1.0},
-       .left_hand_side  = 0,
+      {.name = "first",
+       .var_indices = {0, 2},
+       .coefficients = {1.0, 1.0},
+       .left_hand_side = 0,
        .right_hand_side = std::numeric_limits<double>::infinity()},
-      {.name            = "second",
-       .var_indices     = {0, 1},
-       .coefficients    = {3.0, 5.0},
-       .left_hand_side  = -std::numeric_limits<double>::infinity(),
+      {.name = "second",
+       .var_indices = {0, 1},
+       .coefficients = {3.0, 5.0},
+       .left_hand_side = -std::numeric_limits<double>::infinity(),
        .right_hand_side = -1},
-      {.name            = "third",
-       .var_indices     = {0, 1, 2},
-       .coefficients    = {5.0, 2.0, 7.0},
-       .left_hand_side  = -2,
+      {.name = "third",
+       .var_indices = {0, 1, 2},
+       .coefficients = {5.0, 2.0, 7.0},
+       .left_hand_side = -2,
        .right_hand_side = 3}};
 
-  MiniMipProblem problem = {.name             = "Test",
-                            .variables        = variables,
-                            .constraints      = constraints,
-                            .hints            = {},
-                            .is_maximization  = false,
+  MiniMipProblem problem = {.name = "Test",
+                            .variables = variables,
+                            .constraints = constraints,
+                            .hints = {},
+                            .is_maximization = false,
                             .objective_offset = 1.0};
 
   MipData mip_data = MipData(problem);

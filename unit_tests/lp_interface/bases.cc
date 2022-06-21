@@ -155,7 +155,7 @@ TEST_F(SimpleTest, test3) {
   absl_tmp = lp_interface_->GetColumnBasisStatus();
   ASSERT_OK(absl_tmp.status());
   column_basis_status = *absl_tmp;
-  absl_tmp            = lp_interface_->GetRowBasisStatus();
+  absl_tmp = lp_interface_->GetRowBasisStatus();
   ASSERT_OK(absl_tmp.status());
   row_basis_status = *absl_tmp;
 
@@ -230,14 +230,14 @@ TEST(Complex, testcomplex1) {
   ASSERT_EQ(lp_interface_->GetNumberOfColumns(), 3);
   SparseVector row_coefficients = SparseVector({0, 2}, {-1.0, -1.0});
   ASSERT_OK(lp_interface_->AddRow(row_coefficients, -8.0, -1.0, "r1"));
-  std::vector<std::string> row_names          = {"r2", "r3"};
+  std::vector<std::string> row_names = {"r2", "r3"};
   std::vector<SparseVector> rows_coefficients = {
       SparseVector({0, 1}, {-1.0, -1.0}), SparseVector({0, 1}, {1.0, 2.0})};
   ASSERT_OK(lp_interface_->AddRows(rows_coefficients, {-7.0, -inf},
                                    {-1.0, 12.0}, row_names));
 
   // check size
-  int num_rows    = lp_interface_->GetNumberOfRows();
+  int num_rows = lp_interface_->GetNumberOfRows();
   int num_columns = lp_interface_->GetNumberOfColumns();
   ASSERT_EQ(num_rows, 3);
   ASSERT_EQ(num_columns, 3);
@@ -256,7 +256,7 @@ TEST(Complex, testcomplex1) {
 
   // expected values for the first column of BInv with corresponding variables
   std::vector<double> expected_b_invert_variables = {-2, 1, 2};
-  std::vector<double> expected_b_invert_values    = {0.0, 0.0, -1.0};
+  std::vector<double> expected_b_invert_values = {0.0, 0.0, -1.0};
 
   // expected values for the first column of BAInv with corresponding variables
   std::vector<double> expected_b_invert_times_a_values = {-0.5, 0.5, 1.0};
@@ -441,8 +441,8 @@ class MoreVarsThanRows : public ::testing::Test {
 
     // initialize program
     std::vector<double> objective_coefficients = {1.0, 1.0, 1.0, 1.0};
-    std::vector<double> lower_bounds           = {0.0, 0.0, 0.0, 0.0};
-    std::vector<double> upper_bounds           = {
+    std::vector<double> lower_bounds = {0.0, 0.0, 0.0, 0.0};
+    std::vector<double> upper_bounds = {
         lp_interface_->Infinity(), lp_interface_->Infinity(),
         lp_interface_->Infinity(), lp_interface_->Infinity()};
 
@@ -460,7 +460,7 @@ class MoreVarsThanRows : public ::testing::Test {
     ASSERT_OK(lp_interface_->AddRow(minimip::SparseVector({0, 2, 3}, {1, 1, 1}),
                                     1, lp_interface_->Infinity(), "r1"));
 
-    std::vector<std::string> row_names          = {"r2", "r3"};
+    std::vector<std::string> row_names = {"r2", "r3"};
     std::vector<SparseVector> rows_coefficients = {
         {{0, 1, 2, 3}, {1.0, 1.0, -1.0, -1.0}},
         {{0, 1, 3}, {-1.0, -2.0, -3.0}}};
@@ -472,7 +472,7 @@ class MoreVarsThanRows : public ::testing::Test {
     int num_rows;
 
     // check size
-    num_rows    = lp_interface_->GetNumberOfRows();
+    num_rows = lp_interface_->GetNumberOfRows();
     num_columns = lp_interface_->GetNumberOfColumns();
     ASSERT_EQ(num_rows, 3);
     ASSERT_EQ(num_columns, 4);

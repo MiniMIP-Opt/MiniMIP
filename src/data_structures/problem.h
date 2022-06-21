@@ -139,18 +139,18 @@ enum class MiniMipSolveStatus {
 };
 
 enum class MiniMipStoppingReason {
-  kError                         = 0,
-  kWallclockTimeLimitReached     = 1,
+  kError = 0,
+  kWallclockTimeLimitReached = 1,
   kDeterministicTimeLimitReached = 2,
-  kSolutionLimitReached          = 3,
-  kNodeLimitReached              = 4,
-  kSimplexIterationLimitReached  = 5,
-  kPrimalBoundLimitReached       = 6,
-  kDualBoundLimitReached         = 7,
-  kAbsoluteGapLimitReached       = 8,
-  kRelativeGapLimitReached       = 9,
-  kMemoryLimitReached            = 10,
-  kUserCallbackLimitReached      = 11,
+  kSolutionLimitReached = 3,
+  kNodeLimitReached = 4,
+  kSimplexIterationLimitReached = 5,
+  kPrimalBoundLimitReached = 6,
+  kDualBoundLimitReached = 7,
+  kAbsoluteGapLimitReached = 8,
+  kRelativeGapLimitReached = 9,
+  kMemoryLimitReached = 10,
+  kUserCallbackLimitReached = 11,
 };
 
 // ==========================================================================

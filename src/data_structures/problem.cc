@@ -22,7 +22,7 @@ MiniMipResult MiniMipSolve(const MiniMipProblem& problem,
   MiniMipResult result;
   result.error_message = FindErrorInMiniMipProblem(problem);
   if (!result.error_message.empty()) {
-    result.solve_status    = MiniMipSolveStatus::kProblemInvalid;
+    result.solve_status = MiniMipSolveStatus::kProblemInvalid;
     result.stopping_reason = MiniMipStoppingReason::kError;
     return result;
   }
