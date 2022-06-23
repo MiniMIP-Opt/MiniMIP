@@ -15,25 +15,6 @@ load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_depende
 
 rules_foreign_cc_dependencies()
 
-_ALL_CONTENT = """\
-filegroup(
-    name = "all_srcs",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
-"""
-
-# soplex source code repository
-http_archive(
-    name = "soplex",
-    build_file_content = _ALL_CONTENT,
-    strip_prefix = "soplex-master",
-    urls = [
-        "https://github.com/scipopt/soplex/archive/refs/heads/master.zip",
-    ],
-    # sha256 = "0b8e7465dc5e98c757cc3650a20a7843ee4c3edf50aaf60bb33fd879690d2c73",
-)
-
 # Extra Bazel utilities that may be handy.
 http_archive(
     name = "bazel_skylib",
@@ -131,11 +112,31 @@ http_archive(
     url = "http://www.tcs.hut.fi/Software/bliss/bliss-0.73.zip",
 )
 
-# SCIP -- MIP solver, available via OR-Tools MPSolver. Also includes SoPlex. (It does not)
+# SCIP -- MIP solver, available via OR-Tools MPSolver.
 http_archive(
     name = "scip",
     build_file = "@com_google_ortools//bazel:scip.BUILD",
     patches = ["@com_google_ortools//bazel:scip.patch"],
     sha256 = "033bf240298d3a1c92e8ddb7b452190e0af15df2dad7d24d0572f10ae8eec5aa",
     url = "https://github.com/google/or-tools/releases/download/v7.7/scip-7.0.1.tgz",
+)
+
+# SoPlex -- available from source code repository and compiled via `cmake` rule.
+# TODO(lpawel): See if we can get SoPlex from OR-Tools (since it contains SCIP).
+_ALL_CONTENT = """\
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+"""
+
+http_archive(
+    name = "soplex",
+    build_file_content = _ALL_CONTENT,
+    strip_prefix = "soplex-master",
+    urls = [
+        "https://github.com/scipopt/soplex/archive/refs/heads/master.zip",
+    ],
+    # sha256 = "0b8e7465dc5e98c757cc3650a20a7843ee4c3edf50aaf60bb33fd879690d2c73",
 )
