@@ -33,4 +33,9 @@ std::unique_ptr<LPInterface> CreateLPInterface(LPInterfaceCode interface_code) {
   }
 }
 
+std::ostream& operator<<(std::ostream& os, const LPInterfaceCode& code) {
+  os << static_cast<int>(code);
+  return os;
+}
+
 }  // namespace minimip

@@ -4,22 +4,20 @@ load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 # All other packages in MiniMIP may use any of the testing utils.
 package(default_visibility = ["//visibility:public"])
 
-# TODO(cgraczy,lpawel): Fix symbol lookup error for soplex infinity
-
 # Tests the implementation of all LP interfaces.
-#cc_test(
-#    name = "lpi_test",
-#    size = "small",
-#    srcs = ["lpi_test.cc"],
-#    deps = [
-#        "//unit_tests:utils",
-#        "//src/lp_interface:lp_types",
-#        "//src/lp_interface:lpi_factory",
-#        "//src/data_structures:strong_sparse_vector",
-#        "@com_google_absl//absl/status",
-#        "@com_google_googletest//:gtest_main",
-#    ],
-#)
+cc_test(
+    name = "lpi_test",
+    size = "small",
+    srcs = ["lpi_test.cc"],
+    linkstatic = True,
+    deps = [
+        "//src/lp_interface:lpi",
+        "//src/lp_interface:lpi_factory",
+        "//src/data_structures:strong_sparse_vector",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
 
 # TODO(cgraczy, lpawel): Refactor the tests below.
 

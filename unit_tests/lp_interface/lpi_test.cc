@@ -19,10 +19,8 @@
 #include "absl/status/status.h"
 #include "src/data_structures/strong_sparse_vector.h"
 #include "src/lp_interface/lpi_factory.h"
-#include "unit_tests/utils.h"
 
 namespace minimip {
-
 namespace {
 
 class LPInterfaceImplementationTest
@@ -34,10 +32,11 @@ class LPInterfaceImplementationTest
     // max 4 x        (objective)
     // 1 <= x <= 2  (linear constraint)
     // 0 <= x <= 3  (bounds)
-    ASSERT_OK(lpi_->SetObjectiveSense(/*is_maximization=*/true));
-    ASSERT_OK(lpi_->AddColumn({}, 0.0, 3.0, 4.0, "x"));
+    // ASSERT_THAT(expression, IsOk())
+    ASSERT_TRUE(lpi_->SetObjectiveSense(/*is_maximization=*/true).ok());
+    ASSERT_TRUE(lpi_->AddColumn({}, 0.0, 3.0, 4.0, "x").ok());
     SparseRow row({{0, 1.0}});
-    ASSERT_OK(lpi_->AddRow(row, 1.0, 2.0, "r1"));
+    ASSERT_TRUE(lpi_->AddRow(row, 1.0, 2.0, "r1").ok());
   }
 
   std::unique_ptr<LPInterface> lpi_;
@@ -68,5 +67,4 @@ TEST_P(LPInterfaceImplementationTest, CreateSimpleLp) {
 // a descriptive name).
 
 }  // namespace
-
 }  // namespace minimip
