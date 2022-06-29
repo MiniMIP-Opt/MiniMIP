@@ -32,6 +32,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/data_structures/mip_data.h"
 #include "src/data_structures/strong_sparse_vector.h"
 #include "src/lp_interface/lp_types.h"
 
@@ -65,17 +66,7 @@ class LPInterface {
 
   // Sets the entire problem: variables, constraints, objective, bounds, sides,
   // and names.
-  // TODO(lpawel): Replace with `PopulateFromMipData(const MipData& mip)` once
-  // MipData is ready.
-  virtual absl::Status LoadSparseColumnLP(
-      bool is_maximization, const absl::StrongVector<ColIndex, SparseCol>& cols,
-      const absl::StrongVector<ColIndex, double>& lower_bounds,
-      const absl::StrongVector<ColIndex, double>& upper_bounds,
-      const absl::StrongVector<ColIndex, double>& objective_coefficients,
-      const absl::StrongVector<ColIndex, std::string>& col_names,
-      const absl::StrongVector<RowIndex, double>& left_hand_sides,
-      const absl::StrongVector<RowIndex, double>& right_hand_sides,
-      const absl::StrongVector<RowIndex, std::string>& row_names) = 0;
+  virtual absl::Status PopulateFromMipData(const MipData& mip_data) = 0;
 
   // Adds a new column (aka "variable") to the LP problem stored in the
   // underlying LP solver. The newly created variable gets the next available
@@ -97,12 +88,11 @@ class LPInterface {
 
   // Like `AddColumn()`, but adds multiple columns at once. This is useful if
   // the underlying LP solver supports batched operations.
-  virtual absl::Status AddColumns(
-      const absl::StrongVector<ColIndex, SparseCol>& cols,
-      const absl::StrongVector<ColIndex, double>& lower_bounds,
-      const absl::StrongVector<ColIndex, double>& upper_bounds,
-      const absl::StrongVector<ColIndex, double>& objective_coefficients,
-      const absl::StrongVector<ColIndex, std::string>& names) = 0;
+  virtual absl::Status AddColumns(const StrongSparseMatrix& matrix,
+                                  const std::vector<double>& lower_bounds,
+                                  const std::vector<double>& upper_bounds,
+                                  const SparseRow& objective_coefficients,
+                                  const std::vector<std::string>& names) = 0;
 
   // Deletes all columns from `first_col` to `last_col` inclusive on both ends.
   // The column indices larger than `last_col` are decremented by `last_col -

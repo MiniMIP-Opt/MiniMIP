@@ -44,26 +44,20 @@ class LPGlopInterface : public LPInterface {
   // ==========================================================================
   // LP model setters.
   // ==========================================================================
-  absl::Status LoadSparseColumnLP(
-      bool is_maximization, const absl::StrongVector<ColIndex, SparseCol>& cols,
-      const absl::StrongVector<ColIndex, double>& lower_bounds,
-      const absl::StrongVector<ColIndex, double>& upper_bounds,
-      const absl::StrongVector<ColIndex, double>& objective_coefficients,
-      const absl::StrongVector<ColIndex, std::string>& col_names,
-      const absl::StrongVector<RowIndex, double>& left_hand_sides,
-      const absl::StrongVector<RowIndex, double>& right_hand_sides,
-      const absl::StrongVector<RowIndex, std::string>& row_names) final;
+
+  // Sets the entire problem: variables, constraints, objective, bounds, sides,
+  // and names.
+  absl::Status PopulateFromMipData(const MipData& mip_data) final;
 
   absl::Status AddColumn(const SparseCol& col, double lower_bound,
                          double upper_bound, double objective_coefficient,
                          const std::string& name) final;
 
-  absl::Status AddColumns(
-      const absl::StrongVector<ColIndex, SparseCol>& cols,
-      const absl::StrongVector<ColIndex, double>& lower_bounds,
-      const absl::StrongVector<ColIndex, double>& upper_bounds,
-      const absl::StrongVector<ColIndex, double>& objective_coefficients,
-      const absl::StrongVector<ColIndex, std::string>& names) final;
+  absl::Status AddColumns(const StrongSparseMatrix& matrix,
+                          const std::vector<double>& lower_bounds,
+                          const std::vector<double>& upper_bounds,
+                          const SparseRow& objective_coefficients,
+                          const std::vector<std::string>& names) final;
 
   absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) final;
 

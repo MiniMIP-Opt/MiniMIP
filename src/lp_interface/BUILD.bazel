@@ -21,6 +21,7 @@ cc_library(
     hdrs = ["lpi.h"],
     deps = [
         ":lp_types",
+        "//src/data_structures:mip_data",
         "//src/data_structures:strong_sparse_vector",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
@@ -28,7 +29,7 @@ cc_library(
         "@com_google_ortools//ortools/base:strong_vector",
         "@com_google_ortools//ortools/util:strong_integers",
     ],
- )
+)
 
 cc_library(
     name = "lpi_glop",
@@ -37,6 +38,8 @@ cc_library(
     deps = [
         ":lpi",
         "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/glop:lp_solver",
+        "@com_google_ortools//ortools/glop:revised_simplex",
         "@com_google_ortools//ortools/lp_data:lp_data_utils",
         "@com_google_ortools//ortools/lp_data:lp_print_utils",
         "@com_google_ortools//ortools/lp_data:proto_utils",
@@ -44,8 +47,6 @@ cc_library(
         "@com_google_ortools//ortools/util:file_util",
         "@com_google_ortools//ortools/util:stats",
         "@com_google_ortools//ortools/util:time_limit",
-        "@com_google_ortools//ortools/glop:revised_simplex",
-        "@com_google_ortools//ortools/glop:lp_solver",
     ],
 )
 
