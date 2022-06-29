@@ -416,37 +416,27 @@ absl::Status LPSoplexInterface::StrongBranch(int col, double primal_sol,
 // ==========================================================================
 // LP model setters.
 // ==========================================================================
-// TODO(cgraczy): Replace with `PopulateFromMipData(const MipData& mip)` once
-// MipData is ready.
-absl::Status LPSoplexInterface::LoadSparseColumnLP(
-    bool is_maximization, const absl::StrongVector<ColIndex, SparseCol>& cols,
-    const absl::StrongVector<ColIndex, double>& lower_bounds,
-    const absl::StrongVector<ColIndex, double>& upper_bounds,
-    const absl::StrongVector<ColIndex, double>& objective_coefficients,
-    const absl::StrongVector<ColIndex, std::string>& col_names,
-    const absl::StrongVector<RowIndex, double>& left_hand_sides,
-    const absl::StrongVector<RowIndex, double>& right_hand_sides,
-    const absl::StrongVector<RowIndex, std::string>& row_names) {
+
+absl::Status LPSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
   VLOG(2) << "calling LoadColumnLP().";
 
-  DCHECK_EQ(row_names.size(), left_hand_sides.size());
-  DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
-  DCHECK_EQ(col_names.size(), lower_bounds.size());
-  DCHECK_EQ(lower_bounds.size(), upper_bounds.size());
-  DCHECK_EQ(upper_bounds.size(), objective_coefficients.size());
+  DCHECK_EQ(mip_data.constraint_names().size(),
+            mip_data.left_hand_sides().size());
+  DCHECK_EQ(mip_data.left_hand_sides().size(),
+            mip_data.right_hand_sides().size());
+  DCHECK_EQ(mip_data.variable_names().size(), mip_data.lower_bounds().size());
+  DCHECK_EQ(mip_data.lower_bounds().size(), mip_data.upper_bounds().size());
+  DCHECK_EQ(mip_data.upper_bounds().size(),
+            mip_data.objective().entries().size());
 
-  for (int i = 0; i < cols.size(); i++) {
-    for (int j = 0; j < cols[i].values().size(); j++) {
-      DCHECK_NE(cols[i].values()[j], 0.0);
-    }
-  }
+  DCHECK(mip_data.matrix().AllColsAreClean());
 
   InvalidateSolution();
 
   CHECK(PreStrongBranchingBasisFreed());
 
   try {
-    int num_rows = left_hand_sides.size();
+    int num_rows = mip_data.matrix().num_rows().value();
     soplex::LPRowSet rowset(num_rows);
     soplex::DSVector empty_vector(0);
 
@@ -454,17 +444,19 @@ absl::Status LPSoplexInterface::LoadSparseColumnLP(
 
     static_cast<void>(spx_->setIntParam(
         soplex::SoPlex::OBJSENSE,
-        (is_maximization == 0 ? soplex::SoPlex::OBJSENSE_MINIMIZE
-                              : soplex::SoPlex::OBJSENSE_MAXIMIZE)));
+        (mip_data.is_maximization() == 0 ? soplex::SoPlex::OBJSENSE_MINIMIZE
+                                         : soplex::SoPlex::OBJSENSE_MAXIMIZE)));
 
     // Create empty rows with the given sides.
     for (int i = 0; i < num_rows; ++i)
-      rowset.add(left_hand_sides[i], empty_vector, right_hand_sides[i]);
+      rowset.add(mip_data.left_hand_sides()[i], empty_vector,
+                 mip_data.right_hand_sides()[i]);
     spx_->addRowsReal(rowset);
 
     // Create the column vectors with the given coefficients and bounds.
-    RETURN_IF_ERROR(AddColumns(cols, lower_bounds, upper_bounds,
-                               objective_coefficients, col_names));
+    RETURN_IF_ERROR(AddColumns(mip_data.matrix(), mip_data.lower_bounds(),
+                               mip_data.upper_bounds(), mip_data.objective(),
+                               mip_data.variable_names()));
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return {absl::StatusCode::kInternal, "Error"};
@@ -508,11 +500,10 @@ absl::Status LPSoplexInterface::AddColumn(const SparseCol& col_data,
 }
 
 absl::Status LPSoplexInterface::AddColumns(
-    const absl::StrongVector<ColIndex, SparseCol>& cols,
-    const absl::StrongVector<ColIndex, double>& lower_bounds,
-    const absl::StrongVector<ColIndex, double>& upper_bounds,
-    const absl::StrongVector<ColIndex, double>& objective_coefficients,
-    const absl::StrongVector<ColIndex, std::string>& names) {
+    const StrongSparseMatrix& matrix, const std::vector<double>& lower_bounds,
+    const std::vector<double>& upper_bounds,
+    const SparseRow& objective_coefficients,
+    const std::vector<std::string>& names) {
   VLOG(2) << "calling AddColumns().";
 
   InvalidateSolution();
@@ -520,32 +511,32 @@ absl::Status LPSoplexInterface::AddColumns(
   CHECK(PreStrongBranchingBasisFreed());
 
   if (DEBUG_MODE) {
-    if (!cols.empty()) {
+    if (!(matrix.num_cols() == 0) && matrix.AllColsAreClean()) {
       // Perform a check to ensure that no new rows have been added.
       int num_rows = spx_->numRowsReal();
-      for (int i = 0; i < cols.size(); i++) {
-        for (int j = 0; j < cols[i].entries().size(); ++j) {
-          DCHECK_LE(0, cols[i].indices()[j]);
-          DCHECK_LT(cols[i].indices()[j], num_rows);
-          DCHECK_NE(cols[i].values()[j], 0.0);
+      for (int i = 0; i < matrix.num_cols(); i++) {
+        for (int j = 0; j < matrix.col(i).entries().size(); ++j) {
+          DCHECK_LE(0, matrix.col(i).indices()[j]);
+          DCHECK_LT(matrix.col(i).indices()[j], num_rows);
+          DCHECK_NE(matrix.col(i).values()[j], 0.0);
         }
       }
     }
   }
 
   try {
-    soplex::LPColSet columns(cols.size());
-    soplex::DSVector col_Vector(cols.size());
+    soplex::LPColSet columns(matrix.num_cols().value());
+    soplex::DSVector col_Vector(matrix.num_cols().value());
 
     // Create column vectors with coefficients and bounds.
-    for (int i = 0; i < cols.size(); ++i) {
+    for (int i = 0; i < matrix.num_cols(); ++i) {
       col_Vector.clear();
-      if (!cols[i].entries().empty()) {
-        for (SparseEntry entry : cols[i].entries()) {
+      if (!matrix.col(i).entries().empty()) {
+        for (SparseEntry entry : matrix.col(i).entries()) {
           col_Vector.add(entry.index.value(), entry.value);
         }
       }
-      columns.add(objective_coefficients[i], lower_bounds[i], col_Vector,
+      columns.add(objective_coefficients.value(i), lower_bounds[i], col_Vector,
                   upper_bounds[i]);
     }
     spx_->addColsReal(columns);
