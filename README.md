@@ -1,6 +1,10 @@
-# MiniMIP project
+# MiniMIP
 
-A modular, minimalistic, robust MILP solver.
+MiniMIP is an open source, machine learning oriented Mixed-Integer Programming (MIP) solver.
+We provide a range of interfaces for all aspects of solving MIPs (e.g. heuristics, cut generators, LP solvers), 
+supplying users with a constant view of the internal state and allowing them to propose modifications that are integrated into the global state internally.
+
+This project is still under heavy development and is not ready for practical application.
 
 # Build system
 
