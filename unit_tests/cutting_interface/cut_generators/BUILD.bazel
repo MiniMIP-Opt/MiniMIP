@@ -1,0 +1,25 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+#TODO: Write plugin specific unit tests to enforce the intended functionality of the implementation
+
+cc_test(
+    name = "gomory_mixed_integer_test",
+    size = "small",
+    srcs = ["gomory_mixed_integer_test.cc"],
+    deps = [
+        "//unit_tests/cutting_interface:cut_generator_test",
+    ],
+)
+
+cc_test(
+    name = "zerohalf_test",
+    size = "small",
+    srcs = ["zerohalf_test.cc"],
+    deps = [
+        "//unit_tests/cutting_interface:cut_generator_test",
+    ],
+)

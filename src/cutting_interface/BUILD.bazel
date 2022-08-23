@@ -1,0 +1,32 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "cut_generator",
+    hdrs = ["cut_generator.h"],
+    deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cc_library(
+    name = "cut_runner",
+    hdrs = ["cut_runner.h"],
+    deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cc_library(
+    name = "cut_selector",
+    hdrs = ["cut_selector.h"],
+    deps = [
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)

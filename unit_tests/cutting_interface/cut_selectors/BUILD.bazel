@@ -1,0 +1,25 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+#TODO: Write plugin specific unit tests to enforce the intended functionality of the implementation
+
+cc_test(
+    name = "dynamic_orthogonality_test",
+    size = "small",
+    srcs = ["dynamic_orthogonality_test.cc"],
+    deps = [
+        "//unit_tests/cutting_interface:cut_selector_test",
+    ],
+)
+
+cc_test(
+    name = "projection_efficacy_test",
+    size = "small",
+    srcs = ["projection_efficacy_test.cc"],
+    deps = [
+        "//unit_tests/cutting_interface:cut_selector_test",
+    ],
+)

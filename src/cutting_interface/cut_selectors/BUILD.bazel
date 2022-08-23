@@ -1,0 +1,23 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "dynamic_orthogonality",
+    srcs = ["dynamic_orthogonality.cc"],
+    hdrs = ["dynamic_orthogonality.h"],
+    deps = [
+        "//src/cutting_interface:cut_selector",
+    ],
+)
+
+cc_library(
+    name = "projection_efficacy",
+    srcs = ["projection_efficacy.cc"],
+    hdrs = ["projection_efficacy.h"],
+    deps = [
+        "//src/cutting_interface:cut_selector",
+    ],
+)

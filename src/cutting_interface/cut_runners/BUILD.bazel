@@ -1,0 +1,14 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+#cc_library(
+#    name = "lib_name",
+#    srcs = ["lib_name.cc"],
+#    hdrs = ["lib_name.h"],
+#    deps = [
+#        "//src/cutting_interface:cut_runner",
+#    ],
+#)

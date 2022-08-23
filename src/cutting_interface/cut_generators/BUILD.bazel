@@ -1,0 +1,23 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "gomory_mixed_integer",
+    srcs = ["gomory_mixed_integer.cc"],
+    hdrs = ["gomory_mixed_integer.h"],
+    deps = [
+        "//src/cutting_interface:cut_generator",
+    ],
+)
+
+cc_library(
+    name = "zerohalf",
+    srcs = ["zerohalf.cc"],
+    hdrs = ["zerohalf.h"],
+    deps = [
+        "//src/cutting_interface:cut_generator",
+    ],
+)
