@@ -29,7 +29,7 @@ MipData::MipData()
       upper_bounds_({}),
       left_hand_sides_({}),
       right_hand_sides_({}),
-      constraint_matrix_(0, 0),
+      constraint_matrix_(minimip::ColIndex(0), minimip::RowIndex(0)),
       variable_types_({}),
       variable_names_({}),
       constraint_names_({}) {}
@@ -70,7 +70,7 @@ MipData::MipData(const MiniMipProblem& problem)
     variable_names_[col_idx] = variable.name;
 
     if (variable.objective_coefficient != 0) {
-      objective_.AddEntry(col_idx, variable.objective_coefficient);
+      objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
     }
   }
 
