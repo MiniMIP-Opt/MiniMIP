@@ -162,10 +162,10 @@ class StrongSparseVectorOfDoubles {
     return indices;
   }
 
-  std::vector<SparseIndex> values() const {
+  std::vector<double> values() const {
     DCHECK(!MayNeedCleaning())
         << "The vector is not clean! Call `CleanUpIfNeeded()`.";
-    std::vector<SparseIndex> values;
+    std::vector<double> values;
     values.reserve(entries_.size());
     for (const auto& entry : entries_) {
       values.push_back(entry.value);
@@ -220,8 +220,8 @@ class StrongSparseVectorOfDoubles {
                        return lhs.index < rhs.index;
                      });
 
-    EntryIndex new_pos = 0;
-    for (EntryIndex pos = 0; pos < EntryIndex(entries_.size()); ++pos) {
+    EntryIndex new_pos = EntryIndex(0);
+    for (EntryIndex pos = EntryIndex(0); pos < EntryIndex(entries_.size()); ++pos) {
       if (pos < entries_.size() - 1 &&
           entries_[pos].index == entries_[pos + 1].index) {
         continue;
@@ -253,7 +253,7 @@ class StrongSparseVectorOfDoubles {
   SparseIndex first_index() const {
     DCHECK(!may_need_cleaning_);
     return entries_.empty() ? kInvalidSparseIndex<SparseIndex>
-                            : entries_[0].index;
+                            : entries_.front().index;
   }
 
   // Verifies whether `entries()` are clean (i.e., sorted, no duplicates, no

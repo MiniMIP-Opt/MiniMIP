@@ -167,7 +167,7 @@ absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
                            mip_data.constraint_names()[row.value()]));
   }
   for (ColIndex col(0); col < mip_data.matrix().num_cols(); ++col) {
-    RETURN_IF_ERROR(AddColumn(mip_data.matrix().col(col.value()),
+    RETURN_IF_ERROR(AddColumn(mip_data.matrix().col(col),
                               mip_data.lower_bounds()[col.value()],
                               mip_data.upper_bounds()[col.value()],
                               mip_data.objective().value(col),
@@ -270,7 +270,7 @@ absl::Status LPGlopInterface::AddRows(
     const absl::StrongVector<RowIndex, std::string>& names) {
   DCHECK_EQ(names.size(), left_hand_sides.size());
   DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
-  for (RowIndex row = 0; row < rows.size(); ++row) {
+  for (RowIndex row = RowIndex(0); row < rows.size(); ++row) {
     RETURN_IF_ERROR(AddRow(rows[row], left_hand_sides[row],
                            right_hand_sides[row], names[row]));
   }
