@@ -15,6 +15,14 @@ cc_library(
 )
 
 cc_library(
+    name = "cuts_data",
+    hdrs = ["cuts_data.h"],
+    deps = [
+        ":strong_sparse_matrix",
+    ],
+)
+
+cc_library(
     name = "mip_data",
     srcs = ["mip_data.cc"],
     hdrs = ["mip_data.h"],
@@ -26,14 +34,14 @@ cc_library(
 
 cc_library(
     name = "strong_sparse_matrix",
-    hdrs = ["strong_sparse_matrix.h"],
     srcs = ["strong_sparse_matrix.cc"],
+    hdrs = ["strong_sparse_matrix.h"],
     deps = [
         ":strong_sparse_vector",
         "@com_google_ortools//ortools/base",
         "@com_google_ortools//ortools/base:strong_vector",
-        "@com_google_ortools//ortools/util:strong_integers",
         "@com_google_ortools//ortools/lp_data:base",
+        "@com_google_ortools//ortools/util:strong_integers",
     ],
 )
 
