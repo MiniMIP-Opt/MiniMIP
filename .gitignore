@@ -11,6 +11,9 @@
 /.settings
 /.vscode/
 /bazel.iml
+# Ignore cland files
+.cache
+compile_commands.json
 # Ignore all bazel-* symlinks. There is no full list since this can change
 # based on the name of the directory bazel is cloned into.
 /bazel-*
