@@ -94,3 +94,20 @@ To automatically format the syntax you can run:
 
 Be careful not run clang-format on BUILD files. To format bazel's BUILD files
 automatically, run `buildifier` (see https://github.com/bazelbuild/buildtools).
+
+# VSCode setup
+There is an official VSCode plugin for bazel called `vscode-bazel`. While it allows context highlights when editing Bazel files (`BUILD`, `WORKSPACE`, etc.) it doesn't configure IntelliSense for code files compiled using Bazel. Instead, use the following steps to get code suggestions using `clangd`. Tested on Linux Mint 20 (Ubuntu 20.04 derivative) on 2022-10-04.
+
+1. Make sure `clangd` is installed on your system
+```
+sudo apt install clangd
+```
+2. Download the [Bazel Compilation Database](https://github.com/grailbio/bazel-compilation-database) tool.
+3. Go to MiniMIP's root directory (where the `WORKSPACE` file is located) and run the `generate.py` script you just downloaded. When the script has completed (may take several minutes), you should see a `compile_commands.json` file.
+4. Install the `vscode-clangd` extension for VSCode.
+
+    Note: The clangd extension is incompatible with Microsoft's IntelliSense, and will ask you to disable it. If you want to control this manually, the setting is found under C/C++: Intelli Sense Engine.
+5. In your VSCode settings, find Clangd: Arguments and add `--compile-commands-dir=${workspaceFolder}/` and make sure Clangd: Check Updates is enabled.
+6. Restart VSCode.
+
+Your MiniMIP files should now give you contextual highlighting, symbol lookup, clang-tidy warnings and more. You may need to occasionally repeat step 3 above if the information in `compile_commands.json` becomes stale, e.g. if you add a new target or introduce new dependencies.
