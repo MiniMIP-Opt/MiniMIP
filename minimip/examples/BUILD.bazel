@@ -16,7 +16,8 @@ cc_test(
     srcs = ["example_test.cc"],
     deps = [
         ":example",
-        "//minimip/testing:gtest_main",
+        "//unit_tests:gtest_main",
+        "@com_google_googletest//:gtest",
     ],
 )
 

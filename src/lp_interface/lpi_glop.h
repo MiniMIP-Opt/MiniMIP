@@ -73,7 +73,7 @@ class LPGlopInterface : public LPInterface {
   absl::Status DeleteRows(RowIndex first_row, RowIndex last_row) final;
 
   absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>> DeleteRowSet(
-      absl::StrongVector<RowIndex, bool>& rows_to_delete) final;
+      const absl::StrongVector<RowIndex, bool>& rows_to_delete) final;
 
   absl::Status Clear() final;
 
@@ -217,7 +217,8 @@ class LPGlopInterface : public LPInterface {
 
   absl::Status ReadLPFromFile(const std::string& file_path) final;
 
-  absl::Status WriteLPToFile(const std::string& file_path) const final;
+  absl::StatusOr<std::string> WriteLPToFile(
+      const std::string& file_path) const final;
 
  private:
   // Helper function to delete rows from LP and update the current basis.
