@@ -73,6 +73,7 @@ MipData::MipData(const MiniMipProblem& problem)
       objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
     }
   }
+  objective_.CleanUpIfNeeded();
 
   for (int i = 0; i < problem.hints.size(); ++i) {
     solution_hints_[i] = problem.hints.at(i);

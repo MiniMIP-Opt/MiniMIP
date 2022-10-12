@@ -426,10 +426,6 @@ absl::Status LPSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
             mip_data.right_hand_sides().size());
   DCHECK_EQ(mip_data.variable_names().size(), mip_data.lower_bounds().size());
   DCHECK_EQ(mip_data.lower_bounds().size(), mip_data.upper_bounds().size());
-  DCHECK_EQ(mip_data.upper_bounds().size(),
-            mip_data.objective().entries().size());
-
-  DCHECK(mip_data.matrix().AllColsAreClean());
 
   InvalidateSolution();
 
@@ -487,6 +483,7 @@ absl::Status LPSoplexInterface::AddColumn(const SparseCol& col_data,
   try {
     soplex::DSVector col_vector;
     for (SparseEntry entry : col_data.entries()) {
+      DCHECK(!IsInfinity(std::abs(entry.value)));
       col_vector.add(entry.index.value(), entry.value);
     }
     spx_->addColReal(soplex::LPCol(objective_coefficient, col_vector,
@@ -533,11 +530,12 @@ absl::Status LPSoplexInterface::AddColumns(
       col_Vector.clear();
       if (!matrix.col(i).entries().empty()) {
         for (SparseEntry entry : matrix.col(i).entries()) {
+          DCHECK(!IsInfinity(std::abs(entry.value)));
           col_Vector.add(entry.index.value(), entry.value);
         }
       }
-      columns.add(objective_coefficients.value(i), lower_bounds[i.value()], col_Vector,
-                  upper_bounds[i.value()]);
+      columns.add(objective_coefficients.value(i), lower_bounds[i.value()],
+                  col_Vector, upper_bounds[i.value()]);
     }
     spx_->addColsReal(columns);
   } catch (const soplex::SPxException& x) {
@@ -587,8 +585,11 @@ absl::Status LPSoplexInterface::AddRow(const SparseRow& row_data,
     }
   }
 
+  InvalidateSolution();
+
   soplex::DSVector row_vector;
   for (SparseEntry entry : row_data.entries()) {
+    DCHECK(!IsInfinity(std::abs(entry.value)));
     row_vector.add(entry.index.value(), entry.value);
   }
   spx_->addRowReal(soplex::LPRow(left_hand_side, row_vector, right_hand_side));
@@ -664,7 +665,7 @@ absl::Status LPSoplexInterface::DeleteRows(RowIndex first_row,
 // than its old position.
 absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>>
 LPSoplexInterface::DeleteRowSet(
-    absl::StrongVector<RowIndex, bool>& rows_to_delete) {
+    const absl::StrongVector<RowIndex, bool>& rows_to_delete) {
   VLOG(2) << "calling DeleteRowSet().";
 
   InvalidateSolution();
@@ -673,7 +674,6 @@ LPSoplexInterface::DeleteRowSet(
 
   std::vector<int> int_deletion_status(rows_to_delete.begin(),
                                        rows_to_delete.end());
-
   int num_rows = spx_->numRowsReal();
 
   // SoPlex removeRows() method deletes the rows with deletion_status[i] < 0,
@@ -682,7 +682,20 @@ LPSoplexInterface::DeleteRowSet(
 
   SOPLEX_TRY(spx_->removeRowsReal(int_deletion_status.data()));
 
-  return absl::OkStatus();
+  // Note: We cannot use the same vector for the soplex call above and the row
+  // mapping, even though RowIndex internally consists of an int. In addition to
+  // being bad practice to depend on a class' internals, the compiler may
+  // introduce additional padding mening RowIndex and int don't have identical
+  // representations.
+  absl::StrongVector<RowIndex, RowIndex> row_mapping(rows_to_delete.size());
+  for (RowIndex row(0); row < row_mapping.size(); ++row) {
+    if (rows_to_delete[row]) {
+      row_mapping[row] = kInvalidRow;
+    } else {
+      row_mapping[row] = int_deletion_status[row.value()];
+    }
+  }
+  return row_mapping;
 }
 
 // Clears the whole LP.
@@ -701,6 +714,8 @@ absl::Status LPSoplexInterface::Clear() {
 absl::Status LPSoplexInterface::ClearState() {
   VLOG(2) << "calling ClearState().";
 
+  InvalidateSolution();
+
   try {
     spx_->clearBasis();
   } catch (const soplex::SPxException& x) {
@@ -714,6 +729,9 @@ absl::Status LPSoplexInterface::ClearState() {
 absl::Status LPSoplexInterface::SetColumnBounds(ColIndex col,
                                                 double lower_bound,
                                                 double upper_bound) {
+  DCHECK(!IsInfinity(lower_bound));
+  DCHECK(!IsInfinity(-upper_bound));
+
   VLOG(2) << "calling SetColumnBounds().";
 
   InvalidateSolution();
@@ -723,16 +741,6 @@ absl::Status LPSoplexInterface::SetColumnBounds(ColIndex col,
   CHECK(col < spx_->numColsReal());
 
   try {
-    if (IsInfinity(lower_bound)) {
-      VLOG(3) << "LP Error: fixing lower bound for variable " << col
-              << "to infinity.";
-      return {absl::StatusCode::kInternal, "Error"};
-    }
-    if (IsInfinity(-upper_bound)) {
-      VLOG(3) << "LP Error: fixing upper bound for variable " << col
-              << "to -infinity.";
-      return {absl::StatusCode::kInternal, "Error"};
-    }
     spx_->changeBoundsReal(col.value(), lower_bound, upper_bound);
     DCHECK_LE(spx_->lowerReal(col.value()),
               spx_->upperReal(col.value()) +
@@ -746,14 +754,16 @@ absl::Status LPSoplexInterface::SetColumnBounds(ColIndex col,
 
 absl::Status LPSoplexInterface::SetRowSides(RowIndex row, double left_hand_side,
                                             double right_hand_side) {
+  DCHECK_GE(row, 0);
+  DCHECK_LT(row, GetNumberOfRows());
+  DCHECK(!IsInfinity(left_hand_side));
+  DCHECK(!IsInfinity(-right_hand_side));
+
   VLOG(2) << "calling SetRowSides().";
 
   InvalidateSolution();
 
   CHECK(PreStrongBranchingBasisFreed());
-
-  DCHECK_LE(0, row);
-  DCHECK_LT(row, spx_->numRowsReal());
 
   try {
     spx_->changeRangeReal(row.value(), left_hand_side, right_hand_side);
@@ -786,6 +796,7 @@ absl::Status LPSoplexInterface::SetObjectiveSense(
 
 absl::Status LPSoplexInterface::SetObjectiveCoefficient(
     ColIndex col, double objective_coefficient) {
+  DCHECK(!IsInfinity(std::abs(objective_coefficient)));
   VLOG(2) << "calling SetObjectiveCoefficient().";
 
   InvalidateSolution();
@@ -860,6 +871,7 @@ SparseCol LPSoplexInterface::GetSparseColumnCoefficients(ColIndex col) const {
       sparse_column.AddEntry(RowIndex(cvec.index(j)), cvec.value(j));
     }
   }
+  sparse_column.CleanUpIfNeeded();
   return sparse_column;
 }
 
@@ -1026,9 +1038,6 @@ bool LPSoplexInterface::HasPrimalRay() const {
 
 bool LPSoplexInterface::IsPrimalUnbounded() const {
   VLOG(2) << "calling IsPrimalUnbounded().";
-
-  CHECK(spx_->status() != soplex::SPxSolver::UNBOUNDED ||
-        spx_->basisStatus() == soplex::SPxBasis::UNBOUNDED);
 
   // If SoPlex returns unbounded, this may only mean that an unbounded ray is
   // available, not necessarily a primal
@@ -1444,10 +1453,6 @@ absl::StatusOr<SparseRow> LPSoplexInterface::GetSparseRowOfBInverted(
 
   int num_indices;
 
-  CHECK(PreStrongBranchingBasisFreed());
-  DCHECK_GE(row_in_basis, 0);
-  DCHECK_LT(row_in_basis, spx_->numRowsReal());
-
   std::vector<double> dense_row(spx_->numRowsReal());
   std::vector<int> indices(spx_->numRowsReal());
 
@@ -1455,10 +1460,20 @@ absl::StatusOr<SparseRow> LPSoplexInterface::GetSparseRowOfBInverted(
                                     indices.data(), &num_indices)) {
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
+
   SparseRow sparse_row;
-  for (int i = 0; i < num_indices; ++i) {
-    sparse_row.AddEntry(ColIndex(indices[i]), dense_row[indices[i]]);
+  if (num_indices == -1) {
+    // This means that Soplex used a dense representation. If so, the result
+    // is found directly in dense_row and must be sparsified.
+    for (int i = 0; i < spx_->numRowsReal(); ++i) {
+      if (dense_row[i] != 0.0) sparse_row.AddEntry(ColIndex(i), dense_row[i]);
+    }
+  } else {
+    for (int i = 0; i < num_indices; ++i) {
+      sparse_row.AddEntry(ColIndex(indices[i]), dense_row[indices[i]]);
+    }
   }
+  sparse_row.CleanUpIfNeeded();
   return sparse_row;
 }
 
@@ -1478,20 +1493,39 @@ absl::StatusOr<SparseCol> LPSoplexInterface::GetSparseColumnOfBInverted(
     ColIndex col_in_basis) const {
   VLOG(2) << "calling GetColumnOfBInverted().";
 
+  // TODO(issues/26): Use getBasisInverseColReal when the SoPlex bug is fixed.
+  LOG_FIRST_N(WARNING, 1)
+      << "Due to a SoPlex bug, LPSoplexInterface::GetSparseColumnOfBInverted "
+         "currently retrieves the matrix by rows, which is inefficient. Prefer "
+         "LPSoplexInterface::GetSparseRowOfBInverted if possible.";
   CHECK(PreStrongBranchingBasisFreed());
+  DCHECK_GE(col_in_basis, 0);
+  DCHECK_LT(col_in_basis, spx_->numRowsReal());
 
-  std::vector<double> dense_column(spx_->numRowsReal());
+  // Reused in the loop below to avoid reallocation.
+  std::vector<double> dense_row(spx_->numRowsReal());
   std::vector<int> indices(spx_->numRowsReal());
 
-  int num_indices;
-  if (!spx_->getBasisInverseColReal(col_in_basis.value(), dense_column.data(),
-                                    indices.data(), &num_indices)) {
-    return absl::Status(absl::StatusCode::kInternal, "Error");
-  }
   SparseCol sparse_column;
-  for (int i = 0; i < num_indices; ++i) {
-    sparse_column.AddEntry(RowIndex(indices[i]), dense_column[indices[i]]);
+  for (RowIndex row(0); row < spx_->numRowsReal(); ++row) {
+    int num_indices;
+
+    if (!spx_->getBasisInverseRowReal(row.value(), dense_row.data(),
+                                      indices.data(), &num_indices)) {
+      return absl::Status(absl::StatusCode::kInternal, "Error");
+    }
+    if (num_indices == -1) {
+      sparse_column.AddEntry(row, dense_row[col_in_basis.value()]);
+    } else {
+      // The indices aren't guaranteed to be sorted, so we use linear lookup
+      auto it = std::find(indices.begin(), indices.end(), col_in_basis.value());
+      if (it != indices.end()) {
+        int index = std::distance(indices.begin(), it);
+        if (index < num_indices) sparse_column.AddEntry(row, dense_row[index]);
+      }
+    }
   }
+  sparse_column.CleanUpIfNeeded();
 
   return sparse_column;
 }
@@ -1545,7 +1579,7 @@ absl::StatusOr<SparseCol> LPSoplexInterface::GetSparseColumnOfBInvertedTimesA(
     ColIndex col_in_basis) const {
   VLOG(2) << "calling GetColumnOfBInvertedTimesA().";
 
-  std::vector<double> binv_vec(spx_->numCols());
+  std::vector<double> binv_vec(spx_->numRows());
   SparseCol sparse_col;
   int num_rows = spx_->numRowsReal();
 
@@ -1863,19 +1897,24 @@ absl::Status LPSoplexInterface::ReadLPFromFile(const std::string& file_path) {
   return absl::OkStatus();
 }
 
-absl::Status LPSoplexInterface::WriteLPToFile(
+absl::StatusOr<std::string> LPSoplexInterface::WriteLPToFile(
     const std::string& file_path) const {
   VLOG(2) << "calling WriteLPToFile().";
 
   CHECK(!file_path.empty());
 
+  bool success;
   try {
-    static_cast<void>(spx_->writeFileReal(file_path.c_str()));
+    success = spx_->writeFileReal(file_path.c_str());
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
-    return {absl::StatusCode::kInternal, "Write Error: soplex exception"};
+    return absl::Status(absl::StatusCode::kInternal,
+                        "Write Error: soplex exception");
   }
-  return absl::OkStatus();
+  if (!success) {
+    return absl::InternalError("SoPlex failed to write LP to file");
+  }
+  return file_path;
 }
 
 }  // namespace minimip
