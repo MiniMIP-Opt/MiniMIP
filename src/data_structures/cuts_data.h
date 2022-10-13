@@ -89,7 +89,7 @@ class CutStorage {
   void AddCuts(std::vector<Cut> cuts){
     cuts_.insert(cuts_.end(),cuts.begin(),cuts.end());
     current_number_of_cuts_ += cuts.size();
-    total_number_of_cuts_found_+=cuts.size();
+    total_number_of_cuts_found_ += cuts.size();
   }
 
   // Activate stored cut.
