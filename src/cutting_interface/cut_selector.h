@@ -25,9 +25,8 @@ class CutSelector {
   //      different cut selection strategies including scoring functions.
 
   // NOTE: This file should include the default scoring function as the efficacy
-  // of
-  //      a given cutting plane in regards to the current LP solution as a
-  //      general baseline for scoring cuts. Additionally a basic greedy cut
+  //      of a given cutting plane in regard to the current LP solution as a
+  //      general baseline for scoring cuts. Additionally, a basic greedy cut
   //      selection method adding all non-duplicate cuts given to the cut
   //      selector should be implemented here, allowing the user to turn off all
   //      cut selection strategies for testing or analytics.

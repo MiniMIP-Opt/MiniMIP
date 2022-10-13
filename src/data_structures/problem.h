@@ -131,7 +131,7 @@ enum class MiniMipSolveStatus {
   kUnbounded = 5,
 
   // The solver proved the problem is either infeasible or unbounded. Note, it's
-  // sometimes very time consuming to distinguish between infeasible and
+  // sometimes very time-consuming to distinguish between infeasible and
   // unbounded
   // for a mixed-integer program (in contrast to pure linear programming).
   // In such cases, we stop and return this status.

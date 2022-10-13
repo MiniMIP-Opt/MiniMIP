@@ -29,8 +29,8 @@
   STATUS_MACROS_IMPL_ASSERT_OK_AND_ASSIGN_( \
       STATUS_MACROS_IMPL_CONCAT_(_status_or_value, __COUNTER__), lhs, rexpr);
 #define STATUS_MACROS_IMPL_ASSERT_OK_AND_ASSIGN_(statusor, lhs, rexpr) \
-  auto statusor = (rexpr);                                             \
-  ASSERT_OK(statusor.status());                                        \
+  auto (statusor) = (rexpr);                                             \
+  ASSERT_OK((statusor).status());                                        \
   STATUS_MACROS_IMPL_UNPARENTHESIS(lhs) = std::move(statusor).value()
 
 #endif  // UNIT_TESTS_UTILS_H_

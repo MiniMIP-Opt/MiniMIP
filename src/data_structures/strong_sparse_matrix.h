@@ -65,8 +65,8 @@ class StrongSparseMatrix {
   // This usually runs in O(log(k)) where k is the number of entries in the
   // underlying container (row or col). We prefer to avoid cleaning up the
   // underlying container, but if that's impossible it will run in O(k log(k)).
-  // This never triggers a recomputation of the row / col major view, because
-  // one of them is guaranteed to be up to date.
+  // This never triggers a re-computation of the row / col major view, because
+  // one of them is guaranteed to be up-to-date.
   double GetCoefficient(ColIndex col, RowIndex row) const;
 
   // Runs in O(1), may cause (lazy) row and/or col clean up on later access.

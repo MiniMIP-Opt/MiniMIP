@@ -15,11 +15,12 @@
 #ifndef SRC_DATA_STRUCTURES_CUTS_DATA_H_
 #define SRC_DATA_STRUCTURES_CUTS_DATA_H_
 
-#include "src/data_structures/mip_data.h"
-
 #include <utility>
 
-#include "src/data_structures/strong_sparse_matrix.h"
+#include "src/lp_interface/lpi.h"
+#include "src/data_structures/mip_data.h"
+#include "src/data_structures/strong_sparse_vector.h"
+
 
 namespace minimip {
 
@@ -47,7 +48,7 @@ using Cut = CuttingPlane;
 
 // The cut storage is used to track the globally valid cuts generated while
 // solving the Mixed Integer Problem. The storage functions as a register and
-// provides access to cuts for selection and the lp.
+// provides access to cutting planes for selection and the lp.
 class CutStorage {
   CutStorage() {}
 

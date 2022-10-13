@@ -18,7 +18,9 @@ cc_library(
     name = "cuts_data",
     hdrs = ["cuts_data.h"],
     deps = [
-        ":strong_sparse_matrix",
+        ":strong_sparse_vector",
+        ":mip_data",
+        "//src/lp_interface:lpi"
     ],
 )
 
