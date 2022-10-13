@@ -1,8 +1,5 @@
 # Testing utilities.
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
-
-# All other packages in MiniMIP may use any of the testing utils.
-package(default_visibility = ["//visibility:public"])
+load("@rules_cc//cc:defs.bzl", "cc_test")
 
 # Tests the implementation of all LP interfaces.
 cc_test(
@@ -11,48 +8,12 @@ cc_test(
     srcs = ["lpi_test.cc"],
     linkstatic = True,
     deps = [
+        "//src/data_structures:strong_sparse_vector",
         "//src/lp_interface:lpi",
         "//src/lp_interface:lpi_factory",
-        "//src/data_structures:strong_sparse_vector",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
         "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
     ],
 )
-
-# TODO(cgraczy, lpawel): Refactor the tests below.
-
-#cc_test(
-#    name = "bound_changes_test",
-#    size = "small",
-#    srcs = ["bound_changes.cc"],
-#    deps = [
-#        ":utils",
-#        "//src/lp_interface:lpi_factory",
-#        "@com_google_absl//absl/status",
-#        "@com_google_googletest//:gtest_main",
-#    ],
-#)
-
-#cc_test(
-#    name = "solve_test",
-#    size = "small",
-#    srcs = ["solve.cc"],
-#    deps = [
-#        ":utils",
-#        "//src/lp_interface:lpi_factory",
-#        "@com_google_absl//absl/status",
-#        "@com_google_googletest//:gtest_main",
-#    ],
-#)
-
-#cc_test(
-#    name = "change_test",
-#    size = "small",
-#    srcs = ["change.cc"],
-#    deps = [
-#        ":utils",
-#        "//src/lp_interface:lpi_factory",
-#        "@com_google_absl//absl/status",
-#        "@com_google_googletest//:gtest_main",
-#    ],
-#)

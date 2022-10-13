@@ -68,7 +68,7 @@ TEST(MipDataTests, PopulatesVariables) {
   EXPECT_EQ(mip_data.lower_bounds()[0], 0.0);
   EXPECT_EQ(mip_data.upper_bounds().size(), 1);
   EXPECT_EQ(mip_data.upper_bounds()[0], 1);
-  EXPECT_EQ(mip_data.objective().value(0), 13.0);
+  EXPECT_EQ(mip_data.objective().value(ColIndex(0)), 13.0);
 
   EXPECT_THAT(mip_data.integer_variables(), ElementsAreArray({0}));
   EXPECT_THAT(mip_data.variable_types(),
@@ -96,7 +96,7 @@ TEST(MipDataTests, PopulatesConstraints) {
   EXPECT_THAT(mip_data.constraint_names(), ElementsAreArray({"Baz"}));
 
   const StrongSparseMatrix& constraint_matrix = mip_data.matrix();
-  EXPECT_EQ(constraint_matrix.GetCoefficient(0, 0), 1.0);
+  EXPECT_EQ(constraint_matrix.GetCoefficient(ColIndex(0), RowIndex(0)), 1.0);
 }
 
 TEST(MipDataTests, PopulatesHints) {
@@ -178,7 +178,7 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
 
   EXPECT_THAT(
       objective.entries(),
-      ElementsAreArray({RowEntry(0, 1.0), RowEntry(1, 2.0), RowEntry(2, 3.0)}));
+      ElementsAreArray({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 3.0)}));
 
   ASSERT_TRUE(mip_data.hints().empty());
   EXPECT_THAT(mip_data.lower_bounds(),
@@ -205,22 +205,22 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
   EXPECT_EQ(constraint_matrix.num_cols(), ColIndex(3));
 
   EXPECT_THAT(constraint_matrix.row(RowIndex(0)).entries(),
-              ElementsAre(RowEntry(0, 3.0), RowEntry(1, 5.0)));
+              ElementsAre(RowEntry(ColIndex(0), 3.0), RowEntry(ColIndex(1), 5.0)));
   EXPECT_THAT(
       constraint_matrix.row(RowIndex(1)).entries(),
-      ElementsAre(RowEntry(0, 5.0), RowEntry(1, 2.0), RowEntry(2, 7.0)));
+      ElementsAre(RowEntry(ColIndex(0), 5.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 7.0)));
 
   EXPECT_THAT(constraint_matrix.col(ColIndex(0)).entries(),
-              ElementsAre(ColEntry(0, 3.0), ColEntry(1, 5.0)));
+              ElementsAre(ColEntry(RowIndex(0), 3.0), ColEntry(RowIndex(1), 5.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(1)).entries(),
-              ElementsAre(ColEntry(0, 5.0), ColEntry(1, 2.0)));
+              ElementsAre(ColEntry(RowIndex(0), 5.0), ColEntry(RowIndex(1), 2.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(2)).entries(),
-              ElementsAre(ColEntry(1, 7.0)));
+              ElementsAre(ColEntry(RowIndex(1), 7.0)));
 
   for (int row_idx = 0; row_idx < constraints.size(); ++row_idx) {
     for (int col_idx = 0; col_idx < constraints[row_idx].coefficients.size();
          ++col_idx) {
-      EXPECT_EQ(constraint_matrix.GetCoefficient(col_idx, row_idx),
+      EXPECT_EQ(constraint_matrix.GetCoefficient(ColIndex(col_idx), RowIndex(row_idx)),
                 constraints[row_idx].coefficients[col_idx]);
     }
   }
@@ -286,7 +286,7 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   EXPECT_EQ(objective.entries().size(), 3);
   EXPECT_THAT(
       objective.entries(),
-      ElementsAreArray({RowEntry(0, 1.0), RowEntry(1, 2.0), RowEntry(2, 3.0)}));
+      ElementsAreArray({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 3.0)}));
 
   ASSERT_TRUE(mip_data.hints().empty());
   EXPECT_THAT(mip_data.lower_bounds(),
@@ -316,26 +316,26 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   EXPECT_EQ(constraint_matrix.num_cols(), ColIndex(3));
 
   EXPECT_THAT(constraint_matrix.row(RowIndex(0)).entries(),
-              ElementsAre(RowEntry(0, 1.0), RowEntry(2, 1.0)));
+              ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 1.0)));
   EXPECT_THAT(constraint_matrix.row(RowIndex(1)).entries(),
-              ElementsAre(RowEntry(0, 3.0), RowEntry(1, 5.0)));
+              ElementsAre(RowEntry(ColIndex(0), 3.0), RowEntry(ColIndex(1), 5.0)));
   EXPECT_THAT(
       constraint_matrix.row(RowIndex(2)).entries(),
-      ElementsAre(RowEntry(0, 5.0), RowEntry(1, 2.0), RowEntry(2, 7.0)));
+      ElementsAre(RowEntry(ColIndex(0), 5.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 7.0)));
 
   EXPECT_THAT(
       constraint_matrix.col(ColIndex(0)).entries(),
-      ElementsAre(ColEntry(0, 1.0), ColEntry(1, 3.0), ColEntry(2, 5.0)));
+      ElementsAre(ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(1), 3.0), ColEntry(RowIndex(2), 5.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(1)).entries(),
-              ElementsAre(ColEntry(1, 5.0), ColEntry(2, 2.0)));
+              ElementsAre(ColEntry(RowIndex(1), 5.0), ColEntry(RowIndex(2), 2.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(2)).entries(),
-              ElementsAre(ColEntry(0, 1.0), ColEntry(2, 7.0)));
+              ElementsAre(ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(2), 7.0)));
 
   for (int row_idx = 0; row_idx < constraints.size(); ++row_idx) {
     for (int col_idx = 0; col_idx < constraints[row_idx].coefficients.size();
          ++col_idx) {
       EXPECT_EQ(constraint_matrix.GetCoefficient(
-                    constraints[row_idx].var_indices[col_idx], row_idx),
+                    ColIndex(constraints[row_idx].var_indices[col_idx]), RowIndex(row_idx)),
                 constraints[row_idx].coefficients[col_idx])
           << absl::StrFormat("row_idx: %i, col_idx: %i", row_idx, col_idx);
     }

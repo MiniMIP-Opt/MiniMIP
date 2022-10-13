@@ -157,8 +157,6 @@ absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
             mip_data.right_hand_sides().size());
   DCHECK_EQ(mip_data.variable_names().size(), mip_data.lower_bounds().size());
   DCHECK_EQ(mip_data.lower_bounds().size(), mip_data.upper_bounds().size());
-  DCHECK_EQ(mip_data.upper_bounds().size(),
-            mip_data.objective().entries().size());
 
   const RowIndex num_rows(mip_data.left_hand_sides().size());
   for (RowIndex row(0); row < num_rows; ++row) {
@@ -167,11 +165,10 @@ absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
                            mip_data.constraint_names()[row.value()]));
   }
   for (ColIndex col(0); col < mip_data.matrix().num_cols(); ++col) {
-    RETURN_IF_ERROR(AddColumn(mip_data.matrix().col(col.value()),
-                              mip_data.lower_bounds()[col.value()],
-                              mip_data.upper_bounds()[col.value()],
-                              mip_data.objective().value(col),
-                              mip_data.variable_names()[col.value()]));
+    RETURN_IF_ERROR(AddColumn(
+        mip_data.matrix().col(col), mip_data.lower_bounds()[col.value()],
+        mip_data.upper_bounds()[col.value()], mip_data.objective().value(col),
+        mip_data.variable_names()[col.value()]));
   }
   RETURN_IF_ERROR(SetObjectiveSense(mip_data.is_maximization()));
   return absl::OkStatus();
@@ -195,6 +192,9 @@ absl::Status LPGlopInterface::AddColumn(const SparseCol& col_data,
   lp_.SetObjectiveCoefficient(col, objective_coefficient);
   lp_.SetVariableName(col, name);
   for (const ColEntry& e : col_data.entries()) {
+    DCHECK_GE(e.index, 0);
+    DCHECK_LT(e.index, GetNumberOfRows());
+    DCHECK(!IsInfinity(std::abs(e.value)));
     const GlopRowIndex row(e.index.value());
     lp_.SetCoefficient(row, col, e.value);
   }
@@ -210,7 +210,8 @@ absl::Status LPGlopInterface::AddColumns(
     const std::vector<std::string>& names) {
   DCHECK_EQ(names.size(), lower_bounds.size());
   DCHECK_EQ(lower_bounds.size(), upper_bounds.size());
-  DCHECK_EQ(upper_bounds.size(), objective_coefficients.entries().size());
+  DCHECK_EQ(upper_bounds.size(), matrix.num_cols());
+  DCHECK_EQ(matrix.num_rows(), GetNumberOfRows());
   for (ColIndex col(0); col < matrix.num_cols(); ++col) {
     RETURN_IF_ERROR(AddColumn(
         matrix.col(col), lower_bounds[col.value()], upper_bounds[col.value()],
@@ -221,8 +222,8 @@ absl::Status LPGlopInterface::AddColumns(
 
 absl::Status LPGlopInterface::DeleteColumns(ColIndex first_col,
                                             ColIndex last_col) {
-  DCHECK_GE(ColIndex(0), first_col);
-  DCHECK_GE(first_col, last_col);
+  DCHECK_GE(first_col, ColIndex(0));
+  DCHECK_GE(last_col, first_col);
   DCHECK_LT(last_col, GetNumberOfColumns());
 
   VLOG(3) << "Deleting colums from " << first_col << " to " << last_col << ".";
@@ -255,6 +256,9 @@ absl::Status LPGlopInterface::AddRow(const SparseRow& row_data,
   lp_.SetConstraintBounds(row, left_hand_side, right_hand_side);
   lp_.SetConstraintName(row, name);
   for (const RowEntry& e : row_data.entries()) {
+    DCHECK_GE(e.index, 0);
+    DCHECK_LT(e.index, GetNumberOfColumns());
+    DCHECK(!IsInfinity(std::abs(e.value)));
     const GlopColIndex col(e.index.value());
     lp_.SetCoefficient(row, col, e.value);
   }
@@ -270,7 +274,8 @@ absl::Status LPGlopInterface::AddRows(
     const absl::StrongVector<RowIndex, std::string>& names) {
   DCHECK_EQ(names.size(), left_hand_sides.size());
   DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
-  for (RowIndex row = 0; row < rows.size(); ++row) {
+  DCHECK_EQ(right_hand_sides.size(), rows.size());
+  for (RowIndex row = RowIndex(0); row < rows.size(); ++row) {
     RETURN_IF_ERROR(AddRow(rows[row], left_hand_sides[row],
                            right_hand_sides[row], names[row]));
   }
@@ -279,8 +284,8 @@ absl::Status LPGlopInterface::AddRows(
 
 absl::Status LPGlopInterface::DeleteRows(RowIndex first_row,
                                          RowIndex last_row) {
-  DCHECK_GE(RowIndex(0), first_row);
-  DCHECK_GE(first_row, last_row);
+  DCHECK_GE(first_row, RowIndex(0));
+  DCHECK_GE(last_row, first_row);
   DCHECK_LT(last_row, GetNumberOfRows());
 
   VLOG(3) << "Deleting rows from " << first_row << " to " << last_row << ".";
@@ -295,10 +300,11 @@ absl::Status LPGlopInterface::DeleteRows(RowIndex first_row,
 
 absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>>
 LPGlopInterface::DeleteRowSet(
-    absl::StrongVector<RowIndex, bool>& rows_to_delete) {
+    const absl::StrongVector<RowIndex, bool>& rows_to_delete) {
+  DCHECK_EQ(rows_to_delete.size(), GetNumberOfRows());
   DenseBooleanColumn glop_rows_to_delete(rows_to_delete.begin(),
                                          rows_to_delete.end());
-  absl::StrongVector<RowIndex, RowIndex> row_mapping;
+  absl::StrongVector<RowIndex, RowIndex> row_mapping(rows_to_delete.size());
   RowIndex next_index(0);
   int num_deleted_rows = 0;
   for (RowIndex row(0); row < GetNumberOfRows(); ++row) {
@@ -355,8 +361,11 @@ absl::Status LPGlopInterface::ClearState() {
 
 absl::Status LPGlopInterface::SetColumnBounds(ColIndex col, double lower_bound,
                                               double upper_bound) {
+  DCHECK_GE(col, 0);
+  DCHECK_LT(col, GetNumberOfColumns());
   DCHECK(!IsInfinity(lower_bound));
-  DCHECK(IsInfinity(upper_bound));
+  DCHECK(!IsInfinity(-upper_bound));
+
   VLOG(3) << "Set column bounds: col=" << col << ", lower_bound=" << lower_bound
           << ", upper_bound=" << upper_bound << ".";
   lp_.SetVariableBounds(GlopColIndex(col.value()), lower_bound, upper_bound);
@@ -366,6 +375,11 @@ absl::Status LPGlopInterface::SetColumnBounds(ColIndex col, double lower_bound,
 
 absl::Status LPGlopInterface::SetRowSides(RowIndex row, double left_hand_side,
                                           double right_hand_side) {
+  DCHECK_GE(row, 0);
+  DCHECK_LT(row, GetNumberOfRows());
+  DCHECK(!IsInfinity(left_hand_side));
+  DCHECK(!IsInfinity(-right_hand_side));
+  DCHECK_LE(left_hand_side, right_hand_side);
   VLOG(3) << "Set row sides: row=" << row
           << ", left_hand_side=" << left_hand_side
           << ", right_hand_side=" << right_hand_side << ".";
@@ -384,6 +398,9 @@ absl::Status LPGlopInterface::SetObjectiveSense(bool is_maximization) {
 
 absl::Status LPGlopInterface::SetObjectiveCoefficient(
     ColIndex col, double objective_coefficient) {
+  DCHECK_GE(col, 0);
+  DCHECK_LT(col, GetNumberOfColumns());
+  DCHECK(!IsInfinity(std::abs(objective_coefficient)));
   VLOG(3) << "Setting objective coefficient, col=" << col.value()
           << ", objective_coefficient=" << objective_coefficient << ".";
   lp_.SetObjectiveCoefficient(GlopColIndex(col.value()), objective_coefficient);
@@ -448,26 +465,40 @@ SparseRow LPGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
 }
 
 double LPGlopInterface::GetObjectiveCoefficient(ColIndex col) const {
+  CHECK_GE(col, 0);
+  CHECK_LT(col, GetNumberOfColumns());
   return lp_.objective_coefficients()[GlopColIndex(col.value())];
 }
 
 double LPGlopInterface::GetLowerBound(ColIndex col) const {
+  CHECK_GE(col, 0);
+  CHECK_LT(col, GetNumberOfColumns());
   return lp_.variable_lower_bounds()[GlopColIndex(col.value())];
 }
 
 double LPGlopInterface::GetUpperBound(ColIndex col) const {
+  CHECK_GE(col, 0);
+  CHECK_LT(col, GetNumberOfColumns());
   return lp_.variable_upper_bounds()[GlopColIndex(col.value())];
 }
 
 double LPGlopInterface::GetLeftHandSide(RowIndex row) const {
+  CHECK_GE(row, 0);
+  CHECK_LT(row, GetNumberOfRows());
   return lp_.constraint_lower_bounds()[GlopRowIndex(row.value())];
 }
 
 double LPGlopInterface::GetRightHandSide(RowIndex row) const {
+  CHECK_GE(row, 0);
+  CHECK_LT(row, GetNumberOfRows());
   return lp_.constraint_upper_bounds()[GlopRowIndex(row.value())];
 }
 
 double LPGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
+  CHECK_GE(col, 0);
+  CHECK_LT(col, GetNumberOfColumns());
+  CHECK_GE(row, 0);
+  CHECK_LT(row, GetNumberOfRows());
   // Caution: Runs in O(num_entries_in_col).
   return lp_.GetSparseMatrix().LookUpValue(GlopRowIndex(row.value()),
                                            GlopColIndex(col.value()));
@@ -826,8 +857,10 @@ LPGlopInterface::GetPrimalRay() const {
   absl::StrongVector<ColIndex, double> primal_ray;
   primal_ray.reserve(lp_.num_variables().value());
   for (GlopColIndex col(0); col < lp_.num_variables(); ++col) {
+    // Note, Glop adds slacks with -1.0 coefficient. LP interface assumes slacks
+    // added with +1.0 coefficient. Hence, we need to reverse the sign.
     primal_ray.push_back(
-        scaler_.UnscaleVariableValue(col, solver_.GetPrimalRay()[col]));
+        -scaler_.UnscaleVariableValue(col, solver_.GetPrimalRay()[col]));
   }
   return primal_ray;
 }
@@ -1221,17 +1254,17 @@ absl::Status LPGlopInterface::ReadLPFromFile(const std::string& file_path) {
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::WriteLPToFile(
+absl::StatusOr<std::string> LPGlopInterface::WriteLPToFile(
     const std::string& file_path) const {
   MPModelProto proto;
   LinearProgramToMPModelProto(lp_, &proto);
   if (!WriteProtoToFile(file_path, proto,
                         operations_research::ProtoWriteFormat::kProtoText,
-                        true)) {
+                        /*gzipped=*/true)) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrFormat("Could not write: %s", file_path));
   }
-  return absl::OkStatus();
+  return absl::StrCat(file_path, ".gz");
 }
 
 }  // namespace minimip

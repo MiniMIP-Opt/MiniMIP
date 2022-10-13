@@ -50,6 +50,10 @@ class ColOrRowIndex {
   ColIndex col() const { return col_; }
   RowIndex row() const { return row_; }
 
+  bool operator==(const ColOrRowIndex& o) const {
+    return col_ == o.col_ && row_ == o.row_;
+  }
+
  private:
   ColIndex col_;
   RowIndex row_;
@@ -139,7 +143,7 @@ class LPInterface {
   // Note, it is guaranteed that always new_index <= old_index (rows are not
   // reshuffled on deletion, but the matrix gets "compacted").
   virtual absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>> DeleteRowSet(
-      absl::StrongVector<RowIndex, bool>& rows_to_delete) = 0;
+      const absl::StrongVector<RowIndex, bool>& rows_to_delete) = 0;
 
   // Clears the whole LP solver (including the loaded model).
   virtual absl::Status Clear() = 0;
@@ -283,7 +287,11 @@ class LPInterface {
   // TODO(lpawel): Explain more precisely what stability means.
   virtual bool IsStable() const = 0;
 
-  // LP solve statuses.
+  // LP solve statuses. After solving a feasible bounded model to completion,
+  // these should represent that actual model status. If the problem is primal
+  // infeasible and solved with primal simplex, the solver isn't required to
+  // prove dual unboundedness/infeasibility, and similarly for dual infeasible
+  // models when using dual simplex.
   virtual bool IsOptimal() const = 0;
   virtual bool IsPrimalFeasible() const = 0;
   virtual bool IsPrimalInfeasible() const = 0;
@@ -447,12 +455,19 @@ class LPInterface {
   // ==========================================================================
 
   // Reads an LP from a file in the format supported by the underlying LP solver
-  // (may differ between implementations).
+  // (may differ between implementations). After this call, the LP model should
+  // *essentially* the same as before calling `WriteLPToFile`. By "essentially
+  // the same", we mean that the models should have the same solution space and
+  // objective values, but e.g. the order of variables may be different, and
+  // double-sided constraints may be split to two single-sided constraints. This
+  // should be documented for each implementation.
   virtual absl::Status ReadLPFromFile(const std::string& file_path) = 0;
 
   // Writes an LP to a file in the format supported by the underlying LP solver
-  // (may differ between implementations).
-  virtual absl::Status WriteLPToFile(const std::string& file_path) const = 0;
+  // (may differ between implementations). Returns the path to the written file.
+  // This may differ from the provided path in the file extension only.
+  virtual absl::StatusOr<std::string> WriteLPToFile(
+      const std::string& file_path) const = 0;
 };
 
 }  // namespace minimip

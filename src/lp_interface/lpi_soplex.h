@@ -64,7 +64,7 @@ class LPSoplexInterface : public LPInterface {
   absl::Status DeleteRows(RowIndex first_row, RowIndex last_row) final;
 
   absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>> DeleteRowSet(
-      absl::StrongVector<RowIndex, bool>& rows_to_delete) final;
+      const absl::StrongVector<RowIndex, bool>& rows_to_delete) final;
 
   absl::Status Clear() final;
 
@@ -209,7 +209,13 @@ class LPSoplexInterface : public LPInterface {
 
   absl::Status ReadLPFromFile(const std::string& file_path) final;
 
-  absl::Status WriteLPToFile(const std::string& file_path) const final;
+  // Note that Soplex splits double-sided constraints in the stored file. I.e.
+  // l_j <= sum(a_ijx_i) <= u_j
+  // becomes
+  // l_j <= sum(a_ijx_i)
+  //        sum(a_ijx_i) <= u_j
+  absl::StatusOr<std::string> WriteLPToFile(
+      const std::string& file_path) const final;
 
   // ==========================================================================
   // Private interface methods.

@@ -170,7 +170,8 @@ class StrongSparseMatrix {
   mutable absl::StrongVector<RowIndex, SparseRow> rows_;
 
   // Indicates which of the `cols_` and `rows_` needs recomputation (if any).
-  mutable MatrixConsistency consistency_;
+  mutable MatrixConsistency consistency_ =
+      MatrixConsistency::kRowsAndColsAreUpToDate;
 };
 
 }  // namespace minimip
