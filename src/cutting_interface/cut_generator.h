@@ -17,17 +17,26 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/data_structures/cuts_data.h"
+#include "src/data_structures/mip_data.h"
+#include "src/lp_interface/lpi.h"
 
 namespace minimip {
 
 class CutGenerator {
-  // TODO: Implement abstract cut generator class to allow the implementation
-  //       of different cut generators for the solver.
-
  public:
   virtual ~CutGenerator() = default;
 
-  virtual absl::Status MyCutGeneratorFunction() = 0;
+  // Indicate if this generator can be run in the current state. This is not a
+  // guarantee that `GenerateNextCuttingPlanes` will be able to find any cuts.
+  virtual bool MayBeRun(const LPInterface* lpi,
+                        const MipData& mip_data) const = 0;
+
+  // Generate up to `max_num_cuts` cutting planes. Returns an empty vector if no
+  // cuts could be generated given the current state. If called multiple times,
+  // the generator is expected to continue where it left of, if appropriate.
+  virtual absl::StatusOr<std::vector<CuttingPlane>> GenerateNextCuttingPlanes(
+      const LPInterface* lpi, const MipData& mip_data, int max_num_cuts) = 0;
 };
 
 }  // namespace minimip

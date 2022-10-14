@@ -17,10 +17,9 @@
 
 #include <utility>
 
-#include "src/lp_interface/lpi.h"
 #include "src/data_structures/mip_data.h"
 #include "src/data_structures/strong_sparse_vector.h"
-
+#include "src/lp_interface/lpi.h"
 
 namespace minimip {
 
@@ -32,6 +31,7 @@ namespace minimip {
 // add more information to the generated rows from the cut generators.
 struct CuttingPlane {
   SparseRow row;
+  double right_hand_side;
   bool is_active;
   bool added_at_root;
   bool forced;
@@ -53,26 +53,24 @@ class CutStorage {
   CutStorage() {}
 
   // Initialize CutStorage from initial separation round.
-  CutStorage(std::vector<Cut> cuts,std::vector<unsigned int> cut_positions)
-    : cuts_(std::move(cuts)),
-      active_cuts_positions_(std::move(cut_positions)),
-      current_number_of_cuts_(cuts.size()),
-      total_number_of_cuts_found_(cuts.size()),
-      current_number_of_active_cuts_(cut_positions.size())
-      {
-        DCHECK_LE(cut_positions.size(),cuts.size());
-      }
-
+  CutStorage(std::vector<Cut> cuts, std::vector<unsigned int> cut_positions)
+      : cuts_(std::move(cuts)),
+        active_cuts_positions_(std::move(cut_positions)),
+        current_number_of_cuts_(cuts.size()),
+        total_number_of_cuts_found_(cuts.size()),
+        current_number_of_active_cuts_(cut_positions.size()) {
+    DCHECK_LE(cut_positions.size(), cuts.size());
+  }
 
   // CutStorage is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
   // CutStorage is (no-throw) moveable.
   CutStorage(CutStorage&&) noexcept = default;
-  CutStorage& operator = (CutStorage&&) noexcept = default;
+  CutStorage& operator=(CutStorage&&) noexcept = default;
 
   // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
   // we just use a private copy / move constructor and assignment operator.
-  void PopulateFromCutStorage(CutStorage cut_storage){
+  void PopulateFromCutStorage(CutStorage cut_storage) {
     *this = std::move(cut_storage);
   }
 
@@ -87,32 +85,32 @@ class CutStorage {
   }
 
   // Add a vector of cuts to storage.
-  void AddCuts(std::vector<Cut> cuts){
-    cuts_.insert(cuts_.end(),cuts.begin(),cuts.end());
+  void AddCuts(std::vector<Cut> cuts) {
+    cuts_.insert(cuts_.end(), cuts.begin(), cuts.end());
     current_number_of_cuts_ += cuts.size();
     total_number_of_cuts_found_ += cuts.size();
   }
 
   // Activate stored cut.
-  void ActivateCut(const Cut& cut){
+  void ActivateCut(const Cut& cut) {
     active_cuts_positions_.push_back(cut.cut_position);
     current_number_of_active_cuts_ += 1;
   }
 
   // Activate cuts.
-  void ActivateCuts(std::vector<unsigned int>& active_cuts){
-    DCHECK_LE(active_cuts.size(),cuts_.size());
+  void ActivateCuts(std::vector<unsigned int>& active_cuts) {
+    DCHECK_LE(active_cuts.size(), cuts_.size());
     current_number_of_active_cuts_ = active_cuts.size();
     active_cuts_positions_ = std::move(active_cuts);
   }
 
   // Remove a single cut from storage.
-  void RemoveCut(const unsigned int& cut_position){
+  void RemoveCut(const unsigned int& cut_position) {
     auto it = cuts_.begin();
-    it = it+cut_position-1;
+    it = it + cut_position - 1;
     cuts_.erase(it);
 
-    for(unsigned int i = cut_position; i < cuts_.size(); i++)
+    for (unsigned int i = cut_position; i < cuts_.size(); i++)
       cuts_[i].cut_position -= 1;
 
     current_number_of_cuts_ -= 1;
@@ -128,15 +126,13 @@ class CutStorage {
   std::vector<Cut> GetCuts(const std::vector<unsigned int> cut_indices) const {
     std::vector<Cut> CutSubset;
     CutSubset.reserve(cut_indices.size());
-    for(unsigned int cut_indice : cut_indices)
+    for (unsigned int cut_indice : cut_indices)
       CutSubset.push_back(cuts_[cut_indice]);
     return CutSubset;
   }
 
   // Getter for all cuts.
-  const std::vector<Cut>& cuts() const {
-    return cuts_;
-  }
+  const std::vector<Cut>& cuts() const { return cuts_; }
 
   // Getter for all active cuts.
   std::vector<Cut> active_cuts() const {
@@ -171,5 +167,5 @@ class CutStorage {
   unsigned int current_number_of_active_cuts_;
 };
 
-} // namespace
-#endif //SRC_DATA_STRUCTURES_CUTS_DATA_H_
+}  // namespace minimip
+#endif  // SRC_DATA_STRUCTURES_CUTS_DATA_H_
