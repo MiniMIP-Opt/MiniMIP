@@ -204,6 +204,8 @@ class StrongSparseVectorOfDoubles {
                : ge_entry->value;
   }
 
+  double operator[](SparseIndex index) const { return value(index); }
+
   // Removes all entries, but does not release memory of the underlying storage.
   void Clear() {
     entries_.clear();
@@ -221,7 +223,8 @@ class StrongSparseVectorOfDoubles {
                      });
 
     EntryIndex new_pos = EntryIndex(0);
-    for (EntryIndex pos = EntryIndex(0); pos < EntryIndex(entries_.size()); ++pos) {
+    for (EntryIndex pos = EntryIndex(0); pos < EntryIndex(entries_.size());
+         ++pos) {
       if (pos < entries_.size() - 1 &&
           entries_[pos].index == entries_[pos + 1].index) {
         continue;

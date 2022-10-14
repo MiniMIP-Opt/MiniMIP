@@ -160,15 +160,15 @@ absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
 
   const RowIndex num_rows(mip_data.left_hand_sides().size());
   for (RowIndex row(0); row < num_rows; ++row) {
-    RETURN_IF_ERROR(AddRow({}, mip_data.left_hand_sides()[row.value()],
-                           mip_data.right_hand_sides()[row.value()],
-                           mip_data.constraint_names()[row.value()]));
+    RETURN_IF_ERROR(AddRow({}, mip_data.left_hand_sides()[row],
+                           mip_data.right_hand_sides()[row],
+                           mip_data.constraint_names()[row]));
   }
   for (ColIndex col(0); col < mip_data.matrix().num_cols(); ++col) {
-    RETURN_IF_ERROR(AddColumn(
-        mip_data.matrix().col(col), mip_data.lower_bounds()[col.value()],
-        mip_data.upper_bounds()[col.value()], mip_data.objective().value(col),
-        mip_data.variable_names()[col.value()]));
+    RETURN_IF_ERROR(
+        AddColumn(mip_data.matrix().col(col), mip_data.lower_bounds()[col],
+                  mip_data.upper_bounds()[col], mip_data.objective().value(col),
+                  mip_data.variable_names()[col]));
   }
   RETURN_IF_ERROR(SetObjectiveSense(mip_data.is_maximization()));
   return absl::OkStatus();
@@ -204,18 +204,19 @@ absl::Status LPGlopInterface::AddColumn(const SparseCol& col_data,
 }
 
 absl::Status LPGlopInterface::AddColumns(
-    const StrongSparseMatrix& matrix, const std::vector<double>& lower_bounds,
-    const std::vector<double>& upper_bounds,
-    const SparseRow& objective_coefficients,
-    const std::vector<std::string>& names) {
+    const StrongSparseMatrix& matrix,
+    const absl::StrongVector<ColIndex, double>& lower_bounds,
+    const absl::StrongVector<ColIndex, double>& upper_bounds,
+    const absl::StrongVector<ColIndex, double>& objective_coefficients,
+    const absl::StrongVector<ColIndex, std::string>& names) {
   DCHECK_EQ(names.size(), lower_bounds.size());
   DCHECK_EQ(lower_bounds.size(), upper_bounds.size());
   DCHECK_EQ(upper_bounds.size(), matrix.num_cols());
   DCHECK_EQ(matrix.num_rows(), GetNumberOfRows());
   for (ColIndex col(0); col < matrix.num_cols(); ++col) {
-    RETURN_IF_ERROR(AddColumn(
-        matrix.col(col), lower_bounds[col.value()], upper_bounds[col.value()],
-        objective_coefficients.value(col), names[col.value()]));
+    RETURN_IF_ERROR(AddColumn(matrix.col(col), lower_bounds[col],
+                              upper_bounds[col], objective_coefficients[col],
+                              names[col]));
   }
   return absl::OkStatus();
 }
