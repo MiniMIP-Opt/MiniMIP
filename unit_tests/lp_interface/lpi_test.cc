@@ -169,16 +169,14 @@ class LPInterfaceImplementationTest
   absl::Status InitSimpleProblem(int n_cols, int n_rows) {
     RETURN_IF_ERROR(lpi_->Clear());
     {
-      std::vector<double> lower_bounds(n_cols);
+      absl::StrongVector<ColIndex, double> lower_bounds(n_cols);
       std::iota(lower_bounds.rbegin(), lower_bounds.rend(), -n_cols);
-      std::vector<double> upper_bounds(n_cols);
+      absl::StrongVector<ColIndex, double> upper_bounds(n_cols);
       std::iota(upper_bounds.begin(), upper_bounds.end(), 1.0);
-      SparseRow objective_coefficients;
-      for (ColIndex col(0); col < n_cols; ++col) {
-        objective_coefficients.AddEntry(col, col.value() + 1);
-      }
-      objective_coefficients.CleanUpIfNeeded();
-      std::vector<std::string> names(n_cols);
+      absl::StrongVector<ColIndex, double> objective_coefficients(n_cols);
+      std::iota(objective_coefficients.begin(), objective_coefficients.end(),
+                1.0);
+      absl::StrongVector<ColIndex, std::string> names(n_cols);
       RETURN_IF_ERROR(lpi_->AddColumns(
           StrongSparseMatrix(ColIndex(n_cols), RowIndex(0)), lower_bounds,
           upper_bounds, objective_coefficients, names));
@@ -318,11 +316,10 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
   //  1 <= x5 <= 1
   {
     StrongSparseMatrix matrix(ColIndex(2), RowIndex(0));
-    std::vector<double> lower_bounds = {-1, -kInf};
-    std::vector<double> upper_bounds = {10, kInf};
-    SparseRow objective_coefficients =
-        SparseRow({{ColIndex(0), 1}, {ColIndex(1), 2}});
-    std::vector<std::string> names = {"x1", "x2"};
+    absl::StrongVector<ColIndex, double> lower_bounds = {-1, -kInf};
+    absl::StrongVector<ColIndex, double> upper_bounds = {10, kInf};
+    absl::StrongVector<ColIndex, double> objective_coefficients = {1, 2};
+    absl::StrongVector<ColIndex, std::string> names = {"x1", "x2"};
     ASSERT_OK(lpi_->AddColumns(matrix, lower_bounds, upper_bounds,
                                objective_coefficients, names));
   }
@@ -337,11 +334,10 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
   {
     StrongSparseMatrix matrix(ColIndex(2), RowIndex(2));
     matrix.PopulateCol(ColIndex(1), SparseCol({{RowIndex(1), -1}}));
-    std::vector<double> lower_bounds = {0, -kInf};
-    std::vector<double> upper_bounds = {kInf, 29.3};
-    SparseRow objective_coefficients =
-        SparseRow({{ColIndex(0), -4}, {ColIndex(1), 1e-3}});
-    std::vector<std::string> names = {"x3", "x4"};
+    absl::StrongVector<ColIndex, double> lower_bounds = {0, -kInf};
+    absl::StrongVector<ColIndex, double> upper_bounds = {kInf, 29.3};
+    absl::StrongVector<ColIndex, double> objective_coefficients = {-4, 1e-3};
+    absl::StrongVector<ColIndex, std::string> names = {"x3", "x4"};
     ASSERT_OK(lpi_->AddColumns(matrix, lower_bounds, upper_bounds,
                                objective_coefficients, names));
   }
@@ -357,10 +353,10 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
   {
     StrongSparseMatrix matrix(ColIndex(1), RowIndex(4));
     matrix.PopulateCol(ColIndex(0), SparseCol({{RowIndex(3), 10}}));
-    std::vector<double> lower_bounds = {1};
-    std::vector<double> upper_bounds = {1};
-    SparseRow objective_coefficients = SparseRow();
-    std::vector<std::string> names = {"x5"};
+    absl::StrongVector<ColIndex, double> lower_bounds = {1};
+    absl::StrongVector<ColIndex, double> upper_bounds = {1};
+    absl::StrongVector<ColIndex, double> objective_coefficients = {0};
+    absl::StrongVector<ColIndex, std::string> names = {"x5"};
     ASSERT_OK(lpi_->AddColumns(matrix, lower_bounds, upper_bounds,
                                objective_coefficients, names));
   }

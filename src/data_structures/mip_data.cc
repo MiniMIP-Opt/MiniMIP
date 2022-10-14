@@ -43,7 +43,6 @@ MipData::MipData(const MiniMipProblem& problem)
       upper_bounds_(problem.variables.size()),
       left_hand_sides_(problem.constraints.size()),
       right_hand_sides_(problem.constraints.size()),
-      binary_variables_({}),
       integer_variables_({}),
       constraint_matrix_(ColIndex(problem.variables.size()),
                          RowIndex(problem.constraints.size())),
@@ -56,8 +55,9 @@ MipData::MipData(const MiniMipProblem& problem)
   is_maximization_ = problem.is_maximization;
   objective_offset_ = problem.objective_offset;
 
-  for (int col_idx = 0; col_idx < problem.variables.size(); ++col_idx) {
-    const MiniMipVariable& variable = problem.variables[col_idx];
+  for (ColIndex col_idx = ColIndex(0); col_idx < problem.variables.size();
+       ++col_idx) {
+    const MiniMipVariable& variable = problem.variables[col_idx.value()];
 
     lower_bounds_[col_idx] = variable.lower_bound;
     upper_bounds_[col_idx] = variable.upper_bound;
@@ -79,9 +79,10 @@ MipData::MipData(const MiniMipProblem& problem)
     solution_hints_[i] = problem.hints.at(i);
   }
 
-  for (int row_idx = 0; row_idx < problem.constraints.size(); ++row_idx) {
+  for (RowIndex row_idx = RowIndex(0); row_idx < problem.constraints.size();
+       ++row_idx) {
     SparseRow sparse_constraint;
-    const MiniMipConstraint& constraint = problem.constraints[row_idx];
+    const MiniMipConstraint& constraint = problem.constraints[row_idx.value()];
 
     left_hand_sides_[row_idx] = constraint.left_hand_side;
     right_hand_sides_[row_idx] = constraint.right_hand_side;
@@ -94,17 +95,12 @@ MipData::MipData(const MiniMipProblem& problem)
     constraint_matrix_.PopulateRow(RowIndex(row_idx), sparse_constraint);
   }
 
-  binary_variables_.reserve(problem.variables.size());
   integer_variables_.reserve(problem.variables.size());
 
-  for (int col_idx = 0; col_idx < variable_types_.size(); ++col_idx) {
-    if (variable_types_[col_idx] == VariableType::kBinary) {
-      //@TODO(cgraczyk): This is always empty because variable type kBinary is
-      // never set.
-      binary_variables_.push_back(col_idx);
-    }
+  for (ColIndex col_idx = ColIndex(0); col_idx < variable_types_.size();
+       ++col_idx) {
     if (variable_types_[col_idx] == VariableType::kInteger) {
-      integer_variables_.push_back(col_idx);
+      integer_variables_.insert(col_idx);
     }
   }
 }
