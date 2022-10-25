@@ -240,7 +240,7 @@ class StrongSparseVectorOfDoubles {
 
   bool MayNeedCleaning() const {
     // Note, `!IsClean() => may_need_cleaning_`. In particular,
-    // `may_need_cleaning_` may be true even if `IsClean()` is true (because
+    // `may_need_cleaning_` may be true even if `IsClean()` is false (because
     // we unconditionally mark the entries for cleaning when returning
     // `mutable_entries()`).
     DCHECK(IsClean() || may_need_cleaning_);
@@ -277,16 +277,158 @@ class StrongSparseVectorOfDoubles {
     });
   }
 
+  StrongSparseVectorOfDoubles operator-() const {
+    DCHECK(!may_need_cleaning_);
+    StrongSparseVectorOfDoubles copy = *this;
+    for (auto& [unused, value] : copy.entries_) value = -value;
+    return copy;
+  }
+
+  StrongSparseVectorOfDoubles& operator*=(const double scalar) {
+    DCHECK(!may_need_cleaning_);
+    if (scalar == 0.0) {
+      entries_.clear();
+      return *this;
+    }
+    for (auto& [unused, value] : entries_) value *= scalar;
+    return *this;
+  }
+
+  StrongSparseVectorOfDoubles operator*(const double scalar) const {
+    StrongSparseVectorOfDoubles copy = *this;
+    copy *= scalar;
+    return copy;
+  }
+
+  StrongSparseVectorOfDoubles& operator/=(const double scalar) {
+    DCHECK(!may_need_cleaning_);
+    DCHECK_NE(scalar, 0.0);
+    for (auto& [unused, value] : entries_) value /= scalar;
+    return *this;
+  }
+
+  StrongSparseVectorOfDoubles operator/(const double scalar) const {
+    StrongSparseVectorOfDoubles copy = *this;
+    copy /= scalar;
+    return copy;
+  }
+
+  StrongSparseVectorOfDoubles& operator+=(
+      const StrongSparseVectorOfDoubles& other) {
+    return AddMultipleOfVector(1.0, other);
+  }
+
+  StrongSparseVectorOfDoubles operator+(
+      const StrongSparseVectorOfDoubles& other) const {
+    StrongSparseVectorOfDoubles copy = *this;
+    copy += other;
+    return copy;
+  }
+
+  StrongSparseVectorOfDoubles& operator-=(
+      const StrongSparseVectorOfDoubles& other) {
+    return AddMultipleOfVector(-1.0, other);
+  }
+
+  StrongSparseVectorOfDoubles operator-(
+      const StrongSparseVectorOfDoubles& other) const {
+    StrongSparseVectorOfDoubles copy = *this;
+    copy -= other;
+    return copy;
+  }
+
+  // Performs *this = *this + multiple * vector. Time complexity is linear in
+  // the total number of entries in both vectors.
+  StrongSparseVectorOfDoubles& AddMultipleOfVector(
+      double factor, const StrongSparseVectorOfDoubles& other) {
+    DCHECK(!may_need_cleaning_);
+    DCHECK(!other.may_need_cleaning_);
+
+    // The algorithm we use is:
+    // 1. Merge the added entries into our current entry vector. O(n), since
+    //    both vectors are sorted.
+    // 2. Iterate over entries and for each duplicated index, add the values
+    //    into a single entry and set the duplicate values to 0. O(n)
+    // 3. Remove all entries that have value 0. O(n)
+
+    const int original_size = entries_.size();
+    entries_.resize(entries_.size() + other.entries_.size());
+    // Note: resize may invalidate iterators, so we must create it here.
+    const auto new_entries_it = entries_.begin() + original_size;
+    std::transform(other.entries_.begin(), other.entries_.end(), new_entries_it,
+                   [factor](const SparseEntry<SparseIndex>& e) {
+                     return SparseEntry<SparseIndex>(e.index, e.value * factor);
+                   });
+    std::inplace_merge(
+        entries_.begin(), new_entries_it, entries_.end(),
+        [](const SparseEntry<SparseIndex>& e1,
+           const SparseEntry<SparseIndex>& e2) { return e1.index < e2.index; });
+
+    SparseIndex current_unique_index(kInvalidSparseIndex<SparseIndex>);
+    double* value_at_current_unique_index = nullptr;
+    for (auto& [index, value] : entries_) {
+      if (index != current_unique_index) {
+        // Note: this also happens on the first iteration, so the pointer is
+        // initialized correctly.
+        current_unique_index = index;
+        value_at_current_unique_index = &value;
+      } else {
+        *value_at_current_unique_index += value;
+        value = 0.0;
+      }
+    }
+
+    entries_.erase(std::remove_if(entries_.begin(), entries_.end(),
+                                  [](const SparseEntry<SparseIndex>& e) {
+                                    return e.value == 0.0;
+                                  }),
+                   entries_.end());
+    return *this;
+  }
+
+  template <typename OtherSparseIndex>
+  double DotProduct(
+      const StrongSparseVectorOfDoubles<OtherSparseIndex>& other) const {
+    DCHECK(!may_need_cleaning_);
+    DCHECK(!other.may_need_cleaning_);
+    double product = 0.0;
+    auto it1 = entries_.begin();
+    auto it2 = other.entries_.begin();
+    while (it1 != entries_.end() && it2 != other.entries_.end()) {
+      if (it1->index.value() == it2->index.value()) {
+        product += it1->value * it2->value;
+        ++it1;
+        ++it2;
+      } else if (it1->index.value() < it2->index.value()) {
+        ++it1;
+      } else {
+        ++it2;
+      }
+    }
+    return product;
+  }
+
+  // We allow all instantiations to access each other's private members.
+  template <typename OtherSparseIndex>
+  friend class StrongSparseVectorOfDoubles;
+
  private:
   // With this, the index and the corresponding value are kept next to each
-  // other in memory. Thus, likely they end up in the same page while accessing
-  // (which is good!). However, the compiler will most likely pad this to 16
-  // bytes (see, https://godbolt.org/z/jnvfv3rdn). So, we're over-using memory
-  // by 25%.
+  // other in memory. Thus, likely they end up in the same page while
+  // accessing (which is good!). However, the compiler will most likely pad
+  // this to 16 bytes (see, https://godbolt.org/z/jnvfv3rdn). So, we're
+  // over-using memory by 25%.
   // TODO(lpawel): Investigate if this becomes an issue.
   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>> entries_;
   bool may_need_cleaning_ = false;
 };
+
+// Allow the scalar to be the first operand.
+template <typename SparseIndex>
+StrongSparseVectorOfDoubles<SparseIndex> operator*(
+    double scalar, const StrongSparseVectorOfDoubles<SparseIndex>& vector) {
+  return vector * scalar;
+}
 
 // Note, we need no-throw moveable so that `std::vector<SparseRow>::resize()`
 // uses move semantics.
