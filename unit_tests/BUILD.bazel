@@ -18,6 +18,7 @@ cc_library(
     name = "gtest_main",
     srcs = ["gtest_main.cc"],
     deps = [
+        "//src/data_structures:strong_sparse_vector",
         "@com_google_googletest//:gtest",
         "@com_google_ortools//ortools/base",
     ],
