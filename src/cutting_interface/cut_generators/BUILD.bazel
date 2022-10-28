@@ -12,12 +12,3 @@ cc_library(
         "//src/cutting_interface:cut_generator",
     ],
 )
-
-cc_library(
-    name = "zerohalf",
-    srcs = ["zerohalf.cc"],
-    hdrs = ["zerohalf.h"],
-    deps = [
-        "//src/cutting_interface:cut_generator",
-    ],
-)
