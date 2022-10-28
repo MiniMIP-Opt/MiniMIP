@@ -175,12 +175,15 @@ class StrongSparseVectorOfDoubles {
 
   // Adds new entry and marks the vector for cleaning (if needed).
   void AddEntry(SparseIndex index, double value) {
-    if (!may_need_cleaning_ && !entries_.empty()) {
-      // The entries will be unsorted or duplicated and will require cleaning.
-      if (index <= entries_.back().index) {
+    if (!may_need_cleaning_) {
+      const SparseIndex last_index = entries_.empty()
+                                         ? kInvalidSparseIndex<SparseIndex>
+                                         : entries_.back().index;
+      if (index <= last_index) {
+        // The entries will be unsorted or duplicated and will require cleaning.
         may_need_cleaning_ = true;
       } else if (value == 0.0) {
-        // If we're here, we are in the clean state, so no need to add 0.0.
+        // The new index doesn't have a value, so no need to set it to 0.
         return;
       }
     }

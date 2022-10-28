@@ -112,6 +112,13 @@ TEST(StrongSparseRow, IsCleanWhenAddsSortedNonZero) {
   EXPECT_FALSE(row.MayNeedCleaning());
 }
 
+TEST(StrongSparseRow, IsCleanWhenAddsZeroToEmpty) {
+  SparseRow row;
+  row.AddEntry(ColIndex(1), 0.0);
+  EXPECT_FALSE(row.MayNeedCleaning());
+  EXPECT_THAT(row.entries(), IsEmpty());
+}
+
 TEST(StrongSparseRow, MutateValuesWithCleanUpNeeded) {
   SparseRow row = CreateSparseRow({{1, 10.0}, {2, 20.0}});
   for (auto& e : row.mutable_entries()) {
