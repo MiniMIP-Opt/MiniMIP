@@ -15,7 +15,7 @@
 #ifndef SRC_CUTTING_INTERFACE_CUT_GENERATORS_GOMORY_MIXED_INTEGER_H_
 #define SRC_CUTTING_INTERFACE_CUT_GENERATORS_GOMORY_MIXED_INTEGER_H_
 
-#include "src/cutting_interface/cut_generator.h"
+#include "src/cutting_interface/separator.h"
 
 namespace minimip {
 
@@ -25,7 +25,7 @@ class GomoryMixedInteger : public Separator {
  public:
   GomoryMixedInteger();
 
-  ~GomoryMixedInteger() override;
+  ~GomoryMixedInteger();
 
 };
 

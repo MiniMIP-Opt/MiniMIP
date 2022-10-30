@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_CUT_GENERATOR_H_
-#define SRC_CUTTING_INTERFACE_CUT_GENERATOR_H_
+#ifndef SRC_CUTTING_INTERFACE_SEPARATOR_H_
+#define SRC_CUTTING_INTERFACE_SEPARATOR_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -101,4 +101,4 @@ class Separator : SeparatorInterface {
 
 }  // namespace minimip
 
-#endif  // SRC_CUTTING_INTERFACE_CUT_GENERATOR_H_
+#endif  // SRC_CUTTING_INTERFACE_SEPARATOR_H_

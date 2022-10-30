@@ -6,7 +6,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "separator",
-    hdrs = ["cut_generator.h"],
+    hdrs = ["separator.h"],
     deps = [
         "//src/data_structures:cuts_data",
         "//src/data_structures:mip_data",
