@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_CUT_SELECTOR_H_
-#define SRC_CUTTING_INTERFACE_CUT_SELECTOR_H_
+#ifndef SRC_CUTTING_INTERFACE_SELECTOR_H_
+#define SRC_CUTTING_INTERFACE_SELECTOR_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -38,4 +38,4 @@ class CutSelector {
 };
 
 }  // namespace minimip
-#endif  // SRC_CUTTING_INTERFACE_CUT_SELECTOR_H_
+#endif  // SRC_CUTTING_INTERFACE_SELECTOR_H_

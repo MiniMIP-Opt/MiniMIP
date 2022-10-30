@@ -15,7 +15,7 @@
 #ifndef SRC_CUTTING_INTERFACE_CUT_SELECTORS_DYNAMIC_ORTHOGONALITY_H_
 #define SRC_CUTTING_INTERFACE_CUT_SELECTORS_DYNAMIC_ORTHOGONALITY_H_
 
-#include "src/cutting_interface/cut_selector.h"
+#include "src/cutting_interface/selector.h"
 
 namespace minimip {
 

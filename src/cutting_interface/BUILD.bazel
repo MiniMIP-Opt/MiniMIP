@@ -28,7 +28,7 @@ cc_library(
 
 cc_library(
     name = "cut_selector",
-    hdrs = ["cut_selector.h"],
+    hdrs = ["selector.h"],
     deps = [
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",

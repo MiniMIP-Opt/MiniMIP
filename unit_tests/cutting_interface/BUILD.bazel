@@ -33,7 +33,7 @@ cc_test(
 cc_test(
     name = "cut_selector_test",
     size = "small",
-    srcs = ["cut_selector_test.cc"],
+    srcs = ["selector_test.cc"],
     deps = [
         "//src/data_structures:mip_data",
         "//unit_tests:gtest_main",
