@@ -11,7 +11,7 @@ cc_test(
     size = "small",
     srcs = ["dynamic_orthogonality_test.cc"],
     deps = [
-        "//unit_tests/cutting_interface:cut_selector_test",
+        "//unit_tests/cutting_interface:selector_test",
     ],
 )
 
@@ -20,6 +20,6 @@ cc_test(
     size = "small",
     srcs = ["projection_efficacy_test.cc"],
     deps = [
-        "//unit_tests/cutting_interface:cut_selector_test",
+        "//unit_tests/cutting_interface:selector_test",
     ],
 )

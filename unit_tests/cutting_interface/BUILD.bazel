@@ -31,7 +31,7 @@ cc_test(
 )
 
 cc_test(
-    name = "cut_selector_test",
+    name = "selector_test",
     size = "small",
     srcs = ["selector_test.cc"],
     deps = [
