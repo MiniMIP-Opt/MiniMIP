@@ -21,8 +21,4 @@ GomoryMixedInteger::GomoryMixedInteger() {}
 
 GomoryMixedInteger::~GomoryMixedInteger() {}
 
-absl::Status GomoryMixedInteger::MyCutGeneratorFunction() {
-  return absl::OkStatus();
-}
-
 }  // namespace minimip

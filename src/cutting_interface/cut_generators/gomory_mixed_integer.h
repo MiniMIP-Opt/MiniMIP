@@ -19,7 +19,7 @@
 
 namespace minimip {
 
-class GomoryMixedInteger : public CutGenerator {
+class GomoryMixedInteger : public Separator {
   // TODO: Implement Gomory Mixed-Integer cutting plane generator.
 
  public:
@@ -27,7 +27,6 @@ class GomoryMixedInteger : public CutGenerator {
 
   ~GomoryMixedInteger() override;
 
-  absl::Status MyCutGeneratorFunction() final;
 };
 
 }  // namespace minimip

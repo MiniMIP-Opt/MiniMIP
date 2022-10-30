@@ -9,6 +9,6 @@ cc_library(
     srcs = ["gomory_mixed_integer.cc"],
     hdrs = ["gomory_mixed_integer.h"],
     deps = [
-        "//src/cutting_interface:cut_generator",
+        "//src/cutting_interface:separator",
     ],
 )

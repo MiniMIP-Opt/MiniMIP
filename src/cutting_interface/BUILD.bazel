@@ -5,7 +5,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "cut_generator",
+    name = "separator",
     hdrs = ["cut_generator.h"],
     deps = [
         "//src/data_structures:cuts_data",
@@ -13,7 +13,7 @@ cc_library(
         "//src/lp_interface:lpi",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/base:status_macros",
     ],
 )
 
