@@ -17,12 +17,32 @@
 namespace minimip {
 
 // TODO: Implement Dynamic Orthogonality Filtering based cut selector.
-DynamicOrthogonality::DynamicOrthogonality() {}
+DynamicOrthogonality::DynamicOrthogonality() = default;
 
-DynamicOrthogonality::~DynamicOrthogonality() {}
+DynamicOrthogonality::~DynamicOrthogonality() = default;
 
-absl::Status DynamicOrthogonality::MyCutSelectorFunction() {
+// Extract the relevant data needed for the following cut selection loop.
+// This must include some sort of pre-scoring notion, refreshing the current score of a cut.
+// TODO: add "isCutFresh()" like function corresponding to its current_score.
+absl::Status DynamicOrthogonality::PrepareSelection(const LPInterface *lpi,
+                                                  const MipData &mip_data,
+                                                  const std::vector<CuttingPlane> &cuts) const {
   return absl::OkStatus();
-}
+};
+
+// Prepare the next iteration of filtering cuts and any preprocessing needed
+absl::Status DynamicOrthogonality::PrepareIteration(std::vector<CuttingPlane>& cuts) {
+  return absl::OkStatus();
+};
+
+// Computing the cutting plane from the current iterative and any additional data needed.
+absl::Status DynamicOrthogonality::Filtering(std::vector<CuttingPlane>& cuts) {
+  return absl::OkStatus();
+};
+
+// Compute new scores after filtering if necessary.
+absl::Status DynamicOrthogonality::Scoring(std::vector<CuttingPlane>& cuts) {
+  return absl::OkStatus();
+};
 
 }  // namespace minimip

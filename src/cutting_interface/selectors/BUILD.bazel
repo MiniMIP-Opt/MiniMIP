@@ -9,7 +9,7 @@ cc_library(
     srcs = ["dynamic_orthogonality.cc"],
     hdrs = ["dynamic_orthogonality.h"],
     deps = [
-        "//src/cutting_interface:cut_selector",
+        "//src/cutting_interface:selector",
     ],
 )
 
@@ -18,6 +18,6 @@ cc_library(
     srcs = ["projection_efficacy.cc"],
     hdrs = ["projection_efficacy.h"],
     deps = [
-        "//src/cutting_interface:cut_selector",
+        "//src/cutting_interface:selector",
     ],
 )

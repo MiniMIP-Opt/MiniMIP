@@ -43,7 +43,7 @@ class Separator : SeparatorInterface {
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
   absl::StatusOr<std::vector<CuttingPlane>> GenerateCuttingPlanes(const LPInterface* lpi, const MipData& mip_data, int max_num_cuts) final {
-    RETURN_IF_ERROR( PrepareSeparationRound(lpi, mip_data, max_num_cuts) );
+    RETURN_IF_ERROR(PrepareSeparationRound(lpi, mip_data, max_num_cuts));
 
     std::vector<CuttingPlane> cuts;
 
@@ -57,7 +57,7 @@ class Separator : SeparatorInterface {
       cuts.insert(cuts.end(), current_cuts.begin(), current_cuts.end());
     }
 
-    RETURN_IF_ERROR(LocallyFilter(cuts, max_num_cuts));
+    RETURN_IF_ERROR(LocallyFiltering(cuts, max_num_cuts));
     return cuts;
   };
 
@@ -93,7 +93,7 @@ class Separator : SeparatorInterface {
 
   // Apply a local selection heuristic to the generator specific cuts of the separation round.
   // If this function is not implemented, it simply returns the vector of cuts.
-  virtual absl::Status LocallyFilter(std::vector<CuttingPlane>& cuts, int max_num_cuts) const {
+  virtual absl::Status LocallyFiltering(std::vector<CuttingPlane>& cuts, int max_num_cuts) const {
     return absl::OkStatus();
     }
 
