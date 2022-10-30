@@ -19,9 +19,9 @@ cc_test(
 )
 
 cc_test(
-    name = "cut_runner_test",
+    name = "runner_test",
     size = "small",
-    srcs = ["cut_runner_test.cc"],
+    srcs = ["runner_test.cc"],
     deps = [
         "//src/data_structures:mip_data",
         "//unit_tests:gtest_main",

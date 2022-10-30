@@ -18,16 +18,61 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include "ortools/base/status_macros.h"
+#include "ortools/base/logging.h"
+
+#include "src/data_structures/cuts_data.h"
+#include "src/data_structures/mip_data.h"
+#include "src/lp_interface/lpi.h"
+
 namespace minimip {
 
-class CutRunner {
+class CuttingInterface {
+ public:
+  // TODO: add searchtree etc.
+  virtual absl::Status SeparateCurrentLPSolution(const LPInterface *lpi,
+                                                 const MipData &mip_data,
+                                                 const CutArchive& cut_archive) = 0;
+};
+
+
+class CutRunner : CuttingInterface {
   // TODO: Implement abstract cut runner class to allow the implementation of
   //       different cut runners to control the hierarchy and application of cut
   //       generators.
  public:
   virtual ~CutRunner() = default;
 
-  virtual absl::Status MyCutRunnerFunction() = 0;
+  absl::Status SeparateCurrentLPSolution(const LPInterface *lpi,
+                                         const MipData &mip_data,
+                                         const CutArchive& cut_archive) final {
+    RETURN_IF_ERROR(PrepareSeparation(lpi, mip_data, cut_archive));
+
+    ASSIGN_OR_RETURN(std::vector<CuttingPlane> cuts,
+                     separator_->GenerateCuttingPlanes(lpi,
+                                                       mip_data,
+                                                       cut_archive));
+
+    ASSIGN_OR_RETURN(int number_of_cuts_selected,
+                     selector_->SelectCuttingPlanes(lpi,
+                                                    mip_data,
+                                                    cuts));
+
+    RETURN_IF_ERROR(StoreCutsInArchive(lpi, mip_data, cut_archive));
+    RETURN_IF_ERROR(SolveLP());
+  };
+ private:
+  SeparatorInterface separator_;
+  SelectorInterface selector_;
+
+ protected:
+  virtual absl::Status PrepareSeparation(
+      const LPInterface* lpi, const MipData& mip_data, const CutArchive& cut_archive) = 0;
+
+  virtual absl::Status StoreCutsInArchive(
+      const LPInterface* lpi, const MipData& mip_data, const CutArchive& cut_archive) = 0;
+
+
 };
 
 }  // namespace minimip

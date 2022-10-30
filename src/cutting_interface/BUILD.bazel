@@ -18,11 +18,15 @@ cc_library(
 )
 
 cc_library(
-    name = "cut_runner",
+    name = "runner",
     hdrs = ["cut_runner.h"],
     deps = [
+        "//src/data_structures:cuts_data",
+        "//src/data_structures:mip_data",
+        "//src/lp_interface:lpi",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
+        "@com_google_ortools//ortools/base:status_macros",
     ],
 )
 
