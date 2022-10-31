@@ -26,16 +26,18 @@ class ProjectionEfficacy : Selector {
 
  protected:
   // Extract the relevant data needed for the following cut selection loop.
-  // This must include some sort of pre-scoring notion, refreshing the current score of a cut.
+  // This must include some sort of pre-scoring notion, refreshing the current
+  // score of a cut.
   // TODO: add "isCutFresh()" like function corresponding to its current_score.
-  absl::Status PrepareSelection(const LPInterface *lpi,
-                                        const MipData &mip_data,
-                                        const std::vector<CuttingPlane> &cuts) const final;
+  absl::Status PrepareSelection(
+      const LPInterface* lpi, const MipData& mip_data,
+      const std::vector<CuttingPlane>& cuts) const final;
 
   // Prepare the next iteration of filtering cuts and any preprocessing needed
   absl::Status PrepareIteration(std::vector<CuttingPlane>& cuts) final;
 
-  // Computing the cutting plane from the current iterative and any additional data needed.
+  // Computing the cutting plane from the current iterative and any additional
+  // data needed.
   absl::Status Filtering(std::vector<CuttingPlane>& cuts) final;
 
   // Compute new scores after filtering if necessary.

@@ -21,20 +21,23 @@ ProjectionEfficacy::ProjectionEfficacy() = default;
 
 ProjectionEfficacy::~ProjectionEfficacy() = default;
 // Extract the relevant data needed for the following cut selection loop.
-// This must include some sort of pre-scoring notion, refreshing the current score of a cut.
+// This must include some sort of pre-scoring notion, refreshing the current
+// score of a cut.
 // TODO: add "isCutFresh()" like function corresponding to its current_score.
-absl::Status ProjectionEfficacy::PrepareSelection(const LPInterface *lpi,
-                              const MipData &mip_data,
-                              const std::vector<CuttingPlane> &cuts) const {
+absl::Status ProjectionEfficacy::PrepareSelection(
+    const LPInterface* lpi, const MipData& mip_data,
+    const std::vector<CuttingPlane>& cuts) const {
   return absl::OkStatus();
 };
 
 // Prepare the next iteration of filtering cuts and any preprocessing needed
-absl::Status ProjectionEfficacy::PrepareIteration(std::vector<CuttingPlane>& cuts) {
+absl::Status ProjectionEfficacy::PrepareIteration(
+    std::vector<CuttingPlane>& cuts) {
   return absl::OkStatus();
 };
 
-// Computing the cutting plane from the current iterative and any additional data needed.
+// Computing the cutting plane from the current iterative and any additional
+// data needed.
 absl::Status ProjectionEfficacy::Filtering(std::vector<CuttingPlane>& cuts) {
   return absl::OkStatus();
 };
