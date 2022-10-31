@@ -26,7 +26,6 @@ class GomoryMixedInteger : public Separator {
   GomoryMixedInteger();
 
   ~GomoryMixedInteger();
-
 };
 
 }  // namespace minimip

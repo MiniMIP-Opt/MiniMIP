@@ -17,10 +17,10 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include "ortools/base/status_macros.h"
 #include "ortools/base/logging.h"
-
+#include "ortools/base/status_macros.h"
+#include "src/cutting_interface/selector.h"
+#include "src/cutting_interface/separator.h"
 #include "src/data_structures/cuts_data.h"
 #include "src/data_structures/mip_data.h"
 #include "src/lp_interface/lpi.h"
@@ -30,11 +30,10 @@ namespace minimip {
 class CuttingInterface {
  public:
   // TODO: add searchtree etc.
-  virtual absl::Status SeparateCurrentLPSolution(const LPInterface *lpi,
-                                                 const MipData &mip_data,
-                                                 const CutArchive& cut_archive) = 0;
+  virtual absl::Status SeparateCurrentLPSolution(
+      const LPInterface* lpi, const MipData& mip_data,
+      const CutArchive& cut_archive) = 0;
 };
-
 
 class CutRunner : CuttingInterface {
   // TODO: Implement abstract cut runner class to allow the implementation of
@@ -43,36 +42,40 @@ class CutRunner : CuttingInterface {
  public:
   virtual ~CutRunner() = default;
 
-  absl::Status SeparateCurrentLPSolution(const LPInterface *lpi,
-                                         const MipData &mip_data,
+  absl::Status SeparateCurrentLPSolution(const LPInterface* lpi,
+                                         const MipData& mip_data,
                                          const CutArchive& cut_archive) final {
-    RETURN_IF_ERROR(PrepareSeparation(lpi, mip_data, cut_archive));
+    ASSIGN_OR_RETURN(int max_num_cuts,
+                     PrepareSeparation(lpi, mip_data, cut_archive));
 
-    ASSIGN_OR_RETURN(std::vector<CuttingPlane> cuts,
-                     separator_->GenerateCuttingPlanes(lpi,
-                                                       mip_data,
-                                                       cut_archive));
+    ASSIGN_OR_RETURN(
+        std::vector<CuttingPlane> cuts,
+        separator_->GenerateCuttingPlanes(lpi, mip_data, max_num_cuts));
+
+    RETURN_IF_ERROR(PrepareSelection(lpi, mip_data, cuts));
 
     ASSIGN_OR_RETURN(int number_of_cuts_selected,
-                     selector_->SelectCuttingPlanes(lpi,
-                                                    mip_data,
-                                                    cuts));
+                     selector_->SelectCuttingPlanes(lpi, mip_data, cuts));
 
     RETURN_IF_ERROR(StoreCutsInArchive(lpi, mip_data, cut_archive));
-    RETURN_IF_ERROR(SolveLP());
   };
+
  private:
-  SeparatorInterface separator_;
-  SelectorInterface selector_;
+  SeparatorInterface* separator_;
+  SelectorInterface* selector_;
 
  protected:
-  virtual absl::Status PrepareSeparation(
-      const LPInterface* lpi, const MipData& mip_data, const CutArchive& cut_archive) = 0;
+  virtual absl::StatusOr<int> PrepareSeparation(
+      const LPInterface* lpi, const MipData& mip_data,
+      const CutArchive& cut_archive) = 0;
 
-  virtual absl::Status StoreCutsInArchive(
-      const LPInterface* lpi, const MipData& mip_data, const CutArchive& cut_archive) = 0;
+  virtual absl::Status PrepareSelection(const LPInterface* lpi,
+                                        const MipData& mip_data,
+                                        std::vector<CuttingPlane> cuts) = 0;
 
-
+  virtual absl::Status StoreCutsInArchive(const LPInterface* lpi,
+                                          const MipData& mip_data,
+                                          const CutArchive& cut_archive) = 0;
 };
 
 }  // namespace minimip

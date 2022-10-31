@@ -17,10 +17,8 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include "ortools/base/status_macros.h"
 #include "ortools/base/logging.h"
-
+#include "ortools/base/status_macros.h"
 #include "src/data_structures/cuts_data.h"
 #include "src/data_structures/mip_data.h"
 #include "src/lp_interface/lpi.h"
@@ -34,13 +32,13 @@ namespace minimip {
 //      selector should be implemented here, allowing the user to turn off all
 //      cut selection strategies for testing or analytics.
 
-class SelectorInterface{
+class SelectorInterface {
  public:
   // Generate up to `max_num_cuts` cutting planes. Returns an empty vector if no
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
   virtual absl::StatusOr<int> SelectCuttingPlanes(
-      const LPInterface *lpi, const MipData &mip_data,
+      const LPInterface* lpi, const MipData& mip_data,
       std::vector<CuttingPlane>& cuts) = 0;
 };
 
@@ -48,8 +46,9 @@ class Selector : SelectorInterface {
  public:
   virtual ~Selector() = default;
 
-  absl::StatusOr<int> SelectCuttingPlanes( const LPInterface *lpi,
-    const MipData &mip_data, std::vector<CuttingPlane>& cuts) final {
+  absl::StatusOr<int> SelectCuttingPlanes(
+      const LPInterface* lpi, const MipData& mip_data,
+      std::vector<CuttingPlane>& cuts) final {
     RETURN_IF_ERROR(PrepareSelection(lpi, mip_data, cuts));
 
     while (number_of_cuts_selected_ < max_number_of_cuts_to_select_) {
@@ -66,16 +65,18 @@ class Selector : SelectorInterface {
 
  protected:
   // Extract the relevant data needed for the following cut selection loop.
-  // This must include some sort of pre-scoring notion, refreshing the current score of a cut.
+  // This must include some sort of pre-scoring notion, refreshing the current
+  // score of a cut.
   // TODO: add "isCutFresh()" like function corresponding to its current_score.
-  virtual absl::Status PrepareSelection(const LPInterface *lpi,
-                                        const MipData &mip_data,
-                                        const std::vector<CuttingPlane> &cuts) const = 0;
+  virtual absl::Status PrepareSelection(
+      const LPInterface* lpi, const MipData& mip_data,
+      const std::vector<CuttingPlane>& cuts) const = 0;
 
   // Prepare the next iteration of filtering cuts and any preprocessing needed
   virtual absl::Status PrepareIteration(std::vector<CuttingPlane>& cuts) = 0;
 
-  // Computing the cutting plane from the current iterative and any additional data needed.
+  // Computing the cutting plane from the current iterative and any additional
+  // data needed.
   virtual absl::Status Filtering(std::vector<CuttingPlane>& cuts) = 0;
 
   // Compute new scores after filtering if necessary.
