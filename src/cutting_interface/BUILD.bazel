@@ -8,8 +8,7 @@ cc_library(
     name = "separator",
     hdrs = ["separator.h"],
     deps = [
-        "//src/data_structures:cuts_data",
-        "//src/data_structures:mip_data",
+        "//src/data_structures:solver",
         "//src/lp_interface:lpi",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",

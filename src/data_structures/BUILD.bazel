@@ -9,6 +9,7 @@ cc_library(
     hdrs = ["solver.h"],
     deps = [
         ":mip_data",
+        ":cuts_data",
         "//src/lp_interface:lpi",
     ],
 )

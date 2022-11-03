@@ -16,21 +16,29 @@
 #define SRC_DATA_STRUCTURES_SOLVER_H_
 
 #include "mip_data.h"
+#include "cuts_data.h"
 #include "src/lp_interface/lpi.h"
 
 namespace minimip {
 
 class Solver {
  public:
-  explicit Solver(MipData &mip_data, LPInterface *lp_interface) :
-      mip_data_(mip_data), lp_interface_(lp_interface) {}
+  explicit Solver(MipData &mip_data,
+                  CutStorage& cut_storage,
+                  LPInterface *lp_interface) :
+      mip_data_(mip_data),
+      cut_storage_(cut_storage),
+      lp_interface_(lp_interface) {}
 
   const MipData &mip_data() const { return mip_data_; };
+  const CutStorage &cut_storage() const { return cut_storage_; };
   const LPInterface *lp_interface() const { return lp_interface_; };
 
  private:
-  MipData& mip_data_;
-  LPInterface* lp_interface_;
+  MipData &mip_data_;
+  CutStorage &cut_storage_;
+  LPInterface *lp_interface_;
+
 };
 
 }  // namespace minimip
