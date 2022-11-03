@@ -21,6 +21,7 @@ cc_test(
     deps = [
         "//src/data_structures:strong_sparse_vector",
         "//unit_tests:gtest_main",
+        "//unit_tests:utils",
         "@com_google_googletest//:gtest",
         "@com_google_ortools//ortools/base",
         "@com_google_ortools//ortools/base:strong_vector",

@@ -92,11 +92,12 @@ class LPInterface {
 
   // Like `AddColumn()`, but adds multiple columns at once. This is useful if
   // the underlying LP solver supports batched operations.
-  virtual absl::Status AddColumns(const StrongSparseMatrix& matrix,
-                                  const std::vector<double>& lower_bounds,
-                                  const std::vector<double>& upper_bounds,
-                                  const SparseRow& objective_coefficients,
-                                  const std::vector<std::string>& names) = 0;
+  virtual absl::Status AddColumns(
+      const StrongSparseMatrix& matrix,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) = 0;
 
   // Deletes all columns from `first_col` to `last_col` inclusive on both ends.
   // The column indices larger than `last_col` are decremented by `last_col -
