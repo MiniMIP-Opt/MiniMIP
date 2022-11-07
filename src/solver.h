@@ -7,6 +7,7 @@
 #include "absl/status/status.h"
 #include "ortools/base/status_builder.h"
 #include "ortools/base/status_macros.h"
+#include "src/data_structures/cuts_data.h"
 #include "src/data_structures/mip_data.h"
 #include "src/data_structures/problem.h"
 #include "src/lp_interface/lpi.h"
@@ -29,10 +30,11 @@ class Solver {
              << "Error found in problem: " << problem_error;
     }
     MipData mip_data(problem);
+    CutStorage cut_storage;
     ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                      ConfigureLPSolverFromProto(params.lp_parameters()));
-    auto solver = std::unique_ptr<Solver>(
-        new Solver(params, std::move(mip_data), std::move(lpi)));
+    auto solver = std::unique_ptr<Solver>(new Solver(
+        params, std::move(mip_data), std::move(cut_storage), std::move(lpi)));
     return solver;
   }
 
@@ -42,6 +44,9 @@ class Solver {
 
   const MipData& mip_data() const { return mip_data_; }
   MipData& mutable_mip_data() { return mip_data_; }
+
+  const CutStorage& cut_storage() const { return cut_storage_; }
+  CutStorage& mutable_cut_storage() { return cut_storage_; }
 
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
@@ -53,13 +58,15 @@ class Solver {
  private:
   const MiniMipParameters params_;
   MipData mip_data_;
+  CutStorage cut_storage_;
   std::unique_ptr<LPInterface> lpi_;
 
   // Protected constructor, use Create() instead.
-  Solver(MiniMipParameters params, MipData mip_data,
-         std::unique_ptr<LPInterface> lpi)
+  Solver(const MiniMipParameters& params, MipData mip_data,
+         CutStorage cut_storage, std::unique_ptr<LPInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
+        cut_storage_(std::move(cut_storage)),
         lpi_{std::move(lpi)} {}
 };
 

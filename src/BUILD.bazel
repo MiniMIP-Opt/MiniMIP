@@ -22,6 +22,7 @@ cc_library(
         ":parameters_cc_proto",
         "//src/data_structures:mip_data",
         "//src/data_structures:problem",
+        "//src/data_structures:cuts_data",
         "//src/lp_interface:lpi",
         "//src/lp_interface:lpi_factory",
         "@com_google_ortools//ortools/base:status_builder",
