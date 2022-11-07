@@ -7,6 +7,8 @@
 #include "absl/status/status.h"
 #include "ortools/base/status_builder.h"
 #include "ortools/base/status_macros.h"
+#include "src/cutting_interface/cut_runner.h"
+#include "src/cutting_interface/separator.h"
 #include "src/data_structures/cuts_data.h"
 #include "src/data_structures/mip_data.h"
 #include "src/data_structures/problem.h"
@@ -33,8 +35,17 @@ class Solver {
     CutStorage cut_storage;
     ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                      ConfigureLPSolverFromProto(params.lp_parameters()));
-    auto solver = std::unique_ptr<Solver>(new Solver(
-        params, std::move(mip_data), std::move(cut_storage), std::move(lpi)));
+    ASSIGN_OR_RETURN(std::unique_ptr<CuttingInterface> cut_runner,
+                     ConfigureCutInterfaceFromProto(params.cut_runner()));
+    for (const SeparatorParameters& separator_params : params.separators()) {
+      ASSIGN_OR_RETURN(std::unique_ptr<Separator> separator,
+                       ConfigureSeparatorFromProto(separator_params));
+      cut_runner->AddSeparator(std::move(separator));
+    }
+    // TODO(cgraczy): Configure the selector(s) in a similar way.
+    auto solver = std::unique_ptr<Solver>(
+        new Solver(params, std::move(mip_data), std::move(cut_storage),
+                   std::move(lpi), std::move(cut_runner)));
     return solver;
   }
 
@@ -60,14 +71,17 @@ class Solver {
   MipData mip_data_;
   CutStorage cut_storage_;
   std::unique_ptr<LPInterface> lpi_;
+  std::unique_ptr<CuttingInterface> cut_runner_;
 
   // Protected constructor, use Create() instead.
   Solver(const MiniMipParameters& params, MipData mip_data,
-         CutStorage cut_storage, std::unique_ptr<LPInterface> lpi)
+         CutStorage cut_storage, std::unique_ptr<LPInterface> lpi,
+         std::unique_ptr<CuttingInterface> cut_runner)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         cut_storage_(std::move(cut_storage)),
-        lpi_{std::move(lpi)} {}
+        lpi_{std::move(lpi)},
+        cut_runner_{std::move(cut_runner)} {}
 };
 
 // Convenience function to create a solver and solve the given problem.

@@ -34,13 +34,8 @@ class CuttingInterface {
     separators_.push_back(std::move(separator));
   }
 
-  void AddSelector(std::unique_ptr<Selector> selector) {
-    selectors_.push_back(std::move(selector));
-  }
-
  protected:
   std::vector<std::unique_ptr<Separator>> separators_;
-  std::vector<std::unique_ptr<Selector>> selectors_;
 };
 
 class CutRunner : CuttingInterface {
@@ -76,6 +71,14 @@ class CutRunner : CuttingInterface {
 
   virtual absl::Status StoreCutsInArchive(const Solver& solver) = 0;
 };
+
+inline absl::StatusOr<std::unique_ptr<CuttingInterface>>
+ConfigureCutInterfaceFromProto(const CutRunnerParameters& parameters) {
+  if (parameters.has_some_cut_runner_parameters()) {
+    // Here we would create and return the cut runner.
+  }
+  return absl::InvalidArgumentError("No cut runner implementation was chosen.");
+}
 
 }  // namespace minimip
 

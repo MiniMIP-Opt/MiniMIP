@@ -25,6 +25,16 @@ message SeparatorParameters {
 
 }
 
+message SomeCutRunnerParameters {
+
+}
+
+message CutRunnerParameters {
+  oneof runner_specific {
+    SomeCutRunnerParameters some_cut_runner_parameters = 1;
+  }
+}
+
 message LPParameters {
   enum SolverType {
     LP_GLOP = 0;
@@ -117,5 +127,9 @@ message MiniMipParameters {
   // A value v is considered integral within MiniMip if
   // abs(v - round(v)) <= integrality_tolerance.
   optional double integrality_tolerance = 2 [default = 1e-6];
+
+  optional CutRunnerParameters cut_runner = 3;
+
+  repeated SeparatorParameters separators = 4;
 
 }
