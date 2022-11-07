@@ -36,14 +36,14 @@
 
 namespace minimip {
 
-SparseRow CreateSparseRow(const std::vector<std::pair<int, double>>& v) {
+inline SparseRow CreateSparseRow(const std::vector<std::pair<int, double>>& v) {
   SparseRow res;
   for (auto [index, value] : v) res.AddEntry(ColIndex(index), value);
   res.CleanUpIfNeeded();
   return res;
 }
 
-SparseCol CreateSparseCol(const std::vector<std::pair<int, double>>& v) {
+inline SparseCol CreateSparseCol(const std::vector<std::pair<int, double>>& v) {
   SparseCol res;
   for (auto [index, value] : v) res.AddEntry(RowIndex(index), value);
   res.CleanUpIfNeeded();

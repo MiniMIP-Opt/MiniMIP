@@ -356,6 +356,4 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   }
 }
 
-// TODO(CGraczyk): add tests for FindErrorInMiniMipProblem.
-
 }  // namespace minimip

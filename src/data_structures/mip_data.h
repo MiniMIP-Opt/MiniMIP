@@ -51,11 +51,11 @@ class MipData {
   // Problem getters.
   // ==========================================================================
 
-  const std::string problem_name() const { return problem_name_; }
+  std::string problem_name() const { return problem_name_; }
 
-  const bool is_maximization() const { return is_maximization_; }
+  bool is_maximization() const { return is_maximization_; }
 
-  const double objective_offset() const { return objective_offset_; }
+  double objective_offset() const { return objective_offset_; }
 
   const SparseRow& objective() const { return objective_; }
 
@@ -99,8 +99,8 @@ class MipData {
 
  private:
   std::string problem_name_;
-  bool is_maximization_;
-  double objective_offset_;
+  bool is_maximization_ = false;
+  double objective_offset_ = 0.0;
   SparseRow objective_;
   std::vector<MiniMipSolutionHint> solution_hints_;
   absl::StrongVector<ColIndex, double> lower_bounds_;
