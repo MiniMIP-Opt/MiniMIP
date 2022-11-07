@@ -11,15 +11,8 @@ cc_test(
     size = "small",
     srcs = ["dynamic_orthogonality_test.cc"],
     deps = [
-        "//unit_tests/cutting_interface:selector_test",
-    ],
-)
-
-cc_test(
-    name = "projection_efficacy_test",
-    size = "small",
-    srcs = ["projection_efficacy_test.cc"],
-    deps = [
-        "//unit_tests/cutting_interface:selector_test",
+        "//src/data_structures:mip_data",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
     ],
 )

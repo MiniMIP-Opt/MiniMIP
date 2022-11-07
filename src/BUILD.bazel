@@ -1,0 +1,31 @@
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+proto_library(
+    name = "parameters_proto",
+    srcs = ["parameters.proto"],
+    deps = [],
+)
+
+cc_proto_library(
+    name = "parameters_cc_proto",
+    deps = [
+        ":parameters_proto",
+    ],
+)
+
+cc_library(
+    name = "solver",
+    hdrs = ["solver.h"],
+    deps = [
+        ":parameters_cc_proto",
+        "//src/data_structures:mip_data",
+        "//src/data_structures:problem",
+        "//src/data_structures:cuts_data",
+        "//src/lp_interface:lpi",
+        "//src/lp_interface:lpi_factory",
+        "@com_google_ortools//ortools/base:status_builder",
+        "@com_google_ortools//ortools/base:status_macros",
+    ],
+)

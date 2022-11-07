@@ -17,6 +17,7 @@
 
 #include "absl/status/status.h"
 #include "ortools/base/status_macros.h"
+#include "src/data_structures/strong_sparse_vector.h"
 
 #ifndef UNIT_TESTS_UTILS_H_
 #define UNIT_TESTS_UTILS_H_
@@ -32,5 +33,33 @@
   auto (statusor) = (rexpr);                                             \
   ASSERT_OK((statusor).status());                                        \
   STATUS_MACROS_IMPL_UNPARENTHESIS(lhs) = std::move(statusor).value()
+
+namespace minimip {
+
+inline SparseRow CreateSparseRow(const std::vector<std::pair<int, double>>& v) {
+  SparseRow res;
+  for (auto [index, value] : v) res.AddEntry(ColIndex(index), value);
+  res.CleanUpIfNeeded();
+  return res;
+}
+
+inline SparseCol CreateSparseCol(const std::vector<std::pair<int, double>>& v) {
+  SparseCol res;
+  for (auto [index, value] : v) res.AddEntry(RowIndex(index), value);
+  res.CleanUpIfNeeded();
+  return res;
+}
+
+// Simple helper function to allow writing e.g.
+// EXPECT_THAT(row.entries(), EntriesAre<ColIndex>({{1, 2.0}, {2, 7.5}}));
+// without having to repeatedly specify the index type.
+template <typename IndexType>
+auto EntriesAre(const std::vector<std::pair<int, double>>& val) {
+  std::vector<SparseEntry<IndexType>> vec;
+  for (auto [index, value] : val) vec.push_back({IndexType(index), value});
+  return testing::ElementsAreArray(vec);
+}
+
+}  // namespace minimip
 
 #endif  // UNIT_TESTS_UTILS_H_

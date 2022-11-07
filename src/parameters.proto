@@ -1,0 +1,109 @@
+syntax = "proto2";
+
+package minimip;
+
+message SeparatorParameters {
+  enum SeparatorType {
+    SEPA_GOMORY = 0;
+  }
+
+  // The maximum number of cuts this Separator should add per separation round. Negative values mean
+  // that the separator default should be used. Zero value means the Separator is turned off.
+  optional int32 max_num_cuts = 1 [default = -1];
+
+}
+
+message LPParameters {
+  enum SolverType {
+    LP_GLOP = 0;
+    LP_SOPLEX = 1;
+  }
+
+  enum Pricing {
+    PRICING_DEFAULT = 0;
+    PRICING_AUTO = 1;
+    PRICING_FULL = 2;
+    PRICING_PARTIAL = 3;
+    PRICING_STEEP = 4;
+    PRICING_STEEP_Q_START = 5;
+    PRICING_DEVEX = 6;
+  }
+
+  enum Timing {
+    TIMING_OFF = 0;
+    TIMING_WALLCLOCK = 1;
+    TIMING_CPU = 2;
+  }
+
+  // The underlying solver to use. Note that some parameters behave differently
+  // depending on the solver type.
+  optional SolverType lp_solver_type = 1 [default = LP_GLOP];
+
+  // What kind of scaling the LP solver should use. 0 means no scaling for all
+  // solvers, but the behaviour for other values are solver-specific.
+  optional int32 scaling = 2 [default = 1];
+
+  // Should the LP solver use presolving?
+  optional bool use_presolve = 3 [default = true];
+
+  // Should solutions be polished before they are returned? As of 2022-11-03,
+  // this is not supported by any solvers.
+  optional bool use_polishing = 4 [default = false];
+
+  // Pricing strategy. All solvers may not support all strategies.
+  optional Pricing pricing = 5 [default = PRICING_DEFAULT];
+
+  // Feasibility tolerance for primal variables and slacks. Negative value
+  // means that the solver default should be used.
+  optional double feasibility_tolerance = 6 [default = -1.0];
+
+  // Feasibility tolerance for dual variables and slacks. Negative value
+  // means that the solver default should be used.
+  optional double dual_feasibility_tolerance = 7 [default = -1.0];
+
+  // Markovitz tolerance. Negative value means that the solver default should
+  // be used.
+  optional double markowitz_tolerance = 8 [default = -1.0];
+
+  // Refactorization interval. If 0, refactorization is determined
+  // automatically by the solver.
+  optional int32 refactorization_interval = 9 [default = 0];
+
+  // Should the LP solver stop when a given objective value is achieved?
+  optional bool use_objective_limit = 10 [default = false];
+
+  // The LP solver will stop when the objective value is larger (if
+  // maximization) or smaller (if minimization) than this value. Has no effect
+  // if use_objective_limit = false.
+  optional double objective_limit = 11 [default = 0.0];
+
+  // Time limit for the LP solver. If negative or zero, no limit is used.
+  optional double time_limit = 12 [default = 0.0];
+
+  // Iteration limit for the LP solver. If negative or zero, no limit is used.
+  optional int32 iteration_limit = 13 [default = -1];
+
+  // Timing type.
+  optional Timing timing = 14 [default = TIMING_OFF];
+
+  // Number of thread to use. Set to 0 to let the LP solver determine the
+  // thread count automatically.
+  optional int32 num_threads = 15 [default = 0];
+
+  // Initial random seed, which may affects e.g. perturbations in the simplex.
+  // Set to 0 to use the solver default.
+  optional int32 random_seed = 16 [default = 0];
+
+  // If true, the solver prints extra debugging information to the console.
+  optional bool enable_internal_solver_output = 17 [default = false];
+}
+
+message MiniMipParameters {
+  // Parameters to forward to the underlying LP solver.
+  optional LPParameters lp_parameters = 1;
+
+  // A value v is considered integral within MiniMip if
+  // abs(v - round(v)) <= integrality_tolerance.
+  optional double integrality_tolerance = 2 [default = 1e-6];
+
+}

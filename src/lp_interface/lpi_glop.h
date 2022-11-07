@@ -39,8 +39,6 @@ class LPGlopInterface : public LPInterface {
  public:
   LPGlopInterface();
 
-  ~LPGlopInterface() override;
-
   // ==========================================================================
   // LP model setters.
   // ==========================================================================
@@ -53,11 +51,12 @@ class LPGlopInterface : public LPInterface {
                          double upper_bound, double objective_coefficient,
                          const std::string& name) final;
 
-  absl::Status AddColumns(const StrongSparseMatrix& matrix,
-                          const std::vector<double>& lower_bounds,
-                          const std::vector<double>& upper_bounds,
-                          const SparseRow& objective_coefficients,
-                          const std::vector<std::string>& names) final;
+  absl::Status AddColumns(
+      const StrongSparseMatrix& matrix,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) final;
 
   absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) final;
 

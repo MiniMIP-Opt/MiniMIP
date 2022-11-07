@@ -26,6 +26,7 @@
 namespace minimip {
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
+using ::testing::UnorderedElementsAreArray;
 
 TEST(MipDataTests, CreateEmptyProblem) {
   MipData mip_data;
@@ -39,7 +40,6 @@ TEST(MipDataTests, CreateEmptyProblem) {
   EXPECT_TRUE(mip_data.upper_bounds().empty());
   EXPECT_TRUE(mip_data.left_hand_sides().empty());
   EXPECT_TRUE(mip_data.right_hand_sides().empty());
-  EXPECT_TRUE(mip_data.binary_variables().empty());
   EXPECT_TRUE(mip_data.integer_variables().empty());
   EXPECT_TRUE(mip_data.variable_types().empty());
   EXPECT_TRUE(mip_data.variable_names().empty());
@@ -65,12 +65,12 @@ TEST(MipDataTests, PopulatesVariables) {
 
   const MipData mip_data(problem);
   EXPECT_EQ(mip_data.lower_bounds().size(), 1);
-  EXPECT_EQ(mip_data.lower_bounds()[0], 0.0);
+  EXPECT_EQ(mip_data.lower_bounds()[ColIndex(0)], 0.0);
   EXPECT_EQ(mip_data.upper_bounds().size(), 1);
-  EXPECT_EQ(mip_data.upper_bounds()[0], 1);
+  EXPECT_EQ(mip_data.upper_bounds()[ColIndex(0)], 1);
   EXPECT_EQ(mip_data.objective().value(ColIndex(0)), 13.0);
 
-  EXPECT_THAT(mip_data.integer_variables(), ElementsAreArray({0}));
+  EXPECT_THAT(mip_data.integer_variables(), UnorderedElementsAreArray({0}));
   EXPECT_THAT(mip_data.variable_types(),
               ElementsAreArray({VariableType::kInteger}));
   EXPECT_THAT(mip_data.variable_names(), ElementsAreArray({"Bar"}));
@@ -178,7 +178,8 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
 
   EXPECT_THAT(
       objective.entries(),
-      ElementsAreArray({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 3.0)}));
+      ElementsAreArray({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(1), 2.0),
+                        RowEntry(ColIndex(2), 3.0)}));
 
   ASSERT_TRUE(mip_data.hints().empty());
   EXPECT_THAT(mip_data.lower_bounds(),
@@ -192,7 +193,7 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
       mip_data.left_hand_sides(),
       ElementsAreArray({-std::numeric_limits<double>::infinity(), -2.0}));
   EXPECT_THAT(mip_data.right_hand_sides(), ElementsAreArray({-1.0, 3.0}));
-  EXPECT_THAT(mip_data.integer_variables(), ElementsAreArray({0, 1}));
+  EXPECT_THAT(mip_data.integer_variables(), UnorderedElementsAreArray({0, 1}));
   EXPECT_THAT(mip_data.variable_types(),
               ElementsAreArray({VariableType::kInteger, VariableType::kInteger,
                                 VariableType::kFractional}));
@@ -204,23 +205,28 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
   EXPECT_EQ(constraint_matrix.num_rows(), RowIndex(2));
   EXPECT_EQ(constraint_matrix.num_cols(), ColIndex(3));
 
-  EXPECT_THAT(constraint_matrix.row(RowIndex(0)).entries(),
-              ElementsAre(RowEntry(ColIndex(0), 3.0), RowEntry(ColIndex(1), 5.0)));
+  EXPECT_THAT(
+      constraint_matrix.row(RowIndex(0)).entries(),
+      ElementsAre(RowEntry(ColIndex(0), 3.0), RowEntry(ColIndex(1), 5.0)));
   EXPECT_THAT(
       constraint_matrix.row(RowIndex(1)).entries(),
-      ElementsAre(RowEntry(ColIndex(0), 5.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 7.0)));
+      ElementsAre(RowEntry(ColIndex(0), 5.0), RowEntry(ColIndex(1), 2.0),
+                  RowEntry(ColIndex(2), 7.0)));
 
-  EXPECT_THAT(constraint_matrix.col(ColIndex(0)).entries(),
-              ElementsAre(ColEntry(RowIndex(0), 3.0), ColEntry(RowIndex(1), 5.0)));
-  EXPECT_THAT(constraint_matrix.col(ColIndex(1)).entries(),
-              ElementsAre(ColEntry(RowIndex(0), 5.0), ColEntry(RowIndex(1), 2.0)));
+  EXPECT_THAT(
+      constraint_matrix.col(ColIndex(0)).entries(),
+      ElementsAre(ColEntry(RowIndex(0), 3.0), ColEntry(RowIndex(1), 5.0)));
+  EXPECT_THAT(
+      constraint_matrix.col(ColIndex(1)).entries(),
+      ElementsAre(ColEntry(RowIndex(0), 5.0), ColEntry(RowIndex(1), 2.0)));
   EXPECT_THAT(constraint_matrix.col(ColIndex(2)).entries(),
               ElementsAre(ColEntry(RowIndex(1), 7.0)));
 
   for (int row_idx = 0; row_idx < constraints.size(); ++row_idx) {
     for (int col_idx = 0; col_idx < constraints[row_idx].coefficients.size();
          ++col_idx) {
-      EXPECT_EQ(constraint_matrix.GetCoefficient(ColIndex(col_idx), RowIndex(row_idx)),
+      EXPECT_EQ(constraint_matrix.GetCoefficient(ColIndex(col_idx),
+                                                 RowIndex(row_idx)),
                 constraints[row_idx].coefficients[col_idx]);
     }
   }
@@ -286,7 +292,8 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   EXPECT_EQ(objective.entries().size(), 3);
   EXPECT_THAT(
       objective.entries(),
-      ElementsAreArray({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 3.0)}));
+      ElementsAreArray({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(1), 2.0),
+                        RowEntry(ColIndex(2), 3.0)}));
 
   ASSERT_TRUE(mip_data.hints().empty());
   EXPECT_THAT(mip_data.lower_bounds(),
@@ -303,7 +310,7 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   EXPECT_THAT(
       mip_data.right_hand_sides(),
       ElementsAreArray({std::numeric_limits<double>::infinity(), -1.0, 3.0}));
-  EXPECT_THAT(mip_data.integer_variables(), ElementsAreArray({0, 1}));
+  EXPECT_THAT(mip_data.integer_variables(), UnorderedElementsAreArray({0, 1}));
   EXPECT_THAT(mip_data.variable_types(),
               ElementsAreArray({VariableType::kInteger, VariableType::kInteger,
                                 VariableType::kFractional}));
@@ -315,33 +322,38 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   EXPECT_EQ(constraint_matrix.num_rows(), RowIndex(3));
   EXPECT_EQ(constraint_matrix.num_cols(), ColIndex(3));
 
-  EXPECT_THAT(constraint_matrix.row(RowIndex(0)).entries(),
-              ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 1.0)));
-  EXPECT_THAT(constraint_matrix.row(RowIndex(1)).entries(),
-              ElementsAre(RowEntry(ColIndex(0), 3.0), RowEntry(ColIndex(1), 5.0)));
+  EXPECT_THAT(
+      constraint_matrix.row(RowIndex(0)).entries(),
+      ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 1.0)));
+  EXPECT_THAT(
+      constraint_matrix.row(RowIndex(1)).entries(),
+      ElementsAre(RowEntry(ColIndex(0), 3.0), RowEntry(ColIndex(1), 5.0)));
   EXPECT_THAT(
       constraint_matrix.row(RowIndex(2)).entries(),
-      ElementsAre(RowEntry(ColIndex(0), 5.0), RowEntry(ColIndex(1), 2.0), RowEntry(ColIndex(2), 7.0)));
+      ElementsAre(RowEntry(ColIndex(0), 5.0), RowEntry(ColIndex(1), 2.0),
+                  RowEntry(ColIndex(2), 7.0)));
 
   EXPECT_THAT(
       constraint_matrix.col(ColIndex(0)).entries(),
-      ElementsAre(ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(1), 3.0), ColEntry(RowIndex(2), 5.0)));
-  EXPECT_THAT(constraint_matrix.col(ColIndex(1)).entries(),
-              ElementsAre(ColEntry(RowIndex(1), 5.0), ColEntry(RowIndex(2), 2.0)));
-  EXPECT_THAT(constraint_matrix.col(ColIndex(2)).entries(),
-              ElementsAre(ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(2), 7.0)));
+      ElementsAre(ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(1), 3.0),
+                  ColEntry(RowIndex(2), 5.0)));
+  EXPECT_THAT(
+      constraint_matrix.col(ColIndex(1)).entries(),
+      ElementsAre(ColEntry(RowIndex(1), 5.0), ColEntry(RowIndex(2), 2.0)));
+  EXPECT_THAT(
+      constraint_matrix.col(ColIndex(2)).entries(),
+      ElementsAre(ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(2), 7.0)));
 
   for (int row_idx = 0; row_idx < constraints.size(); ++row_idx) {
     for (int col_idx = 0; col_idx < constraints[row_idx].coefficients.size();
          ++col_idx) {
       EXPECT_EQ(constraint_matrix.GetCoefficient(
-                    ColIndex(constraints[row_idx].var_indices[col_idx]), RowIndex(row_idx)),
+                    ColIndex(constraints[row_idx].var_indices[col_idx]),
+                    RowIndex(row_idx)),
                 constraints[row_idx].coefficients[col_idx])
           << absl::StrFormat("row_idx: %i, col_idx: %i", row_idx, col_idx);
     }
   }
 }
-
-// TODO(CGraczyk): add tests for FindErrorInMiniMipProblem.
 
 }  // namespace minimip

@@ -15,18 +15,14 @@
 #ifndef SRC_LP_INTERFACE_LPI_FACTORY_H_
 #define SRC_LP_INTERFACE_LPI_FACTORY_H_
 
+#include "lp_types.h"
 #include "src/lp_interface/lpi.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
-enum class LPInterfaceCode {
-  kGlop = 0,
-  kSoplex = 1,
-};
-
-std::ostream& operator<<(std::ostream& os, const LPInterfaceCode& code);
-
-std::unique_ptr<LPInterface> CreateLPInterface(LPInterfaceCode interface_code);
+absl::StatusOr<std::unique_ptr<LPInterface>> ConfigureLPSolverFromProto(
+    const LPParameters& params);
 
 }  // namespace minimip
 
