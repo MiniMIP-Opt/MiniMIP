@@ -18,7 +18,7 @@ namespace minimip {
 
 // Returns the solution to the given problem with the given solver settings
 MiniMipResult MiniMipSolve(const MiniMipProblem& problem,
-                           MiniMipOptions options) {
+                           MiniMipOptions /*unused*/) {
   MiniMipResult result;
   result.error_message = FindErrorInMiniMipProblem(problem);
   if (!result.error_message.empty()) {

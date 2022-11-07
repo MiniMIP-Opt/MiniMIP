@@ -39,8 +39,6 @@ class LPGlopInterface : public LPInterface {
  public:
   LPGlopInterface();
 
-  ~LPGlopInterface() override;
-
   // ==========================================================================
   // LP model setters.
   // ==========================================================================
