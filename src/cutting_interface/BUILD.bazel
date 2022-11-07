@@ -18,6 +18,7 @@ cc_library(
     name = "cut_runner",
     hdrs = ["cut_runner.h"],
     deps = [
+        "//src:solver",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
