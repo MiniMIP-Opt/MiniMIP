@@ -102,7 +102,7 @@ enum class MiniMipSolveStatus {
   // The provided input problem was invalid.
   kProblemInvalid = 0,
 
-  // No solution, nor proof of infeasibility or unboundness was found.
+  // No solution, nor proof of infeasibility or unboundedness was found.
   kNotSolved = 1,
 
   // The solver found a solution and proven its optimality (within given gap
@@ -128,7 +128,7 @@ enum class MiniMipSolveStatus {
   kUnbounded = 5,
 
   // The solver proved the problem is either infeasible or unbounded. Note, it's
-  // sometimes very time consuming to distinguish between infeasible and
+  // sometimes very time-consuming to distinguish between infeasible and
   // unbounded
   // for a mixed-integer program (in contrast to pure linear programming).
   // In such cases, we stop and return this status.
@@ -155,7 +155,7 @@ enum class MiniMipStoppingReason {
 // ==========================================================================
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem);
 
-// Read a problem descrption from an MPS file. See
+// Read a problem description from an MPS file. See
 // http://lpsolve.sourceforge.net/5.5/mps-format.htm for details on this file
 // format.
 absl::StatusOr<MiniMipProblem> ReadProblemFromMPSFile(

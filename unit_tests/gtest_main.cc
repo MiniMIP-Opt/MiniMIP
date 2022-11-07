@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   testing::InitGoogleTest(&argc, argv);
 
-  // By default we log to stderr only, and equal or above log level 2 (where
+  // By default, we log to stderr only, and equal or above log level 2 (where
   // 0: INFO, 1: WARNING, 2: ERROR, 3: FATAL).
   absl::SetFlag(&FLAGS_logtostderr, true);
   absl::SetFlag(&FLAGS_minloglevel, 2);

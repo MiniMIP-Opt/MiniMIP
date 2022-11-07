@@ -11,8 +11,8 @@ This project is still under heavy development and is not ready for practical app
 ## Bazel
 The `bazel` build environment composes of:
 * The file `WORKSPACE` that tells from where to fetch all the dependencies
-* The gile `.bazelrc` that defines commonly used options while building
-(e.g., in MiniMIP we always complile with a flag `--cxxopt=-std=c++2a`)
+* The file `.bazelrc` that defines commonly used options while building
+(e.g., in MiniMIP we always compile with a flag `--cxxopt=-std=c++2a`)
 * The build rules for all targets, which are stated explicitly in each
 (sub-)directory's `BUILD.bazel` file.
 
@@ -64,12 +64,12 @@ identical as above):
 bazel test //minimip/examples:all
 ```
 
-Bazel by default builds in "fastbuild" mode. To maximize binary performance
+Bazel by default builds in "fast-build" mode. To maximize binary performance
 (e.g., for benchmarking purposes) compile in "opt" mode:
 ```
 bazel build -c opt //minimip/example:example_main
 ```
-To include symbols allowing for debugging (with `gdb`) complile in `dbg` mode:
+To include symbols allowing for debugging (with `gdb`) compile in `dbg` mode:
 ```
 bazel build -c dbg //minimip/example:example_main
 ```

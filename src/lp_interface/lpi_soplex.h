@@ -111,8 +111,8 @@ class LPSoplexInterface : public LPInterface {
   absl::Status EndStrongBranching() final;
 
   // Strongbranching is applied to the given column, with the corresponding
-  // current primal solution value. The double referenes are used to store the
-  // dual bound after branching up and down. Additionally the validity of both
+  // current primal solution value. The double references are used to store the
+  // dual bound after branching up and down. Additionally, the validity of both
   // bounds is stored, if one bound is not valid it can be used as an estimate.
   absl::StatusOr<StrongBranchResult> SolveDownAndUpStrongBranch(
       ColIndex col, double primal_value, int iteration_limit) final;
