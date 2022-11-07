@@ -64,10 +64,6 @@ struct MiniMipSolutionHint {
   std::vector<double> values;
 };
 
-struct MiniMipOptions {
-  // TODO(lpawel): settings struct, probably better to be moved elsewhere.
-};
-
 // ==========================================================================
 // API Output Datastructures
 // ==========================================================================
@@ -156,11 +152,6 @@ enum class MiniMipStoppingReason {
 // ==========================================================================
 // API Functionality
 // ==========================================================================
-
-// Returns the solution to the given problem with the given solver settings
-MiniMipResult MiniMipSolve(const MiniMipProblem& problem,
-                           MiniMipOptions options);
-
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem);
 
 }  // namespace minimip

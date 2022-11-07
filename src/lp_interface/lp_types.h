@@ -15,9 +15,12 @@
 #ifndef SRC_LP_INTERFACE_LP_TYPES_H_
 #define SRC_LP_INTERFACE_LP_TYPES_H_
 
+#include <iostream>
+
 namespace minimip {
 
-// LP solver parameters
+// LP solver parameters.
+// NOTE: These must be kept consistent with `parameters.proto`.
 enum class LPParameter {
   kFromScratch = 0,           // Solver should start from scratch at next call?
   kScaling = 1,               // Should LP solver use scaling?
@@ -34,12 +37,16 @@ enum class LPParameter {
                            // larger/smaller than limit for min/max-imization)
   kLPIterationLimit = 10,  // LP iteration limit (> 0)
   kLPTimeLimit = 11,       // LP time limit, positive
-  kThreads = 12,     // number of threads used to solve the LP (-1: automatic)
+  kThreads = 12,     // number of threads used to solve the LP (0: automatic)
   kTiming = 13,      // type of timer (1: cpu, 2: wallclock, 0: off)
   kRandomSeed = 14,  // inital random seed, e.g., for perturbations in the
                      // simplex (0: LP default)
   kLPInfo = 15,      // Should LP solver output information to the screen?
 };
+
+inline std::ostream& operator<<(std::ostream& out, LPParameter param) {
+  return out << static_cast<int>(param);
+}
 
 // LP pricing strategy
 enum class LPPricing {
@@ -52,6 +59,10 @@ enum class LPPricing {
   kDevex = 6,        // devex pricing
 };
 
+inline std::ostream& operator<<(std::ostream& out, LPPricing pricing) {
+  return out << static_cast<int>(pricing);
+}
+
 // LP basis status for columns and rows
 enum class LPBasisStatus {
   kBasic = 0,         // (slack) variable is basic
@@ -60,6 +71,10 @@ enum class LPBasisStatus {
   kFixed = 3,         // variable fixed to identical bounds
   kFree = 4,          // free variable is non-basic and set to zero
 };
+
+inline std::ostream& operator<<(std::ostream& out, LPBasisStatus basis_status) {
+  return out << static_cast<int>(basis_status);
+}
 
 }  // namespace minimip
 #endif  // SRC_LP_INTERFACE_LP_TYPES_H_
