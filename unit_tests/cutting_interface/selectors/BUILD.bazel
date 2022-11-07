@@ -16,14 +16,3 @@ cc_test(
         "//unit_tests:utils",
     ],
 )
-
-cc_test(
-    name = "projection_efficacy_test",
-    size = "small",
-    srcs = ["projection_efficacy_test.cc"],
-    deps = [
-        "//src/data_structures:mip_data",
-        "//unit_tests:gtest_main",
-        "//unit_tests:utils",
-    ],
-)

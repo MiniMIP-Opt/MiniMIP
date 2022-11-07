@@ -35,7 +35,7 @@ struct CuttingPlane {
   bool is_active;
   bool added_at_root;
   bool forced;
-  unsigned int from_sepa_round_n;
+  unsigned int from_separation_round_n;
   unsigned int number_of_non_zeros;
   unsigned int cut_position;
   unsigned int integer_variable_support;
@@ -46,6 +46,8 @@ struct CuttingPlane {
 };
 using Cut = CuttingPlane;
 
+// TODO: add "isCutFresh()" like function corresponding to its current_score.
+
 // The cut storage is used to track the globally valid cuts generated while
 // solving the Mixed Integer Problem. The storage functions as a register and
 // provides access to cutting planes for selection and the lp.
@@ -55,7 +57,7 @@ class CutStorage {
   // Initialize CutStorage from initial separation round.
   CutStorage(std::vector<Cut> cuts, std::vector<unsigned int> cut_positions)
       : cuts_(std::move(cuts)),
-        active_cuts_positions_(std::move(cut_positions)),
+        active_cut_positions_(std::move(cut_positions)),
         current_number_of_cuts_(cuts.size()),
         total_number_of_cuts_found_(cuts.size()),
         current_number_of_active_cuts_(cut_positions.size()) {
@@ -101,7 +103,7 @@ class CutStorage {
   void ActivateCuts(std::vector<unsigned int>& active_cuts) {
     DCHECK_LE(active_cuts.size(), cuts_.size());
     current_number_of_active_cuts_ = active_cuts.size();
-    active_cuts_positions_ = std::move(active_cuts);
+    active_cut_positions_ = std::move(active_cuts);
   }
 
   // Remove a single cut from storage.
@@ -136,12 +138,12 @@ class CutStorage {
 
   // Getter for all active cuts.
   std::vector<Cut> active_cuts() const {
-    return GetCuts(active_cuts_positions_);
+    return GetCuts(active_cut_positions_);
   }
 
   // Getter for active cut positions.
   const std::vector<unsigned int>& active_cut_positions() const {
-    return active_cuts_positions_;
+    return active_cut_positions_;
   }
 
   // Getter for number of currently active cuts.
@@ -159,14 +161,9 @@ class CutStorage {
     return total_number_of_cuts_found_;
   }
 
- public:
-  CutStorage();
-
-  CutStorage() = default;
-
  private:
   std::vector<Cut> cuts_;
-  std::vector<unsigned int> active_cuts_positions_;
+  std::vector<unsigned int> active_cut_positions_;
   unsigned int current_number_of_cuts_;
   unsigned int total_number_of_cuts_found_;
   unsigned int current_number_of_active_cuts_;
