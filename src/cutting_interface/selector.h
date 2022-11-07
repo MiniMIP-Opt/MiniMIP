@@ -32,12 +32,10 @@ namespace minimip {
 
 class Selector {
  public:
-  // Select up to `max_num_cuts` cutting planes. Returns an empty vector if no
-  // cuts could be generated given the current state. If called multiple times,
-  // the generator is expected to continue where it left of, if appropriate.
+  // Select up to `max_num_cuts` cutting planes (TODO: add protobuffer param).
+  // Returns the number of selected cuts given the current state.
   virtual absl::StatusOr<int> SelectCuttingPlanes(
-      const Solver& solver, std::vector<CuttingPlane>& cuts,
-      int max_num_cuts) = 0;
+      const Solver& solver, std::vector<CuttingPlane>& cuts) = 0;
 };
 
 }  // namespace minimip
