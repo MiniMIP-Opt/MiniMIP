@@ -50,8 +50,8 @@ using Cut = CuttingPlane;
 // solving the Mixed Integer Problem. The storage functions as a register and
 // provides access to cutting planes for selection and the lp.
 class CutStorage {
-  CutStorage() {}
-
+ public:
+  CutStorage();
   // Initialize CutStorage from initial separation round.
   CutStorage(std::vector<Cut> cuts, std::vector<unsigned int> cut_positions)
       : cuts_(std::move(cuts)),
@@ -64,7 +64,7 @@ class CutStorage {
 
   // CutStorage is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
-  // CutStorage is (no-throw) moveable.
+  // CutStorage is (no-throw) movable.
   CutStorage(CutStorage&&) noexcept = default;
   CutStorage& operator=(CutStorage&&) noexcept = default;
 
@@ -158,6 +158,11 @@ class CutStorage {
   const unsigned int& total_number_of_cuts_found() const {
     return total_number_of_cuts_found_;
   }
+
+ public:
+  CutStorage();
+
+  CutStorage() = default;
 
  private:
   std::vector<Cut> cuts_;
