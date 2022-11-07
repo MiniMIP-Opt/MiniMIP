@@ -48,7 +48,7 @@ class LPInterfaceImplementationTest
  protected:
   void SetUp() override {
     lpi_ = CreateLPInterface(GetParam());
-    kInf = lpi_->Infinity();
+    solver_inf_ = lpi_->Infinity();
   }
 
   absl::Status UploadProblem(
@@ -200,7 +200,7 @@ class LPInterfaceImplementationTest
     return absl::OkStatus();
   }
 
-  double kInf;
+  double solver_inf_;
   std::unique_ptr<LPInterface> lpi_;
 };
 
@@ -211,7 +211,6 @@ INSTANTIATE_TEST_SUITE_P(All, ModelConstructionTest,
                                             LPInterfaceCode::kSoplex}));
 
 TEST_P(ModelConstructionTest, AddColumnRow) {
-  const double kInf = lpi_->Infinity();
   ASSERT_EQ(lpi_->GetNumberOfColumns(), 0);
   ASSERT_EQ(lpi_->GetNumberOfRows(), 0);
 
@@ -233,20 +232,21 @@ TEST_P(ModelConstructionTest, AddColumnRow) {
   //  1 <= x5 <= 1
   ASSERT_OK(lpi_->SetObjectiveSense(true));
   ASSERT_OK(lpi_->AddColumn(SparseCol(), -1, 10, 1, "x1"));
-  ASSERT_OK(lpi_->AddColumn(SparseCol(), -kInf, kInf, 2, "x2"));
-  ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(0), 1}, {ColIndex(1), 5}}), -kInf,
-                         -1, "ct1"));
+  ASSERT_OK(lpi_->AddColumn(SparseCol(), -solver_inf_, solver_inf_, 2, "x2"));
+  ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(0), 1}, {ColIndex(1), 5}}),
+                         -solver_inf_, -1, "ct1"));
   ASSERT_OK(lpi_->AddRow(SparseRow(), -1, -3e-10, "ct2"));
-  ASSERT_OK(lpi_->AddColumn(SparseCol(), 0, kInf, -4, "x3"));
-  ASSERT_OK(
-      lpi_->AddColumn(SparseCol({{RowIndex(1), -1}}), -kInf, 29.3, 1e-3, "x4"));
+  ASSERT_OK(lpi_->AddColumn(SparseCol(), 0, solver_inf_, -4, "x3"));
+  ASSERT_OK(lpi_->AddColumn(SparseCol({{RowIndex(1), -1}}), -solver_inf_, 29.3,
+                            1e-3, "x4"));
   ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(1), 2}, {ColIndex(2), 3e5}}),
                          -3e-10, 0, "ct3"));
   ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(1), 1}, {ColIndex(2), 20}}), 0, 1,
                          "ct4"));
   ASSERT_OK(lpi_->AddColumn(SparseCol({{RowIndex(3), 10}}), 1, 1, 0, "x5"));
   ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(0), -1.9}}), 1, 3e10, "ct5"));
-  ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(3), 1e-2}}), 3e10, kInf, "ct6"));
+  ASSERT_OK(
+      lpi_->AddRow(SparseRow({{ColIndex(3), 1e-2}}), 3e10, solver_inf_, "ct6"));
 
   // Check variable properties
   ASSERT_EQ(lpi_->GetNumberOfColumns(), 5);
@@ -259,8 +259,8 @@ TEST_P(ModelConstructionTest, AddColumnRow) {
     upper_bounds[col] = lpi_->GetUpperBound(col);
     obj_coeff[col] = lpi_->GetObjectiveCoefficient(col);
   }
-  EXPECT_THAT(lower_bounds, ElementsAre(-1, -kInf, 0, -kInf, 1));
-  EXPECT_THAT(upper_bounds, ElementsAre(10, kInf, kInf, 29.3, 1));
+  EXPECT_THAT(lower_bounds, ElementsAre(-1, -solver_inf_, 0, -solver_inf_, 1));
+  EXPECT_THAT(upper_bounds, ElementsAre(10, solver_inf_, solver_inf_, 29.3, 1));
   EXPECT_THAT(obj_coeff, ElementsAre(1, 2, -4, 1e-3, 0));
 
   // Check row properties
@@ -271,8 +271,10 @@ TEST_P(ModelConstructionTest, AddColumnRow) {
     left_hand_sides[row] = lpi_->GetLeftHandSide(row);
     right_hand_sides[row] = lpi_->GetRightHandSide(row);
   }
-  EXPECT_THAT(left_hand_sides, ElementsAre(-kInf, -1, -3e-10, 0, 1, 3e10));
-  EXPECT_THAT(right_hand_sides, ElementsAre(-1, -3e-10, 0, 1, 3e10, kInf));
+  EXPECT_THAT(left_hand_sides,
+              ElementsAre(-solver_inf_, -1, -3e-10, 0, 1, 3e10));
+  EXPECT_THAT(right_hand_sides,
+              ElementsAre(-1, -3e-10, 0, 1, 3e10, solver_inf_));
 
   // Check constraint matrix
   EXPECT_EQ(lpi_->GetNumberOfNonZeros(), 10);
@@ -294,7 +296,6 @@ TEST_P(ModelConstructionTest, AddColumnRow) {
 }
 
 TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
-  const double kInf = lpi_->Infinity();
   ASSERT_EQ(lpi_->GetNumberOfColumns(), 0);
   ASSERT_EQ(lpi_->GetNumberOfRows(), 0);
 
@@ -316,8 +317,8 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
   //  1 <= x5 <= 1
   {
     StrongSparseMatrix matrix(ColIndex(2), RowIndex(0));
-    absl::StrongVector<ColIndex, double> lower_bounds = {-1, -kInf};
-    absl::StrongVector<ColIndex, double> upper_bounds = {10, kInf};
+    absl::StrongVector<ColIndex, double> lower_bounds = {-1, -solver_inf_};
+    absl::StrongVector<ColIndex, double> upper_bounds = {10, solver_inf_};
     absl::StrongVector<ColIndex, double> objective_coefficients = {1, 2};
     absl::StrongVector<ColIndex, std::string> names = {"x1", "x2"};
     ASSERT_OK(lpi_->AddColumns(matrix, lower_bounds, upper_bounds,
@@ -326,7 +327,7 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
   {
     absl::StrongVector<RowIndex, SparseRow> rows = {
         SparseRow({{ColIndex(0), 1}, {ColIndex(1), 5}}), SparseRow()};
-    absl::StrongVector<RowIndex, double> left_hand_sides = {-kInf, -1};
+    absl::StrongVector<RowIndex, double> left_hand_sides = {-solver_inf_, -1};
     absl::StrongVector<RowIndex, double> right_hand_sides = {-1, -3e-10};
     absl::StrongVector<RowIndex, std::string> names = {"ct1", "ct2"};
     ASSERT_OK(lpi_->AddRows(rows, left_hand_sides, right_hand_sides, names));
@@ -334,8 +335,8 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
   {
     StrongSparseMatrix matrix(ColIndex(2), RowIndex(2));
     matrix.PopulateCol(ColIndex(1), SparseCol({{RowIndex(1), -1}}));
-    absl::StrongVector<ColIndex, double> lower_bounds = {0, -kInf};
-    absl::StrongVector<ColIndex, double> upper_bounds = {kInf, 29.3};
+    absl::StrongVector<ColIndex, double> lower_bounds = {0, -solver_inf_};
+    absl::StrongVector<ColIndex, double> upper_bounds = {solver_inf_, 29.3};
     absl::StrongVector<ColIndex, double> objective_coefficients = {-4, 1e-3};
     absl::StrongVector<ColIndex, std::string> names = {"x3", "x4"};
     ASSERT_OK(lpi_->AddColumns(matrix, lower_bounds, upper_bounds,
@@ -364,23 +365,25 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
     absl::StrongVector<RowIndex, SparseRow> rows = {
         SparseRow({{ColIndex(0), -1.9}}), SparseRow({{ColIndex(3), 1e-2}})};
     absl::StrongVector<RowIndex, double> left_hand_sides = {1, 3e10};
-    absl::StrongVector<RowIndex, double> right_hand_sides = {3e10, kInf};
+    absl::StrongVector<RowIndex, double> right_hand_sides = {3e10, solver_inf_};
     absl::StrongVector<RowIndex, std::string> names = {"ct5", "ct6"};
     ASSERT_OK(lpi_->AddRows(rows, left_hand_sides, right_hand_sides, names));
   }
 
   // Check variable properties
   EXPECT_EQ(lpi_->GetNumberOfColumns(), 5);
-  EXPECT_THAT(ExtractLowerBounds(), ElementsAre(-1, -kInf, 0, -kInf, 1));
-  EXPECT_THAT(ExtractUpperBounds(), ElementsAre(10, kInf, kInf, 29.3, 1));
+  EXPECT_THAT(ExtractLowerBounds(),
+              ElementsAre(-1, -solver_inf_, 0, -solver_inf_, 1));
+  EXPECT_THAT(ExtractUpperBounds(),
+              ElementsAre(10, solver_inf_, solver_inf_, 29.3, 1));
   EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(1, 2, -4, 1e-3, 0));
 
   // Check row properties
   EXPECT_EQ(lpi_->GetNumberOfRows(), 6);
   EXPECT_THAT(ExtractLeftHandSides(),
-              ElementsAre(-kInf, -1, -3e-10, 0, 1, 3e10));
+              ElementsAre(-solver_inf_, -1, -3e-10, 0, 1, 3e10));
   EXPECT_THAT(ExtractRightHandSides(),
-              ElementsAre(-1, -3e-10, 0, 1, 3e10, kInf));
+              ElementsAre(-1, -3e-10, 0, 1, 3e10, solver_inf_));
 
   // Check constraint matrix
   EXPECT_EQ(lpi_->GetNumberOfNonZeros(), 10);
@@ -408,8 +411,6 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
 }
 
 TEST_P(ModelConstructionTest, Clear) {
-  const double kInf = lpi_->Infinity();
-
   ASSERT_OK(InitSimpleProblem(4, 5));
   ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
@@ -429,10 +430,12 @@ TEST_P(ModelConstructionTest, Clear) {
   EXPECT_EQ(lpi_->GetNumberOfRows(), 2);
   EXPECT_EQ(lpi_->GetNumberOfNonZeros(), 0);
   EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(0.0, 0.0, 0.0));
-  EXPECT_THAT(ExtractLowerBounds(), ElementsAre(-kInf, -kInf, -kInf));
-  EXPECT_THAT(ExtractUpperBounds(), ElementsAre(kInf, kInf, kInf));
-  EXPECT_THAT(ExtractLeftHandSides(), ElementsAre(-kInf, -kInf));
-  EXPECT_THAT(ExtractRightHandSides(), ElementsAre(kInf, kInf));
+  EXPECT_THAT(ExtractLowerBounds(),
+              ElementsAre(-solver_inf_, -solver_inf_, -solver_inf_));
+  EXPECT_THAT(ExtractUpperBounds(),
+              ElementsAre(solver_inf_, solver_inf_, solver_inf_));
+  EXPECT_THAT(ExtractLeftHandSides(), ElementsAre(-solver_inf_, -solver_inf_));
+  EXPECT_THAT(ExtractRightHandSides(), ElementsAre(solver_inf_, solver_inf_));
   EXPECT_THAT(ExtractMatrix(), ElementsAre(ElementsAre(0, 0), ElementsAre(0, 0),
                                            ElementsAre(0, 0)));
 }
@@ -792,17 +795,17 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
                                               .is_integer = false});
   problem.variables.push_back(MiniMipVariable{.name = "x2",
                                               .objective_coefficient = 2,
-                                              .lower_bound = -kInf,
-                                              .upper_bound = kInf,
+                                              .lower_bound = -solver_inf_,
+                                              .upper_bound = solver_inf_,
                                               .is_integer = false});
   problem.variables.push_back(MiniMipVariable{.name = "x3",
                                               .objective_coefficient = -4,
                                               .lower_bound = 0,
-                                              .upper_bound = kInf,
+                                              .upper_bound = solver_inf_,
                                               .is_integer = true});
   problem.variables.push_back(MiniMipVariable{.name = "x4",
                                               .objective_coefficient = 1e-3,
-                                              .lower_bound = -kInf,
+                                              .lower_bound = -solver_inf_,
                                               .upper_bound = 29.3,
                                               .is_integer = true});
   problem.variables.push_back(MiniMipVariable{.name = "x5",
@@ -810,11 +813,12 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
                                               .lower_bound = 1,
                                               .upper_bound = 1,
                                               .is_integer = false});
-  problem.constraints.push_back(MiniMipConstraint{.name = "ct1",
-                                                  .var_indices = {0, 1},
-                                                  .coefficients = {1, 5},
-                                                  .left_hand_side = -kInf,
-                                                  .right_hand_side = -1});
+  problem.constraints.push_back(
+      MiniMipConstraint{.name = "ct1",
+                        .var_indices = {0, 1},
+                        .coefficients = {1, 5},
+                        .left_hand_side = -solver_inf_,
+                        .right_hand_side = -1});
   problem.constraints.push_back(MiniMipConstraint{.name = "ct2",
                                                   .var_indices = {3},
                                                   .coefficients = {-1},
@@ -835,25 +839,28 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
                                                   .coefficients = {-1.9},
                                                   .left_hand_side = 1,
                                                   .right_hand_side = 3e10});
-  problem.constraints.push_back(MiniMipConstraint{.name = "ct6",
-                                                  .var_indices = {3},
-                                                  .coefficients = {1e-2},
-                                                  .left_hand_side = 3e10,
-                                                  .right_hand_side = kInf});
+  problem.constraints.push_back(
+      MiniMipConstraint{.name = "ct6",
+                        .var_indices = {3},
+                        .coefficients = {1e-2},
+                        .left_hand_side = 3e10,
+                        .right_hand_side = solver_inf_});
   ASSERT_OK(lpi_->PopulateFromMipData(MipData(problem)));
 
   // Check variable properties
   EXPECT_EQ(lpi_->GetNumberOfColumns(), 5);
-  EXPECT_THAT(ExtractLowerBounds(), ElementsAre(-1, -kInf, 0, -kInf, 1));
-  EXPECT_THAT(ExtractUpperBounds(), ElementsAre(10, kInf, kInf, 29.3, 1));
+  EXPECT_THAT(ExtractLowerBounds(),
+              ElementsAre(-1, -solver_inf_, 0, -solver_inf_, 1));
+  EXPECT_THAT(ExtractUpperBounds(),
+              ElementsAre(10, solver_inf_, solver_inf_, 29.3, 1));
   EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(1, 2, -4, 1e-3, 0));
 
   // Check row properties
   EXPECT_EQ(lpi_->GetNumberOfRows(), 6);
   EXPECT_THAT(ExtractLeftHandSides(),
-              ElementsAre(-kInf, -1, -3e-10, 0, 1, 3e10));
+              ElementsAre(-solver_inf_, -1, -3e-10, 0, 1, 3e10));
   EXPECT_THAT(ExtractRightHandSides(),
-              ElementsAre(-1, -3e-10, 0, 1, 3e10, kInf));
+              ElementsAre(-1, -3e-10, 0, 1, 3e10, solver_inf_));
 
   // Check constraint matrix
   EXPECT_EQ(lpi_->GetNumberOfNonZeros(), 10);
@@ -882,13 +889,13 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
 
 class FileTest : public LPInterfaceImplementationTest {
  protected:
-  absl::StatusOr<std::string> GetTemporaryFile() {
-    char buf[L_tmpnam];
-    if (std::tmpnam(buf) != nullptr) return buf;
+  static absl::StatusOr<std::string> GetTemporaryFile() {
+    const char* name = std::tmpnam(nullptr);
+    if (name != nullptr) return name;
     return absl::InternalError("Failed to create a temporary file name");
   }
 
-  bool FileExists(const std::string file_name) {
+  static bool FileExists(const std::string& file_name) {
     FILE* file = std::fopen(file_name.c_str(), "r");
     if (file == nullptr) return false;
     std::fclose(file);
@@ -926,9 +933,9 @@ TEST_P(FileTest, LoadLPFromFile) {
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
       /*lower_bounds=*/{0, 0},
-      /*upper_bounds=*/{kInf, kInf},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{2, 1},
-      /*left_hand_sides=*/{-kInf, -kInf, -kInf},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{1, 0.75, 10},
       /*matrix=*/{{1, 1, 8}, {1, 0, 20}}));
   ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
@@ -1108,9 +1115,9 @@ TEST_P(SolveTest, PrimalDualFeasible1) {
     ASSERT_OK(UploadProblem(
         /*is_maximization=*/true,
         /*lower_bounds=*/{0, 0},
-        /*upper_bounds=*/{kInf, kInf},
+        /*upper_bounds=*/{solver_inf_, solver_inf_},
         /*objective_coefficients=*/{3, 1},
-        /*left_hand_sides=*/{-kInf, -kInf},
+        /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
         /*right_hand_sides=*/{10, 15},
         /*matrix=*/{{2, 1}, {1, 3}}));
     if (use_primal_simplex) {
@@ -1229,9 +1236,9 @@ TEST_P(SolveTest, PrimalDualFeasible2) {
     ASSERT_OK(UploadProblem(
         /*is_maximization=*/true,
         /*lower_bounds=*/{0, 0},
-        /*upper_bounds=*/{kInf, kInf},
+        /*upper_bounds=*/{solver_inf_, solver_inf_},
         /*objective_coefficients=*/{2, 1},
-        /*left_hand_sides=*/{-kInf, -kInf, -kInf},
+        /*left_hand_sides=*/{-solver_inf_, -solver_inf_, -solver_inf_},
         /*right_hand_sides=*/{1, 0.75, 10},
         /*matrix=*/{{1, 1, 8}, {1, 0, 20}}));
     if (use_primal_simplex) {
@@ -1355,10 +1362,10 @@ TEST_P(SolveTest, PrimalUnboundedDualInfeasible) {
                               " simplex."));
     ASSERT_OK(UploadProblem(
         /*is_maximization=*/true,
-        /*lower_bounds=*/{-kInf, -kInf},
-        /*upper_bounds=*/{kInf, kInf},
+        /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+        /*upper_bounds=*/{solver_inf_, solver_inf_},
         /*objective_coefficients=*/{3, 1},
-        /*left_hand_sides=*/{-kInf, -kInf},
+        /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
         /*right_hand_sides=*/{10, 15},
         /*matrix=*/{{2, 1}, {1, 3}}));
     if (use_primal_simplex) {
@@ -1391,10 +1398,10 @@ TEST_P(SolveTest, PrimalUnboundedRayMaximization) {
   // which is unbounded.
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
-      /*lower_bounds=*/{-kInf, -kInf},
-      /*upper_bounds=*/{kInf, kInf},
+      /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{3, 1},
-      /*left_hand_sides=*/{-kInf, -kInf},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{10, 15},
       /*matrix=*/{{2, 1}, {1, 3}}));
   ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
@@ -1434,10 +1441,10 @@ TEST_P(SolveTest, PrimalUnboundedRayMinimization) {
   // which is unbounded.
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/false,
-      /*lower_bounds=*/{-kInf, -kInf},
-      /*upper_bounds=*/{kInf, kInf},
+      /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{-3, -1},
-      /*left_hand_sides=*/{-kInf, -kInf},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{10, 15},
       /*matrix=*/{{2, 1}, {1, 3}}));
   ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
@@ -1487,7 +1494,7 @@ TEST_P(SolveTest, PrimalInfeasibleDualUnbounded) {
     ASSERT_OK(UploadProblem(
         /*is_maximization=*/false,
         /*lower_bounds=*/{0, 0},
-        /*upper_bounds=*/{kInf, kInf},
+        /*upper_bounds=*/{solver_inf_, solver_inf_},
         /*objective_coefficients=*/{10, 15},
         /*left_hand_sides=*/{3, 1},
         /*right_hand_sides=*/{3, 1},
@@ -1529,7 +1536,7 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
       /*lower_bounds=*/{0, 0},
-      /*upper_bounds=*/{kInf, kInf},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{-10, -15},
       /*left_hand_sides=*/{3, 1},
       /*right_hand_sides=*/{3, 1},
@@ -1576,7 +1583,7 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/false,
       /*lower_bounds=*/{0, 0},
-      /*upper_bounds=*/{kInf, kInf},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{10, 15},
       /*left_hand_sides=*/{3, 1},
       /*right_hand_sides=*/{3, 1},
@@ -1624,10 +1631,10 @@ TEST_P(SolveTest, PrimalDualInfeasible) {
                               " simplex."));
     ASSERT_OK(UploadProblem(
         /*is_maximization=*/true,
-        /*lower_bounds=*/{-kInf, -kInf},
-        /*upper_bounds=*/{kInf, kInf},
+        /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+        /*upper_bounds=*/{solver_inf_, solver_inf_},
         /*objective_coefficients=*/{1, 1},
-        /*left_hand_sides=*/{-kInf, -kInf},
+        /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
         /*right_hand_sides=*/{0, -1},
         /*matrix=*/{{1, -1}, {-1, 1}}));
     if (use_primal_simplex) {
@@ -1667,9 +1674,9 @@ TEST_P(SolveTest, SolveFromGivenPrimalBasis) {
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
       /*lower_bounds=*/{0, 0},
-      /*upper_bounds=*/{kInf, kInf},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{1, 1},
-      /*left_hand_sides=*/{-kInf, -kInf},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{3, 3},
       /*matrix=*/{{2, 1}, {1, 2}}));
 
@@ -1738,9 +1745,9 @@ TEST_P(SolveTest, SolveFromGivenDualBasis) {
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
       /*lower_bounds=*/{0, 0},
-      /*upper_bounds=*/{kInf, kInf},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{1, 1},
-      /*left_hand_sides=*/{-kInf, -kInf},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{3, 3},
       /*matrix=*/{{2, 1}, {1, 2}}));
 
@@ -1780,9 +1787,9 @@ TEST_P(SolveTest, DualIncrementality) {
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
       /*lower_bounds=*/{0, 0},
-      /*upper_bounds=*/{kInf, kInf},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
       /*objective_coefficients=*/{1, 1},
-      /*left_hand_sides=*/{-kInf},
+      /*left_hand_sides=*/{-solver_inf_},
       /*right_hand_sides=*/{3},
       /*matrix=*/{{2}, {1}}));
   ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
@@ -1806,7 +1813,7 @@ TEST_P(SolveTest, DualIncrementality) {
   }
 
   // We now add the constraint x2 <= 2, making (0.5, 2) the new optimum.
-  ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(1), 1}}), -kInf, 2, ""));
+  ASSERT_OK(lpi_->AddRow(SparseRow({{ColIndex(1), 1}}), -solver_inf_, 2, ""));
   EXPECT_FALSE(lpi_->IsSolved());
 
   // Since the basis should be retained, it should now only take a single

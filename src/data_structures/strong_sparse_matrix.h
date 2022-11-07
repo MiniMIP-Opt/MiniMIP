@@ -36,7 +36,7 @@ namespace minimip {
 
 class StrongSparseMatrix {
  public:
-  StrongSparseMatrix() {}
+  StrongSparseMatrix() = default;
 
   StrongSparseMatrix(ColIndex num_cols, RowIndex num_rows)
       : cols_(num_cols.value()), rows_(num_rows.value()) {}

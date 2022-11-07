@@ -143,8 +143,6 @@ LPGlopInterface::LPGlopInterface()
   tmp_column_ = std::make_unique<ScatteredColumn>();
 }
 
-LPGlopInterface::~LPGlopInterface() {}
-
 // ==========================================================================
 // LP model setters.
 // ==========================================================================
@@ -276,7 +274,7 @@ absl::Status LPGlopInterface::AddRows(
   DCHECK_EQ(names.size(), left_hand_sides.size());
   DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
   DCHECK_EQ(right_hand_sides.size(), rows.size());
-  for (RowIndex row = RowIndex(0); row < rows.size(); ++row) {
+  for (RowIndex row(0); row < rows.size(); ++row) {
     RETURN_IF_ERROR(AddRow(rows[row], left_hand_sides[row],
                            right_hand_sides[row], names[row]));
   }
@@ -509,6 +507,7 @@ double LPGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
 // Internal solving methods.
 // ============================================================================
 
+// NOLINTNEXTLINE(misc-no-recursion)
 absl::Status LPGlopInterface::SolveInternal(bool recursive,
                                             TimeLimit* time_limit) {
   // Recompute `scaled_lp_`.
@@ -1067,13 +1066,13 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
       param_val = static_cast<int>(parameters_.max_number_of_iterations());
       break;
     case LPParameter::kPresolving:
-      param_val = parameters_.use_preprocessing();
+      param_val = static_cast<int>(parameters_.use_preprocessing());
       break;
     case LPParameter::kPricing:
       param_val = static_cast<int>(pricing_);
       break;
     case LPParameter::kScaling:
-      param_val = parameters_.use_scaling();
+      param_val = static_cast<int>(parameters_.use_scaling());
       break;
     case LPParameter::kThreads:
       param_val = num_threads_;
@@ -1111,10 +1110,10 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
       parameters_.set_max_number_of_iterations(param_val);
       break;
     case LPParameter::kPresolving:
-      parameters_.set_use_preprocessing(param_val);
+      parameters_.set_use_preprocessing(static_cast<bool>(param_val));
       break;
     case LPParameter::kPricing:
-      pricing_ = (LPPricing)param_val;
+      pricing_ = static_cast<LPPricing>(param_val);
       switch (pricing_) {
         case LPPricing::kDefault:
         case LPPricing::kAuto:
@@ -1140,22 +1139,16 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
       }
       break;
     case LPParameter::kScaling:
-      parameters_.set_use_scaling(param_val);
+      parameters_.set_use_scaling(static_cast<bool>(param_val));
       break;
     case LPParameter::kThreads:
       num_threads_ = param_val;
-      if (param_val == 0)
-        parameters_.set_num_omp_threads(1);
-      else
-        parameters_.set_num_omp_threads(param_val);
+      parameters_.set_num_omp_threads(num_threads_ == 0 ? 1 : num_threads_);
       break;
     case LPParameter::kTiming:
       assert(param_val <= 2);
       timing_ = param_val;
-      if (param_val == 1)
-        absl::SetFlag(&FLAGS_time_limit_use_usertime, true);
-      else
-        absl::SetFlag(&FLAGS_time_limit_use_usertime, false);
+      absl::SetFlag(&FLAGS_time_limit_use_usertime, timing_ == 1);
       break;
     case LPParameter::kRandomSeed:
       parameters_.set_random_seed(param_val);
@@ -1180,18 +1173,15 @@ absl::StatusOr<double> LPGlopInterface::GetRealParameter(
       param_val = parameters_.dual_feasibility_tolerance();
       break;
     case LPParameter::kObjectiveLimit:
-      if (lp_.IsMaximizationProblem())
-        param_val = parameters_.objective_lower_limit();
-      else
-        param_val = parameters_.objective_upper_limit();
+      param_val = lp_.IsMaximizationProblem()
+                      ? parameters_.objective_lower_limit()
+                      : parameters_.objective_upper_limit();
       break;
     case LPParameter::kLPTimeLimit:
-      if (absl::GetFlag(FLAGS_time_limit_use_usertime))
-        param_val = parameters_.max_time_in_seconds();
-      else
-        param_val = parameters_.max_deterministic_time();
+      param_val = absl::GetFlag(FLAGS_time_limit_use_usertime)
+                      ? parameters_.max_time_in_seconds()
+                      : parameters_.max_deterministic_time();
       break;
-
     default:
       return absl::Status(absl::StatusCode::kInvalidArgument,
                           "Parameter Unknown");
@@ -1209,16 +1199,18 @@ absl::Status LPGlopInterface::SetRealParameter(LPParameter type,
       parameters_.set_dual_feasibility_tolerance(param_val);
       break;
     case LPParameter::kObjectiveLimit:
-      if (lp_.IsMaximizationProblem())
+      if (lp_.IsMaximizationProblem()) {
         parameters_.set_objective_lower_limit(param_val);
-      else
+      } else {
         parameters_.set_objective_upper_limit(param_val);
+      }
       break;
     case LPParameter::kLPTimeLimit:
-      if (absl::GetFlag(FLAGS_time_limit_use_usertime))
+      if (absl::GetFlag(FLAGS_time_limit_use_usertime)) {
         parameters_.set_max_time_in_seconds(param_val);
-      else
+      } else {
         parameters_.set_max_deterministic_time(param_val);
+      }
       break;
     default:
       return absl::Status(absl::StatusCode::kInvalidArgument,
