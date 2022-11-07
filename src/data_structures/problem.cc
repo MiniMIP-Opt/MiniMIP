@@ -16,20 +16,6 @@
 
 namespace minimip {
 
-// Returns the solution to the given problem with the given solver settings
-MiniMipResult MiniMipSolve(const MiniMipProblem& problem,
-                           MiniMipOptions /*unused*/) {
-  MiniMipResult result;
-  result.error_message = FindErrorInMiniMipProblem(problem);
-  if (!result.error_message.empty()) {
-    result.solve_status = MiniMipSolveStatus::kProblemInvalid;
-    result.stopping_reason = MiniMipStoppingReason::kError;
-    return result;
-  }
-  // TODO(lpawel): actual code to run when solving the MIP to optimality.
-  return result;
-}
-
 // Returns the first error encountered while validating MiniMipProblem.
 // Returns empty string if `problem` is valid.
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem) {

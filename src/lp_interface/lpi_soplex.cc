@@ -1644,6 +1644,9 @@ absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
       param_val = static_cast<int>(spx_->intParam(soplex::SoPlex::SIMPLIFIER) ==
                                    soplex::SoPlex::SIMPLIFIER_AUTO);
       break;
+    case LPParameter::kPolishing:
+      return false;
+      break;
     case LPParameter::kPricing:
       param_val = static_cast<int>(pricing_);
       break;
@@ -1659,6 +1662,9 @@ absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
         param_val = 2;
       }
       break;
+    case LPParameter::kThreads:
+      param_val = 1;
+      break;
     case LPParameter::kTiming:
       param_val = static_cast<int>(spx_->intParam(soplex::SoPlex::TIMER));
       break;
@@ -1670,8 +1676,8 @@ absl::StatusOr<int> LPSoplexInterface::GetIntegerParameter(
           static_cast<int>(spx_->intParam(soplex::SoPlex::FACTOR_UPDATE_MAX));
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown integer parameter type " << type;
   }
 
   return param_val;
@@ -1699,6 +1705,12 @@ absl::Status LPSoplexInterface::SetIntegerParameter(LPParameter type,
           soplex::SoPlex::SIMPLIFIER,
           (param_val == 0 ? soplex::SoPlex::SIMPLIFIER_OFF
                           : soplex::SoPlex::SIMPLIFIER_AUTO)));
+      break;
+    case LPParameter::kPolishing:
+      if (param_val) {
+        return absl::InvalidArgumentError(
+            "Polishing is not supported by SoPlex.");
+      }
       break;
     case LPParameter::kPricing:
       pricing_ = static_cast<LPPricing>(param_val);
@@ -1746,6 +1758,12 @@ absl::Status LPSoplexInterface::SetIntegerParameter(LPParameter type,
                                             soplex::SoPlex::SCALER_LEASTSQ));
       }
       break;
+    case LPParameter::kThreads:
+      if (param_val != 0 && param_val != 1) {
+        return absl::InvalidArgumentError(
+            "SoPlex doesn't support using more than one thread.");
+      }
+      break;
     case LPParameter::kTiming:
       CHECK_GE(param_val, 0);
       CHECK_LT(param_val, 3);
@@ -1760,7 +1778,9 @@ absl::Status LPSoplexInterface::SetIntegerParameter(LPParameter type,
           spx_->setIntParam(soplex::SoPlex::FACTOR_UPDATE_MAX, param_val));
       break;
     default:
-      return {absl::StatusCode::kInvalidArgument, "Parameter Unknown"};
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown integer parameter type " << type << " with value "
+             << param_val;
   }
 
   return absl::OkStatus();
@@ -1793,8 +1813,8 @@ absl::StatusOr<double> LPSoplexInterface::GetRealParameter(
       param_val = spx_->realParam(soplex::SoPlex::MIN_MARKOWITZ);
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown real parameter type " << type;
   }
 
   return param_val;
@@ -1846,7 +1866,9 @@ absl::Status LPSoplexInterface::SetRealParameter(LPParameter type,
           spx_->setRealParam(soplex::SoPlex::MIN_MARKOWITZ, param_val));
       break;
     default:
-      return {absl::StatusCode::kInvalidArgument, "Parameter Unknown"};
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown real parameter type " << type << " with value "
+             << param_val;
   }
 
   return absl::OkStatus();

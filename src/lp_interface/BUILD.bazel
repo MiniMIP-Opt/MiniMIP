@@ -1,5 +1,5 @@
 # Building minimip libraries.
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
 
 package(default_visibility = ["//visibility:public"])
@@ -70,6 +70,7 @@ cc_library(
         ":lpi",
         ":lpi_glop",
         ":lpi_soplex",
+        "//src:parameters_cc_proto",
         "@com_google_ortools//ortools/base",
     ],
 )

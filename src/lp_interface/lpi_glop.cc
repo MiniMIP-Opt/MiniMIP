@@ -1068,8 +1068,14 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
     case LPParameter::kPresolving:
       param_val = static_cast<int>(parameters_.use_preprocessing());
       break;
+    case LPParameter::kPolishing:
+      return false;
+      break;
     case LPParameter::kPricing:
       param_val = static_cast<int>(pricing_);
+      break;
+    case LPParameter::kRefactor:
+      return 0;
       break;
     case LPParameter::kScaling:
       param_val = static_cast<int>(parameters_.use_scaling());
@@ -1084,8 +1090,8 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
       param_val = static_cast<int>(parameters_.random_seed());
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown integer parameter type " << type;
   }
 
   return param_val;
@@ -1112,6 +1118,12 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
     case LPParameter::kPresolving:
       parameters_.set_use_preprocessing(static_cast<bool>(param_val));
       break;
+    case LPParameter::kPolishing:
+      if (param_val) {
+        return absl::InvalidArgumentError(
+            "Polishing is not supported by glop.");
+      }
+      break;
     case LPParameter::kPricing:
       pricing_ = static_cast<LPPricing>(param_val);
       switch (pricing_) {
@@ -1134,8 +1146,14 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
               operations_research::glop::GlopParameters_PricingRule_DEVEX);
           break;
         default:
-          return absl::Status(absl::StatusCode::kInvalidArgument,
-                              "Parameter Unknown");
+          return util::InvalidArgumentErrorBuilder()
+                 << "Unknown pricing strategy " << pricing_;
+      }
+      break;
+    case LPParameter::kRefactor:
+      if (param_val != 0) {
+        return absl::InvalidArgumentError(
+            "Glop only supports automatic refactoring.");
       }
       break;
     case LPParameter::kScaling:
@@ -1154,8 +1172,9 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
       parameters_.set_random_seed(param_val);
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown integer parameter type " << type << " with value "
+             << param_val;
   }
 
   return absl::OkStatus();
@@ -1183,8 +1202,8 @@ absl::StatusOr<double> LPGlopInterface::GetRealParameter(
                       : parameters_.max_deterministic_time();
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown real parameter type " << type;
   }
   return param_val;
 }
@@ -1213,8 +1232,9 @@ absl::Status LPGlopInterface::SetRealParameter(LPParameter type,
       }
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown real parameter type " << type << " with value "
+             << param_val;
   }
 
   return absl::OkStatus();

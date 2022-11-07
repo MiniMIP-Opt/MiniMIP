@@ -27,6 +27,7 @@
 #include "ortools/base/status_macros.h"
 #include "src/data_structures/strong_sparse_vector.h"
 #include "src/lp_interface/lpi_factory.h"
+#include "src/parameters.pb.h"
 #include "unit_tests/utils.h"
 
 using testing::DoubleEq;
@@ -44,10 +45,12 @@ namespace minimip {
 namespace {
 
 class LPInterfaceImplementationTest
-    : public ::testing::TestWithParam<LPInterfaceCode> {
+    : public ::testing::TestWithParam<LPParameters::SolverType> {
  protected:
   void SetUp() override {
-    lpi_ = CreateLPInterface(GetParam());
+    LPParameters lp_params;
+    lp_params.set_lp_solver_type(GetParam());
+    lpi_ = ConfigureLPSolverFromProto(lp_params).value();
     solver_inf_ = lpi_->Infinity();
   }
 
@@ -207,8 +210,8 @@ class LPInterfaceImplementationTest
 class ModelConstructionTest : public LPInterfaceImplementationTest {};
 
 INSTANTIATE_TEST_SUITE_P(All, ModelConstructionTest,
-                         testing::ValuesIn({LPInterfaceCode::kGlop,
-                                            LPInterfaceCode::kSoplex}));
+                         testing::ValuesIn({LPParameters::LP_GLOP,
+                                            LPParameters::LP_SOPLEX}));
 
 TEST_P(ModelConstructionTest, AddColumnRow) {
   ASSERT_EQ(lpi_->GetNumberOfColumns(), 0);
@@ -904,8 +907,8 @@ class FileTest : public LPInterfaceImplementationTest {
 };
 
 INSTANTIATE_TEST_SUITE_P(All, FileTest,
-                         testing::ValuesIn({LPInterfaceCode::kGlop,
-                                            LPInterfaceCode::kSoplex}));
+                         testing::ValuesIn({LPParameters::LP_GLOP,
+                                            LPParameters::LP_SOPLEX}));
 
 TEST_P(FileTest, WritesLPToFile) {
   ASSERT_OK(InitSimpleProblem(3, 4));
@@ -1062,8 +1065,8 @@ class SolveTest : public LPInterfaceImplementationTest {
 };
 
 INSTANTIATE_TEST_SUITE_P(All, SolveTest,
-                         testing::ValuesIn({LPInterfaceCode::kGlop,
-                                            LPInterfaceCode::kSoplex}));
+                         testing::ValuesIn({LPParameters::LP_GLOP,
+                                            LPParameters::LP_SOPLEX}));
 
 // Compute <v1 | v2>
 template <typename Container1, typename Container2>
@@ -1484,7 +1487,7 @@ TEST_P(SolveTest, PrimalInfeasibleDualUnbounded) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LPInterfaceCode::kSoplex) {
+  if (GetParam() == LPParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1529,7 +1532,7 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LPInterfaceCode::kSoplex) {
+  if (GetParam() == LPParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1576,7 +1579,7 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LPInterfaceCode::kSoplex) {
+  if (GetParam() == LPParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1622,7 +1625,7 @@ TEST_P(SolveTest, PrimalDualInfeasible) {
   //
   // Note that the two constraints contradict each other, both in the
   // primal and in the dual.
-  if (GetParam() == LPInterfaceCode::kSoplex) {
+  if (GetParam() == LPParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
