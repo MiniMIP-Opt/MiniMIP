@@ -30,6 +30,19 @@ class Separator {
   virtual absl::StatusOr<std::vector<CuttingPlane>> GenerateCuttingPlanes(
       const Solver& solver) = 0;
 };
+
+// TODO(happlegr): This function currently doesn't do anything, since we don't
+// have any separators yet. Rewrite when the first separator is integrated.
+inline absl::StatusOr<std::unique_ptr<Separator>> ConfigureSeparatorFromProto(
+    const SeparatorParameters& separator_parameters) {
+  if (separator_parameters.has_awesome_separator_parameters()) {
+    // return std::make_unique<AwesomeSeparator>(separator_parameters);
+  } else if (separator_parameters.has_parameterless_separator_parameters()) {
+    // return std::make_unique<ParameterlessSeparator>(separator_parameters);
+  }
+  return absl::InvalidArgumentError("No separator-specific parameters set.");
+}
+
 }  // namespace minimip
 
 #endif  // SRC_CUTTING_INTERFACE_SEPARATOR_H_

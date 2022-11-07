@@ -2,14 +2,26 @@ syntax = "proto2";
 
 package minimip;
 
+// TODO(happlegr): These are dummy protos used to illustrate the parameter
+// structure and how separators are constructed. Remove once we have integrated
+// at least one real separator.
+message AwesomeSeparatorParameters {
+  optional int32 an_important_parameter = 1 [default = 0];
+}
+
+message ParameterlessSeparatorParameters {
+}
+
 message SeparatorParameters {
-  enum SeparatorType {
-    SEPA_GOMORY = 0;
-  }
 
   // The maximum number of cuts this Separator should add per separation round. Negative values mean
   // that the separator default should be used. Zero value means the Separator is turned off.
   optional int32 max_num_cuts = 1 [default = -1];
+
+  oneof separator_specific {
+    AwesomeSeparatorParameters awesome_separator_parameters = 2;
+    ParameterlessSeparatorParameters parameterless_separator_parameters = 3;
+  }
 
 }
 
