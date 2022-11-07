@@ -268,8 +268,8 @@ void LPSoplexInterface::FreePreStrongBranchingBasis() {
 }
 
 // Strongbranching is applied to the given column, with the corresponding
-// current primal solution value. The double referenes are used to store the
-// dual bound after branching up and down. Additionally the validity of both
+// current primal solution value. The double references are used to store the
+// dual bound after branching up and down. Additionally, the validity of both
 // bounds is stored, if one bound is not valid it can be used as an
 // estimate.
 absl::StatusOr<LPInterface::StrongBranchResult>
@@ -702,7 +702,7 @@ LPSoplexInterface::DeleteRowSet(
   // Note: We cannot use the same vector for the soplex call above and the row
   // mapping, even though RowIndex internally consists of an int. In addition to
   // being bad practice to depend on a class' internals, the compiler may
-  // introduce additional padding mening RowIndex and int don't have identical
+  // introduce additional padding meaning RowIndex and int don't have identical
   // representations.
   absl::StrongVector<RowIndex, RowIndex> row_mapping(rows_to_delete.size());
   for (RowIndex row(0); row < row_mapping.size(); ++row) {
@@ -1197,7 +1197,7 @@ LPSoplexInterface::GetRowActivities() const {
     static_cast<void>(
         spx_->getSlacksReal(row_activities.data(),
                             spx_->numRowsReal()));  // in SoPlex, the activities
-                                                    // are called "slacks"
+    // are called "slacks"
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");

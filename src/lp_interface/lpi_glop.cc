@@ -225,7 +225,7 @@ absl::Status LPGlopInterface::DeleteColumns(ColIndex first_col,
   DCHECK_GE(last_col, first_col);
   DCHECK_LT(last_col, GetNumberOfColumns());
 
-  VLOG(3) << "Deleting colums from " << first_col << " to " << last_col << ".";
+  VLOG(3) << "Deleting columns from " << first_col << " to " << last_col << ".";
 
   const GlopColIndex num_cols = lp_.num_variables();
   DenseBooleanRow columns_to_delete(num_cols, false);
@@ -448,7 +448,7 @@ SparseRow LPGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
   DCHECK_GE(row, RowIndex(0));
   DCHECK_LT(row, GetNumberOfRows());
   // Note, there is no casting from col to row in Glop, hence we keep the row
-  // (grabbed from the trasposed matrix) in the column type.
+  // (grabbed from the transposed matrix) in the column type.
   const SparseColumn& row_in_glop =
       lp_.GetTransposeSparseMatrix().column(GlopColIndex(row.value()));
   SparseRow row_data;
@@ -697,7 +697,7 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 // ==========================================================================
 
 bool LPGlopInterface::IsSolved() const {
-  // TODO(lpawel): Track this to avoid uneeded resolving.
+  // TODO(lpawel): Track this to avoid unneeded resolving.
   return (!lp_modified_since_last_solve_);
 }
 
@@ -1069,13 +1069,13 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
       param_val = static_cast<int>(parameters_.use_preprocessing());
       break;
     case LPParameter::kPolishing:
-      return false;
+      param_val = 0;
       break;
     case LPParameter::kPricing:
       param_val = static_cast<int>(pricing_);
       break;
     case LPParameter::kRefactor:
-      return 0;
+      param_val = 0;
       break;
     case LPParameter::kScaling:
       param_val = static_cast<int>(parameters_.use_scaling());
@@ -1119,7 +1119,7 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
       parameters_.set_use_preprocessing(static_cast<bool>(param_val));
       break;
     case LPParameter::kPolishing:
-      if (param_val) {
+      if (param_val != 0) {
         return absl::InvalidArgumentError(
             "Polishing is not supported by glop.");
       }

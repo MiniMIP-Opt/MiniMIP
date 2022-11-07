@@ -118,7 +118,7 @@ class StrongSparseVectorOfDoubles {
   StrongSparseVectorOfDoubles<SparseIndex>& operator=(
       const StrongSparseVectorOfDoubles<SparseIndex>&) = default;
 
-  // The class is (no-throw) moveable.
+  // The class is (no-throw) movable.
   StrongSparseVectorOfDoubles(StrongSparseVectorOfDoubles&&) noexcept = default;
   StrongSparseVectorOfDoubles<SparseIndex>& operator=(
       StrongSparseVectorOfDoubles<SparseIndex>&&) noexcept = default;
@@ -432,7 +432,7 @@ StrongSparseVectorOfDoubles<SparseIndex> operator*(
   return vector * scalar;
 }
 
-// Note, we need no-throw moveable so that `std::vector<SparseRow>::resize()`
+// Note, we need no-throw movable so that `std::vector<SparseRow>::resize()`
 // uses move semantics.
 static_assert(std::is_move_assignable<SparseRow>(),
               "SparseRow is not move assignable.");

@@ -28,20 +28,20 @@ enum class LPParameter {
   kPolishing = 3,             // set solution polishing (0: disable, 1: enable)
   kPricing = 4,               // pricing strategy
   kFeasibilityTolerance = 5,  // feasibility tolerance for primal variables and
-                              // slacks, strictly positive
+  // slacks, strictly positive
   kDualFeasibilityTolerance = 6,  // feasibility tolerance for dual variables
-                                  // and reduced costs, strictly positive
-  kMarkowitz = 7,                 // Markowitz tolerance
-  kRefactor = 8,                  // set refactorization interval (0: automatic)
-  kObjectiveLimit = 9,     // objective limit (stop if objective is known be
-                           // larger/smaller than limit for min/max-imization)
+  // and reduced costs, strictly positive
+  kMarkowitz = 7,       // Markowitz tolerance
+  kRefactor = 8,        // set refactorization interval (0: automatic)
+  kObjectiveLimit = 9,  // objective limit (stop if objective is known be
+  // larger/smaller than limit for min-/maximization)
   kLPIterationLimit = 10,  // LP iteration limit (> 0)
   kLPTimeLimit = 11,       // LP time limit, positive
   kThreads = 12,     // number of threads used to solve the LP (0: automatic)
   kTiming = 13,      // type of timer (1: cpu, 2: wallclock, 0: off)
-  kRandomSeed = 14,  // inital random seed, e.g., for perturbations in the
-                     // simplex (0: LP default)
-  kLPInfo = 15,      // Should LP solver output information to the screen?
+  kRandomSeed = 14,  // initial random seed, e.g., for perturbations in the
+  // simplex (0: LP default)
+  kLPInfo = 15,  // Should LP solver output information to the screen?
 };
 
 inline std::ostream& operator<<(std::ostream& out, LPParameter param) {
