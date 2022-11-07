@@ -10,5 +10,6 @@ package(default_visibility = ["//visibility:public"])
 #    hdrs = ["lib_name.h"],
 #    deps = [
 #        "//src/cutting_interface:cut_runner",
+#        "//unit_tests:gtest_main",
 #    ],
 #)

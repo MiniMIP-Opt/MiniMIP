@@ -7,37 +7,13 @@ package(default_visibility = ["//visibility:public"])
 #TODO: Write relevant general unit tests to test defaults and define general rules of functionality to be adhered to.
 
 cc_test(
-    name = "cut_generator_test",
-    size = "small",
-    srcs = ["cut_generator_test.cc"],
-    deps = [
-        "//src/data_structures:mip_data",
-        "//unit_tests:utils",
-        "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "cut_runner_test",
     size = "small",
     srcs = ["cut_runner_test.cc"],
     deps = [
         "//src/data_structures:mip_data",
+        "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "cut_selector_test",
-    size = "small",
-    srcs = ["cut_selector_test.cc"],
-    deps = [
-        "//src/data_structures:mip_data",
-        "//unit_tests:utils",
-        "@com_google_absl//absl/status",
-        "@com_google_googletest//:gtest_main",
     ],
 )

@@ -12,33 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_CUT_GENERATOR_H_
-#define SRC_CUTTING_INTERFACE_CUT_GENERATOR_H_
+#ifndef SRC_CUTTING_INTERFACE_SEPARATOR_H_
+#define SRC_CUTTING_INTERFACE_SEPARATOR_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/data_structures/cuts_data.h"
-#include "src/data_structures/mip_data.h"
-#include "src/lp_interface/lpi.h"
+#include "ortools/base/logging.h"
+#include "src/solver.h"
 
 namespace minimip {
 
-class CutGenerator {
+class Separator {
  public:
-  virtual ~CutGenerator() = default;
-
-  // Indicate if this generator can be run in the current state. This is not a
-  // guarantee that `GenerateNextCuttingPlanes` will be able to find any cuts.
-  virtual bool MayBeRun(const LPInterface* lpi,
-                        const MipData& mip_data) const = 0;
-
   // Generate up to `max_num_cuts` cutting planes. Returns an empty vector if no
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
-  virtual absl::StatusOr<std::vector<CuttingPlane>> GenerateNextCuttingPlanes(
-      const LPInterface* lpi, const MipData& mip_data, int max_num_cuts) = 0;
+  virtual absl::StatusOr<std::vector<CuttingPlane>> GenerateCuttingPlanes(
+      const Solver& solver) = 0;
 };
-
 }  // namespace minimip
 
-#endif  // SRC_CUTTING_INTERFACE_CUT_GENERATOR_H_
+#endif  // SRC_CUTTING_INTERFACE_SEPARATOR_H_
