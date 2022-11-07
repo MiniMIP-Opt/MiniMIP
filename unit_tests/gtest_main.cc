@@ -5,7 +5,7 @@
 // Unit tests typically link against 'gtest_main' and do not need to implement
 // their own main. Here, however, we want some custom control over logging.
 // Thus, we provide our own `main()`.
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // Initialize logging and testing.
   google::InitGoogleLogging(argv[0]);
   testing::InitGoogleTest(&argc, argv);

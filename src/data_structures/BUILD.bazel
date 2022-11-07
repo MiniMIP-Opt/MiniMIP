@@ -1,16 +1,17 @@
 # Building minimip libraries.
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 # All other packages in MiniMIP may use any of the testing utils.
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "solver",
-    hdrs = ["solver.h"],
+    name = "problem",
+    srcs = ["problem.cc"],
+    hdrs = ["problem.h"],
     deps = [
-        ":mip_data",
-        ":cuts_data",
-        "//src/lp_interface:lpi",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/strings",
+        "@com_google_ortools//ortools/lp_data:mps_reader",
     ],
 )
 
@@ -31,16 +32,6 @@ cc_library(
     deps = [
         ":problem",
         ":strong_sparse_matrix",
-    ],
-)
-
-cc_library(
-    name = "problem",
-    srcs = ["problem.cc"],
-    hdrs = ["problem.h"],
-    deps = [
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/strings",
     ],
 )
 

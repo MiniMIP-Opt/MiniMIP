@@ -1,0 +1,87 @@
+---
+# Configure clang-tidy for this project.
+
+# Here is an explanation for why some checks are disabled.
+#
+# -bugprone-easily-swappable-parameters
+#   Triggered by functions like foo(double, double), giving too many false
+#   positives.
+#
+# -bugprone-narrowing-conversions
+#   Too many false positives when comparing signed loop variables with unsigned
+#   size_t.
+#
+# -readability-braces-around-statements
+#   Clashes with Google style guide. google-braces-around-statements is used
+#   instead.
+#
+# -readability-function-cognitive-complexity
+#   Too many false positives, and the "cognitive complexity" metric is opaque.
+#
+# -readability-identifier-length
+#   Too many false positives, especially in mathematical expressions where
+#   constants often have well-established short names.
+#
+# -readability-magic-numbers
+#   Enforces extracting constants, even for values that are only used once where
+#   a comment would do the same.
+#
+# -misc-const-correctness
+#   Flags every expansion of the VLOG macro.
+#
+# -misc-non-private-member-variables-in-classes
+#   Too many false positives for structs with public members.
+#
+# -modernize-use-nodiscard
+#   Excessive use of nodiscard clutters the code with little benefit.
+#
+# -modernize-use-trailing-return-type
+# -modernize-return-braced-init-list
+#   Clashes with Google style guide.
+#
+# NOTE: You cannot include comments in the Checks field.
+Checks: >
+  -*,
+  abseil-*,
+  bugprone-*,
+  clang-analyzer-*,
+  google-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  -readability-braces-around-statements,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -misc-const-correctness,
+  -misc-non-private-member-variables-in-classes,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -modernize-return-braced-init-list
+
+# Configure naming conventions to match Google style guide.
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,          value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,              value: CamelCase }
+  - { key: readability-identifier-naming.StructCase,             value: CamelCase }
+  - { key: readability-identifier-naming.TemplateParameterCase,  value: CamelCase }
+  - { key: readability-identifier-naming.FunctionCase,           value: aNy_CasE }
+  - { key: readability-identifier-naming.VariableCase,           value: lower_case }
+  - { key: readability-identifier-naming.ClassMemberCase,        value: lower_case }
+  - { key: readability-identifier-naming.ClassMemberSuffix,      value: _ }
+  - { key: readability-identifier-naming.PrivateMemberSuffix,    value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberSuffix,  value: _ }
+  - { key: readability-identifier-naming.EnumConstantCase,         value: CamelCase }
+  - { key: readability-identifier-naming.EnumConstantPrefix,       value: k }
+  - { key: readability-identifier-naming.ConstexprVariableCase,    value: CamelCase }
+  - { key: readability-identifier-naming.ConstexprVariablePrefix,  value: k }
+  - { key: readability-identifier-naming.GlobalConstantCase,       value: CamelCase }
+  - { key: readability-identifier-naming.GlobalConstantPrefix,     value: k }
+  - { key: readability-identifier-naming.MemberConstantCase,       value: CamelCase }
+  - { key: readability-identifier-naming.MemberConstantPrefix,     value: k }
+  - { key: readability-identifier-naming.StaticConstantCase,       value: CamelCase }
+  - { key: readability-identifier-naming.StaticConstantPrefix,     value: k }

@@ -78,8 +78,8 @@ using SparseCol = StrongSparseVectorOfDoubles<RowIndex>;
 template <typename SparseIndex>
 constexpr SparseIndex kInvalidSparseIndex(-1);
 
-constexpr RowIndex kInvalidRow = kInvalidSparseIndex<RowIndex>;
-constexpr ColIndex kInvalidCol = kInvalidSparseIndex<ColIndex>;
+[[maybe_unused]] constexpr RowIndex kInvalidRow = kInvalidSparseIndex<RowIndex>;
+[[maybe_unused]] constexpr ColIndex kInvalidCol = kInvalidSparseIndex<ColIndex>;
 
 // This is needed for CHECK_EQ(), EXPECT_EQ(), and macros from abseil.
 template <typename SparseIndex>
@@ -118,12 +118,12 @@ class StrongSparseVectorOfDoubles {
   StrongSparseVectorOfDoubles<SparseIndex>& operator=(
       const StrongSparseVectorOfDoubles<SparseIndex>&) = default;
 
-  // The class is (no-throw) moveable.
+  // The class is (no-throw) movable.
   StrongSparseVectorOfDoubles(StrongSparseVectorOfDoubles&&) noexcept = default;
   StrongSparseVectorOfDoubles<SparseIndex>& operator=(
       StrongSparseVectorOfDoubles<SparseIndex>&&) noexcept = default;
 
-  StrongSparseVectorOfDoubles() : may_need_cleaning_(false) {}
+  StrongSparseVectorOfDoubles() = default;
 
   explicit StrongSparseVectorOfDoubles(
       absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>> entries)
@@ -225,9 +225,8 @@ class StrongSparseVectorOfDoubles {
                        return lhs.index < rhs.index;
                      });
 
-    EntryIndex new_pos = EntryIndex(0);
-    for (EntryIndex pos = EntryIndex(0); pos < EntryIndex(entries_.size());
-         ++pos) {
+    EntryIndex new_pos(0);
+    for (EntryIndex pos(0); pos < EntryIndex(entries_.size()); ++pos) {
       if (pos < entries_.size() - 1 &&
           entries_[pos].index == entries_[pos + 1].index) {
         continue;
@@ -433,7 +432,7 @@ StrongSparseVectorOfDoubles<SparseIndex> operator*(
   return vector * scalar;
 }
 
-// Note, we need no-throw moveable so that `std::vector<SparseRow>::resize()`
+// Note, we need no-throw movable so that `std::vector<SparseRow>::resize()`
 // uses move semantics.
 static_assert(std::is_move_assignable<SparseRow>(),
               "SparseRow is not move assignable.");
