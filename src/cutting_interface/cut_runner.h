@@ -29,6 +29,18 @@ class CuttingInterface {
  public:
   // TODO: add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(const Solver& solver) = 0;
+
+  void AddSeparator(std::unique_ptr<Separator> separator) {
+    separators_.push_back(std::move(separator));
+  }
+
+  void AddSelector(std::unique_ptr<Selector> selector) {
+    selectors_.push_back(std::move(selector));
+  }
+
+ protected:
+  std::vector<std::unique_ptr<Separator>> separators_;
+  std::vector<std::unique_ptr<Selector>> selectors_;
 };
 
 class CutRunner : CuttingInterface {
