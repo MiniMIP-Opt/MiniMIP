@@ -51,11 +51,11 @@ using Cut = CuttingPlane;
 // The cut storage is used to track the globally valid cuts generated while
 // solving the Mixed Integer Problem. The storage functions as a register and
 // provides access to cutting planes for selection and the lp.
-class CutArchive {
-  CutArchive() {}
-
-  // Initialize CutArchive from initial separation round.
-  CutArchive(std::vector<Cut> cuts, std::vector<unsigned int> cut_positions)
+class CutStorage {
+ public:
+  CutStorage();
+  // Initialize CutStorage from initial separation round.
+  CutStorage(std::vector<Cut> cuts, std::vector<unsigned int> cut_positions)
       : cuts_(std::move(cuts)),
         active_cut_positions_(std::move(cut_positions)),
         current_number_of_cuts_(cuts.size()),
@@ -64,15 +64,15 @@ class CutArchive {
     DCHECK_LE(cut_positions.size(), cuts.size());
   }
 
-  // CutArchive is not copyable to make sure a copy will not be
+  // CutStorage is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
-  // CutArchive is (no-throw) moveable.
-  CutArchive(CutArchive&&) noexcept = default;
-  CutArchive& operator=(CutArchive&&) noexcept = default;
+  // CutStorage is (no-throw) movable.
+  CutStorage(CutStorage&&) noexcept = default;
+  CutStorage& operator=(CutStorage&&) noexcept = default;
 
   // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
   // we just use a private copy / move constructor and assignment operator.
-  void PopulateFromCutStorage(CutArchive cut_storage) {
+  void PopulateFromCutStorage(CutStorage cut_storage) {
     *this = std::move(cut_storage);
   }
 
@@ -95,7 +95,7 @@ class CutArchive {
 
   // Activate stored cut.
   void ActivateCut(const Cut& cut) {
-    active_cut_positions_.push_back(cut.cut_position);
+    active_cuts_positions_.push_back(cut.cut_position);
     current_number_of_active_cuts_ += 1;
   }
 

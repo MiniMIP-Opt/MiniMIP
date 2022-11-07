@@ -19,8 +19,7 @@
 #include "absl/status/statusor.h"
 #include "ortools/base/logging.h"
 #include "ortools/base/status_macros.h"
-#include "src/data_structures/solver.h"
-
+#include "src/solver.h"
 
 namespace minimip {
 
@@ -36,9 +35,9 @@ class Selector {
   // Select up to `max_num_cuts` cutting planes. Returns an empty vector if no
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
-  virtual absl::StatusOr<int> SelectCuttingPlanes(const Solver &solver,
-                                                  std::vector<CuttingPlane> &cuts,
-                                                  int max_num_cuts) = 0;
+  virtual absl::StatusOr<int> SelectCuttingPlanes(
+      const Solver& solver, std::vector<CuttingPlane>& cuts,
+      int max_num_cuts) = 0;
 };
 
 }  // namespace minimip

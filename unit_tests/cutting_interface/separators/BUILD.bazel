@@ -11,6 +11,8 @@ cc_test(
     size = "small",
     srcs = ["gomory_mixed_integer_test.cc"],
     deps = [
-        "//unit_tests/cutting_interface:separator_test",
+        "//src/data_structures:mip_data",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
     ],
 )

@@ -143,8 +143,6 @@ LPGlopInterface::LPGlopInterface()
   tmp_column_ = std::make_unique<ScatteredColumn>();
 }
 
-LPGlopInterface::~LPGlopInterface() {}
-
 // ==========================================================================
 // LP model setters.
 // ==========================================================================
@@ -160,15 +158,15 @@ absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
 
   const RowIndex num_rows(mip_data.left_hand_sides().size());
   for (RowIndex row(0); row < num_rows; ++row) {
-    RETURN_IF_ERROR(AddRow({}, mip_data.left_hand_sides()[row.value()],
-                           mip_data.right_hand_sides()[row.value()],
-                           mip_data.constraint_names()[row.value()]));
+    RETURN_IF_ERROR(AddRow({}, mip_data.left_hand_sides()[row],
+                           mip_data.right_hand_sides()[row],
+                           mip_data.constraint_names()[row]));
   }
   for (ColIndex col(0); col < mip_data.matrix().num_cols(); ++col) {
-    RETURN_IF_ERROR(AddColumn(
-        mip_data.matrix().col(col), mip_data.lower_bounds()[col.value()],
-        mip_data.upper_bounds()[col.value()], mip_data.objective().value(col),
-        mip_data.variable_names()[col.value()]));
+    RETURN_IF_ERROR(
+        AddColumn(mip_data.matrix().col(col), mip_data.lower_bounds()[col],
+                  mip_data.upper_bounds()[col], mip_data.objective().value(col),
+                  mip_data.variable_names()[col]));
   }
   RETURN_IF_ERROR(SetObjectiveSense(mip_data.is_maximization()));
   return absl::OkStatus();
@@ -204,18 +202,19 @@ absl::Status LPGlopInterface::AddColumn(const SparseCol& col_data,
 }
 
 absl::Status LPGlopInterface::AddColumns(
-    const StrongSparseMatrix& matrix, const std::vector<double>& lower_bounds,
-    const std::vector<double>& upper_bounds,
-    const SparseRow& objective_coefficients,
-    const std::vector<std::string>& names) {
+    const StrongSparseMatrix& matrix,
+    const absl::StrongVector<ColIndex, double>& lower_bounds,
+    const absl::StrongVector<ColIndex, double>& upper_bounds,
+    const absl::StrongVector<ColIndex, double>& objective_coefficients,
+    const absl::StrongVector<ColIndex, std::string>& names) {
   DCHECK_EQ(names.size(), lower_bounds.size());
   DCHECK_EQ(lower_bounds.size(), upper_bounds.size());
   DCHECK_EQ(upper_bounds.size(), matrix.num_cols());
   DCHECK_EQ(matrix.num_rows(), GetNumberOfRows());
   for (ColIndex col(0); col < matrix.num_cols(); ++col) {
-    RETURN_IF_ERROR(AddColumn(
-        matrix.col(col), lower_bounds[col.value()], upper_bounds[col.value()],
-        objective_coefficients.value(col), names[col.value()]));
+    RETURN_IF_ERROR(AddColumn(matrix.col(col), lower_bounds[col],
+                              upper_bounds[col], objective_coefficients[col],
+                              names[col]));
   }
   return absl::OkStatus();
 }
@@ -226,7 +225,7 @@ absl::Status LPGlopInterface::DeleteColumns(ColIndex first_col,
   DCHECK_GE(last_col, first_col);
   DCHECK_LT(last_col, GetNumberOfColumns());
 
-  VLOG(3) << "Deleting colums from " << first_col << " to " << last_col << ".";
+  VLOG(3) << "Deleting columns from " << first_col << " to " << last_col << ".";
 
   const GlopColIndex num_cols = lp_.num_variables();
   DenseBooleanRow columns_to_delete(num_cols, false);
@@ -275,7 +274,7 @@ absl::Status LPGlopInterface::AddRows(
   DCHECK_EQ(names.size(), left_hand_sides.size());
   DCHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
   DCHECK_EQ(right_hand_sides.size(), rows.size());
-  for (RowIndex row = RowIndex(0); row < rows.size(); ++row) {
+  for (RowIndex row(0); row < rows.size(); ++row) {
     RETURN_IF_ERROR(AddRow(rows[row], left_hand_sides[row],
                            right_hand_sides[row], names[row]));
   }
@@ -449,7 +448,7 @@ SparseRow LPGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
   DCHECK_GE(row, RowIndex(0));
   DCHECK_LT(row, GetNumberOfRows());
   // Note, there is no casting from col to row in Glop, hence we keep the row
-  // (grabbed from the trasposed matrix) in the column type.
+  // (grabbed from the transposed matrix) in the column type.
   const SparseColumn& row_in_glop =
       lp_.GetTransposeSparseMatrix().column(GlopColIndex(row.value()));
   SparseRow row_data;
@@ -508,6 +507,7 @@ double LPGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
 // Internal solving methods.
 // ============================================================================
 
+// NOLINTNEXTLINE(misc-no-recursion)
 absl::Status LPGlopInterface::SolveInternal(bool recursive,
                                             TimeLimit* time_limit) {
   // Recompute `scaled_lp_`.
@@ -697,7 +697,7 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 // ==========================================================================
 
 bool LPGlopInterface::IsSolved() const {
-  // TODO(lpawel): Track this to avoid uneeded resolving.
+  // TODO(lpawel): Track this to avoid unneeded resolving.
   return (!lp_modified_since_last_solve_);
 }
 
@@ -1066,13 +1066,19 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
       param_val = static_cast<int>(parameters_.max_number_of_iterations());
       break;
     case LPParameter::kPresolving:
-      param_val = parameters_.use_preprocessing();
+      param_val = static_cast<int>(parameters_.use_preprocessing());
+      break;
+    case LPParameter::kPolishing:
+      param_val = 0;
       break;
     case LPParameter::kPricing:
       param_val = static_cast<int>(pricing_);
       break;
+    case LPParameter::kRefactor:
+      param_val = 0;
+      break;
     case LPParameter::kScaling:
-      param_val = parameters_.use_scaling();
+      param_val = static_cast<int>(parameters_.use_scaling());
       break;
     case LPParameter::kThreads:
       param_val = num_threads_;
@@ -1084,8 +1090,8 @@ absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
       param_val = static_cast<int>(parameters_.random_seed());
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown integer parameter type " << type;
   }
 
   return param_val;
@@ -1110,10 +1116,16 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
       parameters_.set_max_number_of_iterations(param_val);
       break;
     case LPParameter::kPresolving:
-      parameters_.set_use_preprocessing(param_val);
+      parameters_.set_use_preprocessing(static_cast<bool>(param_val));
+      break;
+    case LPParameter::kPolishing:
+      if (param_val != 0) {
+        return absl::InvalidArgumentError(
+            "Polishing is not supported by glop.");
+      }
       break;
     case LPParameter::kPricing:
-      pricing_ = (LPPricing)param_val;
+      pricing_ = static_cast<LPPricing>(param_val);
       switch (pricing_) {
         case LPPricing::kDefault:
         case LPPricing::kAuto:
@@ -1134,34 +1146,35 @@ absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
               operations_research::glop::GlopParameters_PricingRule_DEVEX);
           break;
         default:
-          return absl::Status(absl::StatusCode::kInvalidArgument,
-                              "Parameter Unknown");
+          return util::InvalidArgumentErrorBuilder()
+                 << "Unknown pricing strategy " << pricing_;
+      }
+      break;
+    case LPParameter::kRefactor:
+      if (param_val != 0) {
+        return absl::InvalidArgumentError(
+            "Glop only supports automatic refactoring.");
       }
       break;
     case LPParameter::kScaling:
-      parameters_.set_use_scaling(param_val);
+      parameters_.set_use_scaling(static_cast<bool>(param_val));
       break;
     case LPParameter::kThreads:
       num_threads_ = param_val;
-      if (param_val == 0)
-        parameters_.set_num_omp_threads(1);
-      else
-        parameters_.set_num_omp_threads(param_val);
+      parameters_.set_num_omp_threads(num_threads_ == 0 ? 1 : num_threads_);
       break;
     case LPParameter::kTiming:
       assert(param_val <= 2);
       timing_ = param_val;
-      if (param_val == 1)
-        absl::SetFlag(&FLAGS_time_limit_use_usertime, true);
-      else
-        absl::SetFlag(&FLAGS_time_limit_use_usertime, false);
+      absl::SetFlag(&FLAGS_time_limit_use_usertime, timing_ == 1);
       break;
     case LPParameter::kRandomSeed:
       parameters_.set_random_seed(param_val);
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown integer parameter type " << type << " with value "
+             << param_val;
   }
 
   return absl::OkStatus();
@@ -1179,21 +1192,18 @@ absl::StatusOr<double> LPGlopInterface::GetRealParameter(
       param_val = parameters_.dual_feasibility_tolerance();
       break;
     case LPParameter::kObjectiveLimit:
-      if (lp_.IsMaximizationProblem())
-        param_val = parameters_.objective_lower_limit();
-      else
-        param_val = parameters_.objective_upper_limit();
+      param_val = lp_.IsMaximizationProblem()
+                      ? parameters_.objective_lower_limit()
+                      : parameters_.objective_upper_limit();
       break;
     case LPParameter::kLPTimeLimit:
-      if (absl::GetFlag(FLAGS_time_limit_use_usertime))
-        param_val = parameters_.max_time_in_seconds();
-      else
-        param_val = parameters_.max_deterministic_time();
+      param_val = absl::GetFlag(FLAGS_time_limit_use_usertime)
+                      ? parameters_.max_time_in_seconds()
+                      : parameters_.max_deterministic_time();
       break;
-
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown real parameter type " << type;
   }
   return param_val;
 }
@@ -1208,20 +1218,23 @@ absl::Status LPGlopInterface::SetRealParameter(LPParameter type,
       parameters_.set_dual_feasibility_tolerance(param_val);
       break;
     case LPParameter::kObjectiveLimit:
-      if (lp_.IsMaximizationProblem())
+      if (lp_.IsMaximizationProblem()) {
         parameters_.set_objective_lower_limit(param_val);
-      else
+      } else {
         parameters_.set_objective_upper_limit(param_val);
+      }
       break;
     case LPParameter::kLPTimeLimit:
-      if (absl::GetFlag(FLAGS_time_limit_use_usertime))
+      if (absl::GetFlag(FLAGS_time_limit_use_usertime)) {
         parameters_.set_max_time_in_seconds(param_val);
-      else
+      } else {
         parameters_.set_max_deterministic_time(param_val);
+      }
       break;
     default:
-      return absl::Status(absl::StatusCode::kInvalidArgument,
-                          "Parameter Unknown");
+      return util::InvalidArgumentErrorBuilder()
+             << "Unknown real parameter type " << type << " with value "
+             << param_val;
   }
 
   return absl::OkStatus();

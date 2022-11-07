@@ -44,11 +44,12 @@ class LPSoplexInterface : public LPInterface {
                          double upper_bound, double objective_coefficient,
                          const std::string& name) final;
 
-  absl::Status AddColumns(const StrongSparseMatrix& matrix,
-                          const std::vector<double>& lower_bounds,
-                          const std::vector<double>& upper_bounds,
-                          const SparseRow& objective_coefficients,
-                          const std::vector<std::string>& names) final;
+  absl::Status AddColumns(
+      const StrongSparseMatrix& matrix,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) final;
 
   absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) final;
 
@@ -109,6 +110,10 @@ class LPSoplexInterface : public LPInterface {
   absl::Status StartStrongBranching() final;
   absl::Status EndStrongBranching() final;
 
+  // Strongbranching is applied to the given column, with the corresponding
+  // current primal solution value. The double references are used to store the
+  // dual bound after branching up and down. Additionally, the validity of both
+  // bounds is stored, if one bound is not valid it can be used as an estimate.
   absl::StatusOr<StrongBranchResult> SolveDownAndUpStrongBranch(
       ColIndex col, double primal_value, int iteration_limit) final;
 
@@ -260,13 +265,6 @@ class LPSoplexInterface : public LPInterface {
   // solves LP -- used for both, primal and dual simplex, because SoPlex doesn't
   // distinct the two cases
   absl::Status SoPlexSolve();
-
-  // Strongbranching is applied to the given column, with the corresponding
-  // current primal solution value. The double references are used to store the
-  // dual bound after branching up and down. Additionally, the validity of both
-  // bounds is stored, if one bound is not valid it can be used as an estimate.
-  absl::Status StrongBranch(int col, double primal_sol, int iteration_limit,
-                            StrongBranchResult result);
 
   // ==========================================================================
   // Member variables of the SoplexLPInterface.

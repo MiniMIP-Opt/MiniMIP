@@ -8,12 +8,9 @@ cc_library(
     name = "separator",
     hdrs = ["separator.h"],
     deps = [
-        "//src/data_structures:cuts_data",
-        "//src/data_structures:mip_data",
-        "//src/lp_interface:lpi",
+        "//src:solver",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
-        "@com_google_ortools//ortools/base:status_macros",
     ],
 )
 
@@ -30,7 +27,7 @@ cc_library(
     name = "selector",
     hdrs = ["selector.h"],
     deps = [
-        "//src/data_structures:solver",
+        "//src:solver",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_ortools//ortools/base:status_macros",

@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
 namespace minimip {
@@ -64,10 +65,6 @@ struct MiniMipSolutionHint {
   std::vector<double> values;
 };
 
-struct MiniMipOptions {
-  // TODO(lpawel): settings struct, probably better to be moved elsewhere.
-};
-
 // ==========================================================================
 // API Output Datastructures
 // ==========================================================================
@@ -105,7 +102,7 @@ enum class MiniMipSolveStatus {
   // The provided input problem was invalid.
   kProblemInvalid = 0,
 
-  // No solution, nor proof of infeasibility or unboundness was found.
+  // No solution, nor proof of infeasibility or unboundedness was found.
   kNotSolved = 1,
 
   // The solver found a solution and proven its optimality (within given gap
@@ -156,12 +153,18 @@ enum class MiniMipStoppingReason {
 // ==========================================================================
 // API Functionality
 // ==========================================================================
-
-// Returns the solution to the given problem with the given solver settings
-MiniMipResult MiniMipSolve(const MiniMipProblem& problem,
-                           MiniMipOptions options);
-
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem);
+
+// Read a problem description from an MPS file. See
+// http://lpsolve.sourceforge.net/5.5/mps-format.htm for details on this file
+// format.
+absl::StatusOr<MiniMipProblem> ReadProblemFromMPSFile(
+    const std::string& file_name);
+
+// Same as `ReadProblemFromMPSFile`, but takes the data as a string instead of
+// reading it from disk.
+absl::StatusOr<MiniMipProblem> ReadProblemFromMPSData(
+    const std::string& mps_data);
 
 }  // namespace minimip
 #endif  // SRC_DATA_STRUCTURES_PROBLEM_H_

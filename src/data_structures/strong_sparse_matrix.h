@@ -36,14 +36,14 @@ namespace minimip {
 
 class StrongSparseMatrix {
  public:
-  StrongSparseMatrix() {}
+  StrongSparseMatrix() = default;
 
   StrongSparseMatrix(ColIndex num_cols, RowIndex num_rows)
       : cols_(num_cols.value()), rows_(num_rows.value()) {}
 
   // StrongSparseMatrix is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
-  // StrongSparseMatrix is (no-throw) moveable.
+  // StrongSparseMatrix is (no-throw) movable.
   StrongSparseMatrix(StrongSparseMatrix&&) noexcept = default;
   StrongSparseMatrix& operator=(StrongSparseMatrix&&) noexcept = default;
 
@@ -52,7 +52,7 @@ class StrongSparseMatrix {
   void PopulateFromSparseMatrix(StrongSparseMatrix m);
 
   // Current size of this matrix. Note, because we're paranoid and want the
-  // compiler to catch any bug related to accidently swapping rows and cols
+  // compiler to catch any bug related to accidentally swapping rows and cols
   // in some code, we return appropriate strong types (i.e., `ColIndex` and
   // `RowIndex`) and not `int` or `size_t`.
   ColIndex num_cols() const { return ColIndex(cols_.size()); }
@@ -65,7 +65,7 @@ class StrongSparseMatrix {
   // This usually runs in O(log(k)) where k is the number of entries in the
   // underlying container (row or col). We prefer to avoid cleaning up the
   // underlying container, but if that's impossible it will run in O(k log(k)).
-  // This never triggers a re-computation of the row / col major view, because
+  // This never triggers a recomputation of the row / col major view, because
   // one of them is guaranteed to be up-to-date.
   double GetCoefficient(ColIndex col, RowIndex row) const;
 
@@ -80,7 +80,7 @@ class StrongSparseMatrix {
 
   // Recomputes `rows_` or `cols_` only if really needed. Prefers to keep
   // `rows_` (over `cols_`) in a consistent state, if possible. We use strong
-  // types to prevent bugs related to accidently swapping rows and cols.
+  // types to prevent bugs related to accidentally swapping rows and cols.
   void Resize(ColIndex new_num_cols, RowIndex new_num_rows);
 
   // Clears both the row and col major view of the matrix.
@@ -130,7 +130,7 @@ class StrongSparseMatrix {
     kColsNeedRecomputation = 2,
   };
 
-  // We keep the copy constructor and copy assing operator around to use in
+  // We keep the copy constructor and copy assign operator around to use in
   // `PopulateFromSparseMatrix()`.
   StrongSparseMatrix(const StrongSparseMatrix&) = default;
   StrongSparseMatrix& operator=(const StrongSparseMatrix&) = default;

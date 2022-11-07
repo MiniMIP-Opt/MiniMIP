@@ -20,31 +20,16 @@ namespace minimip {
 // ==========================================================================
 
 MipData::MipData()
-    : problem_name_(),
-      is_maximization_(),
-      objective_offset_(),
-      objective_(SparseRow()),
-      solution_hints_({}),
-      lower_bounds_({}),
-      upper_bounds_({}),
-      left_hand_sides_({}),
-      right_hand_sides_({}),
-      constraint_matrix_(minimip::ColIndex(0), minimip::RowIndex(0)),
-      variable_types_({}),
-      variable_names_({}),
-      constraint_names_({}) {}
+    : constraint_matrix_(minimip::ColIndex(0), minimip::RowIndex(0)) {}
 
 // TODO(cgraczyk): Enforce minimization assumption on the internal
 // representation.
 MipData::MipData(const MiniMipProblem& problem)
-    : objective_(SparseRow()),
-      solution_hints_(problem.hints.size()),
+    : solution_hints_(problem.hints.size()),
       lower_bounds_(problem.variables.size()),
       upper_bounds_(problem.variables.size()),
       left_hand_sides_(problem.constraints.size()),
       right_hand_sides_(problem.constraints.size()),
-      binary_variables_({}),
-      integer_variables_({}),
       constraint_matrix_(ColIndex(problem.variables.size()),
                          RowIndex(problem.constraints.size())),
       variable_types_(problem.variables.size()),
@@ -56,17 +41,13 @@ MipData::MipData(const MiniMipProblem& problem)
   is_maximization_ = problem.is_maximization;
   objective_offset_ = problem.objective_offset;
 
-  for (int col_idx = 0; col_idx < problem.variables.size(); ++col_idx) {
-    const MiniMipVariable& variable = problem.variables[col_idx];
+  for (ColIndex col_idx(0); col_idx < problem.variables.size(); ++col_idx) {
+    const MiniMipVariable& variable = problem.variables[col_idx.value()];
 
     lower_bounds_[col_idx] = variable.lower_bound;
     upper_bounds_[col_idx] = variable.upper_bound;
-
-    if (variable.is_integer) {
-      variable_types_[col_idx] = VariableType::kInteger;
-    } else
-      variable_types_[col_idx] = VariableType::kFractional;
-
+    variable_types_[col_idx] = variable.is_integer ? VariableType::kInteger
+                                                   : VariableType::kFractional;
     variable_names_[col_idx] = variable.name;
 
     if (variable.objective_coefficient != 0) {
@@ -79,32 +60,26 @@ MipData::MipData(const MiniMipProblem& problem)
     solution_hints_[i] = problem.hints.at(i);
   }
 
-  for (int row_idx = 0; row_idx < problem.constraints.size(); ++row_idx) {
+  for (RowIndex row_idx(0); row_idx < problem.constraints.size(); ++row_idx) {
     SparseRow sparse_constraint;
-    const MiniMipConstraint& constraint = problem.constraints[row_idx];
+    const MiniMipConstraint& constraint = problem.constraints[row_idx.value()];
 
     left_hand_sides_[row_idx] = constraint.left_hand_side;
     right_hand_sides_[row_idx] = constraint.right_hand_side;
     constraint_names_[row_idx] = constraint.name;
 
     for (int col_idx = 0; col_idx < constraint.var_indices.size(); ++col_idx) {
-      sparse_constraint.AddEntry((ColIndex)constraint.var_indices[col_idx],
+      sparse_constraint.AddEntry(ColIndex{constraint.var_indices[col_idx]},
                                  constraint.coefficients[col_idx]);
     }
     constraint_matrix_.PopulateRow(RowIndex(row_idx), sparse_constraint);
   }
 
-  binary_variables_.reserve(problem.variables.size());
   integer_variables_.reserve(problem.variables.size());
 
-  for (int col_idx = 0; col_idx < variable_types_.size(); ++col_idx) {
-    if (variable_types_[col_idx] == VariableType::kBinary) {
-      //@TODO(cgraczyk): This is always empty because variable type kBinary is
-      // never set.
-      binary_variables_.push_back(col_idx);
-    }
+  for (ColIndex col_idx(0); col_idx < variable_types_.size(); ++col_idx) {
     if (variable_types_[col_idx] == VariableType::kInteger) {
-      integer_variables_.push_back(col_idx);
+      integer_variables_.insert(col_idx);
     }
   }
 }

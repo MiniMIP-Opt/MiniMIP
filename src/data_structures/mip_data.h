@@ -51,11 +51,11 @@ class MipData {
   // Problem getters.
   // ==========================================================================
 
-  const std::string problem_name() const { return problem_name_; }
+  std::string problem_name() const { return problem_name_; }
 
-  const bool is_maximization() const { return is_maximization_; }
+  bool is_maximization() const { return is_maximization_; }
 
-  const double objective_offset() const { return objective_offset_; }
+  double objective_offset() const { return objective_offset_; }
 
   const SparseRow& objective() const { return objective_; }
 
@@ -63,52 +63,55 @@ class MipData {
     return solution_hints_;
   }
 
-  const std::vector<double>& lower_bounds() const { return lower_bounds_; }
+  const absl::StrongVector<ColIndex, double>& lower_bounds() const {
+    return lower_bounds_;
+  }
 
-  const std::vector<double>& upper_bounds() const { return upper_bounds_; }
+  const absl::StrongVector<ColIndex, double>& upper_bounds() const {
+    return upper_bounds_;
+  }
 
-  const std::vector<double>& left_hand_sides() const {
+  const absl::StrongVector<RowIndex, double>& left_hand_sides() const {
     return left_hand_sides_;
   }
 
-  const std::vector<double>& right_hand_sides() const {
+  const absl::StrongVector<RowIndex, double>& right_hand_sides() const {
     return right_hand_sides_;
   }
 
   const StrongSparseMatrix& matrix() const { return constraint_matrix_; }
 
-  const std::vector<VariableType>& variable_types() const {
+  const absl::StrongVector<ColIndex, VariableType>& variable_types() const {
     return variable_types_;
   }
 
-  const std::vector<std::string>& variable_names() const {
+  const absl::StrongVector<ColIndex, std::string>& variable_names() const {
     return variable_names_;
   }
 
-  const std::vector<std::string>& constraint_names() const {
+  const absl::StrongVector<RowIndex, std::string>& constraint_names() const {
     return constraint_names_;
   }
 
-  std::vector<bool> binary_variables() const { return binary_variables_; }
-
-  std::vector<int> integer_variables() const { return integer_variables_; }
+  const absl::flat_hash_set<ColIndex>& integer_variables() const {
+    return integer_variables_;
+  }
 
  private:
   std::string problem_name_;
-  bool is_maximization_;
-  double objective_offset_;
+  bool is_maximization_ = false;
+  double objective_offset_ = 0.0;
   SparseRow objective_;
   std::vector<MiniMipSolutionHint> solution_hints_;
-  std::vector<double> lower_bounds_;
-  std::vector<double> upper_bounds_;
-  std::vector<double> left_hand_sides_;
-  std::vector<double> right_hand_sides_;
-  std::vector<bool> binary_variables_;
-  std::vector<int> integer_variables_;
+  absl::StrongVector<ColIndex, double> lower_bounds_;
+  absl::StrongVector<ColIndex, double> upper_bounds_;
+  absl::StrongVector<RowIndex, double> left_hand_sides_;
+  absl::StrongVector<RowIndex, double> right_hand_sides_;
+  absl::flat_hash_set<ColIndex> integer_variables_;
   StrongSparseMatrix constraint_matrix_;
-  std::vector<VariableType> variable_types_;
-  std::vector<std::string> variable_names_;
-  std::vector<std::string> constraint_names_;
+  absl::StrongVector<ColIndex, VariableType> variable_types_;
+  absl::StrongVector<ColIndex, std::string> variable_names_;
+  absl::StrongVector<RowIndex, std::string> constraint_names_;
 };
 
 }  // namespace minimip

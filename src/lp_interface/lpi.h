@@ -38,7 +38,7 @@
 
 namespace minimip {
 
-// This representes an element of the basis which may be either a column or
+// This represents an element of the basis which may be either a column or
 // a row of the original problem.
 class ColOrRowIndex {
  public:
@@ -92,11 +92,12 @@ class LPInterface {
 
   // Like `AddColumn()`, but adds multiple columns at once. This is useful if
   // the underlying LP solver supports batched operations.
-  virtual absl::Status AddColumns(const StrongSparseMatrix& matrix,
-                                  const std::vector<double>& lower_bounds,
-                                  const std::vector<double>& upper_bounds,
-                                  const SparseRow& objective_coefficients,
-                                  const std::vector<std::string>& names) = 0;
+  virtual absl::Status AddColumns(
+      const StrongSparseMatrix& matrix,
+      const absl::StrongVector<ColIndex, double>& lower_bounds,
+      const absl::StrongVector<ColIndex, double>& upper_bounds,
+      const absl::StrongVector<ColIndex, double>& objective_coefficients,
+      const absl::StrongVector<ColIndex, std::string>& names) = 0;
 
   // Deletes all columns from `first_col` to `last_col` inclusive on both ends.
   // The column indices larger than `last_col` are decremented by `last_col -
@@ -106,7 +107,7 @@ class LPInterface {
   virtual absl::Status DeleteColumns(ColIndex first_col, ColIndex last_col) = 0;
 
   // Adds a new row (aka constraint) to the LP problem stored in the underlying
-  // LP solver. The newly created constriants get the next available RowIndex,
+  // LP solver. The newly created constraints get the next available RowIndex,
   // i.e., in the snippet below the newly created constraint can be referenced
   // by `next_free_index`.
   //
@@ -115,7 +116,7 @@ class LPInterface {
   //
   // The `row` is simply appended to the coefficient matrix from the bottom. Use
   // `lower_bound = -Infinity()` and `upper_bound = Infinity()` for imposing no
-  // limit on the left and right hand sides, respectively, of the added
+  // limit on the left and right-hand sides, respectively, of the added
   // constraint. `name` can be empty.
   virtual absl::Status AddRow(const SparseRow& row, double left_hand_side,
                               double right_hand_side,
@@ -156,9 +157,9 @@ class LPInterface {
   virtual absl::Status SetColumnBounds(ColIndex col, double lower_bound,
                                        double upper_bound) = 0;
 
-  // Sets left and right hand sides for `row`, assuming lower-or-equal
+  // Sets left and right-hand sides for `row`, assuming lower-or-equal
   // relationship. I.e., left_hand_side <= constraint[row] <= right_hand_side.
-  // Use '-Infinity()` and `Infinity()` to impose no left and right hand side
+  // Use '-Infinity()` and `Infinity()` to impose no left and right-hand side
   // limit, respectively.
   virtual absl::Status SetRowSides(RowIndex row, double left_hand_side,
                                    double right_hand_side) = 0;
@@ -208,10 +209,10 @@ class LPInterface {
   // Returns the upper bound for `col` (aka variable upper bound).
   virtual double GetUpperBound(ColIndex col) const = 0;
 
-  // Returns the left hand side for `row` (aka constraint lower bound).
+  // Returns the left-hand side for `row` (aka constraint lower bound).
   virtual double GetLeftHandSide(RowIndex row) const = 0;
 
-  // Returns the right hand side for `row` (aka constraint upper bound).
+  // Returns the right-hand side for `row` (aka constraint upper bound).
   virtual double GetRightHandSide(RowIndex row) const = 0;
 
   // Returns a single coefficient from the constraint matrix for `col` and
