@@ -2,6 +2,17 @@ syntax = "proto2";
 
 package minimip;
 
+message SeparatorParameters {
+  enum SeparatorType {
+    SEPA_GOMORY = 0;
+  }
+
+  // The maximum number of cuts this Separator should add per separation round. Negative values mean
+  // that the separator default should be used. Zero value means the Separator is turned off.
+  optional int32 max_num_cuts = 1 [default = -1];
+
+}
+
 message LPParameters {
   enum SolverType {
     LP_GLOP = 0;
@@ -61,7 +72,7 @@ message LPParameters {
   // Should the LP solver stop when a given objective value is achieved?
   optional bool use_objective_limit = 10 [default = false];
 
-  // The LP solver will stop when the objective value is larger (if 
+  // The LP solver will stop when the objective value is larger (if
   // maximization) or smaller (if minimization) than this value. Has no effect
   // if use_objective_limit = false.
   optional double objective_limit = 11 [default = 0.0];
