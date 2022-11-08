@@ -809,7 +809,7 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
   problem.variables.push_back(MiniMipVariable{.name = "x4",
                                               .objective_coefficient = 1e-3,
                                               .lower_bound = -solver_inf_,
-                                              .upper_bound = 29.3,
+                                              .upper_bound = 29.0,
                                               .is_integer = true});
   problem.variables.push_back(MiniMipVariable{.name = "x5",
                                               .objective_coefficient = 0,
@@ -855,7 +855,7 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
   EXPECT_THAT(ExtractLowerBounds(),
               ElementsAre(-1, -solver_inf_, 0, -solver_inf_, 1));
   EXPECT_THAT(ExtractUpperBounds(),
-              ElementsAre(10, solver_inf_, solver_inf_, 29.3, 1));
+              ElementsAre(10, solver_inf_, solver_inf_, 29, 1));
   EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(1, 2, -4, 1e-3, 0));
 
   // Check row properties
