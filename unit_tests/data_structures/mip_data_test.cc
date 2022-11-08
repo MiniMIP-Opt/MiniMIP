@@ -26,12 +26,13 @@
 namespace minimip {
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
+using testing::IsEmpty;
 using ::testing::UnorderedElementsAreArray;
 
 TEST(MipDataTests, CreateEmptyProblem) {
   MipData mip_data;
   EXPECT_EQ(mip_data.problem_name(), "");
-  EXPECT_EQ(mip_data.is_maximization(), 0);
+  EXPECT_EQ(mip_data.is_maximization(), false);
   EXPECT_EQ(mip_data.objective_offset(), 0);
 
   EXPECT_TRUE(mip_data.objective().entries().empty());
@@ -45,8 +46,8 @@ TEST(MipDataTests, CreateEmptyProblem) {
   EXPECT_TRUE(mip_data.variable_names().empty());
   EXPECT_TRUE(mip_data.constraint_names().empty());
 
-  EXPECT_EQ(mip_data.matrix().num_cols(), (ColIndex)0);
-  EXPECT_EQ(mip_data.matrix().num_rows(), (RowIndex)0);
+  EXPECT_EQ(mip_data.matrix().num_cols(), ColIndex(0));
+  EXPECT_EQ(mip_data.matrix().num_rows(), RowIndex(0));
 }
 
 TEST(MipDataTests, PopulatesProblemName) {
@@ -76,6 +77,20 @@ TEST(MipDataTests, PopulatesVariables) {
   EXPECT_THAT(mip_data.variable_names(), ElementsAreArray({"Bar"}));
 }
 
+TEST(MipDataTests, IntegerVariableBoundsAreTightened) {
+  const MiniMipVariable variable = {.name = "Bar",
+                                    .objective_coefficient = 13.2,
+                                    .lower_bound = -1.2,
+                                    .upper_bound = 7.5,
+                                    .is_integer = true};
+  const MiniMipProblem problem = {.variables = {variable}};
+
+  const MipData mip_data(problem);
+  EXPECT_THAT(mip_data.lower_bounds(), ElementsAre(-1.0));
+  EXPECT_THAT(mip_data.upper_bounds(), ElementsAre(7.0));
+  EXPECT_EQ(mip_data.objective().value(ColIndex(0)), 13.2);
+}
+
 TEST(MipDataTests, PopulatesConstraints) {
   const MiniMipVariable variable = {.name = "Bar",
                                     .objective_coefficient = 13.0,
@@ -84,7 +99,7 @@ TEST(MipDataTests, PopulatesConstraints) {
                                     .is_integer = true};
   const MiniMipConstraint constraint = {.name = "Baz",
                                         .var_indices = {0},
-                                        .coefficients = {1},
+                                        .coefficients = {1.5},
                                         .left_hand_side = -1.0,
                                         .right_hand_side = 0.5};
   const MiniMipProblem problem = {.variables = {variable},
@@ -96,7 +111,82 @@ TEST(MipDataTests, PopulatesConstraints) {
   EXPECT_THAT(mip_data.constraint_names(), ElementsAreArray({"Baz"}));
 
   const StrongSparseMatrix& constraint_matrix = mip_data.matrix();
-  EXPECT_EQ(constraint_matrix.GetCoefficient(ColIndex(0), RowIndex(0)), 1.0);
+  EXPECT_EQ(constraint_matrix.GetCoefficient(ColIndex(0), RowIndex(0)), 1.5);
+}
+
+TEST(MipDataTests, IdentifiesIntegralConstraint) {
+  const MiniMipVariable integer_variable = {.name = "integer",
+                                            .is_integer = true};
+  const MiniMipVariable continuous_variable = {.name = "continuous",
+                                               .is_integer = false};
+
+  {
+    const MiniMipConstraint integral_constraint = {.name = "integral",
+                                                   .var_indices = {0},
+                                                   .coefficients = {1},
+                                                   .left_hand_side = 0.5,
+                                                   .right_hand_side = 2.5};
+    const MiniMipProblem problem = {.variables = {integer_variable},
+                                    .constraints = {integral_constraint}};
+    const MipData mip_data = MipData(problem);
+    EXPECT_THAT(mip_data.is_integral_constraint(), ElementsAre(true));
+    EXPECT_THAT(mip_data.left_hand_sides(), ElementsAre(0.5));
+    EXPECT_THAT(mip_data.right_hand_sides(), ElementsAre(2.5));
+  }
+
+  {
+    const MiniMipConstraint integral_constraint = {.name = "integral",
+                                                   .var_indices = {0, 1},
+                                                   .coefficients = {1, 0.0},
+                                                   .left_hand_side = 0.5,
+                                                   .right_hand_side = 2.5};
+    const MiniMipProblem problem = {
+        .variables = {integer_variable, continuous_variable},
+        .constraints = {integral_constraint}};
+    const MipData mip_data = MipData(problem);
+    EXPECT_THAT(mip_data.is_integral_constraint(), ElementsAre(true));
+    EXPECT_THAT(mip_data.left_hand_sides(), ElementsAre(0.5));
+    EXPECT_THAT(mip_data.right_hand_sides(), ElementsAre(2.5));
+  }
+}
+
+TEST(MipDataTests, IdentifiesNonIntegralConstraint) {
+  const MiniMipVariable integer_variable = {.name = "integer",
+                                            .is_integer = true};
+  const MiniMipVariable continuous_variable = {.name = "continuous",
+                                               .is_integer = false};
+
+  {
+    const MiniMipConstraint constraint_with_continuous_variable = {
+        .name = "nonintegral",
+        .var_indices = {0, 1},
+        .coefficients = {1, 1},
+        .left_hand_side = 0.5,
+        .right_hand_side = 2.5};
+    const MiniMipProblem problem = {
+        .variables = {integer_variable, continuous_variable},
+        .constraints = {constraint_with_continuous_variable}};
+    const MipData mip_data = MipData(problem);
+    EXPECT_THAT(mip_data.is_integral_constraint(), ElementsAre(false));
+    EXPECT_THAT(mip_data.left_hand_sides(), ElementsAre(0.5));
+    EXPECT_THAT(mip_data.right_hand_sides(), ElementsAre(2.5));
+  }
+
+  {
+    const MiniMipConstraint constraint_with_real_coefficient = {
+        .name = "nonintegral",
+        .var_indices = {0},
+        .coefficients = {1.1},
+        .left_hand_side = 0.5,
+        .right_hand_side = 2.5};
+    const MiniMipProblem problem = {
+        .variables = {integer_variable, continuous_variable},
+        .constraints = {constraint_with_real_coefficient}};
+    const MipData mip_data = MipData(problem);
+    EXPECT_THAT(mip_data.is_integral_constraint(), ElementsAre(false));
+    EXPECT_THAT(mip_data.left_hand_sides(), ElementsAre(0.5));
+    EXPECT_THAT(mip_data.right_hand_sides(), ElementsAre(2.5));
+  }
 }
 
 TEST(MipDataTests, PopulatesHints) {
