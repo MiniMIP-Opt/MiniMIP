@@ -19,9 +19,13 @@
 #include "absl/status/statusor.h"
 #include "ortools/base/logging.h"
 #include "ortools/base/status_macros.h"
-#include "src/solver.h"
+#include "src/data_structures/cuts_data.h"
 
 namespace minimip {
+
+// Forward declaration of MiniMipSolver. This is required to break the circular
+// dependency between the solver and the selector.
+class MiniMipSolver;
 
 // NOTE: This file should include the default scoring function as the efficacy
 //      of a given cutting plane in regard to the current LP solution as a

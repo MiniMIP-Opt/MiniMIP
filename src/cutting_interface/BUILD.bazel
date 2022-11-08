@@ -8,7 +8,7 @@ cc_library(
     name = "separator",
     hdrs = ["separator.h"],
     deps = [
-        "//src:solver",
+        "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
@@ -18,7 +18,8 @@ cc_library(
     name = "cut_runner",
     hdrs = ["cut_runner.h"],
     deps = [
-        "//src:solver",
+        ":selector",
+        ":separator",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
@@ -28,7 +29,7 @@ cc_library(
     name = "selector",
     hdrs = ["selector.h"],
     deps = [
-        "//src:solver",
+        "//src/data_structures:cuts_data",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_ortools//ortools/base:status_macros",

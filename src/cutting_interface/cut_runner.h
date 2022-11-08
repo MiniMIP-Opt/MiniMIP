@@ -21,9 +21,12 @@
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/selector.h"
 #include "src/cutting_interface/separator.h"
-#include "src/solver.h"
 
 namespace minimip {
+
+// Forward declaration of MiniMipSolver. This is required to break the circular
+// dependency between the solver and the cutting interface.
+class MiniMipSolver;
 
 class CuttingInterface {
  public:

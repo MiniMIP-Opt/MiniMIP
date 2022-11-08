@@ -95,7 +95,7 @@ class CutStorage {
 
   // Activate stored cut.
   void ActivateCut(const Cut& cut) {
-    active_cuts_positions_.push_back(cut.cut_position);
+    active_cut_positions_.push_back(cut.cut_position);
     current_number_of_active_cuts_ += 1;
   }
 

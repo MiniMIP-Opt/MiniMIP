@@ -18,9 +18,13 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "ortools/base/logging.h"
-#include "src/solver.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
+
+// Forward declaration of MiniMipSolver. This is required to break the circular
+// dependency between the solver and the separator.
+class MiniMipSolver;
 
 class Separator {
  public:
