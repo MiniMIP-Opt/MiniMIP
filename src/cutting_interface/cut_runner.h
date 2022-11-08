@@ -30,6 +30,8 @@ class MiniMipSolver;
 
 class CuttingInterface {
  public:
+  virtual ~CuttingInterface() = default;
+
   // TODO: add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
       const MiniMipSolver& solver) = 0;

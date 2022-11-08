@@ -36,6 +36,8 @@ class MiniMipSolver;
 
 class Selector {
  public:
+  virtual ~Selector() = default;
+
   // Select up to `max_num_cuts` cutting planes (TODO: add protobuffer param).
   // Returns the number of selected cuts given the current state.
   virtual absl::StatusOr<int> SelectCuttingPlanes(
