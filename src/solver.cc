@@ -9,8 +9,8 @@ absl::StatusOr<std::unique_ptr<MiniMipSolver>> MiniMipSolver::Create(
     return util::InvalidArgumentErrorBuilder()
            << "Error found in problem: " << problem_error;
   }
-  MipData mip_data(problem);
-  CutStorage cut_storage;
+  auto mip_data = std::make_unique<MipData>(problem);
+  auto cut_storage = std::make_unique<CutStorage>();
   ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                    ConfigureLPSolverFromProto(params.lp_parameters()));
   ASSIGN_OR_RETURN(std::unique_ptr<CuttingInterface> cut_runner,

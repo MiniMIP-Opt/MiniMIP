@@ -31,11 +31,11 @@ class MiniMipSolver {
     return absl::UnimplementedError("Solve isn't implemented yet.");
   }
 
-  const MipData& mip_data() const { return mip_data_; }
-  MipData& mutable_mip_data() { return mip_data_; }
+  const MipData* mip_data() const { return mip_data_.get(); }
+  MipData* mutable_mip_data() { return mip_data_.get(); }
 
-  const CutStorage& cut_storage() const { return cut_storage_; }
-  CutStorage& mutable_cut_storage() { return cut_storage_; }
+  const CutStorage* cut_storage() const { return cut_storage_.get(); }
+  CutStorage* mutable_cut_storage() { return cut_storage_.get(); }
 
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
@@ -46,14 +46,15 @@ class MiniMipSolver {
 
  private:
   const MiniMipParameters params_;
-  MipData mip_data_;
-  CutStorage cut_storage_;
+  std::unique_ptr<MipData> mip_data_;
+  std::unique_ptr<CutStorage> cut_storage_;
   std::unique_ptr<LPInterface> lpi_;
   std::unique_ptr<CuttingInterface> cut_runner_;
 
   // Protected constructor, use Create() instead.
-  MiniMipSolver(const MiniMipParameters& params, MipData mip_data,
-                CutStorage cut_storage, std::unique_ptr<LPInterface> lpi,
+  MiniMipSolver(MiniMipParameters params, std::unique_ptr<MipData> mip_data,
+                std::unique_ptr<CutStorage> cut_storage,
+                std::unique_ptr<LPInterface> lpi,
                 std::unique_ptr<CuttingInterface> cut_runner)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
