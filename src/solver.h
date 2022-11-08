@@ -45,10 +45,22 @@ class MiniMipSolver {
   }
 
  private:
+  // Parameters specifying the MiniMip configuration.
   const MiniMipParameters params_;
+
+  // The canonical copy of the MIP data. This contains all information from the
+  // original problem, but not cuts etc. For the currently used LP information
+  // (including cuts), see the LPI.
   std::unique_ptr<MipData> mip_data_;
+
+  // Contains all currently active and stored cuts.
   std::unique_ptr<CutStorage> cut_storage_;
+
+  // Handle to an LP solver.
   std::unique_ptr<LPInterface> lpi_;
+
+  // Entry-point for the cut API, used to create and activate cuts in the main
+  // cut-and-price loop (not yet implemented).
   std::unique_ptr<CuttingInterface> cut_runner_;
 
   // Protected constructor, use Create() instead.
