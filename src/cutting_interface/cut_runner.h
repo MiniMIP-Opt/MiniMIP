@@ -28,7 +28,8 @@ namespace minimip {
 class CuttingInterface {
  public:
   // TODO: add searchtree etc.
-  virtual absl::Status SeparateCurrentLPSolution(const Solver& solver) = 0;
+  virtual absl::Status SeparateCurrentLPSolution(
+      const MiniMipSolver& solver) = 0;
 
   void AddSeparator(std::unique_ptr<Separator> separator) {
     separators_.push_back(std::move(separator));
@@ -45,7 +46,7 @@ class CutRunner : CuttingInterface {
  public:
   virtual ~CutRunner() = default;
 
-  absl::Status SeparateCurrentLPSolution(const Solver& solver) final {
+  absl::Status SeparateCurrentLPSolution(const MiniMipSolver& solver) final {
     ASSIGN_OR_RETURN(int max_num_cuts, PrepareSeparation(solver));
 
     ASSIGN_OR_RETURN(std::vector<CuttingPlane> cuts,
@@ -64,12 +65,13 @@ class CutRunner : CuttingInterface {
   Selector* selector_;
 
  protected:
-  virtual absl::StatusOr<int> PrepareSeparation(const Solver& solver) = 0;
+  virtual absl::StatusOr<int> PrepareSeparation(
+      const MiniMipSolver& solver) = 0;
 
-  virtual absl::Status PrepareSelection(const Solver& solver,
+  virtual absl::Status PrepareSelection(const MiniMipSolver& solver,
                                         std::vector<CuttingPlane> cuts) = 0;
 
-  virtual absl::Status StoreCutsInArchive(const Solver& solver) = 0;
+  virtual absl::Status StoreCutsInArchive(const MiniMipSolver& solver) = 0;
 };
 
 inline absl::StatusOr<std::unique_ptr<CuttingInterface>>

@@ -21,10 +21,10 @@ namespace minimip {
 // This is the main solver class. It serves as both the main point of contact
 // between MiniMIP and client code. It also owns all global data structures and
 // modules.
-class Solver {
+class MiniMipSolver {
  public:
   // Factory method to create a Solver object from a set of parameters.
-  static absl::StatusOr<std::unique_ptr<Solver>> Create(
+  static absl::StatusOr<std::unique_ptr<MiniMipSolver>> Create(
       const MiniMipParameters& params, const MiniMipProblem& problem) {
     const std::string problem_error = FindErrorInMiniMipProblem(problem);
     if (!problem_error.empty()) {
@@ -43,9 +43,9 @@ class Solver {
       cut_runner->AddSeparator(std::move(separator));
     }
     // TODO(cgraczy): Configure the selector(s) in a similar way.
-    auto solver = std::unique_ptr<Solver>(
-        new Solver(params, std::move(mip_data), std::move(cut_storage),
-                   std::move(lpi), std::move(cut_runner)));
+    auto solver = std::unique_ptr<MiniMipSolver>(
+        new MiniMipSolver(params, std::move(mip_data), std::move(cut_storage),
+                          std::move(lpi), std::move(cut_runner)));
     return solver;
   }
 
@@ -74,9 +74,9 @@ class Solver {
   std::unique_ptr<CuttingInterface> cut_runner_;
 
   // Protected constructor, use Create() instead.
-  Solver(const MiniMipParameters& params, MipData mip_data,
-         CutStorage cut_storage, std::unique_ptr<LPInterface> lpi,
-         std::unique_ptr<CuttingInterface> cut_runner)
+  MiniMipSolver(const MiniMipParameters& params, MipData mip_data,
+                CutStorage cut_storage, std::unique_ptr<LPInterface> lpi,
+                std::unique_ptr<CuttingInterface> cut_runner)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         cut_storage_(std::move(cut_storage)),
@@ -87,8 +87,8 @@ class Solver {
 // Convenience function to create a solver and solve the given problem.
 inline absl::StatusOr<MiniMipResult> Solve(const MiniMipParameters& parameters,
                                            const MiniMipProblem& problem) {
-  ASSIGN_OR_RETURN(std::unique_ptr<Solver> solver,
-                   Solver::Create(parameters, problem));
+  ASSIGN_OR_RETURN(std::unique_ptr<MiniMipSolver> solver,
+                   MiniMipSolver::Create(parameters, problem));
   return solver->Solve();
 }
 

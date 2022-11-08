@@ -28,7 +28,7 @@ class Separator {
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
   virtual absl::StatusOr<std::vector<CuttingPlane>> GenerateCuttingPlanes(
-      const Solver& solver) = 0;
+      const MiniMipSolver& solver) = 0;
 };
 
 // TODO(happlegr): This function currently doesn't do anything, since we don't
