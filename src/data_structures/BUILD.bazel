@@ -17,11 +17,12 @@ cc_library(
 
 cc_library(
     name = "cuts_data",
+    srcs = ["cuts_data.cc"],
     hdrs = ["cuts_data.h"],
     deps = [
-        ":strong_sparse_vector",
         ":mip_data",
-        "//src/lp_interface:lpi"
+        ":strong_sparse_vector",
+        "//src/lp_interface:lpi",
     ],
 )
 

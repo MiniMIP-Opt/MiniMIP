@@ -54,7 +54,7 @@ class CutRunner : CuttingInterface {
   absl::Status SeparateCurrentLPSolution(const MiniMipSolver& solver) final {
     ASSIGN_OR_RETURN(int max_num_cuts, PrepareSeparation(solver));
 
-    ASSIGN_OR_RETURN(std::vector<CuttingPlane> cuts,
+    ASSIGN_OR_RETURN(std::vector<CutData> cuts,
                      separator_->GenerateCuttingPlanes(solver));
 
     RETURN_IF_ERROR(PrepareSelection(solver, cuts));
@@ -74,7 +74,7 @@ class CutRunner : CuttingInterface {
       const MiniMipSolver& solver) = 0;
 
   virtual absl::Status PrepareSelection(const MiniMipSolver& solver,
-                                        std::vector<CuttingPlane> cuts) = 0;
+                                        std::vector<CutData> cuts) = 0;
 
   virtual absl::Status StoreCutsInArchive(const MiniMipSolver& solver) = 0;
 };

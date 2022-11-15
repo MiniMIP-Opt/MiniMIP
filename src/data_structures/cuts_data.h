@@ -23,46 +23,73 @@
 
 namespace minimip {
 
-// ==========================================================================
-// API Input Datastructures
-// ==========================================================================
-
-// This is the cutting plane object used in the cutting plane interface to
-// add more information to the generated rows from the cut generators.
-struct CuttingPlane {
+// ============================================================================
+// The CutData struct stores all information of a cutting plane d <= a^Tx <= b.
+// ============================================================================
+struct CutData {
+  // The coefficients of the cutting plane are stored as a SparseRow
   SparseRow row;
-  double right_hand_side;
-  bool is_active;
-  bool added_at_root;
-  bool forced;
-  unsigned int from_separation_round_n;
-  unsigned int number_of_non_zeros;
-  unsigned int cut_position;
-  unsigned int integer_variable_support;
-  double original_score;
-  double current_score;
-  double efficacy;
+  double right_hand_side = std::numeric_limits<double>::infinity();
+  double left_hand_side = -std::numeric_limits<double>::infinity();
+
+  // If the cut is currently applied to the problem, is_active is true.
+  bool is_active = false;
+
+  // If the cut will always be selected and activated. This is necessary for
+  // cut selection (e.g., bound changes returned from separators).
+  bool is_forced = false;
+
+  // The node at which the cut is added to the storage. A value of zero means
+  // the cut was added at the root, otherwise the node of the tree is given.
+  int added_at_node = -1;
+
+  // The origin of a cut is specified to the separation round in the node it
+  // originated from. Useful for cut selection between rounds.
+  int from_separation_round_n = -1;
+
+  // The index of the cut in the storage, for easy reference.
+  // The index is set to the current number of cuts in storage once the cut is
+  // added to the storage (i.e. cut_index += cuts().size()).
+  int cut_index = 0;
+
+  // Important characteristics of a cutting plane.
+  int number_of_non_zeros = -1;
+  int number_of_integer_variables = -1;
+
+  // The original score is the score the cut was given when first selected.
+  double original_score = -std::numeric_limits<double>::infinity();
+
+  // The current score is the score the cut has in the current selection.
+  double current_score = -std::numeric_limits<double>::infinity();
+
+  // The efficacy is the normalized violation of the current LP solution.
+  double efficacy = -std::numeric_limits<double>::infinity();
+
+  // The cut name is set by the separator it originates from.
   std::string name;
 };
-using Cut = CuttingPlane;
 
 // TODO: add "isCutFresh()" like function corresponding to its current_score.
 
-// The cut storage is used to track the globally valid cuts generated while
-// solving the Mixed Integer Problem. The storage functions as a register and
-// provides access to cutting planes for selection and the lp.
+// ============================================================================
+// CutStorage contains the generated cutting planes and all relevant meta-data
+// for cutting plane management(e.g., it tracks which cuts are currently
+// active).
+//
+// NOTE: As of 2022/11/09, MiniMip uses only globally valid cuts
+// (though, a cutting plane might have been generated in the inner nodes).
+// ============================================================================
+
 class CutStorage {
  public:
+  // ==========================================================================
+  // Constructors
+  // ==========================================================================
+
   CutStorage();
+
   // Initialize CutStorage from initial separation round.
-  CutStorage(std::vector<Cut> cuts, std::vector<unsigned int> cut_positions)
-      : cuts_(std::move(cuts)),
-        active_cut_positions_(std::move(cut_positions)),
-        current_number_of_cuts_(cuts.size()),
-        total_number_of_cuts_found_(cuts.size()),
-        current_number_of_active_cuts_(cut_positions.size()) {
-    DCHECK_LE(cut_positions.size(), cuts.size());
-  }
+  CutStorage(std::vector<CutData> cuts, std::vector<int> cut_indices);
 
   // CutStorage is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
@@ -70,103 +97,42 @@ class CutStorage {
   CutStorage(CutStorage&&) noexcept = default;
   CutStorage& operator=(CutStorage&&) noexcept = default;
 
-  // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
-  // we just use a private copy / move constructor and assignment operator.
-  void PopulateFromCutStorage(CutStorage cut_storage) {
-    *this = std::move(cut_storage);
-  }
+  // Use this to initialize by deep copy from another cut storage.
+  // Under-the-hood we just use a private copy / move constructor and
+  // assignment operator.
+  void PopulateFromCutStorage(CutStorage cut_storage);
+
+  // ==========================================================================
+  // Methods for managing the cuts in the cut storage.
+  // ==========================================================================
 
   // Add a cut to storage.
-  void AddCut(Cut& cut) {
-    cuts_.push_back(cut);
-    current_number_of_cuts_ += 1;
-    total_number_of_cuts_found_ += 1;
-    if (cut.forced) {
-      ActivateCut(cut);
-    }
-  }
-
-  // Add a vector of cuts to storage.
-  void AddCuts(std::vector<Cut> cuts) {
-    cuts_.insert(cuts_.end(), cuts.begin(), cuts.end());
-    current_number_of_cuts_ += cuts.size();
-    total_number_of_cuts_found_ += cuts.size();
-  }
+  int AddCut(CutData&& cut_data);
 
   // Activate stored cut.
-  void ActivateCut(const Cut& cut) {
-    active_cut_positions_.push_back(cut.cut_position);
-    current_number_of_active_cuts_ += 1;
-  }
-
-  // Activate cuts.
-  void ActivateCuts(std::vector<unsigned int>& active_cuts) {
-    DCHECK_LE(active_cuts.size(), cuts_.size());
-    current_number_of_active_cuts_ = active_cuts.size();
-    active_cut_positions_ = std::move(active_cuts);
-  }
+  void ActivateCut(int cut_index);
 
   // Remove a single cut from storage.
-  void RemoveCut(const unsigned int& cut_position) {
-    auto it = cuts_.begin();
-    it = it + cut_position - 1;
-    cuts_.erase(it);
-
-    for (unsigned int i = cut_position; i < cuts_.size(); i++)
-      cuts_[i].cut_position -= 1;
-
-    current_number_of_cuts_ -= 1;
-  }
+  void RemoveCut(const int& cut_index);
 
   // Getter for individual cuts.
-  const Cut& GetCut(const unsigned int& cut_position) const {
-    DCHECK_LT(cut_position, current_number_of_cuts_);
-    return cuts_[cut_position];
-  }
-
-  // Getter for some subset of cuts.
-  std::vector<Cut> GetCuts(const std::vector<unsigned int> cut_indices) const {
-    std::vector<Cut> CutSubset;
-    CutSubset.reserve(cut_indices.size());
-    for (unsigned int cut_indice : cut_indices)
-      CutSubset.push_back(cuts_[cut_indice]);
-    return CutSubset;
-  }
+  const CutData& GetCut(const int& cut_index) const;
 
   // Getter for all cuts.
-  const std::vector<Cut>& cuts() const { return cuts_; }
+  const std::vector<CutData>& cuts() const { return cuts_; }
 
-  // Getter for all active cuts.
-  std::vector<Cut> active_cuts() const {
-    return GetCuts(active_cut_positions_);
-  }
+  // Getter for active cut indices.
+  const std::vector<int>& active_cuts() const { return active_cut_indices_; }
 
-  // Getter for active cut positions.
-  const std::vector<unsigned int>& active_cut_positions() const {
-    return active_cut_positions_;
-  }
-
-  // Getter for number of currently active cuts.
-  const unsigned int& current_number_of_active_cuts() const {
-    return current_number_of_active_cuts_;
-  }
-
-  // Getter for number of current cuts in the storage.
-  const unsigned int& current_number_of_cuts() const {
-    return current_number_of_cuts_;
-  }
-
-  // Getter for total number of cuts in the storage.
-  const unsigned int& total_number_of_cuts_found() const {
+  // Getter for total number of cuts added to the storage while solving.
+  const int& total_number_of_cuts_found() const {
     return total_number_of_cuts_found_;
   }
 
  private:
-  std::vector<Cut> cuts_;
-  std::vector<unsigned int> active_cut_positions_;
-  unsigned int current_number_of_cuts_;
-  unsigned int total_number_of_cuts_found_;
-  unsigned int current_number_of_active_cuts_;
+  std::vector<CutData> cuts_;
+  std::vector<int> active_cut_indices_;
+  int total_number_of_cuts_found_;
 };
 
 }  // namespace minimip
