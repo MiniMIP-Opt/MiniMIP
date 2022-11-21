@@ -31,14 +31,14 @@ class MiniMipSolver {
     return absl::UnimplementedError("Solve isn't implemented yet.");
   }
 
-  const MipData* mip_data() const { return mip_data_.get(); }
-  MipData* mutable_mip_data() { return mip_data_.get(); }
+  const MipData& mip_data() const { return *mip_data_; }
+  MipData& mutable_mip_data() { return *mip_data_; }
 
-  const CutStorage* cut_storage() const { return cut_storage_.get(); }
-  CutStorage* mutable_cut_storage() { return cut_storage_.get(); }
+  const CutStorage& cut_storage() const { return *cut_storage_; }
+  CutStorage& mutable_cut_storage() { return *cut_storage_; }
 
-  const LPInterface* lpi() const { return lpi_.get(); }
-  LPInterface* mutable_lpi() { return lpi_.get(); }
+  const LPInterface& lpi() const { return *lpi_; }
+  LPInterface& mutable_lpi() { return *lpi_; }
 
   bool IsIntegerWithinTolerance(double d) {
     return std::abs(d - std::round(d)) <= params_.integrality_tolerance();
