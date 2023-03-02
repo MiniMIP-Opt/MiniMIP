@@ -1,52 +1,42 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# Rules for building C/C++ projects using foreign build systems inside Bazel projects.
 http_archive(
     name = "rules_foreign_cc",
-    # TODO: Get the latest sha256 value from a bazel debug message or the latest
-    #       release on the releases page: https://github.com/bazelbuild/rules_foreign_cc/releases
-    #
-    # sha256 = "...",
-    strip_prefix = "rules_foreign_cc-f01fd353ee2adcd55aab899c12fa2733223228a1",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/f01fd353ee2adcd55aab899c12fa2733223228a1.tar.gz",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/refs/tags/0.9.0.tar.gz",
+    sha256 = "2a4d07cd64b0719b39a7c12218a3e507672b82a97b98c6a89d38565894cf7c51",
+    strip_prefix = "rules_foreign_cc-0.9.0",
 )
-
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
-
 rules_foreign_cc_dependencies()
 
 # Extra Bazel utilities that may be handy.
 http_archive(
     name = "bazel_skylib",
-    strip_prefix = "bazel-skylib-1.0.3",
     urls = [
-        "https://github.com/bazelbuild/bazel-skylib/archive/refs/tags/1.0.3.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.1/bazel-skylib-1.4.1.tar.gz",
+        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.1/bazel-skylib-1.4.1.tar.gz",
     ],
-    sha256 = "28f81e36692e1d87823623a99966b2daf85af3fdc1b40f98e37bd5294f3dd185",
+    sha256 = "b8a1527901774180afc798aeb28c4634bdccf19c4d98e7bdd1ce79d1fe9aaad7",
 )
-
-# Support for building C++ targets in Bazel.
-http_archive(
-  name = "rules_cc",
-  urls = ["https://github.com/bazelbuild/rules_cc/archive/40548a2974f1aea06215272d9c2b47a14a24e556.zip"],
-  strip_prefix = "rules_cc-40548a2974f1aea06215272d9c2b47a14a24e556",
-)
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+bazel_skylib_workspace()
 
 # Support for building Python targets in Bazel.
 http_archive(
     name = "rules_python",
-    urls = [
-        "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.1.0.zip",
-    ],
-    strip_prefix = "rules_python-0.1.0",
-    sha256 = "e9afc70f3d14151f1f8759dc224159b029068a66d11f554e0df814d001a345d9",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.18.1/rules_python-0.18.1.tar.gz",
+    sha256 = "29a801171f7ca190c543406f9894abf2d483c206e14d6acbd695623662320097",
+    strip_prefix = "rules_python-0.18.1",
 )
 
 # Google unit testing framework.
 # See: https://google.github.io/googletest/primer.html for introduction.
 http_archive(
   name = "com_google_googletest",
-  urls = ["https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip"],
-  strip_prefix = "googletest-609281088cfefc76f9d0ce82e1ff6c30cc3591e5",
+  urls = ["https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"],
+  sha256 = "ffa17fbc5953900994e2deec164bb8949879ea09b411e07f215bfbb1f87f4632",
+  strip_prefix = "googletest-1.13.0",
 )
 
 # Google protocol buffers (structs on "steroids", useful to serialize to files
@@ -80,9 +70,11 @@ http_archive(
 # reason.
 http_archive(
     name = "platforms",
-    sha256 = "a879ea428c6d56ab0ec18224f976515948822451473a80d06c2e50af0bbe5121",
-    strip_prefix = "platforms-da5541f26b7de1dc8e04c075c99df5351742a4a2",
-    urls = ["https://github.com/bazelbuild/platforms/archive/da5541f26b7de1dc8e04c075c99df5351742a4a2.zip"],  # 2022-05-27
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
+    ],
+    sha256 = "5308fc1d8865406a49427ba24a9ab53087f17f5266a7aabbfc28823f3916e1ca",
 )
 
 # Google OR-Tools. Contains many LP/MIP related utilities, including GLOP
