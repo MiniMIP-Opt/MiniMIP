@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_SEPARATOR_H_
-#define SRC_CUTTING_INTERFACE_SEPARATOR_H_
+#ifndef SRC_CUTTING_INTERFACE_CUTS_SEPARATOR_H_
+#define SRC_CUTTING_INTERFACE_CUTS_SEPARATOR_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -51,4 +51,4 @@ inline absl::StatusOr<std::unique_ptr<Separator>> ConfigureSeparatorFromProto(
 
 }  // namespace minimip
 
-#endif  // SRC_CUTTING_INTERFACE_SEPARATOR_H_
+#endif  // SRC_CUTTING_INTERFACE_CUTS_SEPARATOR_H_

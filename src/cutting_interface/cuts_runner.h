@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_CUT_RUNNER_H_
-#define SRC_CUTTING_INTERFACE_CUT_RUNNER_H_
+#ifndef SRC_CUTTING_INTERFACE_CUTS_RUNNER_H_
+#define SRC_CUTTING_INTERFACE_CUTS_RUNNER_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "ortools/base/logging.h"
 #include "ortools/base/status_macros.h"
-#include "src/cutting_interface/selector.h"
-#include "src/cutting_interface/separator.h"
+#include "src/cutting_interface/cuts_selector.h"
+#include "src/cutting_interface/cuts_separator.h"
 
 namespace minimip {
 
@@ -89,4 +89,4 @@ ConfigureCutInterfaceFromProto(const CutRunnerParameters& parameters) {
 
 }  // namespace minimip
 
-#endif  // SRC_CUTTING_INTERFACE_CUT_RUNNER_H_
+#endif  // SRC_CUTTING_INTERFACE_CUTS_RUNNER_H_

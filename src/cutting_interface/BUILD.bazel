@@ -6,7 +6,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "separator",
-    hdrs = ["separator.h"],
+    hdrs = ["cuts_separator.h"],
     deps = [
         "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
@@ -16,7 +16,7 @@ cc_library(
 
 cc_library(
     name = "cut_runner",
-    hdrs = ["cut_runner.h"],
+    hdrs = ["cuts_runner.h"],
     deps = [
         ":selector",
         ":separator",
@@ -27,7 +27,7 @@ cc_library(
 
 cc_library(
     name = "selector",
-    hdrs = ["selector.h"],
+    hdrs = ["cuts_selector.h"],
     deps = [
         "//src/data_structures:cuts_data",
         "@com_google_absl//absl/status",
