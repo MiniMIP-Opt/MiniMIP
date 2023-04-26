@@ -27,6 +27,8 @@
 
 namespace minimip {
 
+constexpr double kInf = std::numeric_limits<double>::infinity();
+
 // ==========================================================================
 // API Input Datastructures
 // ==========================================================================
@@ -40,24 +42,24 @@ struct MiniMipProblem {
   std::vector<MiniMipVariable> variables;
   std::vector<MiniMipConstraint> constraints;
   std::vector<MiniMipSolutionHint> hints;
-  bool is_maximization;
-  double objective_offset;
+  bool is_maximization = false;
+  double objective_offset = 0.0;
 };
 
 struct MiniMipVariable {
   std::string name;
-  double objective_coefficient;
-  double lower_bound;
-  double upper_bound;
-  bool is_integer;
+  double objective_coefficient = 0.0;
+  double lower_bound = -kInf;
+  double upper_bound = kInf;
+  bool is_integer = false;
 };
 
 struct MiniMipConstraint {
   std::string name;
   std::vector<int> var_indices;
   std::vector<double> coefficients;
-  double left_hand_side;
-  double right_hand_side;
+  double left_hand_side = -kInf;
+  double right_hand_side = kInf;
 };
 
 struct MiniMipSolutionHint {

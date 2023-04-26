@@ -17,7 +17,7 @@ cc_proto_library(
 
 cc_library(
     name = "solver",
-    srcs = ["solver.cc"],
+    srcs = [],
     hdrs = ["solver.h"],
     deps = [
         ":parameters_cc_proto",
@@ -26,6 +26,22 @@ cc_library(
         "//src/data_structures:mip_data",
         "//src/data_structures:problem",
         "//src/lp_interface:lpi",
+        "@com_google_ortools//ortools/base:status_builder",
+        "@com_google_ortools//ortools/base:status_macros",
+    ],
+)
+
+cc_library(
+    name = "solver_factory",
+    srcs = ["solver_factory.cc"],
+    hdrs = ["solver_factory.h"],
+    deps = [
+        ":parameters_cc_proto",
+        "//src/cutting_interface:cut_runner_factory",
+        "//src/cutting_interface:separator_factory",
+        "//src/data_structures:cuts_data",
+        "//src/data_structures:mip_data",
+        "//src/data_structures:problem",
         "//src/lp_interface:lpi_factory",
         "@com_google_ortools//ortools/base:status_builder",
         "@com_google_ortools//ortools/base:status_macros",

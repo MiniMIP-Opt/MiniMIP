@@ -809,7 +809,7 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
   problem.variables.push_back(MiniMipVariable{.name = "x4",
                                               .objective_coefficient = 1e-3,
                                               .lower_bound = -solver_inf_,
-                                              .upper_bound = 29.3,
+                                              .upper_bound = 29.0,
                                               .is_integer = true});
   problem.variables.push_back(MiniMipVariable{.name = "x5",
                                               .objective_coefficient = 0,
@@ -855,7 +855,7 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
   EXPECT_THAT(ExtractLowerBounds(),
               ElementsAre(-1, -solver_inf_, 0, -solver_inf_, 1));
   EXPECT_THAT(ExtractUpperBounds(),
-              ElementsAre(10, solver_inf_, solver_inf_, 29.3, 1));
+              ElementsAre(10, solver_inf_, solver_inf_, 29, 1));
   EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(1, 2, -4, 1e-3, 0));
 
   // Check row properties
@@ -1067,45 +1067,6 @@ class SolveTest : public LPInterfaceImplementationTest {
 INSTANTIATE_TEST_SUITE_P(All, SolveTest,
                          testing::ValuesIn({LPParameters::LP_GLOP,
                                             LPParameters::LP_SOPLEX}));
-
-// Compute <v1 | v2>
-template <typename Container1, typename Container2>
-double DotProduct(const Container1& v1, const Container2& v2) {
-  CHECK_EQ(v1.size(), v2.size());
-  double dot = 0;
-  auto it1 = v1.begin();
-  auto it2 = v2.begin();
-  for (; it1 != v1.end(); ++it1, ++it2) dot += (*it1) * (*it2);
-  return dot;
-}
-
-// Compute v1 + fac*v2
-template <typename Container1, typename Container2>
-Container1 Add(Container1 v1, const Container2& v2, double fac) {
-  CHECK_EQ(v1.size(), v2.size());
-  auto it1 = v1.begin();
-  auto it2 = v2.begin();
-  for (; it1 != v1.end(); ++it1, ++it2) *it1 += fac * (*it2);
-  return v1;
-}
-
-template <typename Matcher>
-std::string ExtractMatcherDescription(const Matcher& m) {
-  std::ostringstream oss;
-  m.DescribeTo(&oss);
-  return oss.str();
-}
-
-// EXPECT_THAT(x, Activation(e, m)) checks that the activation of the linear
-// expression e at point x fulfills the matcher m.
-MATCHER_P2(Activation, linear_expression, matcher,
-           absl::StrCat("the activation with expression ",
-                        testing::PrintToString(linear_expression), " ",
-                        ExtractMatcherDescription(matcher))) {
-  double d = DotProduct(arg, linear_expression);
-  *result_listener << "where the activation is " << d;
-  return ExplainMatchResult(matcher, d, result_listener);
-}
 
 TEST_P(SolveTest, PrimalDualFeasible1) {
   // max 3 x1 +   x2
@@ -1419,17 +1380,20 @@ TEST_P(SolveTest, PrimalUnboundedRayMaximization) {
         (const absl::StrongVector<ColIndex, double>& primal_ray),
         lpi_->GetPrimalRay());
     ASSERT_EQ(primal_ray.size(), 2);
+    const SparseRow sparse_ray = SparseRow(primal_ray);
 
-    // Ray points in direcion of improving objective
-    EXPECT_THAT(primal_ray, Activation(std::vector<double>{3, 1}, Gt(0.0)));
+    // Ray points in direction of improving objective
+    EXPECT_THAT(sparse_ray,
+                Activation(CreateSparseRow({{0, 3.0}, {1, 1.0}}), Gt(0.0)));
 
     // Taking a large step in the ray direction still produces a valid
     // point
-    const std::vector<double> feasible_point{0, 0};
-    const std::vector<double> next_point =
-        Add(feasible_point, primal_ray, 1000);
-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
+    const SparseRow feasible_point = CreateSparseRow({});
+    const SparseRow next_point = feasible_point + 1000 * sparse_ray;
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseRow({{0, 2.0}, {1, 1.0}}), Le(10.0)));
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseRow({{0, 1.0}, {1, 3.0}}), Le(15.0)));
   }
   ASSERT_FALSE(lpi_->ExistsDualRay());
   ASSERT_FALSE(lpi_->HasDualRay());
@@ -1462,17 +1426,20 @@ TEST_P(SolveTest, PrimalUnboundedRayMinimization) {
         (const absl::StrongVector<ColIndex, double>& primal_ray),
         lpi_->GetPrimalRay());
     ASSERT_EQ(primal_ray.size(), 2);
+    const SparseRow sparse_ray = SparseRow(primal_ray);
 
-    // Ray points in direcion of improving objective
-    EXPECT_THAT(primal_ray, Activation(std::vector<double>{-3, -1}, Lt(0.0)));
+    // Ray points in direction of improving objective
+    EXPECT_THAT(sparse_ray,
+                Activation(CreateSparseRow({{0, -3.0}, {1, -1.0}}), Lt(0.0)));
 
     // Taking a large step in the ray direction still produces a valid
     // point
-    const std::vector<double> feasible_point{0, 0};
-    const std::vector<double> next_point =
-        Add(feasible_point, primal_ray, 1000);
-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
+    const SparseRow feasible_point = CreateSparseRow({});
+    const SparseRow next_point = feasible_point + 1000 * sparse_ray;
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseRow({{0, 2.0}, {1, 1.0}}), Le(10.0)));
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseRow({{0, 1.0}, {1, 3.0}}), Le(15.0)));
   }
   ASSERT_FALSE(lpi_->ExistsDualRay());
   ASSERT_FALSE(lpi_->HasDualRay());
@@ -1557,16 +1524,20 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
     ASSERT_OK_AND_ASSIGN((const absl::StrongVector<RowIndex, double>& dual_ray),
                          lpi_->GetDualRay());
     ASSERT_EQ(dual_ray.size(), 2);
+    const SparseCol sparse_ray = SparseCol(dual_ray);
 
     // Ray points in direction of improving objective
-    EXPECT_THAT(dual_ray, Activation(std::vector<double>{-10, -15}, Gt(0.0)));
+    EXPECT_THAT(sparse_ray,
+                Activation(CreateSparseCol({{0, -10.0}, {1, -15.0}}), Gt(0.0)));
 
     // Taking a large step in the ray direction still produces a valid
     // point
-    const std::vector<double> feasible_point{0, 0};
-    const std::vector<double> next_point = Add(feasible_point, dual_ray, 1000);
-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
+    const SparseCol feasible_point = CreateSparseCol({});
+    const SparseCol next_point = feasible_point + 1000 * sparse_ray;
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseCol({{0, 2.0}, {1, 1.0}}), Le(10.0)));
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseCol({{0, 1.0}, {1, 3.0}}), Le(15.0)));
   }
 }
 
@@ -1604,16 +1575,20 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
     ASSERT_OK_AND_ASSIGN((const absl::StrongVector<RowIndex, double>& dual_ray),
                          lpi_->GetDualRay());
     ASSERT_EQ(dual_ray.size(), 2);
+    const SparseCol sparse_ray = SparseCol(dual_ray);
 
     // Ray points in direction of improving objective
-    EXPECT_THAT(dual_ray, Activation(std::vector<double>{10, 15}, Lt(0.0)));
+    EXPECT_THAT(sparse_ray,
+                Activation(CreateSparseCol({{0, 10.0}, {1, 15.0}}), Lt(0.0)));
 
     // Taking a large step in the ray direction still produces a valid
     // point
-    const std::vector<double> feasible_point{0, 0};
-    const std::vector<double> next_point = Add(feasible_point, dual_ray, 1000);
-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
+    const SparseCol feasible_point = CreateSparseCol({});
+    const SparseCol next_point = feasible_point + 1000 * sparse_ray;
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseCol({{0, 2.0}, {1, 1.0}}), Le(10.0)));
+    EXPECT_THAT(next_point,
+                Activation(CreateSparseCol({{0, 1.0}, {1, 3.0}}), Le(15.0)));
   }
 }
 

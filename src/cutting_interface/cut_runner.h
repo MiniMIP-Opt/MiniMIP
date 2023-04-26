@@ -79,14 +79,6 @@ class CutRunner : CuttingInterface {
   virtual absl::Status StoreCutsInArchive(const MiniMipSolver& solver) = 0;
 };
 
-inline absl::StatusOr<std::unique_ptr<CuttingInterface>>
-ConfigureCutInterfaceFromProto(const CutRunnerParameters& parameters) {
-  if (parameters.has_some_cut_runner_parameters()) {
-    // Here we would create and return the cut runner.
-  }
-  return absl::InvalidArgumentError("No cut runner implementation was chosen.");
-}
-
 }  // namespace minimip
 
 #endif  // SRC_CUTTING_INTERFACE_CUT_RUNNER_H_
