@@ -9,8 +9,32 @@ cc_library(
     hdrs = ["separator.h"],
     deps = [
         "//src:parameters_cc_proto",
+        "//src/data_structures:cuts_data",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cc_library(
+    name = "separator_factory",
+    hdrs = ["separator_factory.h"],
+    deps = [
+        "//src:parameters_cc_proto",
+        "//src/cutting_interface:aggregating_separator",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ]
+)
+
+cc_library(
+    name = "aggregating_separator",
+    srcs = ["aggregating_separator.cc"],
+    hdrs = ["aggregating_separator.h"],
+    deps = [
+        "//src:solver",
+        "//src/cutting_interface:separator",
+        "//src/lp_interface:lpi",
+        "@com_google_ortools//ortools/base:status_macros",
     ],
 )
 
@@ -23,6 +47,17 @@ cc_library(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
+)
+
+cc_library(
+    name = "cut_runner_factory",
+    hdrs = ["cut_runner_factory.h"],
+    deps = [
+        ":cut_runner",
+        "//src:parameters_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ]
 )
 
 cc_library(

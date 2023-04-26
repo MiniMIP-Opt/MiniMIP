@@ -19,6 +19,7 @@
 
 #include "ortools/base/commandlineflags.h"
 #include "ortools/base/logging.h"
+#include "unit_tests/utils.h"
 
 namespace minimip {
 namespace {
@@ -50,12 +51,17 @@ TEST(StrongSparseMatrix, InitializeAndGetValues) {
   // CopyDenseIntoSparseMatrix(dense, &sparse);
   EXPECT_EQ(sparse.num_rows(), RowIndex(2));
   EXPECT_EQ(sparse.num_cols(), ColIndex(3));
-  EXPECT_THAT(sparse.row(RowIndex(0)).entries(),
-              ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 3.0)));
-  EXPECT_THAT(sparse.row(RowIndex(1)).entries(), ElementsAre(RowEntry(ColIndex(1), 2.0)));
-  EXPECT_THAT(sparse.col(ColIndex(0)).entries(), ElementsAre(ColEntry(RowIndex(0), 1.0)));
-  EXPECT_THAT(sparse.col(ColIndex(1)).entries(), ElementsAre(ColEntry(RowIndex(1), 2.0)));
-  EXPECT_THAT(sparse.col(ColIndex(2)).entries(), ElementsAre(ColEntry(RowIndex(0), 3.0)));
+  EXPECT_THAT(
+      sparse.row(RowIndex(0)).entries(),
+      ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 3.0)));
+  EXPECT_THAT(sparse.row(RowIndex(1)).entries(),
+              ElementsAre(RowEntry(ColIndex(1), 2.0)));
+  EXPECT_THAT(sparse.col(ColIndex(0)).entries(),
+              ElementsAre(ColEntry(RowIndex(0), 1.0)));
+  EXPECT_THAT(sparse.col(ColIndex(1)).entries(),
+              ElementsAre(ColEntry(RowIndex(1), 2.0)));
+  EXPECT_THAT(sparse.col(ColIndex(2)).entries(),
+              ElementsAre(ColEntry(RowIndex(0), 3.0)));
   for (RowIndex row(0); row < sparse.num_rows(); ++row) {
     for (ColIndex col(0); col < sparse.num_cols(); ++col) {
       EXPECT_EQ(sparse.GetCoefficient(col, row), dense[row][col]);
@@ -65,24 +71,30 @@ TEST(StrongSparseMatrix, InitializeAndGetValues) {
 
 TEST(StrongSparseMatrix, PopulatesColsFromRows) {
   StrongSparseMatrix sparse(ColIndex(3), RowIndex(2));
-  SparseRow row1({RowEntry(ColIndex(1), 2.0)});
+  SparseRow row1 = CreateSparseRow({{1, 2.0}});
   sparse.PopulateRow(RowIndex(0), std::move(row1));
-  SparseRow row2({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 3.0)});
+  SparseRow row2 = CreateSparseRow({{0, 1.0}, {2, 3.0}});
   sparse.PopulateRow(RowIndex(1), std::move(row2));
-  EXPECT_THAT(sparse.col(ColIndex(0)).entries(), ElementsAre(ColEntry(RowIndex(1), 1.0)));
-  EXPECT_THAT(sparse.col(ColIndex(1)).entries(), ElementsAre(ColEntry(RowIndex(0), 2.0)));
-  EXPECT_THAT(sparse.col(ColIndex(2)).entries(), ElementsAre(ColEntry(RowIndex(1), 3.0)));
+  EXPECT_THAT(sparse.col(ColIndex(0)).entries(),
+              ElementsAre(ColEntry(RowIndex(1), 1.0)));
+  EXPECT_THAT(sparse.col(ColIndex(1)).entries(),
+              ElementsAre(ColEntry(RowIndex(0), 2.0)));
+  EXPECT_THAT(sparse.col(ColIndex(2)).entries(),
+              ElementsAre(ColEntry(RowIndex(1), 3.0)));
 }
 
 TEST(StrongSparseMatrix, PopulatesRowsFromCols) {
   StrongSparseMatrix sparse(ColIndex(2), RowIndex(3));
-  SparseCol col1({ColEntry(RowIndex(1), 2.0)});
+  SparseCol col1 = CreateSparseCol({{1, 2.0}});
   sparse.PopulateCol(ColIndex(0), std::move(col1));
-  SparseCol col2({ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(2), 3.0)});
+  SparseCol col2 = CreateSparseCol({{0, 1.0}, {2, 3.0}});
   sparse.PopulateCol(ColIndex(1), std::move(col2));
-  EXPECT_THAT(sparse.row(RowIndex(0)).entries(), ElementsAre(RowEntry(ColIndex(1), 1.0)));
-  EXPECT_THAT(sparse.row(RowIndex(1)).entries(), ElementsAre(RowEntry(ColIndex(0), 2.0)));
-  EXPECT_THAT(sparse.row(RowIndex(2)).entries(), ElementsAre(RowEntry(ColIndex(1), 3.0)));
+  EXPECT_THAT(sparse.row(RowIndex(0)).entries(),
+              ElementsAre(RowEntry(ColIndex(1), 1.0)));
+  EXPECT_THAT(sparse.row(RowIndex(1)).entries(),
+              ElementsAre(RowEntry(ColIndex(0), 2.0)));
+  EXPECT_THAT(sparse.row(RowIndex(2)).entries(),
+              ElementsAre(RowEntry(ColIndex(1), 3.0)));
 }
 
 // TODO(lpawel): Implement more tests after initial review.
