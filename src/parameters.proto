@@ -2,25 +2,24 @@ syntax = "proto2";
 
 package minimip;
 
-// TODO(happlegr): These are dummy protos used to illustrate the parameter
-// structure and how separators are constructed. Remove once we have integrated
-// at least one real separator.
-message AwesomeSeparatorParameters {
-  optional int32 an_important_parameter = 1 [default = 0];
-}
+// This separator extracts rows from the optimal tableau and rounds the resulting coefficients
+// according to different formulas.
+// For more information, see Achterberg: Constraint Integer Programming (2006), ch 8.3-8.4.
+message TableauRoundingSeparatorParameters {
 
-message ParameterlessSeparatorParameters {
+  // Toggle which rounding procedures to apply to the optimal tableau row. At least one must be used.
+  optional bool use_mixed_integer_rounding = 1 [default = true];
+  optional bool use_strong_cg_rounding = 2 [default = true];
 }
 
 message SeparatorParameters {
 
-  // The maximum number of cuts this Separator should add per separation round. Negative values mean
-  // that the separator default should be used. Zero value means the Separator is turned off.
-  optional int32 max_num_cuts = 1 [default = -1];
+  // The maximum number of cuts this Separator should add per separation round. Zero value means
+  // the Separator is turned off.
+  optional int32 max_num_cuts = 1 [default = 100];
 
   oneof separator_specific {
-    AwesomeSeparatorParameters awesome_separator_parameters = 2;
-    ParameterlessSeparatorParameters parameterless_separator_parameters = 3;
+    TableauRoundingSeparatorParameters tableau_rounding_separator_parameters = 2;
   }
 
 }

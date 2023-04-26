@@ -798,7 +798,7 @@ int64_t LPGlopInterface::GetNumIterations() const {
   return num_iterations_of_last_solve_;
 }
 
-double LPGlopInterface::GetObjectiveValue() {
+double LPGlopInterface::GetObjectiveValue() const {
   DCHECK(IsOptimal());
   return solver_.GetObjectiveValue();
 }

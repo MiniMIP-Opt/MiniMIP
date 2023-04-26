@@ -144,7 +144,7 @@ class LPGlopInterface : public LPInterface {
   bool IterationLimitIsExceeded() const final;
   int64_t GetNumIterations() const final;
 
-  double GetObjectiveValue() final;
+  double GetObjectiveValue() const final;
 
   absl::StatusOr<absl::StrongVector<ColIndex, double>> GetPrimalValues()
       const final;

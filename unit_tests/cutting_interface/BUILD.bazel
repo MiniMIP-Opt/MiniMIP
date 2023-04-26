@@ -17,3 +17,17 @@ cc_test(
         "@com_google_absl//absl/status",
     ],
 )
+
+cc_test(
+    name = "aggregating_separator_test",
+    size = "small",
+    srcs = ["aggregating_separator_test.cc"],
+    deps = [
+        "//src/cutting_interface:aggregating_separator",
+        "//src:solver_factory",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
+    ],
+)

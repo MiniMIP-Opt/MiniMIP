@@ -15,26 +15,32 @@
 #include "mip_data.h"
 
 namespace minimip {
+namespace {
+
+bool IsIntegralCoefficient(double coefficient) {
+  return coefficient == std::round(coefficient);
+}
+
+}  // namespace
 // ==========================================================================
 // Constructor functionality
 // ==========================================================================
-
-MipData::MipData()
-    : constraint_matrix_(minimip::ColIndex(0), minimip::RowIndex(0)) {}
 
 // TODO(cgraczyk): Enforce minimization assumption on the internal
 // representation.
 MipData::MipData(const MiniMipProblem& problem)
     : solution_hints_(problem.hints.size()),
+      variable_names_(problem.variables.size()),
       lower_bounds_(problem.variables.size()),
       upper_bounds_(problem.variables.size()),
+      integer_variables_(),
+      variable_types_(problem.variables.size()),
+      constraint_names_(problem.constraints.size()),
       left_hand_sides_(problem.constraints.size()),
       right_hand_sides_(problem.constraints.size()),
+      is_integral_constraint_(problem.constraints.size()),
       constraint_matrix_(ColIndex(problem.variables.size()),
-                         RowIndex(problem.constraints.size())),
-      variable_types_(problem.variables.size()),
-      variable_names_(problem.variables.size()),
-      constraint_names_(problem.constraints.size()) {
+                         RowIndex(problem.constraints.size())) {
   DCHECK(FindErrorInMiniMipProblem(problem).empty());
 
   problem_name_ = problem.name;
@@ -46,10 +52,16 @@ MipData::MipData(const MiniMipProblem& problem)
 
     lower_bounds_[col_idx] = variable.lower_bound;
     upper_bounds_[col_idx] = variable.upper_bound;
-    variable_types_[col_idx] = variable.is_integer ? VariableType::kInteger
-                                                   : VariableType::kFractional;
-    variable_names_[col_idx] = variable.name;
 
+    if (variable.is_integer) {
+      variable_types_[col_idx] = VariableType::kInteger;
+      integer_variables_.insert(col_idx);
+      lower_bounds_[col_idx] = std::ceil(lower_bounds_[col_idx]);
+      upper_bounds_[col_idx] = std::floor(upper_bounds_[col_idx]);
+    } else {
+      variable_types_[col_idx] = VariableType::kFractional;
+    }
+    variable_names_[col_idx] = variable.name;
     if (variable.objective_coefficient != 0) {
       objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
     }
@@ -61,17 +73,22 @@ MipData::MipData(const MiniMipProblem& problem)
   }
 
   for (RowIndex row_idx(0); row_idx < problem.constraints.size(); ++row_idx) {
-    SparseRow sparse_constraint;
     const MiniMipConstraint& constraint = problem.constraints[row_idx.value()];
-
     left_hand_sides_[row_idx] = constraint.left_hand_side;
     right_hand_sides_[row_idx] = constraint.right_hand_side;
     constraint_names_[row_idx] = constraint.name;
 
+    SparseRow sparse_constraint;
     for (int col_idx = 0; col_idx < constraint.var_indices.size(); ++col_idx) {
       sparse_constraint.AddEntry(ColIndex{constraint.var_indices[col_idx]},
                                  constraint.coefficients[col_idx]);
     }
+    is_integral_constraint_[row_idx] = std::all_of(
+        sparse_constraint.entries().begin(), sparse_constraint.entries().end(),
+        [this](const SparseEntry<ColIndex>& entry) {
+          return IsIntegralCoefficient(entry.value) &&
+                 integer_variables_.contains(entry.index);
+        });
     constraint_matrix_.PopulateRow(RowIndex(row_idx), sparse_constraint);
   }
 
