@@ -19,7 +19,7 @@
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "src/cutting_interface/separator.h"
+#include "src/cutting_interface/cuts_separator.h"
 #include "src/parameters.pb.h"
 #include "src/solver_factory.h"
 #include "unit_tests/utils.h"

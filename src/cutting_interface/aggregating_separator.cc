@@ -2,8 +2,8 @@
 
 #include <limits>
 
-#include "selector.h"
-#include "separator.h"
+#include "cuts_selector.h"
+#include "cuts_separator.h"
 #include "src/solver.h"
 
 namespace minimip {

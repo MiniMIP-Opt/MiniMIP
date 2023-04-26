@@ -5,8 +5,7 @@
 #include <optional>
 
 #include "ortools/base/status_macros.h"
-#include "separator.h"
-#include "src/cutting_interface/separator.h"
+#include "src/cutting_interface/cuts_separator.h"
 #include "src/solver.h"
 
 // The cut generators in this file creates cutting planes by rounding row

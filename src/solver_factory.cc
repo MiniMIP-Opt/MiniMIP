@@ -1,6 +1,7 @@
 #include "src/solver_factory.h"
 
-#include "src/cutting_interface/cut_runner_factory.h"
+#include "src/cutting_interface/runner_factory.h"
+#include "src/cutting_interface/selector_factory.h"
 #include "src/cutting_interface/separator_factory.h"
 #include "src/lp_interface/lpi_factory.h"
 
@@ -23,6 +24,11 @@ absl::StatusOr<std::unique_ptr<MiniMipSolver>> ConfigureMiniMipSolverFromProto(
     ASSIGN_OR_RETURN(std::unique_ptr<Separator> separator,
                      ConfigureSeparatorFromProto(separator_params));
     cut_runner->AddSeparator(std::move(separator));
+  }
+  for (const SelectorParameters& selector_params : params.selectors()) {
+    ASSIGN_OR_RETURN(std::unique_ptr<Selector> selector,
+                     ConfigureSelectorFromProto(selector_params));
+    cut_runner->AddSelector(std::move(selector));
   }
   // TODO(cgraczy): Configure the selector(s) in a similar way.
   auto solver = std::make_unique<MiniMipSolver>(

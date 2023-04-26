@@ -12,27 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cuts_runner.h"
+#include "src/cutting_interface/cuts_selector.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
-//
-absl::Status CutRunner::SeparateCurrentLPSolution(
-    const MiniMipSolver& solver, CutStorage& mutable_cut_storage) {
-  for (const std::unique_ptr<Separator>& separator : separators_) {
-    absl::StatusOr<std::vector<CutData>> cuts =
-        separator->GenerateCuttingPlanes(solver);
-    if (cuts.status() != absl::OkStatus()) {
-      return cuts.status();
-    }
-
-    absl::StatusOr<std::vector<CutData>> filtered_cuts =
-        selector_->SelectCuttingPlanes(solver, cuts.value());
-    for (CutData& cut : filtered_cuts.value()) {
-      mutable_cut_storage.AddCut(std::move(cut));
-    }
+inline absl::StatusOr<std::unique_ptr<Selector>> ConfigureSelectorFromProto(
+    const SelectorParameters& selector_parameters) {
+  if (selector_parameters.has_some_cut_selector_parameters()) {
+    // Here we would create and return the cut runner.
   }
-  return absl::OkStatus();
-};
+  return absl::InvalidArgumentError("No separator-specific parameters set.");
+}
 
 }  // namespace minimip

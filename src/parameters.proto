@@ -24,6 +24,7 @@ message SeparatorParameters {
 
 }
 
+// Cutrunner Parameters  @TODO: Add more cut runner parameters and commentary
 message SomeCutRunnerParameters {
 
 }
@@ -31,6 +32,22 @@ message SomeCutRunnerParameters {
 message CutRunnerParameters {
   oneof runner_specific {
     SomeCutRunnerParameters some_cut_runner_parameters = 1;
+  }
+}
+
+// Cutselector Parameters @TODO: Add more cut selectors parameters and commentary
+message SomeSelectorParameters {
+
+}
+
+message SelectorParameters {
+
+  // The maximum number of cuts this Selector should add per separation round. Zero value means
+  // the Selector is turned off.
+  // optional int32 max_num_cuts = 1 [default = 100];
+
+  oneof selector_specific {
+    SomeSelectorParameters some_cut_selector_parameters = 2;
   }
 }
 
@@ -131,4 +148,5 @@ message MiniMipParameters {
 
   repeated SeparatorParameters separators = 4;
 
+  repeated SelectorParameters selectors = 5;
 }

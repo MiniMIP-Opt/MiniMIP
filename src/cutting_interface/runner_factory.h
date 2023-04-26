@@ -12,27 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cuts_runner.h"
+#include "src/cutting_interface/cuts_runner.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
-//
-absl::Status CutRunner::SeparateCurrentLPSolution(
-    const MiniMipSolver& solver, CutStorage& mutable_cut_storage) {
-  for (const std::unique_ptr<Separator>& separator : separators_) {
-    absl::StatusOr<std::vector<CutData>> cuts =
-        separator->GenerateCuttingPlanes(solver);
-    if (cuts.status() != absl::OkStatus()) {
-      return cuts.status();
-    }
-
-    absl::StatusOr<std::vector<CutData>> filtered_cuts =
-        selector_->SelectCuttingPlanes(solver, cuts.value());
-    for (CutData& cut : filtered_cuts.value()) {
-      mutable_cut_storage.AddCut(std::move(cut));
-    }
+inline absl::StatusOr<std::unique_ptr<CuttingInterface>>
+ConfigureCutInterfaceFromProto(const CutRunnerParameters& parameters) {
+  if (parameters.has_some_cut_runner_parameters()) {
+    // Here we would create and return the cut runner.
   }
-  return absl::OkStatus();
-};
+  return nullptr;
+  /* TODO(cgraczy): Return an error instead once we have at least one runner
+     implementation. We currently return nullptr to allow unit tests to create a
+     solver object.
+  return absl::InvalidArgumentError("No cut runner implementation was chosen.");
+  */
+}
 
 }  // namespace minimip

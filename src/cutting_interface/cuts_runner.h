@@ -34,49 +34,27 @@ class CuttingInterface {
 
   // TODO: add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      const MiniMipSolver& solver) = 0;
+      const MiniMipSolver& solver, CutStorage& mutable_cut_storage) = 0;
 
   void AddSeparator(std::unique_ptr<Separator> separator) {
     separators_.push_back(std::move(separator));
   }
 
+  void AddSelector(std::unique_ptr<Selector> selector) {
+    selector_ = std::move(selector);
+  }
+
  protected:
   std::vector<std::unique_ptr<Separator>> separators_;
+  std::unique_ptr<Selector> selector_;
 };
 
 class CutRunner : CuttingInterface {
-  // TODO: Implement abstract cut runner class to allow the implementation of
-  //       different cut runners to control the hierarchy and application of cut
-  //       generators.
  public:
   virtual ~CutRunner() = default;
 
-  absl::Status SeparateCurrentLPSolution(const MiniMipSolver& solver) final {
-    ASSIGN_OR_RETURN(int max_num_cuts, PrepareSeparation(solver));
-
-    ASSIGN_OR_RETURN(std::vector<CutData> cuts,
-                     separator_->GenerateCuttingPlanes(solver));
-
-    RETURN_IF_ERROR(PrepareSelection(solver, cuts));
-
-    ASSIGN_OR_RETURN(int number_of_cuts_selected,
-                     selector_->SelectCuttingPlanes(solver, cuts));
-
-    RETURN_IF_ERROR(StoreCutsInArchive(solver));
-  };
-
- private:
-  Separator* separator_;
-  Selector* selector_;
-
- protected:
-  virtual absl::StatusOr<int> PrepareSeparation(
-      const MiniMipSolver& solver) = 0;
-
-  virtual absl::Status PrepareSelection(const MiniMipSolver& solver,
-                                        std::vector<CutData> cuts) = 0;
-
-  virtual absl::Status StoreCutsInArchive(const MiniMipSolver& solver) = 0;
+  virtual absl::Status SeparateCurrentLPSolution(
+      const MiniMipSolver& solver, CutStorage& mutable_cut_storage) final;
 };
 
 }  // namespace minimip
