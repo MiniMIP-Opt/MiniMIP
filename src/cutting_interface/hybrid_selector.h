@@ -12,17 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef MINIMIP_SRC_CUTTING_INTERFACE_HYBRID_SELECTOR_H_
+#define MINIMIP_SRC_CUTTING_INTERFACE_HYBRID_SELECTOR_H_
+
+#include <iostream>
+#include <optional>
+
+#include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_selector.h"
-#include "src/cutting_interface/hybrid_selector.h"
+#include "src/solver.h"
 
 namespace minimip {
 
-inline absl::StatusOr<std::unique_ptr<Selector>> ConfigureSelectorFromProto(
-    const SelectorParameters& selector_parameters) {
-  if (selector_parameters.has_hybrid_selector_parameters()) {
-    return std::make_unique<HybridSelector>(selector_parameters);
-  }
-  return absl::InvalidArgumentError("No selector-specific parameters set.");
-}
+class HybridSelector : public Selector {
+ public:
+  explicit HybridSelector(SelectorParameters params)
+      : params_(std:: move(params)) {}
+
+  absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
+      const MiniMipSolver& solver, std::vector<CutData>& cuts) final;
+
+ private:
+
+  const SelectorParameters params_;
+};
 
 }  // namespace minimip
+
+#endif  // MINIMIP_SRC_CUTTING_INTERFACE_HYBRID_SELECTOR_H_

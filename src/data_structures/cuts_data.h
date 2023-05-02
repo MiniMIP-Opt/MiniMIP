@@ -65,6 +65,9 @@ struct CutData {
   // The efficacy is the normalized violation of the current LP solution.
   double efficacy = -std::numeric_limits<double>::infinity();
 
+  // The relative parallelism to the objective function.
+  double objective_parallelism = -std::numeric_limits<double>::infinity();
+
   // The cut name is set by the separator it originates from.
   std::string name;
 };

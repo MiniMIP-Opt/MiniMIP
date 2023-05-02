@@ -30,25 +30,52 @@ message SomeCutRunnerParameters {
 }
 
 message CutRunnerParameters {
+
   oneof runner_specific {
     SomeCutRunnerParameters some_cut_runner_parameters = 1;
   }
+
 }
 
-// Cutselector Parameters @TODO: Add more cut selectors parameters and commentary
-message SomeSelectorParameters {
+// This selector scores cuts via the weighted sum of efficacy, directed cutoff distance, objective parallelism,
+// and integer support.
+message HybridSelectorParameters {
+
+  // coefficients for the weighted sum of the scoring metrics.
+  optional double efficacy_weight = 1 [default = 1.0];
+  optional double directed_cutoff_distance_weight = 2 [default = 0.0];
+  optional double objective_parallelism_weight = 3 [default = 0.1];
+  optional double integer_support_weight = 4 [default = 0.1];
+
+  // minimum orthogonality between cuts for a cut to enter the LP.
+  optional double minimum_orthogonality = 5 [default = 0.9];
+  optional double minimum_orthogonality_at_root = 6 [default = 0.9];
+
+  // toggle whether to use signed or unsigned orthogonality for filtering cuts.
+  optional bool signed_orthogonality = 7 [default = false];
+
+  // thresholds for good and bad cut scores.
+  optional double score_threshold = 8 [default = 0.0];
+
+  // priority of the selector.
+  optional int32 priority = 9 [default = 8000];
+  optional int32 priority_at_root = 10 [default = 8000];
+
+  // maximum tree depth at which the selector is active, -1 means no limit.
+  optional int64 maximum_tree_depth = 11 [default = -1];
 
 }
 
 message SelectorParameters {
 
   // The maximum number of cuts this Selector should add per separation round. Zero value means
-  // the Selector is turned off.
-  // optional int32 max_num_cuts = 1 [default = 100];
+  // the Selector is turned off, -1 means no limit.
+  optional int32 max_num_cuts = 1 [default = -1];
 
   oneof selector_specific {
-    SomeSelectorParameters some_cut_selector_parameters = 2;
+    HybridSelectorParameters has_hybrid_selector_parameters = 2;
   }
+
 }
 
 message LPParameters {
