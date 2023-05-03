@@ -73,7 +73,7 @@ message SelectorParameters {
   optional int32 max_num_cuts = 1 [default = -1];
 
   oneof selector_specific {
-    HybridSelectorParameters has_hybrid_selector_parameters = 2;
+    HybridSelectorParameters hybrid_selector_parameters = 2;
   }
 
 }

@@ -27,13 +27,12 @@ namespace minimip {
 class HybridSelector : public Selector {
  public:
   explicit HybridSelector(SelectorParameters params)
-      : params_(std:: move(params)) {}
+      : params_(std::move(params)) {}
 
   absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
       const MiniMipSolver& solver, std::vector<CutData>& cuts) final;
 
  private:
-
   const SelectorParameters params_;
 };
 

@@ -76,7 +76,7 @@ cc_library(
     name = "selector_factory",
     hdrs = ["selector_factory.h"],
     deps = [
-        "//src/cutting_interface:cuts_selector",
+        "//src/cutting_interface:hybrid_selector",
         "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
