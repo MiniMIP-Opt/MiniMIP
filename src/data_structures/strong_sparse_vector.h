@@ -53,14 +53,11 @@
 #include "ortools/base/logging.h"
 #include "ortools/base/strong_vector.h"
 #include "ortools/util/strong_integers.h"
+#include "src/data_structures/mip_types.h"
 
 namespace minimip {
 
-// These are strong types for columns (aka variables) and rows (aka
-// constraints) used everywhere in MiniMip. The individual entries of a
-// sparse vector are indexed with `EntryIndex`.
-DEFINE_STRONG_INDEX_TYPE(ColIndex);
-DEFINE_STRONG_INDEX_TYPE(RowIndex);
+// The individual entries of a sparse vector are indexed with `EntryIndex`.
 DEFINE_STRONG_INDEX_TYPE(EntryIndex);
 
 // Forward declarations.
@@ -74,12 +71,6 @@ using ColEntry = SparseEntry<RowIndex>;
 using RowEntry = SparseEntry<ColIndex>;
 using SparseRow = StrongSparseVectorOfDoubles<ColIndex>;
 using SparseCol = StrongSparseVectorOfDoubles<RowIndex>;
-
-template <typename SparseIndex>
-constexpr SparseIndex kInvalidSparseIndex(-1);
-
-[[maybe_unused]] constexpr RowIndex kInvalidRow = kInvalidSparseIndex<RowIndex>;
-[[maybe_unused]] constexpr ColIndex kInvalidCol = kInvalidSparseIndex<ColIndex>;
 
 // This is needed for CHECK_EQ(), EXPECT_EQ(), and macros from abseil.
 template <typename SparseIndex>
