@@ -51,7 +51,6 @@ cc_library(
     srcs = ["strong_sparse_matrix.cc"],
     hdrs = ["strong_sparse_matrix.h"],
     deps = [
-        ":mip_types",
         ":strong_sparse_vector",
         "@com_google_ortools//ortools/base",
         "@com_google_ortools//ortools/base:strong_vector",
@@ -64,6 +63,7 @@ cc_library(
     name = "strong_sparse_vector",
     hdrs = ["strong_sparse_vector.h"],
     deps = [
+        ":mip_types",
         "@com_google_ortools//ortools/base",
         "@com_google_ortools//ortools/base:strong_vector",
         "@com_google_ortools//ortools/util:strong_integers",
