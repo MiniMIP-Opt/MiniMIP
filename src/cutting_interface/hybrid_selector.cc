@@ -91,7 +91,7 @@ std::vector<CutData> filter_cuts(const MiniMipSolver& solver,
                                  std::vector<CutData>& cuts) {
   const double parallel_cutoff = 1.0 - params.minimum_orthogonality();
 
-  //Todo: fix memory leak
+  // Todo: fix memory leak
   std::vector<CutData> filtered_cuts;
 
   filtered_cuts.push_back(cut_reference);
@@ -109,18 +109,18 @@ std::vector<CutData> filter_cuts(const MiniMipSolver& solver,
 
 }  // namespace
 
-absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(const MiniMipSolver& solver, std::vector<CutData>& cuts) {
-
+absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
+    const MiniMipSolver& solver, std::vector<CutData>& cuts) {
   const int max_cuts = params_.max_num_cuts();
 
   // 1. compute the score for each cut
   for (CutData& cut : cuts) {
-      scoring_function(solver, params_.hybrid_selector_parameters(), cut);
+    scoring_function(solver, params_.hybrid_selector_parameters(), cut);
   }
 
   int selected_cuts = 0;
 
-  while(!cuts.empty()) {
+  while (!cuts.empty()) {
     // 2. select the best cut
     int best_cut_index = select_best_cut(solver, cuts);
 
@@ -128,16 +128,18 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(const M
 
     CutData& cut_reference = cuts[best_cut_index];
 
-    if(cut_reference.current_score < params_.hybrid_selector_parameters().score_threshold()) {
+    if (cut_reference.current_score <
+        params_.hybrid_selector_parameters().score_threshold()) {
       break;
     }
 
-    //Todo: fix memory leak
-    // 3. filter the cuts
-    std::vector<CutData> filtered_cuts = filter_cuts(solver, params_.hybrid_selector_parameters(), cut_reference, cuts);
+    // Todo: fix memory leak
+    //  3. filter the cuts
+    std::vector<CutData> filtered_cuts = filter_cuts(
+        solver, params_.hybrid_selector_parameters(), cut_reference, cuts);
     cuts = filtered_cuts;
 
-    if(selected_cuts == max_cuts) {
+    if (selected_cuts == max_cuts) {
       break;
     }
   }
@@ -146,3 +148,11 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(const M
 }
 
 }  // namespace minimip
+
+// TODO: refactor the whole cutting interface, remove the runner and instead
+// implement
+//  the generator and incorporate the filtering into the cut_storage.
+//  The generator should be able to generate cuts and store them in the
+//  cut_storage. The cut_storage should be able to filter the cuts and return
+//  the best cuts. The runner should be able to run the generator and apply the
+//  cut_storage to the LP.
