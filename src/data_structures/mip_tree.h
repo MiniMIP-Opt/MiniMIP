@@ -101,7 +101,7 @@ class MipTree {
 
   // This marks the node `n` as closed, which means the node has been pruned,
   // its LP relaxation is infeasible, or the two child branches have been added.
-  // This funciont also attempts to reclaim the closed node (and iteratively all
+  // This function also attempts to reclaim the closed node (and iteratively all
   // ancestors up to the root too). A node can be reclaimed (i.e., turned into
   // a free node to be used again later to store another node data) if all
   // node's children are closed too (if there are any).
