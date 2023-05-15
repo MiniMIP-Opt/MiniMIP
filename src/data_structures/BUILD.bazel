@@ -27,8 +27,10 @@ cc_library(
 
 cc_library(
     name = "mip_types",
+    srcs = ["mip_types.cc"],
     hdrs = ["mip_types.h"],
     deps = [
+        "@com_google_ortools//ortools/base:strong_vector",
         "@com_google_ortools//ortools/util:strong_integers",
     ],
 )

@@ -57,18 +57,24 @@ struct NodeData {
   // non-root active node, and `kFreeNodeDepth` for any free node.
   int depth = kFreeNodeDepth;
 
-  // Index of the variable to branch on in this node.
+  // If this node is *not* a root node then it was created by branching from
+  // some parent. We need to include this branching decision before solving the
+  // LP relaxation. In particural, we set new bounds on the branched variable.
+  // For `branch_down`, we will impose the following *upper* bound:
+  //   branch_variable <= std::floor(branch_primal_value_in_parent_lp)
+  // wheres for `!branch_down`, we will impose the following *lower* bound:
+  //   branch_variable >= std::ceil(branch_primal_value_in_parent_lp)
+  //
+  // TODO(lpawel): Consider adding `struct BranchingData` to wrap these.
+  //
+  // Index of the branching variable (while branching from the parent to this
+  // node).
   ColIndex branch_variable = kInvalidCol;
 
-  // Branching direction for this node.
+  // Branching direction (while branching from the parent to this node).
   bool branch_down = false;
 
   // The primal value of `branch_variable` in the parent's LP relaxation.
-  // This is needed to set the new bounds on the branched variable, and to track
-  // pseudo-costs. For `branch_down`, we will impose the following upper bound:
-  //   branch_variable <= std::floor(branch_primal_value_in_parent_lp)
-  // wheres for `!branch_down`, we will impose the following lower bound:
-  //   branch_variable >= std::ceil(branch_primal_value_in_parent_lp)
   double branch_primal_value_in_parent_lp = 0.0;
 
   // The objective value of this node's LP relaxation. Note, we always assume
@@ -129,6 +135,8 @@ class MipTree {
 
   // Sets some (needed for later) data about the node's LP relaxation.
   // Typically, this is called when exploring a node.
+  // TODO(lpawel): When expanding to store extra LP data in nodes, wrap all of
+  // them into `struct LpRelaxationData` and refactor this function.
   void SetLpRelaxationDataInNode(NodeIndex n, double lp_objective_value);
 
   // Sets implied bounds computed for the node. Typically, this is called when

@@ -15,6 +15,7 @@
 #ifndef SRC_DATA_STRUCTURES_MIP_TYPES_H_
 #define SRC_DATA_STRUCTURES_MIP_TYPES_H_
 
+#include "ortools/base/strong_vector.h"
 #include "ortools/util/strong_integers.h"
 
 namespace minimip {
@@ -55,6 +56,12 @@ class ColOrRowIndex {
   ColIndex col_;
   RowIndex row_;
 };
+
+// This is needed for CHECK_EQ(), EXPECT_EQ(), and macros from abseil.
+bool operator==(const ColOrRowIndex& lhs, const ColOrRowIndex& rhs);
+
+// This is needed for nice printing in unit tests and via LOG().
+std::ostream& operator<<(std::ostream& out, const ColOrRowIndex& i);
 
 // A struct to contain a single double value for a variable (used to, e.g.,
 // specify sparse implied bounds).
