@@ -33,31 +33,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/data_structures/mip_data.h"
+#include "src/data_structures/mip_types.h"
 #include "src/data_structures/strong_sparse_vector.h"
 #include "src/lp_interface/lp_types.h"
 
 namespace minimip {
-
-// This represents an element of the basis which may be either a column or
-// a row of the original problem.
-class ColOrRowIndex {
- public:
-  explicit ColOrRowIndex(ColIndex only_col)
-      : col_(only_col), row_(kInvalidRow) {}
-  explicit ColOrRowIndex(RowIndex only_row)
-      : col_(kInvalidCol), row_(only_row) {}
-
-  ColIndex col() const { return col_; }
-  RowIndex row() const { return row_; }
-
-  bool operator==(const ColOrRowIndex& o) const {
-    return col_ == o.col_ && row_ == o.row_;
-  }
-
- private:
-  ColIndex col_;
-  RowIndex row_;
-};
 
 // LPInterface is used by MiniMIP to communicate with an underlying LP solver.
 class LPInterface {
