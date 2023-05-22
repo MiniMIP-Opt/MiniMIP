@@ -124,10 +124,11 @@ class StrongSparseVectorOfDoubles {
   }
 
   explicit StrongSparseVectorOfDoubles(
-      const absl::StrongVector<SparseIndex, double>& values)
+      const absl::StrongVector<SparseIndex, double>& dense_values)
       : entries_{}, may_need_cleaning_(false) {
-    for (SparseIndex index(0); index < values.size(); ++index) {
-      if (values[index] != 0.0) entries_.emplace_back(index, values[index]);
+    for (SparseIndex index(0); index < dense_values.size(); ++index) {
+      if (dense_values[index] != 0.0)
+        entries_.emplace_back(index, dense_values[index]);
     }
   }
 
