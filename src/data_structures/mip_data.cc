@@ -56,8 +56,9 @@ MipData::MipData(const MiniMipProblem& problem)
     if (variable.is_integer) {
       variable_types_[col_idx] = VariableType::kInteger;
       integer_variables_.insert(col_idx);
-      lower_bounds_[col_idx] = std::ceil(lower_bounds_[col_idx]);
-      upper_bounds_[col_idx] = std::floor(upper_bounds_[col_idx]);
+
+      // TODO(lpawel): Move the logic that makes bounds integral to the preprocessor.
+      CHECK_LE(lower_bounds_[col_idx], upper_bounds_[col_idx]);
     } else {
       variable_types_[col_idx] = VariableType::kFractional;
     }

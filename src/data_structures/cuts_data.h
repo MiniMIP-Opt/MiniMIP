@@ -59,20 +59,12 @@ struct CutData {
   // The original score is the score the cut was given when first selected.
   double original_score = -std::numeric_limits<double>::infinity();
 
-  // The current score is the score the cut has in the current selection.
-  double current_score = -std::numeric_limits<double>::infinity();
-
-  // The efficacy is the normalized violation of the current LP solution.
-  double efficacy = -std::numeric_limits<double>::infinity();
-
   // The relative parallelism to the objective function.
   double objective_parallelism = -std::numeric_limits<double>::infinity();
 
   // The cut name is set by the separator it originates from.
   std::string name;
 };
-
-// TODO: add "isCutFresh()" like function corresponding to its current_score.
 
 // ============================================================================
 // CutStorage contains the generated cutting planes and all relevant meta-data
