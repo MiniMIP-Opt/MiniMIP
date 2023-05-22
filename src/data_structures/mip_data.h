@@ -43,7 +43,7 @@ class MipData {
   // Constructors
   // ==========================================================================
 
-  MipData();
+  MipData() : MipData(MiniMipProblem{}){};
 
   explicit MipData(const MiniMipProblem& problem);
 
@@ -79,6 +79,10 @@ class MipData {
     return right_hand_sides_;
   }
 
+  const absl::StrongVector<RowIndex, bool>& is_integral_constraint() const {
+    return is_integral_constraint_;
+  }
+
   const StrongSparseMatrix& matrix() const { return constraint_matrix_; }
 
   const absl::StrongVector<ColIndex, VariableType>& variable_types() const {
@@ -103,15 +107,18 @@ class MipData {
   double objective_offset_ = 0.0;
   SparseRow objective_;
   std::vector<MiniMipSolutionHint> solution_hints_;
+
+  absl::StrongVector<ColIndex, std::string> variable_names_;
   absl::StrongVector<ColIndex, double> lower_bounds_;
   absl::StrongVector<ColIndex, double> upper_bounds_;
+  absl::flat_hash_set<ColIndex> integer_variables_;
+  absl::StrongVector<ColIndex, VariableType> variable_types_;
+
+  absl::StrongVector<RowIndex, std::string> constraint_names_;
   absl::StrongVector<RowIndex, double> left_hand_sides_;
   absl::StrongVector<RowIndex, double> right_hand_sides_;
-  absl::flat_hash_set<ColIndex> integer_variables_;
+  absl::StrongVector<RowIndex, bool> is_integral_constraint_;
   StrongSparseMatrix constraint_matrix_;
-  absl::StrongVector<ColIndex, VariableType> variable_types_;
-  absl::StrongVector<ColIndex, std::string> variable_names_;
-  absl::StrongVector<RowIndex, std::string> constraint_names_;
 };
 
 }  // namespace minimip
