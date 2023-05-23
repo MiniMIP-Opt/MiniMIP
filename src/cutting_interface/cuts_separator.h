@@ -33,7 +33,7 @@ class Separator {
   // Generate up to `max_num_cuts` cutting planes. Returns an empty vector if no
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
-  virtual absl::StatusOr<std::vector<CutData>> GenerateCuttingPlanes(
+  virtual absl::StatusOr<std::vector<Cut>> GenerateCuttingPlanes(
       const MiniMipSolver& solver) = 0;
 };
 

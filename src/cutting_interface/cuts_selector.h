@@ -40,8 +40,8 @@ class Selector {
 
   // Select up to `max_num_cuts` cutting planes.
   // Returns the selected cuts given the current state.
-  virtual absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
-      const MiniMipSolver& solver, std::vector<CutData>& cuts) = 0;
+  virtual absl::StatusOr<std::vector<Cut>> SelectCuttingPlanes(
+      const MiniMipSolver& solver, std::vector<Cut>& cuts) = 0;
 };
 
 }  // namespace minimip

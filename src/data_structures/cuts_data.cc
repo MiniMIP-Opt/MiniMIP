@@ -26,7 +26,7 @@ CutStorage::CutStorage()
     : cuts_({}), active_cut_indices_({}), total_number_of_cuts_found_(0) {}
 
 // Initialize CutStorage from initial separation round.
-CutStorage::CutStorage(std::vector<CutData> cuts, std::vector<int> cut_indices)
+CutStorage::CutStorage(std::vector<Cut> cuts, std::vector<int> cut_indices)
     : cuts_(std::move(cuts)),
       active_cut_indices_(std::move(cut_indices)),
       total_number_of_cuts_found_(cuts_.size()) {
@@ -45,11 +45,12 @@ void CutStorage::PopulateFromCutStorage(CutStorage cut_storage) {
 
 // Add a cut to storage.
 // TODO(cgraczy): Add checks to enforce correct initialization on cuts.
-int CutStorage::AddCut(CutData&& cut_data) {
-  DCHECK_EQ(cut_data.cut_index, 0);
-  cuts_.push_back(cut_data);
+int CutStorage::AddCut(Cut&& cut) {
+  DCHECK_EQ(cut.index(), 0);
+  cut.setIndex(total_number_of_cuts_found_ + 1);
+  cuts_.push_back(cut);
   total_number_of_cuts_found_ += 1;
-  return cut_data.cut_index;
+  return cut.index();
 }
 
 // Activate stored cut.
@@ -68,12 +69,12 @@ void CutStorage::RemoveCut(const int& cut_index) {
   cuts_.erase(it);
 
   for (int i = cut_index; i < cuts_.size(); i++) {
-    cuts_[i].cut_index -= 1;
+    cuts_[i].setIndex(cuts_[i].index() - 1);
   }
 }
 
 // Getter for individual cuts.
-const CutData& CutStorage::GetCut(const int& cut_index) const {
+const Cut& CutStorage::GetCut(const int& cut_index) const {
   DCHECK_GE(cut_index, 0);
   DCHECK_LT(cut_index, cuts_.size());
   return cuts_[cut_index];

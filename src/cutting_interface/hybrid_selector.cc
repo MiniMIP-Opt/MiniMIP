@@ -25,49 +25,51 @@ namespace minimip {
 namespace {
 
 void scoring_function(const MiniMipSolver& solver,
-                      const HybridSelectorParameters params, CutData& cut) {
+                      const HybridSelectorParameters params, Cut& cut) {
   // TODO: implement incumbent solution for directed cutoff distance.
 
   double efficacy_weight =
       params.efficacy_weight() + params.directed_cutoff_distance_weight();
   double integer_support_weight = params.integer_support_weight();
   double objective_parallelism_weight = params.objective_parallelism_weight();
-  double directed_cutoff_distance_weight =
-      params.directed_cutoff_distance_weight();
 
   double efficacy =
-      (efficacy_weight > 0) ? efficacy_weight * cut.efficacy : 0.0;
+      (efficacy_weight > 0) ? efficacy_weight * cut.efficacy() : 0.0;
 
   double integer_support =
       (integer_support_weight > 0)
           ? integer_support_weight *
-                (cut.number_of_integer_variables / cut.number_of_non_zeros)
+                (cut.getConstData().number_of_integer_variables /
+                 cut.getConstData().number_of_non_zeros)
           : 0.0;
   double objective_parallelism =
       (objective_parallelism_weight > 0)
-          ? objective_parallelism_weight * cut.objective_parallelism
+          ? objective_parallelism_weight *
+                cut.getConstData().objective_parallelism
           : 0.0;
 
-  cut.current_score = efficacy + integer_support + objective_parallelism;
+  cut.setScore(efficacy + integer_support + objective_parallelism);
 }
 
-int select_best_cut(const MiniMipSolver& solver, std::vector<CutData>& cuts) {
+int select_best_cut(const MiniMipSolver& solver, std::vector<Cut>& cuts) {
   double max_score = std::numeric_limits<double>::lowest();
   int best_cut_index = -1;
-  for (CutData cut : cuts) {
-    if (cut.current_score > max_score) {
-      max_score = cut.current_score;
-      best_cut_index = cut.cut_index;
+  for (Cut cut : cuts) {
+    if (cut.score() > max_score) {
+      max_score = cut.score();
+      best_cut_index = cut.index();
     }
   }
   return best_cut_index;
 }
 
-bool compute_row_parallelism(CutData& cut_reference, CutData& cut,
+bool compute_row_parallelism(Cut& reference_cut, Cut& cut,
                              double maximum_parallelism,
                              bool signed_orthogonality = false) {
-  std::vector<double> reference_row_values = cut_reference.row.values();
-  std::vector<double> cut_row_values = cut.row.values();
+  const SparseRow& reference_cut_row = reference_cut.getConstData().row;
+  const SparseRow& cut_row = cut.getConstData().row;
+  std::vector<double> reference_row_values = reference_cut_row.values();
+  std::vector<double> cut_row_values = cut_row.values();
 
   double squared_norm_reference = std::inner_product(
       reference_row_values.begin(), reference_row_values.end(),
@@ -76,7 +78,7 @@ bool compute_row_parallelism(CutData& cut_reference, CutData& cut,
       std::inner_product(cut_row_values.begin(), cut_row_values.end(),
                          cut_row_values.begin(), 0.0);
 
-  double dot_product = cut_reference.row.DotProduct(cut.row);
+  double dot_product = reference_cut_row.DotProduct(cut_row);
   double cos_angle = dot_product / (std::sqrt(squared_norm_reference) *
                                     std::sqrt(squared_norm_cut));
 
@@ -85,18 +87,17 @@ bool compute_row_parallelism(CutData& cut_reference, CutData& cut,
                               : cos_angle > maximum_parallelism;
 }
 
-std::vector<CutData> filter_cuts(const MiniMipSolver& solver,
-                                 HybridSelectorParameters params,
-                                 CutData& cut_reference,
-                                 std::vector<CutData>& cuts) {
+std::vector<Cut> filter_cuts(const MiniMipSolver& solver,
+                             HybridSelectorParameters params,
+                             Cut& cut_reference, std::vector<Cut>& cuts) {
   const double parallel_cutoff = 1.0 - params.minimum_orthogonality();
 
   // Todo: fix memory leak
-  std::vector<CutData> filtered_cuts;
+  std::vector<Cut> filtered_cuts;
 
   filtered_cuts.push_back(cut_reference);
 
-  for (CutData cut : cuts) {
+  for (Cut cut : cuts) {
     bool is_parallel = compute_row_parallelism(
         cut_reference, cut, parallel_cutoff, params.signed_orthogonality());
     if (!is_parallel) {
@@ -109,12 +110,12 @@ std::vector<CutData> filter_cuts(const MiniMipSolver& solver,
 
 }  // namespace
 
-absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
-    const MiniMipSolver& solver, std::vector<CutData>& cuts) {
+absl::StatusOr<std::vector<Cut>> HybridSelector::SelectCuttingPlanes(
+    const MiniMipSolver& solver, std::vector<Cut>& cuts) {
   const int max_cuts = params_.max_num_cuts();
 
   // 1. compute the score for each cut
-  for (CutData& cut : cuts) {
+  for (Cut& cut : cuts) {
     scoring_function(solver, params_.hybrid_selector_parameters(), cut);
   }
 
@@ -126,18 +127,17 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
 
     selected_cuts++;
 
-    CutData& cut_reference = cuts[best_cut_index];
-
-    if (cut_reference.current_score <
+    if (cuts[best_cut_index].score() <
         params_.hybrid_selector_parameters().score_threshold()) {
       break;
     }
 
     // Todo: fix memory leak
     //  3. filter the cuts
-    std::vector<CutData> filtered_cuts = filter_cuts(
-        solver, params_.hybrid_selector_parameters(), cut_reference, cuts);
-    cuts = filtered_cuts;
+    std::vector<Cut> filtered_cuts =
+        filter_cuts(solver, params_.hybrid_selector_parameters(),
+                    cuts[best_cut_index], cuts);
+    cuts = std::move(filtered_cuts);
 
     if (selected_cuts == max_cuts) {
       break;

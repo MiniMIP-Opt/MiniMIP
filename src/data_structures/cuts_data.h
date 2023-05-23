@@ -32,9 +32,6 @@ struct CutData {
   double right_hand_side = std::numeric_limits<double>::infinity();
   double left_hand_side = -std::numeric_limits<double>::infinity();
 
-  // If the cut is currently applied to the problem, is_active is true.
-  bool is_active = false;
-
   // If the cut will always be selected and activated. This is necessary for
   // cut selection (e.g., bound changes returned from separators).
   bool is_forced = false;
@@ -47,23 +44,77 @@ struct CutData {
   // originated from. Useful for cut selection between rounds.
   int from_separation_round_n = -1;
 
-  // The index of the cut in the storage, for easy reference.
-  // The index is set to the current number of cuts in storage once the cut is
-  // added to the storage (i.e. cut_index += cuts().size()).
-  int cut_index = 0;
-
   // Important characteristics of a cutting plane.
   int number_of_non_zeros = -1;
   int number_of_integer_variables = -1;
-
-  // The original score is the score the cut was given when first selected.
-  double original_score = -std::numeric_limits<double>::infinity();
 
   // The relative parallelism to the objective function.
   double objective_parallelism = -std::numeric_limits<double>::infinity();
 
   // The cut name is set by the separator it originates from.
   std::string name;
+};
+
+class Cut {
+ public:
+  // Constructor that takes a CutData object
+  explicit Cut(CutData& data) : data_(data) {
+    DCHECK(!data_.row.IsClean());
+    DCHECK_NE(data_.right_hand_side, -data_.left_hand_side);
+    DCHECK_NE(data_.added_at_node, -1);
+    DCHECK_NE(data_.from_separation_round_n, -1);
+    DCHECK_NE(data_.number_of_non_zeros, -1);
+    DCHECK_NE(data_.number_of_integer_variables, -1);
+    DCHECK_NE(data_.objective_parallelism,
+              -std::numeric_limits<double>::infinity());
+    DCHECK(!data_.name.empty());
+  }
+
+  // Setter methods for the changing data
+  void setEfficacy(double efficacy) { efficacy_ = efficacy; }
+  void setScore(double score) { current_score_ = score; }
+  void setIndex(int index) { cut_index_ = index; }
+  void setActive(bool is_active) { is_active_ = is_active; }
+
+  // Getter methods for the changing data
+  double efficacy() const { return efficacy_; }
+  double score() const { return current_score_; }
+  int index() const { return cut_index_; }
+  bool isActive() const { return is_active_; }
+
+  // Getter method for the constant data
+  const CutData& getConstData() const { return data_; }
+
+  // Method to create a new Cut with updated CutData and moved fields.
+  Cut recreateWithUpdatedData(CutData& newData) const {
+    Cut new_cut(newData);
+    new_cut.efficacy_ = efficacy_;
+    new_cut.current_score_ = current_score_;
+    new_cut.cut_index_ = cut_index_;
+    new_cut.is_active_ = is_active_;
+    return new_cut;
+  }
+
+ private:
+  // The CutData struct stores all constant information of a cutting plane d <=
+  // a^Tx <= b.
+  CutData data_;
+
+  // The index of the cut in the storage, for easy reference.
+  // The index is set to the current number of cuts in storage once the cut is
+  // added to the storage (i.e. cut_index += cuts().size()).
+  int cut_index_ = 0;
+
+  // If the cut is currently applied to the problem, is_active is true.
+  bool is_active_ = false;
+
+  // The efficacy of the cut is the orthogonal projection of the LP optimum onto
+  // the cutting plane.
+  double efficacy_ = 0.0;
+
+  // The current score of the cut is the score the cut was given when first
+  // selected.
+  double current_score_ = 0.0;
 };
 
 // ============================================================================
@@ -84,7 +135,7 @@ class CutStorage {
   CutStorage();
 
   // Initialize CutStorage from initial separation round.
-  CutStorage(std::vector<CutData> cuts, std::vector<int> cut_indices);
+  CutStorage(std::vector<Cut> cuts, std::vector<int> cut_indices);
 
   // CutStorage is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
@@ -102,7 +153,7 @@ class CutStorage {
   // ==========================================================================
 
   // Add a cut to storage.
-  int AddCut(CutData&& cut_data);
+  int AddCut(Cut&& cut);
 
   // Activate stored cut.
   void ActivateCut(int cut_index);
@@ -111,10 +162,10 @@ class CutStorage {
   void RemoveCut(const int& cut_index);
 
   // Getter for individual cuts.
-  const CutData& GetCut(const int& cut_index) const;
+  const Cut& GetCut(const int& cut_index) const;
 
   // Getter for all cuts.
-  const std::vector<CutData>& cuts() const { return cuts_; }
+  const std::vector<Cut>& cuts() const { return cuts_; }
 
   // Getter for active cut indices.
   const std::vector<int>& active_cuts() const { return active_cut_indices_; }
@@ -125,7 +176,7 @@ class CutStorage {
   }
 
  private:
-  std::vector<CutData> cuts_;
+  std::vector<Cut> cuts_;
   std::vector<int> active_cut_indices_;
   int total_number_of_cuts_found_;
 };

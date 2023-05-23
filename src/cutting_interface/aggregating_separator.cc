@@ -325,7 +325,7 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
   return aggregated_row;
 }
 
-absl::StatusOr<std::vector<CutData>>
+absl::StatusOr<std::vector<Cut>>
 TableauRoundingSeparator::GenerateCuttingPlanes(const MiniMipSolver& solver) {
   const int max_num_cuts = params_.max_num_cuts();
   if (!solver.lpi().IsSolved()) {
@@ -352,7 +352,7 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const MiniMipSolver& solver) {
       }()));
 
   // Generate the cuts.
-  std::vector<CutData> cutting_planes;
+  std::vector<Cut> cutting_planes;
   cutting_planes.reserve(max_num_cuts);
   for (RowIndex tableau_row(0);
        tableau_row < num_rows && cutting_planes.size() < max_num_cuts;
@@ -404,13 +404,13 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const MiniMipSolver& solver) {
             "should always be possible.");
       }
       SubstituteSlackVariables(solver, *rounded_row);
-      CutData cut{.row = std::move(rounded_row->variable_coefficients),
-                  .right_hand_side = rounded_row->right_hand_side};
-      if (!RemovesLPOptimum(cut, lp_optimum)) {
+      CutData cut_data{.row = std::move(rounded_row->variable_coefficients),
+                       .right_hand_side = rounded_row->right_hand_side};
+      if (!RemovesLPOptimum(cut_data, lp_optimum)) {
         VLOG(3) << "Final cut doesn't remove LP optimum.";
         continue;
       }
-      cutting_planes.push_back(std::move(cut));
+      cutting_planes.emplace_back(cut_data);
     }
   }
   return cutting_planes;
