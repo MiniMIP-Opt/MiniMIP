@@ -1,4 +1,5 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright 2023 the MiniMIP Project
+
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -68,7 +69,8 @@ class SmallModelSmokeTest
         CreateSampleProblem(std::get<1>(GetParam()));
 
     // Call the Create function to create a Solver object
-    ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(MiniMipParameters{}, data.first));
+    ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+                         Solver::Create(MiniMipParameters{}, data.first));
 
     solver_ = std::move(solver);
     optimum_ = std::move(data.second);

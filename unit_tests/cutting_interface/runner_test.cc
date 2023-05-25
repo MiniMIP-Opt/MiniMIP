@@ -1,4 +1,5 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright 2023 the MiniMIP Project
+
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/data_structures/mip_data.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/data_structures/mip_data.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
 
 // TODO: Implement CutRunnerTests.
 
-TEST(CutRunnerTests, EmptyTest) {
-  MipData mip_data;
-}
+TEST(CutRunnerTests, EmptyTest) { MipData mip_data; }
 
 }  // namespace minimip
