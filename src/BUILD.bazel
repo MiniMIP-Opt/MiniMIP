@@ -21,6 +21,7 @@ cc_library(
     deps = [
         ":parameters_cc_proto",
         "//src/data_structures:mip_data",
+        "//src/data_structures:mip_tree",
         "//src/data_structures:problem",
         "//src/lp_interface:lpi",
         "//src/lp_interface:lpi_factory",
