@@ -58,8 +58,8 @@ class Solver {
   const MipData& mip_data() const { return mip_data_; }
   MipData& mutable_mip_data() { return mip_data_; }
 
-  const MipTree& mip_tree() const { return *mip_tree_; }
-  MipData& mutable_mip_tree() { return *mip_tree_; }
+  const MipTree& mip_tree() const { return mip_tree_; }
+  MipData& mutable_mip_tree() { return mip_tree_; }
 
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
