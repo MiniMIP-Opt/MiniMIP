@@ -24,9 +24,9 @@
 
 namespace minimip {
 
-// Forward declaration of MiniMipSolver. This is required to break the circular
+// Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the cutting interface.
-class MiniMipSolver;
+class Solver;
 
 class CuttingInterface {
  public:
@@ -34,7 +34,7 @@ class CuttingInterface {
 
   // TODO: add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      const MiniMipSolver& solver, CutStorage& mutable_cut_storage) = 0;
+      const Solver& solver, CutStorage& mutable_cut_storage) = 0;
 
   void AddSeparator(std::unique_ptr<Separator> separator) {
     separators_.push_back(std::move(separator));
@@ -54,7 +54,7 @@ class CutRunner : CuttingInterface {
   virtual ~CutRunner() = default;
 
   virtual absl::Status SeparateCurrentLPSolution(
-      const MiniMipSolver& solver, CutStorage& mutable_cut_storage) final;
+      const Solver& solver, CutStorage& mutable_cut_storage) final;
 };
 
 }  // namespace minimip

@@ -18,7 +18,7 @@ namespace minimip {
 
 //
 absl::Status CutRunner::SeparateCurrentLPSolution(
-    const MiniMipSolver& solver, CutStorage& mutable_cut_storage) {
+    const Solver& solver, CutStorage& mutable_cut_storage) {
   for (const std::unique_ptr<Separator>& separator : separators_) {
     absl::StatusOr<std::vector<CutData>> cuts =
         separator->GenerateCuttingPlanes(solver);
