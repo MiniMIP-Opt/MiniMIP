@@ -90,14 +90,14 @@ class Rounder {
   virtual ~Rounder() = default;
 
   virtual std::optional<AggregatedRow> RoundAggregatedRow(
-      const MiniMipSolver& solver, AggregatedRow aggregated_row) const = 0;
+      const Solver& solver, AggregatedRow aggregated_row) const = 0;
 };
 
 // Create a cut from the aggregated row using Mixed Integer Rounding.
 class MIRRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
-      const MiniMipSolver& solver, AggregatedRow aggregated_row) const final;
+      const Solver& solver, AggregatedRow aggregated_row) const final;
 };
 
 // Create a cut from the aggregated row using strong Chvatal-Gomory rounding.
@@ -106,7 +106,7 @@ class MIRRounder : public Rounder {
 class StrongCGRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
-      const MiniMipSolver& solver, AggregatedRow aggregated_row) const final;
+      const Solver& solver, AggregatedRow aggregated_row) const final;
 };
 
 class TableauRoundingSeparator : public Separator {
@@ -124,8 +124,8 @@ class TableauRoundingSeparator : public Separator {
     }
   }
 
-  absl::StatusOr<std::vector<Cut>> GenerateCuttingPlanes(
-      const MiniMipSolver& solver) final;
+  absl::StatusOr<std::vector<CutData>> GenerateCuttingPlanes(
+      const Solver& solver) final;
 
  private:
   std::vector<std::unique_ptr<Rounder>> rounders_;

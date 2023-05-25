@@ -18,17 +18,17 @@ namespace minimip {
 
 //
 absl::Status CutRunner::SeparateCurrentLPSolution(
-    const MiniMipSolver& solver, CutStorage& mutable_cut_storage) {
+    const Solver& solver, CutStorage& mutable_cut_storage) {
   for (const std::unique_ptr<Separator>& separator : separators_) {
-    absl::StatusOr<std::vector<Cut>> cuts =
+    absl::StatusOr<std::vector<CutData>> cuts =
         separator->GenerateCuttingPlanes(solver);
     if (cuts.status() != absl::OkStatus()) {
       return cuts.status();
     }
 
-    absl::StatusOr<std::vector<Cut>> filtered_cuts =
+    absl::StatusOr<std::vector<CutData>> filtered_cuts =
         selector_->SelectCuttingPlanes(solver, cuts.value());
-    for (Cut& cut : filtered_cuts.value()) {
+    for (CutData& cut : filtered_cuts.value()) {
       mutable_cut_storage.AddCut(std::move(cut));
     }
   }

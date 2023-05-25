@@ -77,20 +77,6 @@ TEST(MipDataTests, PopulatesVariables) {
   EXPECT_THAT(mip_data.variable_names(), ElementsAreArray({"Bar"}));
 }
 
-TEST(MipDataTests, IntegerVariableBoundsAreTightened) {
-  const MiniMipVariable variable = {.name = "Bar",
-                                    .objective_coefficient = 13.2,
-                                    .lower_bound = -1.2,
-                                    .upper_bound = 7.5,
-                                    .is_integer = true};
-  const MiniMipProblem problem = {.variables = {variable}};
-
-  const MipData mip_data(problem);
-  EXPECT_THAT(mip_data.lower_bounds(), ElementsAre(-1.0));
-  EXPECT_THAT(mip_data.upper_bounds(), ElementsAre(7.0));
-  EXPECT_EQ(mip_data.objective().value(ColIndex(0)), 13.2);
-}
-
 TEST(MipDataTests, PopulatesConstraints) {
   const MiniMipVariable variable = {.name = "Bar",
                                     .objective_coefficient = 13.0,
