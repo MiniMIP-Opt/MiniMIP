@@ -44,6 +44,7 @@ class Solver {
              << "Error found in problem: " << problem_error;
     }
     MipData mip_data(problem);
+    MipTree mip_tree;
     ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                      ConfigureLPSolverFromProto(params.lp_parameters()));
     auto solver = std::unique_ptr<Solver>(new Solver(
@@ -59,7 +60,7 @@ class Solver {
   MipData& mutable_mip_data() { return mip_data_; }
 
   const MipTree& mip_tree() const { return mip_tree_; }
-  MipData& mutable_mip_tree() { return mip_tree_; }
+  MipTree& mutable_mip_tree() { return mip_tree_; }
 
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
@@ -78,7 +79,9 @@ class Solver {
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
          std::unique_ptr<LPInterface> lpi)
       : params_{std::move(params)},
-        mip_data_{std::move(mip_data)}, mip_tree_{std::move(mip_tree)}, lpi_{std::move(lpi)} {}
+        mip_data_{std::move(mip_data)},
+        mip_tree_{std::move(mip_tree)},
+        lpi_{std::move(lpi)} {}
 };
 
 // Convenience function to create a solver and solve the given problem.
