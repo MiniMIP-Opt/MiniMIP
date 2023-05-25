@@ -1146,7 +1146,7 @@ bool LPSoplexInterface::TimeLimitIsExceeded() const {
   return (spx_->status() == soplex::SPxSolver::ABORT_TIME);
 }
 
-double LPSoplexInterface::GetObjectiveValue() {
+double LPSoplexInterface::GetObjectiveValue() const {
   VLOG(2) << "calling GetObjectiveValue().";
 
   return spx_->objValueReal();

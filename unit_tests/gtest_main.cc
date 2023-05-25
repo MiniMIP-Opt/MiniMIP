@@ -27,7 +27,8 @@ int main(int argc, char** argv) {
   // By default, we log to stderr only, and equal or above log level 2 (where
   // 0: INFO, 1: WARNING, 2: ERROR, 3: FATAL).
   absl::SetFlag(&FLAGS_logtostderr, true);
-  absl::SetFlag(&FLAGS_minloglevel, 2);
+  absl::SetFlag(&FLAGS_minloglevel,
+                std::min(absl::GetFlag(FLAGS_minloglevel), 2));
   // Parse extra command line arguments that may override, e.g., minloglevel.
   absl::ParseCommandLine(argc, argv);
 

@@ -12,15 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/data_structures/mip_data.h"
-#include "unit_tests/utils.h"
+#include "cuts_runner.h"
 
 namespace minimip {
 
-// TODO: Implement DynamicOrthogonalityTests.
+//
+absl::Status CutRunner::SeparateCurrentLPSolution(
+    const Solver& solver, CutStorage& mutable_cut_storage) {
+  for (const std::unique_ptr<Separator>& separator : separators_) {
+    absl::StatusOr<std::vector<CutData>> cuts =
+        separator->GenerateCuttingPlanes(solver);
+    if (cuts.status() != absl::OkStatus()) {
+      return cuts.status();
+    }
 
-TEST(DynamicOrthogonalityTests, EmptyTest) { MipData mip_data; }
+    absl::StatusOr<std::vector<CutData>> filtered_cuts =
+        selector_->SelectCuttingPlanes(solver, cuts.value());
+    for (CutData& cut : filtered_cuts.value()) {
+      mutable_cut_storage.AddCut(std::move(cut));
+    }
+  }
+  return absl::OkStatus();
+};
 
 }  // namespace minimip

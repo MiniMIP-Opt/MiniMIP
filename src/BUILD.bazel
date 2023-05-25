@@ -17,13 +17,16 @@ cc_proto_library(
 
 cc_library(
     name = "solver",
+    srcs = [],
     hdrs = ["solver.h"],
     deps = [
         ":parameters_cc_proto",
+        "//src/cutting_interface:cuts_runner",
+        "//src/cutting_interface:runner_factory",
+        "//src/data_structures:cuts_data",
         "//src/data_structures:mip_data",
         "//src/data_structures:mip_tree",
         "//src/data_structures:problem",
-        "//src/data_structures:cuts_data",
         "//src/lp_interface:lpi",
         "//src/lp_interface:lpi_factory",
         "@com_google_ortools//ortools/base:status_builder",

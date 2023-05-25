@@ -49,6 +49,25 @@ TEST(StrongSparseRow, InitializeAndGetValue) {
   EXPECT_THAT(row.values(), ElementsAre(10.0, 40.0));
 }
 
+TEST(StrongSparseRow, InitializeFromDenseVector) {
+  SparseRow row({0.0, 10.0, 0.0, 0.0, 40.0, 0.0});
+  EXPECT_FALSE(row.MayNeedCleaning());
+  EXPECT_TRUE(row.IsClean());
+  EXPECT_THAT(row.entries(), EntriesAre<ColIndex>({{1, 10.0}, {4, 40.0}}));
+  EXPECT_EQ(row.value(ColIndex(1)), 10.0);
+  EXPECT_EQ(row.value(ColIndex(2)), 0.0);
+  EXPECT_EQ(row.value(ColIndex(3)), 0.0);
+  EXPECT_EQ(row.value(ColIndex(4)), 40.0);
+  EXPECT_EQ(row.value(ColIndex(5)), 0.0);
+  EXPECT_EQ(row[ColIndex(1)], 10.0);
+  EXPECT_EQ(row[ColIndex(2)], 0.0);
+  EXPECT_EQ(row[ColIndex(3)], 0.0);
+  EXPECT_EQ(row[ColIndex(4)], 40.0);
+  EXPECT_EQ(row[ColIndex(5)], 0.0);
+  EXPECT_THAT(row.indices(), ElementsAre(ColIndex(1), ColIndex(4)));
+  EXPECT_THAT(row.values(), ElementsAre(10.0, 40.0));
+}
+
 TEST(StrongSparseRow, MakeCopy) {
   SparseRow x = CreateSparseRow({{1, 10.0}});
   SparseRow y = x;
@@ -184,6 +203,31 @@ TEST(StrongSparseRowDeathTest, DiesWhenForgotToCleanUpMutatedEntries3) {
         EXPECT_EQ(row[ColIndex(8)], 20.0);
       },
       "The vector is not clean!");
+}
+
+TEST(StrongSparseRow, Transform) {
+  const SparseRow row = CreateSparseRow({{1, 1.0}, {2, 1.0}, {7, 2.5}});
+  {
+    SparseRow mutable_row = row;
+    mutable_row.Transform(
+        [](ColIndex i, double value) { return value * i.value(); });
+    EXPECT_THAT(mutable_row.entries(),
+                EntriesAre<ColIndex>({{1, 1.0}, {2, 2.0}, {7, 17.5}}));
+  }
+
+  {
+    SparseRow mutable_row = row;
+    mutable_row.Transform(
+        [](ColIndex i, double value) { return value * (i.value() - 1); });
+    EXPECT_THAT(mutable_row.entries(),
+                EntriesAre<ColIndex>({{2, 1.0}, {7, 15}}));
+  }
+
+  {
+    SparseRow mutable_row = row;
+    mutable_row.Transform([](ColIndex i, double value) { return 0.0; });
+    EXPECT_THAT(mutable_row.entries(), IsEmpty());
+  }
 }
 
 TEST(StrongSparseRow, Negation) {

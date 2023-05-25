@@ -5,31 +5,80 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "separator",
-    hdrs = ["separator.h"],
+    name = "cuts_separator",
+    hdrs = ["cuts_separator.h"],
     deps = [
-        "//src:solver",
+        "//src:parameters_cc_proto",
+        "//src/data_structures:cuts_data",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
 )
 
 cc_library(
-    name = "cut_runner",
-    hdrs = ["cut_runner.h"],
+    name = "separator_factory",
+    hdrs = ["separator_factory.h"],
     deps = [
+        "//src:parameters_cc_proto",
+        "//src/cutting_interface:aggregating_separator",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ]
+)
+
+cc_library(
+    name = "aggregating_separator",
+    srcs = ["aggregating_separator.cc"],
+    hdrs = ["aggregating_separator.h"],
+    deps = [
+        "//src:solver",
+        "//src/cutting_interface:cuts_separator",
+        "//src/lp_interface:lpi",
+        "@com_google_ortools//ortools/base:status_macros",
+    ],
+)
+
+cc_library(
+    name = "cuts_runner",
+    srcs = ["cuts_runner.cc"],
+    hdrs = ["cuts_runner.h"],
+    deps = [
+        ":cuts_selector",
+        ":cuts_separator",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
 )
 
 cc_library(
-    name = "selector",
-    hdrs = ["selector.h"],
+    name = "runner_factory",
+    hdrs = ["runner_factory.h"],
     deps = [
-        "//src:solver",
+        "//src/cutting_interface:cuts_runner",
+        "//src:parameters_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ]
+)
+
+cc_library(
+    name = "cuts_selector",
+    hdrs = ["cuts_selector.h"],
+    deps = [
+        "//src/data_structures:cuts_data",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_ortools//ortools/base:status_macros",
     ],
+)
+
+cc_library(
+    name = "selector_factory",
+    hdrs = ["selector_factory.h"],
+    deps = [
+        "//src/cutting_interface:cuts_selector",
+        "//src:parameters_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ]
 )

@@ -1,4 +1,4 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright 2023 the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_CUT_RUNNER_H_
-#define SRC_CUTTING_INTERFACE_CUT_RUNNER_H_
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/data_structures/mip_data.h"
+#include "unit_tests/utils.h"
 
 namespace minimip {
 
-class CutRunner {
-  // TODO: Implement abstract cut runner class to allow the implementation of
-  //       different cut runners to control the hierarchy and application of cut
-  //       generators.
- public:
-  virtual ~CutRunner() = default;
+// TODO: Implement CutRunnerTests.
 
-  virtual absl::Status MyCutRunnerFunction() = 0;
-};
+TEST(CutRunnerTests, EmptyTest) { MipData mip_data; }
 
 }  // namespace minimip
-
-#endif  // SRC_CUTTING_INTERFACE_CUT_RUNNER_H_

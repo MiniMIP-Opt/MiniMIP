@@ -1,4 +1,4 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright 2023 the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_SELECTOR_H_
-#define SRC_CUTTING_INTERFACE_SELECTOR_H_
+#ifndef SRC_CUTTING_INTERFACE_CUTS_SELECTOR_H_
+#define SRC_CUTTING_INTERFACE_CUTS_SELECTOR_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "ortools/base/logging.h"
 #include "ortools/base/status_macros.h"
-#include "src/solver.h"
+#include "src/data_structures/cuts_data.h"
 
 namespace minimip {
+
+// Forward declaration of Solver. This is required to break the circular
+// dependency between the solver and the selector.
+class Solver;
 
 // NOTE: This file should include the default scoring function as the efficacy
 //      of a given cutting plane in regard to the current LP solution as a
@@ -32,11 +36,13 @@ namespace minimip {
 
 class Selector {
  public:
+  virtual ~Selector() = default;
+
   // Select up to `max_num_cuts` cutting planes (TODO: add protobuffer param).
   // Returns the number of selected cuts given the current state.
-  virtual absl::StatusOr<int> SelectCuttingPlanes(
-      const Solver& solver, std::vector<CuttingPlane>& cuts) = 0;
+  virtual absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
+      const Solver& solver, std::vector<CutData>& cuts) = 0;
 };
 
 }  // namespace minimip
-#endif  // SRC_CUTTING_INTERFACE_SELECTOR_H_
+#endif  // SRC_CUTTING_INTERFACE_CUTS_SELECTOR_H_
