@@ -246,7 +246,7 @@ absl::StatusOr<absl::StrongVector<RowIndex, bool>> ChooseActiveSidesByBasis(
 
 // Check if a cut removes the current lp optimum.
 bool RemovesLPOptimum(const CutData& cut, const SparseRow& lp_optimum) {
-  return cut.row.DotProduct(lp_optimum) > cut.right_hand_side;
+  return cut.row().DotProduct(lp_optimum) > cut.right_hand_side();
 }
 
 }  // namespace
@@ -404,6 +404,13 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const MiniMipSolver& solver) {
             "should always be possible.");
       }
       SubstituteSlackVariables(solver, *rounded_row);
+
+      CutData cut(std::move(rounded_row->variable_coefficients),
+                  rounded_row->right_hand_side,
+                  std::numeric_limits<double>::infinity(),
+                  solver.mip_data().
+
+
       CutData cut{.row = std::move(rounded_row->variable_coefficients),
                   .right_hand_side = rounded_row->right_hand_side};
       if (!RemovesLPOptimum(cut, lp_optimum)) {
