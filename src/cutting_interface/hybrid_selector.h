@@ -29,8 +29,8 @@ class HybridSelector : public Selector {
   explicit HybridSelector(SelectorParameters params)
       : params_(std::move(params)) {}
 
-  absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
-      const MiniMipSolver& solver, std::vector<CutData>& cuts) final;
+  absl::StatusOr<std::vector<Cut>> SelectCuttingPlanes(
+      const MiniMipSolver& solver, std::vector<Cut>& cuts) final;
 
  private:
   const SelectorParameters params_;

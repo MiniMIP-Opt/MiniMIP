@@ -124,7 +124,7 @@ class TableauRoundingSeparator : public Separator {
     }
   }
 
-  absl::StatusOr<std::vector<CutData>> GenerateCuttingPlanes(
+  absl::StatusOr<std::vector<Cut>> GenerateCuttingPlanes(
       const MiniMipSolver& solver) final;
 
  private:
