@@ -22,6 +22,7 @@
 #include "ortools/base/status_builder.h"
 #include "ortools/base/status_macros.h"
 #include "src/data_structures/mip_data.h"
+#include "src/data_structures/mip_tree.h"
 #include "src/data_structures/problem.h"
 #include "src/lp_interface/lpi.h"
 #include "src/lp_interface/lpi_factory.h"
@@ -45,8 +46,8 @@ class Solver {
     MipData mip_data(problem);
     ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                      ConfigureLPSolverFromProto(params.lp_parameters()));
-    auto solver = std::unique_ptr<Solver>(
-        new Solver(params, std::move(mip_data), std::move(lpi)));
+    auto solver = std::unique_ptr<Solver>(new Solver(
+        params, std::move(mip_data), std::move(mip_tree), std::move(lpi)));
     return solver;
   }
 
@@ -56,6 +57,9 @@ class Solver {
 
   const MipData& mip_data() const { return mip_data_; }
   MipData& mutable_mip_data() { return mip_data_; }
+
+  const MipTree& mip_tree() const { return *mip_tree_; }
+  MipData& mutable_mip_tree() { return *mip_tree_; }
 
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
@@ -67,14 +71,15 @@ class Solver {
  private:
   const MiniMipParameters params_;
   MipData mip_data_;
+  MipTree mip_tree_;
   std::unique_ptr<LPInterface> lpi_;
 
   // Protected constructor, use Create() instead.
-  Solver(MiniMipParameters params, MipData mip_data,
+  Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
          std::unique_ptr<LPInterface> lpi)
       : params_{std::move(params)},
-        mip_data_{std::move(mip_data)},
-        lpi_{std::move(lpi)} {}
+        mip_data_{std::move(mip_data)} mip_tree_{std::move(mip_tree)};
+  , lpi_{std::move(lpi)} {}
 };
 
 // Convenience function to create a solver and solve the given problem.
