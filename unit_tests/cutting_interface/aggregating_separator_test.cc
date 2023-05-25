@@ -21,7 +21,7 @@
 #include "gtest/gtest.h"
 #include "src/cutting_interface/cuts_separator.h"
 #include "src/parameters.pb.h"
-#include "src/solver_factory.h"
+#include "src/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
@@ -66,10 +66,13 @@ class SmallModelSmokeTest
     generator_ = CreateCutGenerator(std::get<0>(GetParam()));
     std::pair<MiniMipProblem, SparseRow> data =
         CreateSampleProblem(std::get<1>(GetParam()));
-    solver_ = ConfigureMiniMipSolverFromProto(MiniMipParameters{}, data.first)
-                  .value();
+
+    // Call the Create function to create a Solver object
+    ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(MiniMipParameters{}, data.first));
+
+    solver_ = std::move(solver);
     optimum_ = std::move(data.second);
-    CHECK_OK(solver_->mutable_lpi().PopulateFromMipData(solver_->mip_data()));
+    CHECK_OK(solver_->mutable_lpi()->PopulateFromMipData(solver_->mip_data()));
   }
 
   static std::pair<MiniMipProblem, SparseRow> CreateSampleProblem(
@@ -247,15 +250,15 @@ class SmallModelSmokeTest
 
   absl::Status AddCutsAndResolveLp(const std::vector<CutData>& cuts) {
     for (const CutData& cut : cuts) {
-      RETURN_IF_ERROR(solver_->mutable_lpi().AddRow(
-          cut.row, -solver_->lpi().Infinity(), cut.right_hand_side, ""));
+      RETURN_IF_ERROR(solver_->mutable_lpi()->AddRow(
+          cut.row, -solver_->lpi()->Infinity(), cut.right_hand_side, ""));
     }
-    return solver_->mutable_lpi().SolveLPWithDualSimplex();
+    return solver_->mutable_lpi()->SolveLPWithDualSimplex();
   }
 
   absl::StatusOr<bool> SolutionIsMipFeasible() {
     ASSIGN_OR_RETURN((const absl::StrongVector<ColIndex, double> primal_values),
-                     solver_->lpi().GetPrimalValues());
+                     solver_->lpi()->GetPrimalValues());
     return std::all_of(
         solver_->mip_data().integer_variables().begin(),
         solver_->mip_data().integer_variables().end(),
@@ -265,7 +268,7 @@ class SmallModelSmokeTest
   }
 
   std::unique_ptr<Separator> generator_;
-  std::unique_ptr<MiniMipSolver> solver_;
+  std::unique_ptr<Solver> solver_;
   SparseRow optimum_;
 };
 
@@ -280,9 +283,9 @@ INSTANTIATE_TEST_SUITE_P(
                      testing::Range(0, 4)));
 
 TEST_P(SmallModelSmokeTest, SmokeTest) {
-  ASSERT_OK(solver_->mutable_lpi().SolveLPWithPrimalSimplex());
-  ASSERT_TRUE(solver_->lpi().IsSolved());
-  ASSERT_TRUE(solver_->lpi().IsOptimal());
+  ASSERT_OK(solver_->mutable_lpi()->SolveLPWithPrimalSimplex());
+  ASSERT_TRUE(solver_->lpi()->IsSolved());
+  ASSERT_TRUE(solver_->lpi()->IsOptimal());
   for (int i = 0; i < 10; ++i) {
     ASSERT_OK_AND_ASSIGN(const std::vector<CutData> cuts,
                          generator_->GenerateCuttingPlanes(*solver_));
@@ -290,7 +293,7 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
 
     ASSERT_OK_AND_ASSIGN(
         (const absl::StrongVector<ColIndex, double> primal_values),
-        solver_->lpi().GetPrimalValues());
+        solver_->lpi()->GetPrimalValues());
     const SparseRow lp_optimum = SparseRow(primal_values);
     for (const CutData& cut : cuts) {
       // All cuts should remove the LP optimum.
@@ -301,8 +304,8 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
     }
 
     ASSERT_OK(AddCutsAndResolveLp(cuts));
-    ASSERT_TRUE(solver_->lpi().IsSolved());
-    ASSERT_TRUE(solver_->lpi().IsOptimal());
+    ASSERT_TRUE(solver_->lpi()->IsSolved());
+    ASSERT_TRUE(solver_->lpi()->IsOptimal());
     ASSERT_OK_AND_ASSIGN(bool is_mip_feasible, SolutionIsMipFeasible());
     if (is_mip_feasible) break;
   }
