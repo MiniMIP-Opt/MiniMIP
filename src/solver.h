@@ -78,8 +78,7 @@ class Solver {
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
          std::unique_ptr<LPInterface> lpi)
       : params_{std::move(params)},
-        mip_data_{std::move(mip_data)} mip_tree_{std::move(mip_tree)};
-  , lpi_{std::move(lpi)} {}
+        mip_data_{std::move(mip_data)}, mip_tree_{std::move(mip_tree)}, lpi_{std::move(lpi)} {}
 };
 
 // Convenience function to create a solver and solve the given problem.
