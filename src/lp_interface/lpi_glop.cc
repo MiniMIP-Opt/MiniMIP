@@ -1,4 +1,4 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright 2023 the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -560,7 +560,8 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
       parameters_.use_scaling()) {
     const auto primal_values = GetPrimalValues();
     CHECK_OK(primal_values);
-    const DenseRow solution(primal_values->begin(), primal_values->end());
+    const operations_research::glop::DenseRow solution(primal_values->begin(),
+                                                       primal_values->end());
     if (!lp_.SolutionIsLPFeasible(solution,
                                   parameters_.primal_feasibility_tolerance())) {
       VLOG(1) << "Solution not feasible w.r.t. absolute tolerance "

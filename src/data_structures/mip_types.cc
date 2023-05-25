@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_LP_INTERFACE_LPI_FACTORY_H_
-#define SRC_LP_INTERFACE_LPI_FACTORY_H_
-
-#include "lp_types.h"
-#include "src/lp_interface/lpi.h"
-#include "src/parameters.pb.h"
+#include "src/data_structures/mip_types.h"
 
 namespace minimip {
 
-absl::StatusOr<std::unique_ptr<LPInterface>> ConfigureLPSolverFromProto(
-    const LPParameters& params);
+bool operator==(const ColOrRowIndex& lhs, const ColOrRowIndex& rhs) {
+  return lhs.col() == rhs.col() && lhs.row() == rhs.row();
+}
+
+std::ostream& operator<<(std::ostream& out, const ColOrRowIndex& i) {
+  out << "{.col = " << i.col() << ", .row = " << i.row() << "}";
+  return out;
+}
 
 }  // namespace minimip
-
-#endif  // SRC_LP_INTERFACE_LPI_FACTORY_H_

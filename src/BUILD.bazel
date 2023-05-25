@@ -24,6 +24,7 @@ cc_library(
         "//src/cutting_interface:cuts_runner",
         "//src/data_structures:cuts_data",
         "//src/data_structures:mip_data",
+        "//src/data_structures:mip_tree",
         "//src/data_structures:problem",
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_builder",
