@@ -244,8 +244,9 @@ absl::StatusOr<absl::StrongVector<RowIndex, bool>> ChooseActiveSidesByBasis(
 }
 
 // Check if a cut removes the current lp optimum.
-bool RemovesLPOptimum(const CutData& cut, const SparseRow& lp_optimum) {
-  return cut.row().DotProduct(lp_optimum) > cut.right_hand_side();
+bool RemovesLPOptimum(const SparseRow& row, double right_hand_side,
+                      const SparseRow& lp_optimum) {
+  return row.DotProduct(lp_optimum) > right_hand_side;
 }
 
 }  // namespace
@@ -393,6 +394,8 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
       VLOG(3) << "SKIP: Failed to transform variables for row " << tableau_row;
       continue;
     }
+
+    static int total_cuts = 0;
     for (const std::unique_ptr<Rounder>& rounder : rounders_) {
       std::optional<AggregatedRow> rounded_row =
           rounder->RoundAggregatedRow(solver, aggregated_row);
@@ -404,42 +407,37 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
       }
       SubstituteSlackVariables(solver, *rounded_row);
 
-      int current_separound =
-          0;  // TODO(cgraczy): unclear how to get this from the cutrunner
-      int current_node_index =
-          0;  // solver.mip_tree().GetDepth(); // TODO(pawel): How do i access
-              // the current node index?
-      int number_of_integer_variables =
-          -1;  // TODO(happlegren): are all entries in the aggregated row
-               // integer variables?
-      std::string cutname =
-          "nonameyet";  // TODO(happlegren): how do i get the name of the cut?
+      SparseRow& row = rounded_row->variable_coefficients;
 
-      double objective_parallelism =
-          0.0;  // TODO(cgraczy): dot product of normalized sparse row with
-                // normalized objective
-
-      bool is_forced = false;
-      if (rounded_row->variable_coefficients.entries().size() == 1) {
-        is_forced = true;
-      }
-
-      // TODO(cgraczy): finish this initializer to be correct - only fully
-      // initialized cuts are allowed.
-      CutData cut(std::move(rounded_row->variable_coefficients),
-                  rounded_row->right_hand_side,
-                  std::numeric_limits<double>::infinity(), current_node_index,
-                  current_separound,
-                  rounded_row->variable_coefficients.entries().size(),
-                  number_of_integer_variables, objective_parallelism, cutname,
-                  is_forced);
-
-      if (!RemovesLPOptimum(cut, lp_optimum)) {
-        // TODO: If this is checked, we should store the resulting violation of
-        // the cut, or simply the efficacy already.
+      if (!RemovesLPOptimum(row, rounded_row->right_hand_side, lp_optimum)) {
         VLOG(3) << "Final cut doesn't remove LP optimum.";
         continue;
       }
+
+      // TODO:(cgraczy) add a unique identifier to the name for multiple rounds.
+      std::string cutname = rounder->GetName() + std::to_string(total_cuts++);
+
+      SparseRow objective = solver.mip_data().objective();
+
+      double objective_parallelism =
+          row.DotProduct(objective) /
+          sqrt(row.DotProduct(row) * objective.DotProduct(objective));
+
+      bool is_forced = false;
+      if (row.entries().size() == 1) {
+        is_forced = true;
+      }
+
+      int number_of_non_zeros = row.entries().size();
+      int number_of_integer_variables = row.entries().size();
+      double efficacy =
+          (row.DotProduct(lp_optimum) - rounded_row->right_hand_side) /
+          row.DotProduct(row);
+
+      CutData cut(std::move(rounded_row->variable_coefficients),
+                  rounded_row->right_hand_side, number_of_non_zeros,
+                  number_of_integer_variables, objective_parallelism, efficacy,
+                  cutname, is_forced);
       cutting_planes.push_back(std::move(cut));
     }
   }

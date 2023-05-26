@@ -29,32 +29,26 @@ namespace minimip {
 class CutData {
  public:
   // Constructor that takes a CutData object
-  explicit CutData(SparseRow row, double right_hand_side, double left_hand_side,
-                   int added_at_node, int from_separation_round_n,
+  explicit CutData(SparseRow row, double right_hand_side,
                    int number_of_non_zeros, int number_of_integer_variables,
-                   double objective_parallelism, std::string name,
-                   bool is_forced = false)
+                   double objective_parallelism, double efficacy,
+                   std::string name, bool is_forced = false)
       : row_(std::move(row)),
         right_hand_side_(right_hand_side),
-        left_hand_side_(left_hand_side),
-        added_at_node_(added_at_node),
-        from_separation_round_n_(from_separation_round_n),
         number_of_non_zeros_(number_of_non_zeros),
         number_of_integer_variables_(number_of_integer_variables),
         objective_parallelism_(objective_parallelism),
         name_(std::move(name)),
-        is_forced_(is_forced) {
+        is_forced_(is_forced),
+        efficacy_(efficacy) {
     // Check the validity of the parameters
     DCHECK(row_.IsClean());
     DCHECK_GT(right_hand_side_, -std::numeric_limits<double>::infinity());
-    DCHECK_LT(left_hand_side_, std::numeric_limits<double>::infinity());
-    DCHECK_GE(right_hand_side_, left_hand_side_);
-    DCHECK_GE(added_at_node_, 0);
-    DCHECK_GE(from_separation_round_n_, 0);
     DCHECK_GT(number_of_non_zeros_, 0);
     DCHECK_GE(number_of_integer_variables_, 0);
     DCHECK_GE(objective_parallelism_, -1.0);
     DCHECK_LE(objective_parallelism_, 1.0);
+    DCHECK_GE(efficacy_, 0.0);
     DCHECK(!name_.empty());
   }
 
@@ -65,13 +59,6 @@ class CutData {
   void SetActive(bool is_active) { is_active_ = is_active; }
 
   // Getter methods for the changing data
-  double efficacy() const {
-    if (efficacy_.has_value()) {
-      return *efficacy_;
-    }
-    throw std::runtime_error("Efficacy has not been set.");
-  }
-
   double score() const {
     if (score_.has_value()) {
       return *score_;
@@ -88,12 +75,11 @@ class CutData {
 
   bool is_active() const { return is_active_; }
 
+  double efficacy() const { return efficacy_; }
+
   // Getter methods for the constant data
   const SparseRow& row() const { return row_; }
   double right_hand_side() const { return right_hand_side_; }
-  double left_hand_side() const { return left_hand_side_; }
-  int added_at_node() const { return added_at_node_; }
-  int from_separation_round_n() const { return from_separation_round_n_; }
   int number_of_non_zeros() const { return number_of_non_zeros_; }
   int number_of_integer_variables() const {
     return number_of_integer_variables_;
@@ -102,20 +88,10 @@ class CutData {
   const std::string& name() const { return name_; }
   bool is_forced() const { return is_forced_; }
 
-
  private:
   // The coefficients of the cutting plane are stored as a SparseRow
   SparseRow row_;
   double right_hand_side_;
-  double left_hand_side_;
-
-  // The node at which the cut is added to the storage. A value of zero means
-  // the cut was added at the root, otherwise the node of the tree is given.
-  int added_at_node_;
-
-  // The origin of a cut is specified to the separation round in the node it
-  // originated from. Useful for cut selection between rounds.
-  int from_separation_round_n_;
 
   // Important characteristics of a cutting plane.
   int number_of_non_zeros_;
@@ -134,6 +110,10 @@ class CutData {
   // If the cut is currently applied to the problem, is_active is true.
   bool is_active_{false};
 
+  // The efficacy of the cut is the orthogonal projection of the LP optimum onto
+  // the cutting plane.
+  double efficacy_;
+
   // The index of the cut in the storage, for easy reference.
   // The index is set to the current number of cuts in storage once the cut is
   // added to the storage (i.e. cut_index += cuts().size()).
@@ -141,10 +121,6 @@ class CutData {
 
   // The original score is the score the cut was given when first selected.
   std::optional<double> score_;
-
-  // The efficacy of the cut is the orthogonal projection of the LP optimum onto
-  // the cutting plane.
-  std::optional<double> efficacy_;
 };
 
 // ============================================================================
