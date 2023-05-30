@@ -46,10 +46,10 @@ void CutStorage::PopulateFromCutStorage(CutStorage cut_storage) {
 // Add a cut to storage.
 // TODO(cgraczy): Add checks to enforce correct initialization on cuts.
 int CutStorage::AddCut(CutData&& cut_data) {
-  DCHECK_EQ(cut_data.cut_index, 0);
+  DCHECK_EQ(cut_data.index(), 0);
   cuts_.push_back(cut_data);
   total_number_of_cuts_found_ += 1;
-  return cut_data.cut_index;
+  return cut_data.index();
 }
 
 // Activate stored cut.
@@ -68,7 +68,7 @@ void CutStorage::RemoveCut(const int& cut_index) {
   cuts_.erase(it);
 
   for (int i = cut_index; i < cuts_.size(); i++) {
-    cuts_[i].cut_index -= 1;
+    cuts_[i].SetIndex(cuts_[i].index() - 1);
   }
 }
 

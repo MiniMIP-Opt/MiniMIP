@@ -91,6 +91,9 @@ class Rounder {
 
   virtual std::optional<AggregatedRow> RoundAggregatedRow(
       const Solver& solver, AggregatedRow aggregated_row) const = 0;
+
+  // Add a virtual function to return the name of the rounder
+  virtual std::string GetName() const = 0;
 };
 
 // Create a cut from the aggregated row using Mixed Integer Rounding.
@@ -98,6 +101,8 @@ class MIRRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
       const Solver& solver, AggregatedRow aggregated_row) const final;
+
+  std::string GetName() const override { return "MIR"; }
 };
 
 // Create a cut from the aggregated row using strong Chvatal-Gomory rounding.
@@ -107,6 +112,8 @@ class StrongCGRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
       const Solver& solver, AggregatedRow aggregated_row) const final;
+
+  std::string GetName() const override { return "SCG"; }
 };
 
 class TableauRoundingSeparator : public Separator {
