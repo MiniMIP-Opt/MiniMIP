@@ -24,34 +24,26 @@ namespace minimip {
 
 namespace {
 
-void scoring_function(const Solver& solver,
-                      const HybridSelectorParameters params, CutData& cut) {
-  // TODO: implement incumbent solution for directed cutoff distance.
-
-  double efficacy_weight =
-      params.efficacy_weight() + params.directed_cutoff_distance_weight();
-  double integer_support_weight = params.integer_support_weight();
-  double objective_parallelism_weight = params.objective_parallelism_weight();
-  double directed_cutoff_distance_weight =
-      params.directed_cutoff_distance_weight();
-
-  double efficacy =
-      (efficacy_weight > 0) ? efficacy_weight * cut.efficacy() : 0.0;
+void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
+  double efficacy = (params.efficacy_weight() > 0)
+                        ? params.efficacy_weight() * cut.efficacy()
+                        : 0.0;
 
   double integer_support =
-      (integer_support_weight > 0)
-          ? integer_support_weight *
+      (params.integer_support_weight() > 0)
+          ? params.integer_support_weight() *
                 (cut.number_of_integer_variables() / cut.number_of_non_zeros())
           : 0.0;
+
   double objective_parallelism =
-      (objective_parallelism_weight > 0)
-          ? objective_parallelism_weight * cut.objective_parallelism()
+      (params.objective_parallelism_weight() > 0)
+          ? params.objective_parallelism_weight() * cut.objective_parallelism()
           : 0.0;
 
   cut.SetScore(efficacy + integer_support + objective_parallelism);
 }
 
-int select_best_cut(const Solver& solver, std::vector<CutData>& cuts) {
+int select_best_cut(std::vector<CutData>& cuts) {
   double max_score = std::numeric_limits<double>::lowest();
   int best_cut_index = -1;
   for (const CutData& cut : cuts) {
@@ -85,8 +77,7 @@ bool compute_row_parallelism(CutData& cut_reference, CutData& cut,
                               : cos_angle > maximum_parallelism;
 }
 
-std::vector<CutData> filter_cuts(const Solver& solver,
-                                 HybridSelectorParameters params,
+std::vector<CutData> filter_cuts(const HybridSelectorParameters& params,
                                  CutData& cut_reference,
                                  std::vector<CutData>& cuts) {
   const double parallel_cutoff = 1.0 - params.minimum_orthogonality();
@@ -115,14 +106,14 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
 
   // 1. compute the score for each cut
   for (CutData& cut : cuts) {
-    scoring_function(solver, params_.hybrid_selector_parameters(), cut);
+    scoring_function(params_.hybrid_selector_parameters(), cut);
   }
 
   int selected_cuts = 0;
 
   while (!cuts.empty()) {
     // 2. select the best cut
-    int best_cut_index = select_best_cut(solver, cuts);
+    int best_cut_index = select_best_cut(cuts);
 
     selected_cuts++;
 
@@ -135,8 +126,8 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
 
     // Todo: fix memory leak
     //  3. filter the cuts
-    std::vector<CutData> filtered_cuts = filter_cuts(
-        solver, params_.hybrid_selector_parameters(), cut_reference, cuts);
+    std::vector<CutData> filtered_cuts =
+        filter_cuts(params_.hybrid_selector_parameters(), cut_reference, cuts);
     cuts = filtered_cuts;
 
     if (selected_cuts == max_cuts) {
@@ -148,11 +139,3 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
 }
 
 }  // namespace minimip
-
-// TODO: refactor the whole cutting interface, remove the runner and instead
-// implement
-//  the generator and incorporate the filtering into the cut_storage.
-//  The generator should be able to generate cuts and store them in the
-//  cut_storage. The cut_storage should be able to filter the cuts and return
-//  the best cuts. The runner should be able to run the generator and apply the
-//  cut_storage to the LP.
