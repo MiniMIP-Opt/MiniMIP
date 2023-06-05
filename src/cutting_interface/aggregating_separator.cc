@@ -395,7 +395,9 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
       continue;
     }
 
+    const SparseRow& objective = solver.mip_data().objective();
     static int total_cuts = 0;
+
     for (const std::unique_ptr<Rounder>& rounder : rounders_) {
       std::optional<AggregatedRow> rounded_row =
           rounder->RoundAggregatedRow(solver, aggregated_row);
@@ -417,10 +419,6 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
       // TODO:(cgraczy) add a unique identifier to the name for multiple rounds.
       std::string cutname = rounder->GetName() + std::to_string(total_cuts++);
 
-      SparseRow objective =
-          solver.mip_data().objective();  // TODO(CGRACZY): initialize objective
-                                          // in constructor
-
       double objective_parallelism =
           row.DotProduct(objective) /
           sqrt(row.DotProduct(row) * objective.DotProduct(objective));
@@ -434,7 +432,7 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
       int number_of_integer_variables = row.entries().size();
       double efficacy =
           (row.DotProduct(lp_optimum) - rounded_row->right_hand_side) /
-          row.DotProduct(row);
+          sqrt(row.DotProduct(row));
 
       CutData cut(std::move(rounded_row->variable_coefficients),
                   rounded_row->right_hand_side, number_of_non_zeros,

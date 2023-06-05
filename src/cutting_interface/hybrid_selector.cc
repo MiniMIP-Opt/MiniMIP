@@ -43,21 +43,12 @@ void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
   cut.SetScore(efficacy + integer_support + objective_parallelism);
 }
 
-int select_best_cut(std::vector<CutData>& cuts) {
-  double max_score = std::numeric_limits<double>::lowest();
-  int best_cut_index = -1;
-  for (const CutData& cut : cuts) {
-    if (cut.score() > max_score) {
-      max_score = cut.score();
-      best_cut_index = cut.index();
-    }
-  }
-  return best_cut_index;
-}
-
-bool compute_row_parallelism(CutData& cut_reference, CutData& cut,
+bool compute_row_parallelism(const CutData& cut_reference, const CutData& cut,
                              double maximum_parallelism,
                              bool signed_orthogonality = false) {
+  if (cut.is_forced()) {
+    return true;
+  }
   std::vector<double> reference_row_values = cut_reference.row().values();
   std::vector<double> cut_row_values = cut.row().values();
 
@@ -68,74 +59,63 @@ bool compute_row_parallelism(CutData& cut_reference, CutData& cut,
       std::inner_product(cut_row_values.begin(), cut_row_values.end(),
                          cut_row_values.begin(), 0.0);
 
-  double dot_product = cut_reference.row().DotProduct(cut.row());
-  double cos_angle = dot_product / (std::sqrt(squared_norm_reference) *
-                                    std::sqrt(squared_norm_cut));
+  double cos_angle =
+      cut_reference.row().DotProduct(cut.row()) /
+      (std::sqrt(squared_norm_reference) * std::sqrt(squared_norm_cut));
 
-  // TODO: check unequal sign for signed_orthogonality
-  return signed_orthogonality ? std::abs(cos_angle) > maximum_parallelism
-                              : cos_angle > maximum_parallelism;
-}
-
-std::vector<CutData> filter_cuts(const HybridSelectorParameters& params,
-                                 CutData& cut_reference,
-                                 std::vector<CutData>& cuts) {
-  const double parallel_cutoff = 1.0 - params.minimum_orthogonality();
-
-  // Todo: fix memory leak
-  std::vector<CutData> filtered_cuts;
-
-  filtered_cuts.push_back(cut_reference);
-
-  for (CutData cut : cuts) {
-    bool is_parallel = compute_row_parallelism(
-        cut_reference, cut, parallel_cutoff, params.signed_orthogonality());
-    if (!is_parallel) {
-      filtered_cuts.push_back(cut);
-    }
-  }
-
-  return filtered_cuts;
+  return signed_orthogonality ? std::abs(cos_angle) < maximum_parallelism
+                              : cos_angle < maximum_parallelism;
 }
 
 }  // namespace
 
 absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     const Solver& solver, std::vector<CutData>& cuts) {
-  const int max_cuts = params_.max_num_cuts();
-
   // 1. compute the score for each cut
   for (CutData& cut : cuts) {
-    scoring_function(params_.hybrid_selector_parameters(), cut);
+    scoring_function(params_, cut);
   }
 
-  int selected_cuts = 0;
+  // 2. select the best cut and filter the remaining cuts.
+  std::vector<CutData> selected_cuts;
 
   while (!cuts.empty()) {
-    // 2. select the best cut
-    int best_cut_index = select_best_cut(cuts);
+    // 2.1. sort the cuts by score.
+    std::sort(cuts.begin(), cuts.end(),
+              [](const CutData& cut1, const CutData& cut2) {
+                return cut1.score() > cut2.score();
+              });
 
-    selected_cuts++;
+    // The remaining cut with the highest score.
+    CutData& cut_reference = cuts[0];
 
-    CutData& cut_reference = cuts[best_cut_index];
-
-    if (cut_reference.score() <
-        params_.hybrid_selector_parameters().score_threshold()) {
+    if (cut_reference.score() < params_.score_threshold()) {
       break;
     }
 
-    // Todo: fix memory leak
-    //  3. filter the cuts
-    std::vector<CutData> filtered_cuts =
-        filter_cuts(params_.hybrid_selector_parameters(), cut_reference, cuts);
-    cuts = filtered_cuts;
+    // 2.2 add the current best cut to the selected cuts.
+    selected_cuts.push_back(cut_reference);
 
-    if (selected_cuts == max_cuts) {
+    if (selected_cuts.size() == max_num_cuts_) {
       break;
     }
+
+    // 3. filter the cuts
+    auto predicate = [cut_reference, this](const CutData& cut) {
+      return compute_row_parallelism(cut_reference, cut,
+                                     1.0 - params_.minimum_orthogonality(),
+                                     params_.signed_orthogonality());
+    };
+
+    // Remove all elements that match the predicate
+    cuts.erase(std::remove_if(cuts.begin() + 1, cuts.end(), predicate),
+               cuts.end());
+
+    // Remove the first element (since we've already processed it)
+    cuts.erase(cuts.begin());
   }
 
-  return cuts;
+  return selected_cuts;
 }
 
 }  // namespace minimip

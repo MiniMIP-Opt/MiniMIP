@@ -31,52 +31,211 @@ using testing::IsEmpty;
 using testing::Le;
 using testing::Not;
 
-class CutSelectorTest : public ::testing::Test {
+// This is a helper function to create the selector parameters.
+enum class CutSelectorType { kHybridSelectorUnsigned, kHybridSelectorSigned };
+
+std::unique_ptr<Selector> CreateCutSelector(CutSelectorType type) {
+  switch (type) {
+    case CutSelectorType::kHybridSelectorUnsigned: {
+      SelectorParameters params;
+      CHECK(google::protobuf::TextFormat::ParseFromString(
+          R"pb(
+            hybrid_selector_parameters: { signed_orthogonality: false })pb",
+          &params));
+      return std::make_unique<HybridSelector>(params);
+    }
+    case CutSelectorType::kHybridSelectorSigned: {
+      SelectorParameters params;
+      CHECK(google::protobuf::TextFormat::ParseFromString(
+          R"pb(
+            hybrid_selector_parameters: { signed_orthogonality: true })pb",
+          &params));
+      return std::make_unique<HybridSelector>(params);
+    }
+  }
+}
+
+class MinimalCutSelectorTest
+    : public testing::TestWithParam<std::tuple<CutSelectorType, int>> {
  protected:
   void SetUp() final {
     // Here we initialize the cut selector.
     SelectorParameters params;
-    cut_selector_ = std::make_unique<HybridSelector>(params);
+    selector_ = CreateCutSelector(std::get<0>(GetParam()));
 
-    std::vector<CutData> cuts;
+    std::vector<CutData> cuts = CreateCuttingplanes(std::get<1>(GetParam()));
   }
-  static std::pair<MiniMipProblem, SparseRow> CreateCuttingplanes(
-      int switch_variable_index) {
+
+  static std::vector<CutData> CreateCuttingplanes(int switch_variable_index) {
+    std::vector<CutData> cuts;
+
     switch (switch_variable_index) {
-      case 0:
-        // Create simple Cutting planes.
-        for (ColIndex col(0); col < mip_data.matrix().num_cols(); ++col) {
-          RETURN_IF_ERROR(AddColumn(
-              mip_data.matrix().col(col), mip_data.lower_bounds()[col],
-              mip_data.upper_bounds()[col], mip_data.objective().value(col),
-              mip_data.variable_names()[col]));
-        }
-        SparseRow objective = solver.mip_data().objective();
-
-        double objective_parallelism =
-            row.DotProduct(objective) /
-            sqrt(row.DotProduct(row) * objective.DotProduct(objective));
-
-        bool is_forced = false;
-        if (row.entries().size() == 1) {
-          is_forced = true;
-        }
-
-        int number_of_non_zeros = row.entries().size();
-        int number_of_integer_variables = row.entries().size();
-        double efficacy =
-            (row.DotProduct(lp_optimum) - rounded_row->right_hand_side) /
-            row.DotProduct(row);
-
-        CutData cut(std::move(rounded_row->variable_coefficients),
-                    rounded_row->right_hand_side, number_of_non_zeros,
-                    number_of_integer_variables, objective_parallelism,
-                    efficacy, cutname, is_forced);
-        cutting_planes.push_back(std::move(cut));
+      case 0: {
+        // cut_1 is identical to cut_2
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 1: {
+        // cut_1 is identical to cut_2, but cut_2 is forced
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+                     true);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 2: {
+        // cut_1 is scored lower than parallel cut_2
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 3: {
+        // cut_1 is scored lower than cut_2, but cut_1 is forced
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+                     true);
+        CutData cut2(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 4: {
+        // cut_1 is orthogonal to cut_2
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 5: {
+        // cut_1 is orthogonal to cut_2, but cut_2 is scored negatively
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, -1.0, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 6: {
+        // cut_1 is orthogonal to cut_2, but both are scored negatively
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, -1.0, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, -1.0, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
+      case 7: {
+        // cut_1 is orthogonal to 2 cut, one that is parallel to cut_2
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+                     false);
+        CutData cut3(CreateSparseRow({{0, 2.0}}), 1.0, 1, 1, 1.0, 0.5, "cut_3",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        cuts.push_back(cut3);
+        break;
+      }
+      case 8: {
+        // cut_1 is orthogonal to 2 cut, one that is parallel to cut_2, but is
+        // forced
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 0.6, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+                     false);
+        CutData cut3(CreateSparseRow({{0, 2.0}}), 1.0, 1, 1, 1.0, 0.5, "cut_3",
+                     true);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        cuts.push_back(cut3);
+        break;
+      }  // TODO(Cgraczyk): add signed vs unsigned test.
+      default:
+        LOG(FATAL) << "Invalid Cutting Plane Setup: " << switch_variable_index;
     }
+    return cuts;
+  }
 
-    std::unique_ptr<HybridSelector> cut_selector_;
-  };
+  std::unique_ptr<Selector> selector_;
+};
+
+INSTANTIATE_TEST_SUITE_P(IdenticalCuts, MinimalCutSelectorTest,
+                         testing::Combine(testing::Values(0, 1),
+                                          testing::Range(0, 3)));
+
+INSTANTIATE_TEST_SUITE_P(OrthogonalCuts, MinimalCutSelectorTest,
+                         testing::Combine(testing::Values(0, 1),
+                                          testing::Range(4, 8)));
+
+TEST_P(MinimalCutSelectorTest, CutSelectorTest) {
+  // Call the Create function to create a Solver object
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+
+  std::vector<CutData> cuts = CreateCuttingplanes(std::get<1>(GetParam()));
+  absl::StatusOr<std::vector<CutData>> selected_cuts =
+      selector_->SelectCuttingPlanes(*solver, cuts);
+
+  if (std::get<1>(GetParam()) == 0) {
+    EXPECT_EQ(selected_cuts.value().size(), 1);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+  } else if (std::get<1>(GetParam()) == 1) {
+    EXPECT_EQ(selected_cuts.value().size(), 2);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_2");
+  } else if (std::get<1>(GetParam()) == 2) {
+    EXPECT_EQ(selected_cuts.value().size(), 1);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_2");
+  } else if (std::get<1>(GetParam()) == 3) {
+    EXPECT_EQ(selected_cuts.value().size(), 2);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_2");
+    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_1");
+  } else if (std::get<1>(GetParam()) == 4) {
+    EXPECT_EQ(selected_cuts.value().size(), 2);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_2");
+  } else if (std::get<1>(GetParam()) == 5) {
+    EXPECT_EQ(selected_cuts.value().size(), 1);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+  } else if (std::get<1>(GetParam()) == 6) {
+    EXPECT_EQ(selected_cuts.value().size(), 0);
+  } else if (std::get<1>(GetParam()) == 7) {
+    EXPECT_EQ(selected_cuts.value().size(), 2);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_2");
+  } else if (std::get<1>(GetParam()) == 8) {
+    EXPECT_EQ(selected_cuts.value().size(), 3);
+    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_2");
+    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_1");
+    EXPECT_EQ(selected_cuts.value()[2].name(), "cut_3");
+  }
+
+  /*
+  if (std::get<0>(GetParam()) == CutSelectorType::kHybridSelectorUnsigned) {
+    //TODO(cgraczyk): add signed test.
+  } else if (std::get<0>(GetParam()) ==
+             CutSelectorType::kHybridSelectorSigned) {
+    //TODO(cgraczyk): add signed test.
+  }
+  */
+}
 
 }  // namespace
 }  // namespace minimip

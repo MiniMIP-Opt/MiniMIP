@@ -22,18 +22,29 @@
 #include "src/cutting_interface/cuts_selector.h"
 #include "src/solver.h"
 
+// TODO(Cgraczyk): Add a check that duplicates are removed.
+// The cutselector should not be responsible for removing duplicates.
+// Maybe this can be avoided by using std::set instead of std::vector in the
+// future.
+
+// The assumption here is that all cuts are initialized correctly and are valid.
+// Note:
+// - make sure that cuts are updated if returned from the cut_storage.
+
 namespace minimip {
 
 class HybridSelector : public Selector {
  public:
-  explicit HybridSelector(SelectorParameters params)
-      : params_(std::move(params)) {}
+  explicit HybridSelector(const SelectorParameters& params)
+      : max_num_cuts_(params.max_num_cuts()),
+        params_(params.hybrid_selector_parameters()) {}
 
   absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
       const Solver& solver, std::vector<CutData>& cuts) final;
 
  private:
-  const SelectorParameters params_;
+  int max_num_cuts_;
+  const HybridSelectorParameters params_;
 };
 
 }  // namespace minimip
