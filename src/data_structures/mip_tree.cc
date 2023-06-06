@@ -69,6 +69,7 @@ void MipTree::CloseNodeAndReclaimNodesUpToRootIfPossible(NodeIndex n) {
   CHECK_GE(number_of_open_child_nodes_[nodes_[n].parent], 0);
   CHECK_LE(number_of_open_child_nodes_[nodes_[n].parent], 2);
   --number_of_open_child_nodes_[nodes_[n].parent];
+  ++num_closed_nodes_;
 
   while (true) {
     if (number_of_open_child_nodes_[n] > 0) return;
