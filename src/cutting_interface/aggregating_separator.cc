@@ -421,7 +421,7 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
 
       double objective_parallelism =
           row.DotProduct(objective) /
-          sqrt(row.DotProduct(row) * objective.DotProduct(objective));
+          std::sqrt(row.DotProduct(row) * objective.DotProduct(objective));
 
       bool is_forced = false;
       if (row.entries().size() == 1) {

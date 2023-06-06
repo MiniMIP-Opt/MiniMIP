@@ -121,20 +121,20 @@ class MinimalCutSelectorTest
         break;
       }
       case 5: {
-        // cut_1 is orthogonal to cut_2, but cut_2 is scored negatively
+        // cut_1 is orthogonal to cut_2, but cut_2 is scored below threshold
         CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
                      false);
-        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, -1.0, "cut_2",
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_2",
                      false);
         cuts.push_back(cut1);
         cuts.push_back(cut2);
         break;
       }
       case 6: {
-        // cut_1 is orthogonal to cut_2, but both are scored negatively
-        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, -1.0, "cut_1",
+        // cut_1 is orthogonal to cut_2, but both are scored below threshold
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_1",
                      false);
-        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, -1.0, "cut_2",
+        CutData cut2(CreateSparseRow({{0, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_2",
                      false);
         cuts.push_back(cut1);
         cuts.push_back(cut2);
@@ -194,37 +194,37 @@ TEST_P(MinimalCutSelectorTest, CutSelectorTest) {
       selector_->SelectCuttingPlanes(*solver, cuts);
 
   if (std::get<1>(GetParam()) == 0) {
-    EXPECT_EQ(selected_cuts.value().size(), 1);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value().size(), 1);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
   } else if (std::get<1>(GetParam()) == 1) {
-    EXPECT_EQ(selected_cuts.value().size(), 2);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
-    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_2");
+    ASSERT_EQ(selected_cuts.value().size(), 2);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
   } else if (std::get<1>(GetParam()) == 2) {
-    EXPECT_EQ(selected_cuts.value().size(), 1);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_2");
+    ASSERT_EQ(selected_cuts.value().size(), 1);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
   } else if (std::get<1>(GetParam()) == 3) {
-    EXPECT_EQ(selected_cuts.value().size(), 2);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_2");
-    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value().size(), 2);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
+    ASSERT_EQ(selected_cuts.value()[1].name(), "cut_1");
   } else if (std::get<1>(GetParam()) == 4) {
-    EXPECT_EQ(selected_cuts.value().size(), 2);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
-    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_2");
+    ASSERT_EQ(selected_cuts.value().size(), 2);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
   } else if (std::get<1>(GetParam()) == 5) {
-    EXPECT_EQ(selected_cuts.value().size(), 1);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value().size(), 1);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
   } else if (std::get<1>(GetParam()) == 6) {
-    EXPECT_EQ(selected_cuts.value().size(), 0);
+    ASSERT_EQ(selected_cuts.value().size(), 0);
   } else if (std::get<1>(GetParam()) == 7) {
-    EXPECT_EQ(selected_cuts.value().size(), 2);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_1");
-    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_2");
+    ASSERT_EQ(selected_cuts.value().size(), 2);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
   } else if (std::get<1>(GetParam()) == 8) {
-    EXPECT_EQ(selected_cuts.value().size(), 3);
-    EXPECT_EQ(selected_cuts.value()[0].name(), "cut_2");
-    EXPECT_EQ(selected_cuts.value()[1].name(), "cut_1");
-    EXPECT_EQ(selected_cuts.value()[2].name(), "cut_3");
+    ASSERT_EQ(selected_cuts.value().size(), 3);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
+    ASSERT_EQ(selected_cuts.value()[1].name(), "cut_1");
+    ASSERT_EQ(selected_cuts.value()[2].name(), "cut_3");
   }
 
   /*

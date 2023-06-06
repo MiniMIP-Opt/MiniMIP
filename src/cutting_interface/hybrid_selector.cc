@@ -44,10 +44,10 @@ void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
 }
 
 bool compute_row_parallelism(const CutData& cut_reference, const CutData& cut,
-                             double maximum_parallelism,
+                             double minimum_orthogonality,
                              bool signed_orthogonality = false) {
   if (cut.is_forced()) {
-    return true;
+    return false;
   }
   std::vector<double> reference_row_values = cut_reference.row().values();
   std::vector<double> cut_row_values = cut.row().values();
@@ -63,8 +63,8 @@ bool compute_row_parallelism(const CutData& cut_reference, const CutData& cut,
       cut_reference.row().DotProduct(cut.row()) /
       (std::sqrt(squared_norm_reference) * std::sqrt(squared_norm_cut));
 
-  return signed_orthogonality ? std::abs(cos_angle) < maximum_parallelism
-                              : cos_angle < maximum_parallelism;
+  return signed_orthogonality ? std::abs(cos_angle) > 1 - minimum_orthogonality
+                              : cos_angle > 1 - minimum_orthogonality;
 }
 
 }  // namespace
@@ -103,7 +103,7 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     // 3. filter the cuts
     auto predicate = [cut_reference, this](const CutData& cut) {
       return compute_row_parallelism(cut_reference, cut,
-                                     1.0 - params_.minimum_orthogonality(),
+                                     params_.minimum_orthogonality(),
                                      params_.signed_orthogonality());
     };
 

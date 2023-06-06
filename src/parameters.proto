@@ -68,7 +68,7 @@ message HybridSelectorParameters {
   optional bool signed_orthogonality = 6 [default = false];
 
   // thresholds for good and bad cut scores.
-  optional double score_threshold = 7 [default = 0.0];
+  optional double score_threshold = 7 [default = 0.000001];
 
   // priority of the selector.
   optional int32 priority = 8 [default = 8000];
