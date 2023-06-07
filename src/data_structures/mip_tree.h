@@ -154,6 +154,21 @@ class MipTree {
   // and all implied bounds from node `n` up to root node.
   DenseRow RetrieveUpperBounds(NodeIndex n, DenseRow root_upper_bounds) const;
 
+  // Number of closed (aka processed, visited) nodes so far. A node is closed if
+  // all work for that node has been finished. A closed node may have descendent
+  // nodes that are not yet closed (due to branching), and thus a closed node is
+  // still stored in the internal storage. If a closed node has no descendants
+  // (it is infeasible or pruned) it is *reclaimed* (completely removed from
+  // the internal storage). If all descendent nodes of the focal node have been
+  // reclaimed, the focal node is also reclaimed. Thus, the number of closed
+  // nodes is always strictly larger than the number of reclaimed nodes as long
+  // as the search is in progress. The two become equal when the search tree is
+  // fully explored.
+  // TODO(lpawel): Track other statistics like the number of added nodes,
+  // reclaimed nodes, pruned nodes, infeasible nodes, etc. Perhaps create a
+  // dedicated "stat"class for this (and for other components)?
+  int num_closed_nodes() const { return num_closed_nodes_; }
+
  private:
   // A helper function used in checks.
   bool NodeIsActive(NodeIndex n) const {
@@ -171,6 +186,15 @@ class MipTree {
 
   // The index to the head of free nodes' list.
   NodeIndex next_free_node_;
+
+  // The number of "closed" nodes. A node is closed if it has been visited and
+  // processed. In practice, it means that all work (e.g., LP relaxation, bound
+  // propagation, cut generation, heuristics) for a node has been finished, and
+  // the node turned out infeasible, prunded, or a branching decision has been
+  // made and two child branches have been added. Note, this is *not* the same
+  // as the number of nodes that have been "reclaimed" (to reclaim a node, it
+  // must be closed and all its descendent nodes must be reclaimed).
+  int num_closed_nodes_ = 0;
 };
 
 }  // namespace minimip
