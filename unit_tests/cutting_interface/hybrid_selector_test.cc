@@ -40,7 +40,7 @@ std::unique_ptr<Selector> CreateCutSelector(CutSelectorType type) {
       SelectorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
-            hybrid_selector_parameters: { signed_orthogonality: false })pb",
+            hybrid_selector_parameters: { unsigned_orthogonality: true })pb",
           &params));
       return std::make_unique<HybridSelector>(params);
     }
@@ -48,7 +48,7 @@ std::unique_ptr<Selector> CreateCutSelector(CutSelectorType type) {
       SelectorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
-            hybrid_selector_parameters: { signed_orthogonality: true })pb",
+            hybrid_selector_parameters: { unsigned_orthogonality: false })pb",
           &params));
       return std::make_unique<HybridSelector>(params);
     }
@@ -166,7 +166,17 @@ class MinimalCutSelectorTest
         cuts.push_back(cut2);
         cuts.push_back(cut3);
         break;
-      }  // TODO(Cgraczyk): add signed vs unsigned test.
+      }
+      case 9: {
+        // cut_1 is parallel to cut_2 with cos = -1
+        CutData cut1(CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1",
+                     false);
+        CutData cut2(CreateSparseRow({{1, -1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+                     false);
+        cuts.push_back(cut1);
+        cuts.push_back(cut2);
+        break;
+      }
       default:
         LOG(FATAL) << "Invalid Cutting Plane Setup: " << switch_variable_index;
     }
@@ -183,6 +193,10 @@ INSTANTIATE_TEST_SUITE_P(IdenticalCuts, MinimalCutSelectorTest,
 INSTANTIATE_TEST_SUITE_P(OrthogonalCuts, MinimalCutSelectorTest,
                          testing::Combine(testing::Values(0, 1),
                                           testing::Range(4, 8)));
+
+INSTANTIATE_TEST_SUITE_P(SignedOrthogonalCuts, MinimalCutSelectorTest,
+                         testing::Combine(testing::Values(0, 1),
+                                          testing::Range(9, 10)));
 
 TEST_P(MinimalCutSelectorTest, CutSelectorTest) {
   // Call the Create function to create a Solver object
@@ -225,16 +239,17 @@ TEST_P(MinimalCutSelectorTest, CutSelectorTest) {
     ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
     ASSERT_EQ(selected_cuts.value()[1].name(), "cut_1");
     ASSERT_EQ(selected_cuts.value()[2].name(), "cut_3");
+  } else if (std::get<1>(GetParam()) == 9) {
+    if (std::get<0>(GetParam()) == CutSelectorType::kHybridSelectorUnsigned) {
+      ASSERT_EQ(selected_cuts.value().size(), 1);
+      ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+    } else if (std::get<0>(GetParam()) ==
+               CutSelectorType::kHybridSelectorSigned) {
+      ASSERT_EQ(selected_cuts.value().size(), 2);
+      ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+      ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
+    }
   }
-
-  /*
-  if (std::get<0>(GetParam()) == CutSelectorType::kHybridSelectorUnsigned) {
-    //TODO(cgraczyk): add signed test.
-  } else if (std::get<0>(GetParam()) ==
-             CutSelectorType::kHybridSelectorSigned) {
-    //TODO(cgraczyk): add signed test.
-  }
-  */
 }
 
 }  // namespace

@@ -65,7 +65,7 @@ message HybridSelectorParameters {
   optional double minimum_orthogonality_at_root = 5 [default = 0.9];
 
   // toggle whether to use signed or unsigned orthogonality for filtering cuts.
-  optional bool signed_orthogonality = 6 [default = false];
+  optional bool unsigned_orthogonality = 6 [default = false];
 
   // thresholds for good and bad cut scores.
   optional double score_threshold = 7 [default = 0.000001];

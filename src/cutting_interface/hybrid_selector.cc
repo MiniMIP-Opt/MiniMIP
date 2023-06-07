@@ -43,9 +43,9 @@ void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
   cut.SetScore(efficacy + integer_support + objective_parallelism);
 }
 
-bool compute_row_parallelism(const CutData& cut_reference, const CutData& cut,
-                             double minimum_orthogonality,
-                             bool signed_orthogonality = false) {
+bool check_orthogonality(const CutData& cut_reference, const CutData& cut,
+                         double minimum_orthogonality,
+                         bool unsigned_orthogonality = false) {
   if (cut.is_forced()) {
     return false;
   }
@@ -63,8 +63,10 @@ bool compute_row_parallelism(const CutData& cut_reference, const CutData& cut,
       cut_reference.row().DotProduct(cut.row()) /
       (std::sqrt(squared_norm_reference) * std::sqrt(squared_norm_cut));
 
-  return signed_orthogonality ? std::abs(cos_angle) > 1 - minimum_orthogonality
-                              : cos_angle > 1 - minimum_orthogonality;
+  // return false if rows are insufficiently orthogonal.
+  return unsigned_orthogonality
+             ? std::abs(cos_angle) > 1 - minimum_orthogonality
+             : cos_angle > 1 - minimum_orthogonality;
 }
 
 }  // namespace
@@ -102,9 +104,9 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
 
     // 3. filter the cuts
     auto predicate = [cut_reference, this](const CutData& cut) {
-      return compute_row_parallelism(cut_reference, cut,
-                                     params_.minimum_orthogonality(),
-                                     params_.signed_orthogonality());
+      return check_orthogonality(cut_reference, cut,
+                                 params_.minimum_orthogonality(),
+                                 params_.unsigned_orthogonality());
     };
 
     // Remove all elements that match the predicate
