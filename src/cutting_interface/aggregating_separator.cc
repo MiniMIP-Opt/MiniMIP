@@ -419,7 +419,7 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
       // TODO(cgraczy): add a unique identifier to the name for multiple rounds.
       std::string cutname = rounder->GetName() + std::to_string(total_cuts++);
 
-      double objective_parallelism =
+      const double objective_parallelism =
           row.DotProduct(objective) /
           std::sqrt(row.DotProduct(row) * objective.DotProduct(objective));
 
