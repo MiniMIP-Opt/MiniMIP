@@ -425,9 +425,9 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
 
       const bool is_forced = (row.entries().size() == 1);
 
-      int number_of_non_zeros = row.entries().size();
-      int number_of_integer_variables = row.entries().size();
-      double efficacy =
+      const int number_of_non_zeros = row.entries().size();
+      const int number_of_integer_variables = row.entries().size();
+      const double efficacy =
           (row.DotProduct(lp_optimum) - rounded_row->right_hand_side) /
           sqrt(row.DotProduct(row));
 
