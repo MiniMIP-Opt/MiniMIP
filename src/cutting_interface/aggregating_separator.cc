@@ -396,7 +396,7 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
     }
 
     const SparseRow& objective = solver.mip_data().objective();
-    static int total_cuts = 0;
+    int total_cuts = 0;
 
     for (const std::unique_ptr<Rounder>& rounder : rounders_) {
       std::optional<AggregatedRow> rounded_row =
