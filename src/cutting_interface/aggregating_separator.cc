@@ -423,10 +423,7 @@ TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
           row.DotProduct(objective) /
           std::sqrt(row.DotProduct(row) * objective.DotProduct(objective));
 
-      bool is_forced = false;
-      if (row.entries().size() == 1) {
-        is_forced = true;
-      }
+      const bool is_forced = (row.entries().size() == 1);
 
       int number_of_non_zeros = row.entries().size();
       int number_of_integer_variables = row.entries().size();
