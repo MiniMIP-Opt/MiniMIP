@@ -43,9 +43,9 @@ double ComputeCutScore(const HybridSelectorParameters& params, CutData& cut) {
   return efficacy + integer_support + objective_parallelism;
 }
 
-bool CheckOrthogonality(const CutData& cut_reference, const CutData& cut,
-                        const double minimum_orthogonality,
-                        const bool signed_orthogonality = false) {
+bool TwoCutsAreOrthogonal(const CutData& cut_reference, const CutData& cut,
+                          const double minimum_orthogonality,
+                          const bool signed_orthogonality = false) {
   if (cut.is_forced()) {
     return false;
   }
@@ -103,9 +103,9 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
 
     // 3. filter the cuts
     auto predicate = [cut_reference, this](const CutData& cut) {
-      return CheckOrthogonality(cut_reference, cut,
-                                params_.minimum_orthogonality(),
-                                params_.signed_orthogonality());
+      return TwoCutsAreOrthogonal(cut_reference, cut,
+                                  params_.minimum_orthogonality(),
+                                  params_.signed_orthogonality());
     };
 
     // Remove all elements that match the predicate
