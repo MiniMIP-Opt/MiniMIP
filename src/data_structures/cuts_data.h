@@ -24,7 +24,7 @@
 namespace minimip {
 
 // ============================================================================
-// The CutData struct stores all information of a cutting plane d <= a^Tx <= b.
+// The CutData struct stores all information of a cutting plane a^Tx <= b.
 // ============================================================================
 class CutData {
  public:
@@ -52,13 +52,14 @@ class CutData {
     DCHECK(!name_.empty());
   }
 
-  // Setter methods for the changing data
+  // The efficacy is a measure of how much the cut improves the LP solution.
+  // It describes the length of orthogonal projection of the LP solution onto
+  // the cutting plane.
   void SetEfficacy(double efficacy) { efficacy_ = efficacy; }
-  void SetScore(double score) { score_ = score; }
-  void SetIndex(int index) { cut_index_ = index; }
-  void SetActive(bool is_active) { is_active_ = is_active; }
+  double efficacy() const { return efficacy_; }
 
-  // Getter methods for the changing data
+  // The score is a measure of preference that is set by the cut selector.
+  void SetScore(double score) { score_ = score; }
   double score() const {
     if (score_.has_value()) {
       return *score_;
@@ -66,6 +67,9 @@ class CutData {
     throw std::runtime_error("Score has not been set.");
   }
 
+  // The index is the position of the cut in the cut storage.
+  // It is set by the Cut Storage, after the cut has been added.
+  void SetIndex(int index) { cut_index_ = index; }
   int index() const {
     if (cut_index_.has_value()) {
       return *cut_index_;
@@ -73,19 +77,30 @@ class CutData {
     throw std::runtime_error("Index has not been set.");
   }
 
+  // The active flag is set by the cut selector. It is used to indicate whether
+  // the cut is active in the LP. This is useful to avoid adding the same or
+  // strictly dominated cuts multiple times.
+  void SetActive(bool is_active) { is_active_ = is_active; }
   bool is_active() const { return is_active_; }
 
-  double efficacy() const { return efficacy_; }
-
-  // Getter methods for the constant data
+  // The row is the coefficient vector a of the cutting plane a^Tx <= b.
   const SparseRow& row() const { return row_; }
+
+  // The right hand side is the constant b of the cutting plane a^Tx <= b.
   double right_hand_side() const { return right_hand_side_; }
+
+  // Important characteristics of a cutting plane.
   int number_of_non_zeros() const { return number_of_non_zeros_; }
   int number_of_integer_variables() const {
     return number_of_integer_variables_;
   }
   double objective_parallelism() const { return objective_parallelism_; }
+
+  // The cut name is set by the separator it originates from.
   const std::string& name() const { return name_; }
+
+  // If the cut will always be selected and activated. This is useful for single
+  // variable cuts, also called bound changes.
   bool is_forced() const { return is_forced_; }
 
  private:
@@ -108,7 +123,7 @@ class CutData {
   bool is_forced_;
 
   // If the cut is currently applied to the problem, is_active is true.
-  bool is_active_{false};
+  bool is_active_ = false;
 
   // The efficacy of the cut is the orthogonal projection of the LP optimum onto
   // the cutting plane.
