@@ -24,7 +24,7 @@ namespace minimip {
 
 namespace {
 
-void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
+double ComputeCutScore(const HybridSelectorParameters& params, CutData& cut) {
   double efficacy = (params.efficacy_weight() > 0)
                         ? params.efficacy_weight() * cut.efficacy()
                         : 0.0;
@@ -40,7 +40,7 @@ void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
           ? params.objective_parallelism_weight() * cut.objective_parallelism()
           : 0.0;
 
-  cut.SetScore(efficacy + integer_support + objective_parallelism);
+  return efficacy + integer_support + objective_parallelism;
 }
 
 bool check_orthogonality(const CutData& cut_reference, const CutData& cut,
@@ -74,7 +74,7 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     const Solver& solver, std::vector<CutData>& cuts) {
   // 1. compute the score for each cut
   for (CutData& cut : cuts) {
-    scoring_function(params_, cut);
+    cut.SetScore(ComputeCutScore(params_, cut));
   }
 
   // 2. select the best cut and filter the remaining cuts.
