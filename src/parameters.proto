@@ -55,31 +55,31 @@ message CutRunnerParameters {
 // and integer support.
 message HybridSelectorParameters {
 
-  // coefficients for the weighted sum of the scoring metrics.
+  // The coefficients for the weighted sum of the scoring metrics.
   optional double efficacy_weight = 1 [default = 1.0];
   optional double objective_parallelism_weight = 2 [default = 0.1];
   optional double integer_support_weight = 3 [default = 0.1];
 
-  // minimum orthogonality between cuts for a cut to enter the LP.
+  // The minimum orthogonality between cuts for a cut to enter the LP.
   optional double minimum_orthogonality = 4 [default = 0.9];
   optional double minimum_orthogonality_at_root = 5 [default = 0.9];
 
-  // toggle whether to use signed or unsigned orthogonality for filtering cuts.
-  optional bool unsigned_orthogonality = 6 [default = false];
+  // To toggle whether to use signed_orthogonality for filtering parallel cuts ( otherwise unsigned cosine angle is used to evaluate cut parallelism ).
+  optional bool signed_orthogonality = 6 [default = false];
 
-  // thresholds for good and bad cut scores.
+  // The thresholds for good and bad cut scores.
   optional double score_threshold = 7 [default = 0.000001];
 
-  // priority of the selector.
+  // The priority of the selector.
   optional int32 priority = 8 [default = 8000];
   optional int32 priority_at_root = 9 [default = 8000];
 
-  // maximum tree depth at which the selector is active, -1 means no limit.
+  // The maximum tree depth at which the selector is active, -1 means no limit.
   optional int64 maximum_tree_depth = 10 [default = -1];
 
 }
 
-message SelectorParameters {
+message CutSelectorParameters {
 
   // The maximum number of cuts this Selector should add per separation round. Zero value means
   // the Selector is turned off, -1 means no limit.
