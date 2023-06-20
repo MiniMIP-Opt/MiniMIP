@@ -45,7 +45,7 @@ void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
 
 bool check_orthogonality(const CutData& cut_reference, const CutData& cut,
                          const double minimum_orthogonality,
-                         const bool unsigned_orthogonality = false) {
+                         const bool signed_orthogonality = false) {
   if (cut.is_forced()) {
     return false;
   }
@@ -64,9 +64,8 @@ bool check_orthogonality(const CutData& cut_reference, const CutData& cut,
       (std::sqrt(squared_norm_reference) * std::sqrt(squared_norm_cut));
 
   // return false if rows are insufficiently orthogonal.
-  return unsigned_orthogonality
-             ? std::abs(cos_angle) > 1 - minimum_orthogonality
-             : cos_angle > 1 - minimum_orthogonality;
+  return signed_orthogonality ? cos_angle > 1 - minimum_orthogonality
+                              : std::abs(cos_angle) > 1 - minimum_orthogonality;
 }
 
 }  // namespace
@@ -106,7 +105,7 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     auto predicate = [cut_reference, this](const CutData& cut) {
       return check_orthogonality(cut_reference, cut,
                                  params_.minimum_orthogonality(),
-                                 params_.unsigned_orthogonality());
+                                 params_.signed_orthogonality());
     };
 
     // Remove all elements that match the predicate

@@ -188,5 +188,5 @@ message MiniMipParameters {
 
   repeated SeparatorParameters separators = 4;
 
-  repeated SelectorParameters selectors = 5;
+  repeated CutSelectorParameters selectors = 5;
 }
