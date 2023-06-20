@@ -63,7 +63,7 @@ bool TwoCutsAreOrthogonal(const CutData& cut_reference, const CutData& cut,
       cut_reference.row().DotProduct(cut.row()) /
       (std::sqrt(squared_norm_reference) * std::sqrt(squared_norm_cut));
 
-  // return false if rows are insufficiently orthogonal.
+  // Return false if rows are insufficiently orthogonal.
   return signed_orthogonality ? cos_angle > 1 - minimum_orthogonality
                               : std::abs(cos_angle) > 1 - minimum_orthogonality;
 }
@@ -72,16 +72,16 @@ bool TwoCutsAreOrthogonal(const CutData& cut_reference, const CutData& cut,
 
 absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     const Solver& solver, std::vector<CutData>& cuts) {
-  // 1. compute the score for each cut
+  // 1. Compute the score for each cut
   for (CutData& cut : cuts) {
     cut.SetScore(ComputeCutScore(params_, cut));
   }
 
-  // 2. select the best cut and filter the remaining cuts.
+  // 2. Select the best cut and filter the remaining cuts.
   std::vector<CutData> selected_cuts;
 
   while (!cuts.empty()) {
-    // 2.1. sort the cuts by score.
+    // 2.1. Sort the cuts by score.
     std::sort(cuts.begin(), cuts.end(),
               [](const CutData& cut1, const CutData& cut2) {
                 return cut1.score() > cut2.score();
@@ -94,25 +94,25 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
       break;
     }
 
-    // 2.2 add the current best cut to the selected cuts.
+    // 2.2 Add the current best cut to the selected cuts.
     selected_cuts.push_back(cut_reference);
 
     if (selected_cuts.size() == max_num_cuts_) {
       break;
     }
 
-    // 3. filter the cuts
+    // 3. Filter the cuts
     auto predicate = [cut_reference, this](const CutData& cut) {
       return TwoCutsAreOrthogonal(cut_reference, cut,
                                   params_.minimum_orthogonality(),
                                   params_.signed_orthogonality());
     };
 
-    // Remove all elements that match the predicate
+    // Remove all elements that match the predicate.
     cuts.erase(std::remove_if(cuts.begin() + 1, cuts.end(), predicate),
                cuts.end());
 
-    // Remove the first element (since we've already processed it)
+    // Remove the first element (since we've already processed it).
     cuts.erase(cuts.begin());
   }
 
