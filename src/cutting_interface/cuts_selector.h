@@ -34,9 +34,9 @@ class Solver;
 //      selector should be implemented here, allowing the user to turn off all
 //      cut selection strategies for testing or analytics.
 
-class Selector {
+class CutSelector {
  public:
-  virtual ~Selector() = default;
+  virtual ~CutSelector() = default;
 
   // Select up to `max_num_cuts` cutting planes.
   // Returns the selected cuts given the current state.

@@ -44,22 +44,22 @@ void scoring_function(const HybridSelectorParameters& params, CutData& cut) {
 }
 
 bool check_orthogonality(const CutData& cut_reference, const CutData& cut,
-                         double minimum_orthogonality,
-                         bool unsigned_orthogonality = false) {
+                         const double minimum_orthogonality,
+                         const bool unsigned_orthogonality = false) {
   if (cut.is_forced()) {
     return false;
   }
   std::vector<double> reference_row_values = cut_reference.row().values();
   std::vector<double> cut_row_values = cut.row().values();
 
-  double squared_norm_reference = std::inner_product(
+  const double squared_norm_reference = std::inner_product(
       reference_row_values.begin(), reference_row_values.end(),
       reference_row_values.begin(), 0.0);
-  double squared_norm_cut =
+  const double squared_norm_cut =
       std::inner_product(cut_row_values.begin(), cut_row_values.end(),
                          cut_row_values.begin(), 0.0);
 
-  double cos_angle =
+  const double cos_angle =
       cut_reference.row().DotProduct(cut.row()) /
       (std::sqrt(squared_norm_reference) * std::sqrt(squared_norm_cut));
 
