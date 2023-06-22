@@ -40,7 +40,7 @@ std::unique_ptr<CutSelector> CreateCutSelector(CutSelectorType type) {
       CutSelectorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
-            hybrid_selector_parameters: { unsigned_orthogonality: true })pb",
+            hybrid_selector_parameters: { signed_orthogonality: true })pb",
           &params));
       return std::make_unique<HybridSelector>(params);
     }
@@ -48,7 +48,7 @@ std::unique_ptr<CutSelector> CreateCutSelector(CutSelectorType type) {
       CutSelectorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
-            hybrid_selector_parameters: { unsigned_orthogonality: false })pb",
+            hybrid_selector_parameters: { signed_orthogonality: false })pb",
           &params));
       return std::make_unique<HybridSelector>(params);
     }
