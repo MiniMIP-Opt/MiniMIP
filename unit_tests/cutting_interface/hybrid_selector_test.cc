@@ -208,20 +208,20 @@ TEST_P(MinimalCutSelectorTest, SelectInvertedCutIfSignedOrthogonalityIsUsed) {
                        Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
   std::vector<CutData> cuts = {
       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1", false},
-      CutData{CreateSparseRow({{0, -1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
+      CutData{CreateSparseRow({{1, -1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
               false}};
 
   absl::StatusOr<std::vector<CutData>> selected_cuts =
       selector_->SelectCuttingPlanes(*solver, cuts);
 
   if (std::get<0>(GetParam()) == CutSelectorType::kHybridSelectorUnsigned) {
-    ASSERT_EQ(selected_cuts.value().size(), 1);
-    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-  } else if (std::get<0>(GetParam()) ==
-             CutSelectorType::kHybridSelectorSigned) {
     ASSERT_EQ(selected_cuts.value().size(), 2);
     ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
     ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
+  } else if (std::get<0>(GetParam()) ==
+             CutSelectorType::kHybridSelectorSigned) {
+    ASSERT_EQ(selected_cuts.value().size(), 1);
+    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
   }
 }
 
