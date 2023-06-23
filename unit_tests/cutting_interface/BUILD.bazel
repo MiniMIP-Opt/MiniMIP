@@ -30,3 +30,17 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_test(
+    name = "hybrid_selector_test",
+    size = "small",
+    srcs = ["hybrid_selector_test.cc"],
+    deps = [
+        "//src/cutting_interface:hybrid_selector",
+        "//src/cutting_interface:aggregating_separator",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
+    ],
+)

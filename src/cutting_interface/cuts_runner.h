@@ -40,13 +40,13 @@ class CuttingInterface {
     separators_.push_back(std::move(separator));
   }
 
-  void AddSelector(std::unique_ptr<Selector> selector) {
+  void AddSelector(std::unique_ptr<CutSelector> selector) {
     selector_ = std::move(selector);
   }
 
  protected:
   std::vector<std::unique_ptr<Separator>> separators_;
-  std::unique_ptr<Selector> selector_;
+  std::unique_ptr<CutSelector> selector_;
 };
 
 class CutRunner : CuttingInterface {

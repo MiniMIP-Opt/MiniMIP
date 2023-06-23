@@ -34,15 +34,16 @@ class Solver;
 //      selector should be implemented here, allowing the user to turn off all
 //      cut selection strategies for testing or analytics.
 
-class Selector {
+class CutSelector {
  public:
-  virtual ~Selector() = default;
+  virtual ~CutSelector() = default;
 
-  // Select up to `max_num_cuts` cutting planes (TODO: add protobuffer param).
-  // Returns the number of selected cuts given the current state.
+  // Select up to `max_num_cuts` cutting planes.
+  // Returns the selected cuts given the current state.
   virtual absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
       const Solver& solver, std::vector<CutData>& cuts) = 0;
 };
 
 }  // namespace minimip
+
 #endif  // SRC_CUTTING_INTERFACE_CUTS_SELECTOR_H_

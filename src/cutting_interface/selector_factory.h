@@ -13,16 +13,16 @@
 // limitations under the License.
 
 #include "src/cutting_interface/cuts_selector.h"
-#include "src/parameters.pb.h"
+#include "src/cutting_interface/hybrid_selector.h"
 
 namespace minimip {
 
-inline absl::StatusOr<std::unique_ptr<Selector>> ConfigureSelectorFromProto(
-    const SelectorParameters& selector_parameters) {
-  if (selector_parameters.has_some_cut_selector_parameters()) {
-    // Here we would create and return the cut runner.
+inline absl::StatusOr<std::unique_ptr<CutSelector>> ConfigureSelectorFromProto(
+    const CutSelectorParameters& cut_selector_parameters) {
+  if (cut_selector_parameters.has_hybrid_selector_parameters()) {
+    return std::make_unique<HybridSelector>(cut_selector_parameters);
   }
-  return absl::InvalidArgumentError("No separator-specific parameters set.");
+  return absl::InvalidArgumentError("No cut-selector-specific parameters set.");
 }
 
 }  // namespace minimip

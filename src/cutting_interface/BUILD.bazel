@@ -76,9 +76,21 @@ cc_library(
     name = "selector_factory",
     hdrs = ["selector_factory.h"],
     deps = [
-        "//src/cutting_interface:cuts_selector",
+        "//src/cutting_interface:hybrid_selector",
         "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ]
+)
+
+cc_library(
+    name = "hybrid_selector",
+    srcs = ["hybrid_selector.cc"],
+    hdrs = ["hybrid_selector.h"],
+    deps = [
+        "//src:solver",
+        "//src/cutting_interface:cuts_selector",
+        "//src/lp_interface:lpi",
+        "@com_google_ortools//ortools/base:status_macros",
+    ],
 )

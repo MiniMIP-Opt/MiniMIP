@@ -102,6 +102,7 @@ class MipData {
   }
 
  private:
+  // TODO(lpawel): Clean up and comment all fields.
   std::string problem_name_;
   bool is_maximization_ = false;
   double objective_offset_ = 0.0;
