@@ -23,35 +23,16 @@
 
 namespace minimip {
 
+class CutRegistry;  // Forward declaration
+
 // ============================================================================
 // The CutData struct stores all information of a cutting plane a^Tx <= b.
 // ============================================================================
 class CutData {
- public:
-  // Constructor that takes a CutData object
-  explicit CutData(SparseRow row, double right_hand_side,
-                   int number_of_non_zeros, int number_of_integer_variables,
-                   double objective_parallelism, double efficacy,
-                   std::string name, bool is_forced = false)
-      : row_(std::move(row)),
-        right_hand_side_(right_hand_side),
-        number_of_non_zeros_(number_of_non_zeros),
-        number_of_integer_variables_(number_of_integer_variables),
-        objective_parallelism_(objective_parallelism),
-        name_(std::move(name)),
-        is_forced_(is_forced),
-        efficacy_(efficacy) {
-    // Check the validity of the parameters
-    DCHECK(row_.IsClean());
-    DCHECK_GT(right_hand_side_, -std::numeric_limits<double>::infinity());
-    DCHECK_GT(number_of_non_zeros_, 0);
-    DCHECK_GE(number_of_integer_variables_, 0);
-    DCHECK_GE(objective_parallelism_, -1.0);
-    DCHECK_LE(objective_parallelism_, 1.0);
-    DCHECK_GE(efficacy_, 0.0);
-    DCHECK(!name_.empty());
-  }
+  // Allow CutRegistry to create CutData objects
+  friend class CutRegistry;
 
+ public:
   // The efficacy is a measure of how much the cut improves the LP solution.
   // It describes the length of orthogonal projection of the LP solution onto
   // the cutting plane.
@@ -67,8 +48,8 @@ class CutData {
     throw std::runtime_error("Score has not been set.");
   }
 
-  // The index is the position of the cut in the cut storage.
-  // It is set by the Cut Storage, after the cut has been added.
+  // The index is the position of the cut in the cut registry.
+  // It is set by the Cut registry, after the cut has been added.
   void SetIndex(int index) { cut_index_ = index; }
   int index() const {
     if (cut_index_.has_value()) {
@@ -104,6 +85,29 @@ class CutData {
   bool is_forced() const { return is_forced_; }
 
  private:
+  // Constructor that takes a CutData object
+  explicit CutData(SparseRow row, double right_hand_side,
+                   int number_of_non_zeros, int number_of_integer_variables,
+                   double objective_parallelism, double efficacy,
+                   std::string name, bool is_forced = false)
+      : row_(std::move(row)),
+        right_hand_side_(right_hand_side),
+        number_of_non_zeros_(number_of_non_zeros),
+        number_of_integer_variables_(number_of_integer_variables),
+        objective_parallelism_(objective_parallelism),
+        name_(std::move(name)),
+        is_forced_(is_forced),
+        efficacy_(efficacy) {
+    // Check the validity of the parameters
+    DCHECK(row_.IsClean());
+    DCHECK_GT(right_hand_side_, -std::numeric_limits<double>::infinity());
+    DCHECK_GT(number_of_non_zeros_, 0);
+    DCHECK_GE(number_of_integer_variables_, 0);
+    DCHECK_GE(objective_parallelism_, -1.0);
+    DCHECK_LE(objective_parallelism_, 1.0);
+    DCHECK_GE(efficacy_, 0.0);
+    DCHECK(!name_.empty());
+  }
   // The coefficients of the cutting plane are stored as a SparseRow
   SparseRow row_;
   double right_hand_side_;
@@ -129,9 +133,9 @@ class CutData {
   // the cutting plane.
   double efficacy_;
 
-  // The index of the cut in the storage, for easy reference.
-  // The index is set to the current number of cuts in storage once the cut is
-  // added to the storage (i.e. cut_index += cuts().size()).
+  // The index of the cut in the registry, for easy reference.
+  // The index is set to the current number of cuts in registry once the cut is
+  // added to the registry (i.e. cut_index += cuts().size()).
   std::optional<int> cut_index_;
 
   // The original score is the score the cut was given when first selected.
@@ -139,51 +143,61 @@ class CutData {
 };
 
 // ============================================================================
-// CutStorage contains the generated cutting planes and all relevant meta-data
-// for cutting plane management(e.g., it tracks which cuts are currently
-// active).
+// CutRegistry initializes and contains the generated cutting planes and all
+// relevant meta-data for cutting plane management (e.g., it tracks which cuts
+// are currently active).
 //
 // NOTE: As of 2022/11/09, MiniMip uses only globally valid cuts
 // (though, a cutting plane might have been generated in the inner nodes).
 // ============================================================================
 
-class CutStorage {
+class CutRegistry {
  public:
   // ==========================================================================
   // Constructors
   // ==========================================================================
 
-  CutStorage();
+  CutRegistry();
 
-  // Initialize CutStorage from initial separation round.
-  CutStorage(std::vector<CutData> cuts, std::vector<int> cut_indices);
+  // Initialize CutRegistry from initial separation round.
+  CutRegistry(std::vector<CutData> cuts, std::vector<int> cut_indices);
 
-  // CutStorage is not copyable to make sure a copy will not be
+  // CutRegistry is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
-  // CutStorage is (no-throw) movable.
-  CutStorage(CutStorage&&) noexcept = default;
-  CutStorage& operator=(CutStorage&&) noexcept = default;
+  // CutRegistry is (no-throw) movable.
+  CutRegistry(CutRegistry&&) noexcept = default;
+  CutRegistry& operator=(CutRegistry&&) noexcept = default;
 
-  // Use this to initialize by deep copy from another cut storage.
+  // Use this to initialize by deep copy from another cut registry.
   // Under-the-hood we just use a private copy / move constructor and
   // assignment operator.
-  void PopulateFromCutStorage(CutStorage cut_storage);
+  void PopulateFromCutRegistry(CutRegistry cut_registry);
 
   // ==========================================================================
-  // Methods for managing the cuts in the cut storage.
+  // Methods for managing the cuts in the cut registry.
   // ==========================================================================
 
-  // Add a cut to storage.
-  int AddCut(CutData&& cut_data);
+  CutData CreateCut(const MipData& mip_data, const SparseRow& lp_optimum,
+                    SparseRow row, double right_hand_side, std::string name,
+                    bool is_forced = false) const;
 
-  // Activate stored cut.
+  // Activate cutting plane with given index in the registry
   void ActivateCut(int cut_index);
 
-  // Remove a single cut from storage.
+  // Remove a single cut from registry.
   void RemoveCut(const int& cut_index);
 
   // Getter for individual cuts.
   const CutData& GetCut(const int& cut_index) const;
+
+  double ComputeEfficacy(const SparseRow& row, double right_hand_side,
+                         const SparseRow& lp_optimum) const {
+    return (row.DotProduct(lp_optimum) - right_hand_side) /
+           sqrt(row.DotProduct(row));
+  }
+
+  // Given a new LP optimum, update the efficacy of all cuts before reselection.
+  void UpdateCutEfficacy(const SparseRow& lp_optimum);
 
   // Getter for all cuts.
   const std::vector<CutData>& cuts() const { return cuts_; }
@@ -191,10 +205,13 @@ class CutStorage {
   // Getter for active cut indices.
   const std::vector<int>& active_cuts() const { return active_cut_indices_; }
 
-  // Getter for total number of cuts added to the storage while solving.
+  // Getter for total number of cuts added to the registry while solving.
   const int& total_number_of_cuts_found() const {
     return total_number_of_cuts_found_;
   }
+
+  // Add a cut to registry and return its index.
+  int AddCut(CutData&& cut_data);
 
  private:
   std::vector<CutData> cuts_;

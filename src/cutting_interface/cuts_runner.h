@@ -34,7 +34,7 @@ class CuttingInterface {
 
   // TODO: add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutStorage& mutable_cut_storage) = 0;
+      const Solver& solver, CutRegistry& mutable_cut_registry) = 0;
 
   void AddSeparator(std::unique_ptr<Separator> separator) {
     separators_.push_back(std::move(separator));
@@ -54,7 +54,7 @@ class CutRunner : CuttingInterface {
   virtual ~CutRunner() = default;
 
   virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutStorage& mutable_cut_storage) final;
+      const Solver& solver, CutRegistry& mutable_cut_registry) final;
 };
 
 }  // namespace minimip

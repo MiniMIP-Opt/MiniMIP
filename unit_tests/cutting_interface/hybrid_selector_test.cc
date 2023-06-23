@@ -72,13 +72,21 @@ INSTANTIATE_TEST_SUITE_P(
     testing::Values(CutSelectorType::kHybridSelectorUnsigned,
                     CutSelectorType::kHybridSelectorSigned));
 
+// TODO(cgraczy): Redo tests with actual small scale MIP instances to ensure cut
+// creation.
 TEST_P(MinimalCutSelectorTest, SelectsFirstCutIfAllAreIdentical) {
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
                        Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+
+  // Dummy data for MipData and lp_optimum
+  MipData mip_data;
+  SparseRow lp_optimum = CreateSparseRow({{1, 2.0}});
+
   std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1", false},
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
-              false}};
+      solver->cut_registry().CreateCut(
+          mip_data, lp_optimum, CreateSparseRow({{1, 1.0}}), 1.0, "cut_1"),
+      solver->cut_registry().CreateCut(
+          mip_data, lp_optimum, CreateSparseRow({{1, 1.0}}), 1.0, "cut_2")};
 
   absl::StatusOr<std::vector<CutData>> selected_cuts =
       selector_->SelectCuttingPlanes(*solver, cuts);
