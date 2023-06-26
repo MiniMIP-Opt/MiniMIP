@@ -5,8 +5,8 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
-    name = "cuts_separator",
-    hdrs = ["cuts_separator.h"],
+    name = "cuts_generator",
+    hdrs = ["cuts_generator.h"],
     deps = [
         "//src:parameters_cc_proto",
         "//src/data_structures:cuts_data",
@@ -16,23 +16,23 @@ cc_library(
 )
 
 cc_library(
-    name = "separator_factory",
-    hdrs = ["separator_factory.h"],
+    name = "generator_factory",
+    hdrs = ["generator_factory.h"],
     deps = [
         "//src:parameters_cc_proto",
-        "//src/cutting_interface:aggregating_separator",
+        "//src/cutting_interface:aggregating_generator",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ]
 )
 
 cc_library(
-    name = "aggregating_separator",
-    srcs = ["aggregating_separator.cc"],
-    hdrs = ["aggregating_separator.h"],
+    name = "aggregating_generator",
+    srcs = ["aggregating_generator.cc"],
+    hdrs = ["aggregating_generator.h"],
     deps = [
         "//src:solver",
-        "//src/cutting_interface:cuts_separator",
+        "//src/cutting_interface:cuts_generator",
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_macros",
     ],
@@ -44,7 +44,7 @@ cc_library(
     hdrs = ["cuts_runner.h"],
     deps = [
         ":cuts_selector",
-        ":cuts_separator",
+        ":cuts_generator",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],

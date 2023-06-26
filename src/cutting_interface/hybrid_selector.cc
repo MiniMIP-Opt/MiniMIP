@@ -16,8 +16,8 @@
 
 #include <limits>
 
+#include "cuts_generator.h"
 #include "cuts_selector.h"
-#include "cuts_separator.h"
 #include "src/solver.h"
 
 namespace minimip {

@@ -19,8 +19,8 @@
 #include "absl/status/statusor.h"
 #include "ortools/base/logging.h"
 #include "ortools/base/status_macros.h"
+#include "src/cutting_interface/cuts_generator.h"
 #include "src/cutting_interface/cuts_selector.h"
-#include "src/cutting_interface/cuts_separator.h"
 
 namespace minimip {
 
@@ -36,8 +36,8 @@ class CuttingInterface {
   virtual absl::Status SeparateCurrentLPSolution(
       const Solver& solver, CutStorage& mutable_cut_storage) = 0;
 
-  void AddSeparator(std::unique_ptr<Separator> separator) {
-    separators_.push_back(std::move(separator));
+  void AddGenerator(std::unique_ptr<CutGenerator> generator) {
+    generators_.push_back(std::move(generator));
   }
 
   void AddSelector(std::unique_ptr<CutSelector> selector) {
@@ -45,7 +45,7 @@ class CuttingInterface {
   }
 
  protected:
-  std::vector<std::unique_ptr<Separator>> separators_;
+  std::vector<std::unique_ptr<CutGenerator>> generators_;
   std::unique_ptr<CutSelector> selector_;
 };
 
