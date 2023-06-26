@@ -19,11 +19,11 @@ cc_test(
 )
 
 cc_test(
-    name = "aggregating_separator_test",
+    name = "aggregating_generator_test",
     size = "small",
-    srcs = ["aggregating_separator_test.cc"],
+    srcs = ["aggregating_generator_test.cc"],
     deps = [
-        "//src/cutting_interface:aggregating_separator",
+        "//src/cutting_interface:aggregating_generator",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",

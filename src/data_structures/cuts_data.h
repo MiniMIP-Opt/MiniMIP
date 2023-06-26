@@ -77,7 +77,7 @@ class CutData {
   }
   double objective_parallelism() const { return objective_parallelism_; }
 
-  // The cut name is set by the separator it originates from.
+  // The cut name is set by the generator it originates from.
   const std::string& name() const { return name_; }
 
   // If the cut will always be selected and activated. This is useful for single
@@ -119,11 +119,11 @@ class CutData {
   // The relative parallelism to the objective function.
   double objective_parallelism_;
 
-  // The cut name is set by the separator it originates from.
+  // The cut name is set by the generator it originates from.
   std::string name_;
 
   // If the cut will always be selected and activated. This is necessary for
-  // cut selection (e.g., bound changes returned from separators).
+  // cut selection (e.g., bound changes returned from generators).
   bool is_forced_;
 
   // If the cut is currently applied to the problem, is_active is true.

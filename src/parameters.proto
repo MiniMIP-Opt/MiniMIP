@@ -16,24 +16,24 @@ syntax = "proto2";
 
 package minimip;
 
-// This separator extracts rows from the optimal tableau and rounds the resulting coefficients
+// This generator extracts rows from the optimal tableau and rounds the resulting coefficients
 // according to different formulas.
 // For more information, see Achterberg: Constraint Integer Programming (2006), ch 8.3-8.4.
-message TableauRoundingSeparatorParameters {
+message TableauRoundingGeneratorParameters {
 
   // Toggle which rounding procedures to apply to the optimal tableau row. At least one must be used.
   optional bool use_mixed_integer_rounding = 1 [default = true];
   optional bool use_strong_cg_rounding = 2 [default = true];
 }
 
-message SeparatorParameters {
+message GeneratorParameters {
 
-  // The maximum number of cuts this Separator should add per separation round. Zero value means
-  // the Separator is turned off.
+  // The maximum number of cuts this CutGenerator should add per separation round. Zero value means
+  // the CutGenerator is turned off.
   optional int32 max_num_cuts = 1 [default = 100];
 
-  oneof separator_specific {
-    TableauRoundingSeparatorParameters tableau_rounding_separator_parameters = 2;
+  oneof generator_specific {
+    TableauRoundingGeneratorParameters tableau_rounding_generator_parameters = 2;
   }
 
 }
@@ -183,7 +183,7 @@ message MiniMipParameters {
 
   optional CutRunnerParameters cut_runner = 3;
 
-  repeated SeparatorParameters separators = 4;
+  repeated GeneratorParameters generators = 4;
 
   repeated CutSelectorParameters selectors = 5;
 }

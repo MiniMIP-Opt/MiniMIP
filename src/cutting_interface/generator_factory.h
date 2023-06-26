@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cutting_interface/aggregating_separator.h"
-#include "src/cutting_interface/cuts_separator.h"
+#include "src/cutting_interface/aggregating_generator.h"
+#include "src/cutting_interface/cuts_generator.h"
 
 namespace minimip {
 
-inline absl::StatusOr<std::unique_ptr<Separator>> ConfigureSeparatorFromProto(
-    const SeparatorParameters& separator_parameters) {
-  if (separator_parameters.has_tableau_rounding_separator_parameters()) {
-    return std::make_unique<TableauRoundingSeparator>(separator_parameters);
+inline absl::StatusOr<std::unique_ptr<CutGenerator>>
+ConfigureGeneratorFromProto(const GeneratorParameters& generator_parameters) {
+  if (generator_parameters.has_tableau_rounding_generator_parameters()) {
+    return std::make_unique<TableauRoundingGenerator>(generator_parameters);
   }
-  return absl::InvalidArgumentError("No separator-specific parameters set.");
+  return absl::InvalidArgumentError("No generator-specific parameters set.");
 }
 
 }  // namespace minimip
