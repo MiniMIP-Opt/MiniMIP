@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_CUTTING_INTERFACE_CUTS_SEPARATOR_H_
-#define SRC_CUTTING_INTERFACE_CUTS_SEPARATOR_H_
+#ifndef SRC_CUTTING_INTERFACE_CUTS_GENERATOR_H_
+#define SRC_CUTTING_INTERFACE_CUTS_GENERATOR_H_
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -23,12 +23,12 @@
 namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
-// dependency between the solver and the separator.
+// dependency between the solver and the generator.
 class Solver;
 
-class Separator {
+class CutGenerator {
  public:
-  virtual ~Separator() = default;
+  virtual ~CutGenerator() = default;
 
   // Generate up to `max_num_cuts` cutting planes. Returns an empty vector if no
   // cuts could be generated given the current state. If called multiple times,
@@ -39,4 +39,4 @@ class Separator {
 
 }  // namespace minimip
 
-#endif  // SRC_CUTTING_INTERFACE_CUTS_SEPARATOR_H_
+#endif  // SRC_CUTTING_INTERFACE_CUTS_GENERATOR_H_

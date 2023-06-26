@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cutting_interface/aggregating_separator.h"
+#include "src/cutting_interface/aggregating_generator.h"
 
 #include <algorithm>
 
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "src/cutting_interface/cuts_separator.h"
+#include "src/cutting_interface/cuts_generator.h"
 #include "src/parameters.pb.h"
 #include "src/solver.h"
 #include "unit_tests/utils.h"
@@ -34,27 +34,27 @@ using testing::Not;
 
 enum class CutGeneratorType { kGomoryMixedInteger, kGomoryStrongCG };
 
-std::unique_ptr<Separator> CreateCutGenerator(CutGeneratorType type) {
+std::unique_ptr<CutGenerator> CreateCutGenerator(CutGeneratorType type) {
   switch (type) {
     case CutGeneratorType::kGomoryMixedInteger: {
-      SeparatorParameters params;
+      GeneratorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
-            tableau_rounding_separator_parameters: {
+            tableau_rounding_generator_parameters: {
               use_mixed_integer_rounding: true
             })pb",
           &params));
-      return std::make_unique<TableauRoundingSeparator>(params);
+      return std::make_unique<TableauRoundingGenerator>(params);
     }
     case CutGeneratorType::kGomoryStrongCG: {
-      SeparatorParameters params;
+      GeneratorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
-            tableau_rounding_separator_parameters: {
+            tableau_rounding_generator_parameters: {
               use_strong_cg_rounding: true
             })pb",
           &params));
-      return std::make_unique<TableauRoundingSeparator>(params);
+      return std::make_unique<TableauRoundingGenerator>(params);
     }
   }
 }
@@ -268,7 +268,7 @@ class SmallModelSmokeTest
         });
   }
 
-  std::unique_ptr<Separator> generator_;
+  std::unique_ptr<CutGenerator> generator_;
   std::unique_ptr<Solver> solver_;
   SparseRow optimum_;
 };
@@ -313,7 +313,7 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
 
   // The cutting plane algorithm is complete when using Gomory cuts, so we
   // expect that the MIP is solved. Note that this is not guaranteed for all
-  // separator families.
+  // generator families.
   ASSERT_OK_AND_ASSIGN(bool is_mip_feasible, SolutionIsMipFeasible());
   ASSERT_TRUE(is_mip_feasible);
 }

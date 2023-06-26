@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cutting_interface/aggregating_separator.h"
+#include "src/cutting_interface/aggregating_generator.h"
 
 #include <limits>
 
+#include "cuts_generator.h"
 #include "cuts_selector.h"
-#include "cuts_separator.h"
 #include "src/solver.h"
 
 namespace minimip {
@@ -326,14 +326,15 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
 }
 
 absl::StatusOr<std::vector<CutData>>
-TableauRoundingSeparator::GenerateCuttingPlanes(const Solver& solver) {
+TableauRoundingGenerator::GenerateCuttingPlanes(const Solver& solver) {
   const int max_num_cuts = params_.max_num_cuts();
   if (!solver.lpi()->IsSolved()) {
     return absl::FailedPreconditionError(
-        "Generator called without solving LP.");
+        "CutGenerator called without solving LP.");
   }
   if (!solver.lpi()->IsOptimal()) {
-    return absl::FailedPreconditionError("Generator called on non-optimal LP.");
+    return absl::FailedPreconditionError(
+        "CutGenerator called on non-optimal LP.");
   }
 
   // Extract data from the LP solver.

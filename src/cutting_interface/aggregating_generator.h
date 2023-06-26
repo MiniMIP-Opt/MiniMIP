@@ -19,7 +19,7 @@
 #include <optional>
 
 #include "ortools/base/status_macros.h"
-#include "src/cutting_interface/cuts_separator.h"
+#include "src/cutting_interface/cuts_generator.h"
 #include "src/solver.h"
 
 // The cut generators in this file creates cutting planes by rounding row
@@ -116,16 +116,16 @@ class StrongCGRounder : public Rounder {
   std::string GetName() const override { return "SCG"; }
 };
 
-class TableauRoundingSeparator : public Separator {
+class TableauRoundingGenerator : public CutGenerator {
  public:
-  explicit TableauRoundingSeparator(SeparatorParameters params)
+  explicit TableauRoundingGenerator(GeneratorParameters params)
       : params_(std::move(params)) {
-    DCHECK(params_.has_tableau_rounding_separator_parameters());
-    if (params_.tableau_rounding_separator_parameters()
+    DCHECK(params_.has_tableau_rounding_generator_parameters());
+    if (params_.tableau_rounding_generator_parameters()
             .use_mixed_integer_rounding()) {
       rounders_.push_back(std::make_unique<MIRRounder>());
     }
-    if (params_.tableau_rounding_separator_parameters()
+    if (params_.tableau_rounding_generator_parameters()
             .use_strong_cg_rounding()) {
       rounders_.push_back(std::make_unique<StrongCGRounder>());
     }
@@ -136,7 +136,7 @@ class TableauRoundingSeparator : public Separator {
 
  private:
   std::vector<std::unique_ptr<Rounder>> rounders_;
-  const SeparatorParameters params_;
+  const GeneratorParameters params_;
 };
 
 }  // namespace minimip
