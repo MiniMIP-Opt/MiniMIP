@@ -159,9 +159,6 @@ class CutRegistry {
 
   CutRegistry();
 
-  // Initialize CutRegistry from initial separation round.
-  CutRegistry(std::vector<CutData> cuts, std::vector<int> cut_indices);
-
   // CutRegistry is not copyable to make sure a copy will not be
   // triggered by accident (copy constructor and assign operator are private).
   // CutRegistry is (no-throw) movable.
@@ -215,7 +212,7 @@ class CutRegistry {
 
  private:
   std::vector<CutData> cuts_;
-  std::vector<int> active_cut_indices_;
+  std::vector<std::reference_wrapper<int>> active_cut_indices_;
   int total_number_of_cuts_found_;
 };
 

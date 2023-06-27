@@ -25,15 +25,6 @@ namespace minimip {
 CutRegistry::CutRegistry()
     : cuts_({}), active_cut_indices_({}), total_number_of_cuts_found_(0) {}
 
-// Initialize CutRegistry from initial separation round.
-CutRegistry::CutRegistry(std::vector<CutData> cuts,
-                         std::vector<int> cut_indices)
-    : cuts_(std::move(cuts)),
-      active_cut_indices_(std::move(cut_indices)),
-      total_number_of_cuts_found_(cuts_.size()) {
-  DCHECK_LE(active_cut_indices_.size(), cuts_.size());
-}
-
 // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
 // we just use a private copy / move constructor and assignment operator.
 void CutRegistry::PopulateFromCutRegistry(CutRegistry cut_registry) {
@@ -79,7 +70,7 @@ CutData CutRegistry::CreateCut(const MipData& mip_data,
 int CutRegistry::AddCut(CutData&& cut_data) {
   cut_data.SetIndex(cuts_.size());
   cuts_.push_back(std::move(cut_data));
-  return cuts_.size() - 1;
+  return cuts_.size();
 }
 
 // Activate stored cut.
@@ -94,7 +85,7 @@ void CutRegistry::RemoveCut(const int& cut_index) {
   DCHECK_GE(cut_index, 0);
   DCHECK_LT(cut_index, cuts_.size());
   auto it = cuts_.begin();
-  it = it + cut_index - 1;
+  it = it + cut_index;
   cuts_.erase(it);
 
   for (int i = cut_index; i < cuts_.size(); i++) {

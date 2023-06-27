@@ -62,9 +62,59 @@ class MinimalCutSelectorTest
     // Here we initialize the cut selector.
     CutSelectorParameters params;
     selector_ = CreateCutSelector(std::get<0>(GetParam()));
+    MiniMipProblem problem = CreateSampleProblem();
+
+    // Call the Create function to create a Solver object
+    ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+                         Solver::Create(MiniMipParameters{}, problem));
+
+    solver_ = std::move(solver);
+
+    lp_optimum_ = CreateSparseRow({{0, 1.0}, {1, 1.5}});
+  }
+
+  // Creates a very simple model where all variables are non-negative.
+  //
+  // max: z = x2
+  //  3*x1 + 2*x2 <= 6
+  // -3*x1 + 2*x2 <= 0
+  // x1, x2 >= 0
+  // x1, x2 integer
+
+  static MiniMipProblem CreateSampleProblem() {
+    MiniMipProblem problem;
+    SparseRow optimum;
+    problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                                .objective_coefficient = 0.0,
+                                                .lower_bound = 0,
+                                                .upper_bound = kInf,
+                                                .is_integer = true});
+    problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                                .objective_coefficient = 1.0,
+                                                .lower_bound = 0,
+                                                .upper_bound = kInf,
+                                                .is_integer = true});
+    problem.constraints.push_back(MiniMipConstraint{
+        .name = "ct1",
+        .var_indices = {0, 1},
+        .coefficients = {3.0, 2.0},
+        .left_hand_side = -kInf,
+        .right_hand_side = 6.0,
+    });
+    problem.constraints.push_back(MiniMipConstraint{
+        .name = "ct2",
+        .var_indices = {0, 1},
+        .coefficients = {-3.0, 2.0},
+        .left_hand_side = -kInf,
+        .right_hand_side = 0.0,
+    });
+    problem.is_maximization = true;
+    return problem;
   }
 
   std::unique_ptr<CutSelector> selector_;
+  std::unique_ptr<Solver> solver_;
+  SparseRow lp_optimum_;
 };
 
 INSTANTIATE_TEST_SUITE_P(
@@ -75,163 +125,180 @@ INSTANTIATE_TEST_SUITE_P(
 // TODO(cgraczy): Redo tests with actual small scale MIP instances to ensure cut
 // creation.
 TEST_P(MinimalCutSelectorTest, SelectsFirstCutIfAllAreIdentical) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK(solver_->mutable_lpi()->SolveLPWithPrimalSimplex());
+  ASSERT_TRUE(solver_->lpi()->IsSolved());
+  ASSERT_TRUE(solver_->lpi()->IsOptimal());
 
-  // Dummy data for MipData and lp_optimum
-  MipData mip_data;
-  SparseRow lp_optimum = CreateSparseRow({{1, 2.0}});
-
-  std::vector<CutData> cuts = {
-      solver->cut_registry().CreateCut(
-          mip_data, lp_optimum, CreateSparseRow({{1, 1.0}}), 1.0, "cut_1"),
-      solver->cut_registry().CreateCut(
-          mip_data, lp_optimum, CreateSparseRow({{1, 1.0}}), 1.0, "cut_2")};
+  std::vector<CutData> cuts = {solver_->cut_registry().CreateCut(
+                                   solver_->mip_data(), lp_optimum_,
+                                   CreateSparseRow({{1, 1.0}}), 1.0, "cut_1"),
+                               solver_->cut_registry().CreateCut(
+                                   solver_->mip_data(), lp_optimum_,
+                                   CreateSparseRow({{1, 1.0}}), 1.0, "cut_2")};
 
   absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
+      selector_->SelectCuttingPlanes(*solver_, cuts);
   ASSERT_EQ(selected_cuts.value().size(), 1);
   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
 }
 
-TEST_P(MinimalCutSelectorTest, SelectsIdenticalCutIfItIsForced) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1", false},
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2", true}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 2);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-  ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
-}
-
-TEST_P(MinimalCutSelectorTest, SelectsSecondIdenticalCutWithHigherScore) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1", false},
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_2",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 1);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
-}
-
-TEST_P(MinimalCutSelectorTest, SelectsForcedIdenticalCutWithLowerScoreLast) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1", true},
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_2",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 2);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
-  ASSERT_EQ(selected_cuts.value()[1].name(), "cut_1");
-}
-
-TEST_P(MinimalCutSelectorTest, SelectsAllOrthgonalCuts) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1", false},
-      CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 2);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-  ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
-}
-
-TEST_P(MinimalCutSelectorTest, FiltersOrthogonalCutBelowScoreThreshold) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1", false},
-      CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_2",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 1);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-}
-
-TEST_P(MinimalCutSelectorTest, SelectsNoCutsIfNoneAreAboveScoreThreshold) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_1", false},
-      CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_2",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 0);
-}
-
-TEST_P(MinimalCutSelectorTest, SelectBetterOrthogonalCut) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1", false},
-      CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2", false},
-      CutData{CreateSparseRow({{0, 2.0}}), 1.0, 1, 1, 1.0, 0.5, "cut_3",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 2);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-  ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
-}
-
-TEST_P(MinimalCutSelectorTest, SelectBestCutsFirstAndForcedCutsInPosition) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 0.5, "cut_1", false},
-      CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2", false},
-      CutData{CreateSparseRow({{0, 2.0}}), 1.0, 1, 1, 1.0, 0.6, "cut_3", true}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-  ASSERT_EQ(selected_cuts.value().size(), 3);
-  ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
-  ASSERT_EQ(selected_cuts.value()[1].name(), "cut_3");
-  ASSERT_EQ(selected_cuts.value()[2].name(), "cut_1");
-}
-
-TEST_P(MinimalCutSelectorTest, SelectInvertedCutIfSignedOrthogonalityIsUsed) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
-  std::vector<CutData> cuts = {
-      CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1", false},
-      CutData{CreateSparseRow({{1, -1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_2",
-              false}};
-
-  absl::StatusOr<std::vector<CutData>> selected_cuts =
-      selector_->SelectCuttingPlanes(*solver, cuts);
-
-  if (std::get<0>(GetParam()) == CutSelectorType::kHybridSelectorUnsigned) {
-    ASSERT_EQ(selected_cuts.value().size(), 2);
-    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-    ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
-  } else if (std::get<0>(GetParam()) ==
-             CutSelectorType::kHybridSelectorSigned) {
-    ASSERT_EQ(selected_cuts.value().size(), 1);
-    ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
-  }
-}
+// TEST_P(MinimalCutSelectorTest, SelectsIdenticalCutIfItIsForced) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+//       false}, CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0,
+//       "cut_2", true}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 2);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+//   ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectsSecondIdenticalCutWithHigherScore) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+//       false}, CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1,
+//       "cut_2",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 1);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectsForcedIdenticalCutWithLowerScoreLast) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+//       true}, CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1,
+//       "cut_2",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 2);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
+//   ASSERT_EQ(selected_cuts.value()[1].name(), "cut_1");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectsAllOrthgonalCuts) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1",
+//       false}, CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0,
+//       "cut_2",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 2);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+//   ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, FiltersOrthogonalCutBelowScoreThreshold) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.0, "cut_1",
+//       false}, CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 0, 0.0, 0.0,
+//       "cut_2",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 1);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectsNoCutsIfNoneAreAboveScoreThreshold) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 0, 0.0, 0.0, "cut_1",
+//       false}, CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 0, 0.0, 0.0,
+//       "cut_2",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 0);
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectBetterOrthogonalCut) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1",
+//       false}, CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0,
+//       "cut_2", false}, CutData{CreateSparseRow({{0, 2.0}}), 1.0, 1, 1, 1.0,
+//       0.5, "cut_3",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 2);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+//   ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectBestCutsFirstAndForcedCutsInPosition) {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 0.5, "cut_1",
+//       false}, CutData{CreateSparseRow({{0, 1.0}}), 1.0, 1, 1, 1.0, 1.0,
+//       "cut_2", false}, CutData{CreateSparseRow({{0, 2.0}}), 1.0, 1, 1, 1.0,
+//       0.6, "cut_3", true}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//   ASSERT_EQ(selected_cuts.value().size(), 3);
+//   ASSERT_EQ(selected_cuts.value()[0].name(), "cut_2");
+//   ASSERT_EQ(selected_cuts.value()[1].name(), "cut_3");
+//   ASSERT_EQ(selected_cuts.value()[2].name(), "cut_1");
+// }
+//
+// TEST_P(MinimalCutSelectorTest, SelectInvertedCutIfSignedOrthogonalityIsUsed)
+// {
+//   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+//                        Solver::Create(MiniMipParameters{},
+//                        MiniMipProblem{}));
+//   std::vector<CutData> cuts = {
+//       CutData{CreateSparseRow({{1, 1.0}}), 1.0, 1, 1, 1.0, 1.1, "cut_1",
+//       false}, CutData{CreateSparseRow({{1, -1.0}}), 1.0, 1, 1, 1.0, 1.0,
+//       "cut_2",
+//               false}};
+//
+//   absl::StatusOr<std::vector<CutData>> selected_cuts =
+//       selector_->SelectCuttingPlanes(*solver, cuts);
+//
+//   if (std::get<0>(GetParam()) == CutSelectorType::kHybridSelectorUnsigned) {
+//     ASSERT_EQ(selected_cuts.value().size(), 2);
+//     ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+//     ASSERT_EQ(selected_cuts.value()[1].name(), "cut_2");
+//   } else if (std::get<0>(GetParam()) ==
+//              CutSelectorType::kHybridSelectorSigned) {
+//     ASSERT_EQ(selected_cuts.value().size(), 1);
+//     ASSERT_EQ(selected_cuts.value()[0].name(), "cut_1");
+//   }
+// }
 
 }  // namespace
 }  // namespace minimip

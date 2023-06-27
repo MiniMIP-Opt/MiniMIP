@@ -419,12 +419,10 @@ TableauRoundingGenerator::GenerateCuttingPlanes(const Solver& solver) {
       // TODO(cgraczy): add a unique identifier to the name for multiple rounds.
       std::string cutname = rounder->GetName() + std::to_string(total_cuts++);
 
-      CutData cut = solver.cut_registry().CreateCut(
+      cutting_planes.push_back(solver.cut_registry().CreateCut(
           solver.mip_data(), lp_optimum,
           std::move(rounded_row->variable_coefficients),
-          rounded_row->right_hand_side, std::move(cutname));
-
-      cutting_planes.push_back(std::move(cut));
+          rounded_row->right_hand_side, std::move(cutname)));
     }
   }
   return cutting_planes;
