@@ -76,6 +76,7 @@ TEST(CutDataTests, CreateDifferentCut) {
   //       problem.
 
   CutRegistry cut_registry;
+
   MiniMipProblem problem;
 
   problem.variables.push_back(MiniMipVariable{.name = "x1",
@@ -106,16 +107,57 @@ TEST(CutDataTests, CreateDifferentCut) {
   EXPECT_EQ(cut.is_active(), false);
 }
 
-TEST(CutRegistryTests, InitTest) {
+TEST(CutRegistryTest, InitTest) {
   CutRegistry cut_registry;
 
   EXPECT_EQ(cut_registry.cuts().size(), 0);
   EXPECT_EQ(cut_registry.active_cuts().size(), 0);
-  EXPECT_EQ(cut_registry.total_number_of_cuts_found(), 0);
 }
 
-TEST(CutRegistryTest, SimpleTestCase) {
+TEST(CutRegistryTest, AddCuts) {
   CutRegistry cut_registry;
+  const std::vector<CutData>& cuts = cut_registry.cuts();
+
+  MiniMipProblem problem;
+
+  problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                              .objective_coefficient = 1.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                              .objective_coefficient = 0.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  MipData mip_data(problem);
+
+  EXPECT_EQ(cuts.size(), 0);
+
+  // Create a cutting plane a^Tx <= b, a = (0,1) and b = 1, x^*_lp = (0,2).
+  cut_registry.AddCut(
+      cut_registry.CreateCut(mip_data, CreateSparseRow({{0, 0.0}, {1, 2.0}}),
+                             CreateSparseRow({{1, 1.0}}), 1.0, "cut1"));
+
+  EXPECT_EQ(cuts.size(), 1);
+  EXPECT_EQ(cuts[0].index(), 0);  // Check the index of the first cut.
+
+  // Create a cutting plane a^Tx <= b, a = (0,1) and b = 1.5, x^*_lp = (0,2).
+  cut_registry.AddCut(
+      cut_registry.CreateCut(mip_data, CreateSparseRow({{0, 0.0}, {1, 2.0}}),
+                             CreateSparseRow({{1, 1.0}}), 1.5, "cut2"));
+
+  EXPECT_EQ(cuts.size(), 2);
+  EXPECT_EQ(cuts[0].index(), 0);
+  EXPECT_EQ(cuts[0].name(), "cut1");
+  EXPECT_EQ(cuts[1].index(), 1);
+  EXPECT_EQ(cuts[1].name(), "cut2");
+}
+
+TEST(CutRegistryTest, ActivateAndRemoveCuts) {
+  CutRegistry cut_registry;
+  const std::vector<CutData>& cuts = cut_registry.cuts();
+  const std::vector<int>& active_cuts = cut_registry.active_cuts();
 
   MiniMipProblem problem;
 
@@ -132,44 +174,58 @@ TEST(CutRegistryTest, SimpleTestCase) {
 
   MipData mip_data(problem);
 
-  // Create a cut cutting plane a^Tx <= b, a = (0,1) and b = 1, x^*_lp = (0,2).
-
+  // Create a cutting plane a^Tx <= b, a = (0,1) and b = 1, x^*_lp = (0,2).
   cut_registry.AddCut(
       cut_registry.CreateCut(mip_data, CreateSparseRow({{0, 0.0}, {1, 2.0}}),
                              CreateSparseRow({{1, 1.0}}), 1.0, "cut1"));
 
-  EXPECT_EQ(cut_registry.cuts().size(), 1);
-  const std::vector<CutData>& cuts1 = cut_registry.cuts();
-  EXPECT_EQ(cuts1[0].index(), 0);  // Check the index of the first cut.
-
+  // Create a cutting plane a^Tx <= b, a = (0,1) and b = 1.5, x^*_lp = (0,2).
   cut_registry.AddCut(
       cut_registry.CreateCut(mip_data, CreateSparseRow({{0, 0.0}, {1, 2.0}}),
                              CreateSparseRow({{1, 1.0}}), 1.5, "cut2"));
 
-  EXPECT_EQ(cut_registry.cuts().size(), 2);
-
-  const std::vector<CutData>& cuts = cut_registry.cuts();
-  EXPECT_EQ(cuts[0].index(), 0);
-  EXPECT_EQ(cuts[0].name(), "cut1");
-  EXPECT_EQ(cuts[1].index(), 1);
-  EXPECT_EQ(cuts[1].name(), "cut2");
-
+  EXPECT_EQ(active_cuts.size(), 0);
   cut_registry.ActivateCut(1);
-  EXPECT_EQ(cut_registry.active_cuts().size(), 1);
-  EXPECT_EQ(cut_registry.active_cuts()[0], 1);
+  EXPECT_EQ(active_cuts.size(), 1);
+  EXPECT_EQ(active_cuts[0], 1);
 
   cut_registry.RemoveCut(0);
-  EXPECT_EQ(cut_registry.active_cuts()[0], 0);
-  EXPECT_EQ(cut_registry.cuts().size(), 1);
+  EXPECT_EQ(active_cuts[0], 0);
+  EXPECT_EQ(cuts.size(), 1);
   EXPECT_EQ(cuts[0].name(), "cut2");
   EXPECT_EQ(cuts[0].index(), 0);
+}
+
+TEST(CutRegistryTest, UpdateCutEfficacy) {
+  CutRegistry cut_registry;
+  const std::vector<CutData>& cuts = cut_registry.cuts();
+
+  MiniMipProblem problem;
+
+  problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                              .objective_coefficient = 1.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                              .objective_coefficient = 0.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+
+  MipData mip_data(problem);
+
+  // Create a cutting plane a^Tx <= b, a = (0,1) and b = 1.5, x^*_lp = (0,2).
+  cut_registry.AddCut(
+      cut_registry.CreateCut(mip_data, CreateSparseRow({{0, 0.0}, {1, 2.0}}),
+                             CreateSparseRow({{1, 1.0}}), 1.5, "cut"));
 
   cut_registry.UpdateCutEfficacy(CreateSparseRow({{0, 1.0}, {1, 1.0}}));
   CutData cut = cut_registry.GetCut(0);
 
   EXPECT_EQ(cut.efficacy(), -0.5);
   cut_registry.RemoveCut(0);
-  EXPECT_EQ(cut_registry.cuts().size(), 0);
+  EXPECT_EQ(cuts.size(), 0);
 }
 
 }  // namespace minimip

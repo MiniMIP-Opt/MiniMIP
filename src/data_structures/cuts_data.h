@@ -188,10 +188,7 @@ class CutRegistry {
   const CutData& GetCut(const int& cut_index) const;
 
   double ComputeEfficacy(const SparseRow& row, double right_hand_side,
-                         const SparseRow& lp_optimum) const {
-    return (row.DotProduct(lp_optimum) - right_hand_side) /
-           sqrt(row.DotProduct(row));
-  }
+                         const SparseRow& lp_optimum) const;
 
   // Given a new LP optimum, update the efficacy of all cuts before reselection.
   void UpdateCutEfficacy(const SparseRow& lp_optimum);
@@ -202,18 +199,12 @@ class CutRegistry {
   // Getter for active cut indices.
   const std::vector<int>& active_cuts() const { return active_cut_indices_; }
 
-  // Getter for total number of cuts added to the registry while solving.
-  const int& total_number_of_cuts_found() const {
-    return total_number_of_cuts_found_;
-  }
-
   // Add a cut to registry and return its index.
   int AddCut(CutData&& cut_data);
 
  private:
   std::vector<CutData> cuts_;
-  std::vector<std::reference_wrapper<int>> active_cut_indices_;
-  int total_number_of_cuts_found_;
+  std::vector<int> active_cut_indices_;
 };
 
 }  // namespace minimip

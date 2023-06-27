@@ -22,8 +22,7 @@ namespace minimip {
 // Constructors
 // ==========================================================================
 
-CutRegistry::CutRegistry()
-    : cuts_({}), active_cut_indices_({}), total_number_of_cuts_found_(0) {}
+CutRegistry::CutRegistry() : cuts_({}), active_cut_indices_({}) {}
 
 // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
 // we just use a private copy / move constructor and assignment operator.
@@ -60,6 +59,12 @@ CutData CutRegistry::CreateCut(const MipData& mip_data,
 
   return cut;
 }
+double CutRegistry::ComputeEfficacy(
+    const minimip::SparseRow& row, double right_hand_side,
+    const minimip::SparseRow& lp_optimum) const {
+  return (row.DotProduct(lp_optimum) - right_hand_side) /
+         sqrt(row.DotProduct(row));
+}
 
 // ==========================================================================
 // Methods for managing the cuts in the cut registry.
@@ -80,16 +85,31 @@ void CutRegistry::ActivateCut(int cut_index) {
   active_cut_indices_.push_back(cut_index);
 }
 
-// Remove a single cut from registry.
 void CutRegistry::RemoveCut(const int& cut_index) {
   DCHECK_GE(cut_index, 0);
   DCHECK_LT(cut_index, cuts_.size());
-  auto it = cuts_.begin();
-  it = it + cut_index;
-  cuts_.erase(it);
 
+  // Remove from cuts_.
+  auto cut_it = cuts_.begin() + cut_index;
+  cuts_.erase(cut_it);
+
+  // Remove the same cut_index from active_cut_indices_.
+  auto active_it = std::find(active_cut_indices_.begin(),
+                             active_cut_indices_.end(), cut_index);
+  if (active_it != active_cut_indices_.end()) {
+    active_cut_indices_.erase(active_it);
+  }
+
+  // Adjust indices for the remaining cuts.
   for (int i = cut_index; i < cuts_.size(); i++) {
     cuts_[i].SetIndex(cuts_[i].index() - 1);
+  }
+
+  // Adjust active_cut_indices_.
+  for (int& index : active_cut_indices_) {
+    if (index > cut_index) {
+      --index;
+    }
   }
 }
 
