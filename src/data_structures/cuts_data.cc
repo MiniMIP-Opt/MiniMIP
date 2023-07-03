@@ -59,6 +59,7 @@ CutData CutRegistry::CreateCut(const MipData& mip_data,
 
   return cut;
 }
+
 double CutRegistry::ComputeEfficacy(
     const minimip::SparseRow& row, double right_hand_side,
     const minimip::SparseRow& lp_optimum) const {
@@ -105,7 +106,7 @@ void CutRegistry::RemoveCut(const int& cut_index) {
     cuts_[i].SetIndex(cuts_[i].index() - 1);
   }
 
-  // Adjust active_cut_indices_.
+  // Adjust active_cut_indices_ to track changes in cuts_.
   for (int& index : active_cut_indices_) {
     if (index > cut_index) {
       --index;
