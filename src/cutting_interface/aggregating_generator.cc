@@ -396,7 +396,6 @@ TableauRoundingGenerator::GenerateCuttingPlanes(const Solver& solver) {
       continue;
     }
 
-    const SparseRow& objective = solver.mip_data().objective();
     int total_cuts = 0;
 
     for (const std::unique_ptr<Rounder>& rounder : rounders_) {
@@ -420,23 +419,10 @@ TableauRoundingGenerator::GenerateCuttingPlanes(const Solver& solver) {
       // TODO(cgraczy): add a unique identifier to the name for multiple rounds.
       std::string cutname = rounder->GetName() + std::to_string(total_cuts++);
 
-      const double objective_parallelism =
-          row.DotProduct(objective) /
-          std::sqrt(row.DotProduct(row) * objective.DotProduct(objective));
-
-      const bool is_forced = (row.entries().size() == 1);
-
-      const int number_of_non_zeros = row.entries().size();
-      const int number_of_integer_variables = row.entries().size();
-      const double efficacy =
-          (row.DotProduct(lp_optimum) - rounded_row->right_hand_side) /
-          sqrt(row.DotProduct(row));
-
-      CutData cut(std::move(rounded_row->variable_coefficients),
-                  rounded_row->right_hand_side, number_of_non_zeros,
-                  number_of_integer_variables, objective_parallelism, efficacy,
-                  cutname, is_forced);
-      cutting_planes.push_back(std::move(cut));
+      cutting_planes.push_back(solver.cut_registry().CreateCut(
+          solver.mip_data(), lp_optimum,
+          std::move(rounded_row->variable_coefficients),
+          rounded_row->right_hand_side, std::move(cutname)));
     }
   }
   return cutting_planes;

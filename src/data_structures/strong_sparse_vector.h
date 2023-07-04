@@ -211,7 +211,8 @@ class StrongSparseVectorOfDoubles {
 
   double operator[](SparseIndex index) const { return value(index); }
 
-  // Removes all entries, but does not release memory of the underlying storage.
+  // Removes all entries, but does not release memory of the underlying
+  // registry.
   void Clear() {
     entries_.clear();
     may_need_cleaning_ = false;

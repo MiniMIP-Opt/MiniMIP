@@ -29,7 +29,7 @@
 
 // The assumption here is that all cuts are initialized correctly and are valid.
 // Note:
-// - make sure that cuts are updated if returned from the cut_storage.
+// - make sure that cuts are updated if returned from the cut_registry.
 
 namespace minimip {
 

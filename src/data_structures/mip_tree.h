@@ -94,7 +94,7 @@ struct NodeData {
   std::vector<ColAndValue> implied_upper_bounds;
 };
 
-// This is the main storage of all nodes in the search tree.
+// This is the main registry of all nodes in the search tree.
 class MipTree {
  public:
   // The tree is initialized with an "empty" root node and one free node.

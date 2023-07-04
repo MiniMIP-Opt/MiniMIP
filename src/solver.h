@@ -49,7 +49,7 @@ class Solver {
     }
     MipData mip_data(problem);
     MipTree mip_tree;
-    CutStorage cut_storage;
+    CutRegistry cut_registry;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                      ConfigureLPSolverFromProto(params.lp_parameters()));
@@ -59,7 +59,7 @@ class Solver {
 
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree),
-        std::move(cut_storage), std::move(cut_runner), std::move(lpi)));
+        std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
     return solver;
   }
 
@@ -73,8 +73,8 @@ class Solver {
   const MipTree& mip_tree() const { return mip_tree_; }
   MipTree& mutable_mip_tree() { return mip_tree_; }
 
-  const CutStorage& cut_storage() const { return cut_storage_; }
-  CutStorage& mutable_cut_storage() { return cut_storage_; }
+  const CutRegistry& cut_registry() const { return cut_registry_; }
+  CutRegistry& mutable_cut_registry() { return cut_registry_; }
 
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
@@ -100,7 +100,7 @@ class Solver {
   MipTree mip_tree_;
 
   // Contains all currently active and stored cuts.
-  CutStorage cut_storage_;
+  CutRegistry cut_registry_;
   // Entry-point for the cut API, used to create and activate cuts in the main
   // cut-and-price loop (not yet implemented).
   std::unique_ptr<CuttingInterface> cut_runner_;
@@ -109,12 +109,12 @@ class Solver {
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
-         CutStorage cut_storage, std::unique_ptr<CuttingInterface> cut_runner,
+         CutRegistry cut_registry, std::unique_ptr<CuttingInterface> cut_runner,
          std::unique_ptr<LPInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
-        cut_storage_(std::move(cut_storage)),
+        cut_registry_(std::move(cut_registry)),
         cut_runner_{std::move(cut_runner)},
         lpi_{std::move(lpi)} {}
 };
