@@ -17,7 +17,7 @@ cc_proto_library(
 
 cc_library(
     name = "solver",
-    srcs = [],
+    srcs = ["solver.cc"],
     hdrs = ["solver.h"],
     deps = [
         ":parameters_cc_proto",
