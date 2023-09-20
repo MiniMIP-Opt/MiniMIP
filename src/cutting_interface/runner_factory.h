@@ -18,16 +18,12 @@
 namespace minimip {
 
 inline absl::StatusOr<std::unique_ptr<CuttingInterface>>
-ConfigureCutInterfaceFromProto(const CutRunnerParameters& parameters) {
-  if (parameters.has_some_cut_runner_parameters()) {
-    // Here we would create and return the cut runner.
+ConfigureRunnerFromProto(const RunnerParameters& runner_parameters) {
+  if (runner_parameters.has_default_runner_parameters()) {
+    // Here we create and return the specific CuttingInterface.
+    return std::make_unique<DefaultRunnerParameters>(runner_parameters);
   }
-  return nullptr;
-  /* TODO(cgraczy): Return an error instead once we have at least one runner
-     implementation. We currently return nullptr to allow unit tests to create a
-     solver object.
   return absl::InvalidArgumentError("No cut runner implementation was chosen.");
-  */
 }
 
 }  // namespace minimip

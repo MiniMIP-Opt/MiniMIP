@@ -21,6 +21,7 @@
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_generator.h"
 #include "src/cutting_interface/cuts_selector.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
@@ -32,9 +33,12 @@ class CuttingInterface {
  public:
   virtual ~CuttingInterface() = default;
 
-  // TODO: add searchtree etc.
+  // TODO(CG): add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutRegistry& mutable_cut_registry) = 0;
+      const Solver& solver, LPInterface* mutable_lpi,
+      CutRegistry& mutable_cut_registry) = 0;
+
+  virtual bool CutCondition(const Solver& solver) = 0;
 
   void AddGenerator(std::unique_ptr<CutGenerator> generator) {
     generators_.push_back(std::move(generator));
@@ -49,12 +53,19 @@ class CuttingInterface {
   std::unique_ptr<CutSelector> selector_;
 };
 
-class CutRunner : CuttingInterface {
+class CutRunner : public CuttingInterface {
  public:
-  virtual ~CutRunner() = default;
+  explicit CutRunner(const RunnerParameters& params)
+      : params_(params.default_runner_parameters()) {}
 
-  virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutRegistry& mutable_cut_registry) final;
+  bool CutCondition(const Solver& solver) final;
+
+  absl::Status SeparateCurrentLPSolution(
+      const Solver& solver, LPInterface* mutable_lpi,
+      CutRegistry& mutable_cut_registry) final;
+
+ private:
+  const DefaultRunnerParameters& params_;
 };
 
 }  // namespace minimip

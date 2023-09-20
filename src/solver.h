@@ -55,7 +55,7 @@ class Solver {
                      ConfigureLPSolverFromProto(params.lp_parameters()));
 
     ASSIGN_OR_RETURN(std::unique_ptr<CuttingInterface> cut_runner,
-                     ConfigureCutInterfaceFromProto(params.cut_runner()));
+                     ConfigureRunnerFromProto(params.cut_runner()));
 
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree),
@@ -74,11 +74,17 @@ class Solver {
   const CutRegistry& cut_registry() const { return cut_registry_; }
   CutRegistry& mutable_cut_registry() { return cut_registry_; }
 
+  CuttingInterface* mutable_cut_runner() const { return cut_runner_.get(); }
+
   const LPInterface* lpi() const { return lpi_.get(); }
   LPInterface* mutable_lpi() { return lpi_.get(); }
 
   bool IsIntegerWithinTolerance(double d) const {
     return std::abs(d - std::round(d)) <= params_.integrality_tolerance();
+  }
+
+  bool IsEqualToWithinTolerance(double d, double b) const {
+    return std::abs(d - b) <= params_.numerical_tolerance();
   }
 
   double FloorWithTolerance(double d) const {
@@ -99,9 +105,11 @@ class Solver {
 
   // Contains all currently active and stored cuts.
   CutRegistry cut_registry_;
+
   // Entry-point for the cut API, used to create and activate cuts in the main
   // cut-and-price loop (not yet implemented).
   std::unique_ptr<CuttingInterface> cut_runner_;
+
   // Handle to an LP solver.
   std::unique_ptr<LPInterface> lpi_;
 
@@ -112,7 +120,7 @@ class Solver {
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
-        cut_registry_(std::move(cut_registry)),
+        cut_registry_{std::move(cut_registry)},
         cut_runner_{std::move(cut_runner)},
         lpi_{std::move(lpi)} {}
 };

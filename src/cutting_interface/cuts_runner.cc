@@ -16,21 +16,53 @@
 
 namespace minimip {
 
-//
+bool CutRunner::CutCondition(const Solver& solver) {
+  // max cutrounds per node
+
+  // max cuts
+  /* if the LP is infeasible = cutoff , unbounded, exceeded the objective limit
+   * or a global performance limit was reached, we don't need to separate cuts
+   * (the global limits are only checked at the root node in order to not query
+   * system time too often)
+   */
+
+  return false;
+}
+
 absl::Status CutRunner::SeparateCurrentLPSolution(
-    const Solver& solver, CutRegistry& mutable_cut_registry) {
-  for (const std::unique_ptr<CutGenerator>& generator : generators_) {
-    absl::StatusOr<std::vector<CutData>> cuts =
-        generator->GenerateCuttingPlanes(solver);
-    if (cuts.status() != absl::OkStatus()) {
-      return cuts.status();
+    const Solver& solver, LPInterface* mutable_lpi,
+    CutRegistry& mutable_cut_registry) {
+  int i = 0;
+
+  while (i < 1) {  // CutCondition(solver)
+    std::vector<int> new_cut_indices;
+
+    for (const std::unique_ptr<CutGenerator>& generator : generators_) {
+      absl::StatusOr<std::vector<CutData>> cuts =
+          generator->GenerateCuttingPlanes(solver);
+      if (cuts.status() != absl::OkStatus()) {
+        return cuts.status();
+      }
+
+      absl::StatusOr<std::vector<CutData>> filtered_cuts =
+          selector_->SelectCuttingPlanes(solver, cuts.value());
+
+      if (filtered_cuts.status() != absl::OkStatus()) {
+        return filtered_cuts.status();
+      }
+
+      for (CutData& cut : filtered_cuts.value()) {
+        new_cut_indices.push_back(mutable_cut_registry.AddCut(std::move(cut)));
+      }
     }
 
-    absl::StatusOr<std::vector<CutData>> filtered_cuts =
-        selector_->SelectCuttingPlanes(solver, cuts.value());
-    for (CutData& cut : filtered_cuts.value()) {
-      mutable_cut_registry.AddCut(std::move(cut));
+    for (int cut_index : new_cut_indices) {
+      const CutData& cut = mutable_cut_registry.GetCut(cut_index);
+      RETURN_IF_ERROR(mutable_lpi->AddRow(cut.row(), -mutable_lpi->Infinity(),
+                                          cut.right_hand_side(), cut.name()));
     }
+    RETURN_IF_ERROR(mutable_lpi->SolveLPWithDualSimplex());
+    i++;
   }
   return absl::OkStatus();
 };

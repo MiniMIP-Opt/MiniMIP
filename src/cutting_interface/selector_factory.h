@@ -18,7 +18,7 @@
 namespace minimip {
 
 inline absl::StatusOr<std::unique_ptr<CutSelector>> ConfigureSelectorFromProto(
-    const CutSelectorParameters& cut_selector_parameters) {
+    const SelectorParameters& cut_selector_parameters) {
   if (cut_selector_parameters.has_hybrid_selector_parameters()) {
     return std::make_unique<HybridSelector>(cut_selector_parameters);
   }

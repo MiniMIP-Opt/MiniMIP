@@ -45,6 +45,7 @@ cc_library(
     deps = [
         ":cuts_selector",
         ":cuts_generator",
+        "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
@@ -55,7 +56,6 @@ cc_library(
     hdrs = ["runner_factory.h"],
     deps = [
         "//src/cutting_interface:cuts_runner",
-        "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ]
