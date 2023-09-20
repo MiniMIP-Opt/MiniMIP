@@ -18,7 +18,7 @@
 namespace minimip {
 
 absl::StatusOr<MiniMipResult> Solver::Solve() {
-  MipTree tree;
+  MipTree tree = this->mutable_mip_tree();
   LPInterface* lp = this->mutable_lpi();
   MiniMipResult result;
 
