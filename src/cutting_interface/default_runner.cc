@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cuts_runner.h"
+#include "default_runner.h"
 
 namespace minimip {
 
-bool CutRunner::CutCondition(const Solver& solver) {
+bool DefaultRunner::CutCondition(const Solver& solver) {
   // max cutrounds per node
 
   // max cuts
@@ -29,7 +29,7 @@ bool CutRunner::CutCondition(const Solver& solver) {
   return false;
 }
 
-absl::Status CutRunner::SeparateCurrentLPSolution(
+absl::Status DefaultRunner::SeparateCurrentLPSolution(
     const Solver& solver, LPInterface* mutable_lpi,
     CutRegistry& mutable_cut_registry) {
   int i = 0;

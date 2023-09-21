@@ -21,7 +21,7 @@ cc_library(
     hdrs = ["solver.h"],
     deps = [
         ":parameters_cc_proto",
-        "//src/cutting_interface:cuts_runner",
+        "//src/cutting_interface:cutting_interface",
         "//src/cutting_interface:runner_factory",
         "//src/data_structures:cuts_data",
         "//src/data_structures:mip_data",

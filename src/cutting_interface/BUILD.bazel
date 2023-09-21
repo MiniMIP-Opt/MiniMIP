@@ -39,13 +39,25 @@ cc_library(
 )
 
 cc_library(
-    name = "cuts_runner",
-    srcs = ["cuts_runner.cc"],
+    name = "cutting_interface",
     hdrs = ["cuts_runner.h"],
     deps = [
         ":cuts_selector",
         ":cuts_generator",
-        "//src:parameters_cc_proto",
+        "//src/data_structures:cuts_data",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cc_library(
+    name = "default_runner",
+    srcs = ["default_runner.cc"],
+    hdrs = ["default_runner.h"],
+    deps = [
+        ":hybrid_selector",
+        ":aggregating_generator",
+        "//src/cutting_interface:cutting_interface",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
@@ -55,7 +67,8 @@ cc_library(
     name = "runner_factory",
     hdrs = ["runner_factory.h"],
     deps = [
-        "//src/cutting_interface:cuts_runner",
+        "//src/cutting_interface:default_runner",
+        "//src:parameters_cc_proto",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ]
@@ -73,17 +86,6 @@ cc_library(
 )
 
 cc_library(
-    name = "selector_factory",
-    hdrs = ["selector_factory.h"],
-    deps = [
-        "//src/cutting_interface:hybrid_selector",
-        "//src:parameters_cc_proto",
-        "@com_google_absl//absl/status",
-        "@com_google_absl//absl/status:statusor",
-    ]
-)
-
-cc_library(
     name = "hybrid_selector",
     srcs = ["hybrid_selector.cc"],
     hdrs = ["hybrid_selector.h"],
@@ -93,4 +95,15 @@ cc_library(
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_macros",
     ],
+)
+
+cc_library(
+    name = "selector_factory",
+    hdrs = ["selector_factory.h"],
+    deps = [
+        "//src/cutting_interface:hybrid_selector",
+        "//src:parameters_cc_proto",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ]
 )

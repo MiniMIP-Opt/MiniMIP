@@ -53,21 +53,6 @@ class CuttingInterface {
   std::unique_ptr<CutSelector> selector_;
 };
 
-class CutRunner : public CuttingInterface {
- public:
-  explicit CutRunner(const RunnerParameters& params)
-      : params_(params.default_runner_parameters()) {}
-
-  bool CutCondition(const Solver& solver) final;
-
-  absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, LPInterface* mutable_lpi,
-      CutRegistry& mutable_cut_registry) final;
-
- private:
-  const DefaultRunnerParameters& params_;
-};
-
 }  // namespace minimip
 
 #endif  // SRC_CUTTING_INTERFACE_CUTS_RUNNER_H_
