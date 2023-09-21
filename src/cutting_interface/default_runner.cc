@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cuts_runner.h"
+#include "default_runner.h"
 
 namespace minimip {
 
-//
-absl::Status CutRunner::SeparateCurrentLPSolution(
+absl::Status DefaultRunner::SeparateCurrentLPSolution(
     const Solver& solver, CutRegistry& mutable_cut_registry) {
   for (const std::unique_ptr<CutGenerator>& generator : generators_) {
     absl::StatusOr<std::vector<CutData>> cuts =

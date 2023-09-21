@@ -35,7 +35,7 @@ namespace minimip {
 
 class HybridSelector : public CutSelector {
  public:
-  explicit HybridSelector(const CutSelectorParameters& params)
+  explicit HybridSelector(const SelectorParameters& params)
       : max_num_cuts_(params.max_num_cuts()),
         params_(params.hybrid_selector_parameters()) {}
 

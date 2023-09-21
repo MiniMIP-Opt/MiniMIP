@@ -49,14 +49,6 @@ class CuttingInterface {
   std::unique_ptr<CutSelector> selector_;
 };
 
-class CutRunner : CuttingInterface {
- public:
-  virtual ~CutRunner() = default;
-
-  virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutRegistry& mutable_cut_registry) final;
-};
-
 }  // namespace minimip
 
 #endif  // SRC_CUTTING_INTERFACE_CUTS_RUNNER_H_
