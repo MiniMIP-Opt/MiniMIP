@@ -20,7 +20,7 @@
 
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_selector.h"
-#include "src/solver.h"
+#include "src/isolver_context.h"
 
 // TODO(Cgraczyk): Add a check that duplicates are removed.
 // The cutselector should not be responsible for removing duplicates.
@@ -40,7 +40,7 @@ class HybridSelector : public CutSelector {
         params_(params.hybrid_selector_parameters()) {}
 
   absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
-      const Solver& solver, std::vector<CutData>& cuts) final;
+      const ISolverContext& context, std::vector<CutData>& cuts) final;
 
  private:
   int max_num_cuts_;

@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef SRC_CUTTING_INTERFACE_RUNNER_FACTORY_H_
+#define SRC_CUTTING_INTERFACE_RUNNER_FACTORY_H_
+
 #include "src/cutting_interface/cuts_runner.h"
+#include "src/cutting_interface/default_runner.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {
@@ -21,9 +25,11 @@ inline absl::StatusOr<std::unique_ptr<CuttingInterface>>
 ConfigureRunnerFromProto(const RunnerParameters& runner_parameters) {
   if (runner_parameters.has_default_runner_parameters()) {
     // Here we create and return the specific CuttingInterface.
-    return std::make_unique<DefaultRunnerParameters>(runner_parameters);
+    return std::make_unique<DefaultRunner>(runner_parameters);
   }
   return absl::InvalidArgumentError("No cut runner implementation was chosen.");
 }
 
 }  // namespace minimip
+
+#endif  // SRC_CUTTING_INTERFACE_RUNNER_FACTORY_H_

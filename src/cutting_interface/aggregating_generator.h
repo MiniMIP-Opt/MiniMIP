@@ -20,7 +20,7 @@
 
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_generator.h"
-#include "src/solver.h"
+#include "src/isolver_context.h"
 
 // The cut generators in this file creates cutting planes by rounding row
 // aggregations. Assume that row i in the LP is given by
@@ -90,7 +90,7 @@ class Rounder {
   virtual ~Rounder() = default;
 
   virtual std::optional<AggregatedRow> RoundAggregatedRow(
-      const Solver& solver, AggregatedRow aggregated_row) const = 0;
+      const ISolverContext& context, AggregatedRow aggregated_row) const = 0;
 
   // Add a virtual function to return the name of the rounder
   virtual std::string GetName() const = 0;
@@ -100,7 +100,7 @@ class Rounder {
 class MIRRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
-      const Solver& solver, AggregatedRow aggregated_row) const final;
+      const ISolverContext& context, AggregatedRow aggregated_row) const final;
 
   std::string GetName() const override { return "MIR"; }
 };
@@ -111,7 +111,7 @@ class MIRRounder : public Rounder {
 class StrongCGRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
-      const Solver& solver, AggregatedRow aggregated_row) const final;
+      const ISolverContext& context, AggregatedRow aggregated_row) const final;
 
   std::string GetName() const override { return "SCG"; }
 };
@@ -132,7 +132,7 @@ class TableauRoundingGenerator : public CutGenerator {
   }
 
   absl::StatusOr<std::vector<CutData>> GenerateCuttingPlanes(
-      const Solver& solver) final;
+      const ISolverContext& context) final;
 
  private:
   std::vector<std::unique_ptr<Rounder>> rounders_;

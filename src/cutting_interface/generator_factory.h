@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef SRC_CUTTING_INTERFACE_GENERATOR_FACTORY_H_
+#define SRC_CUTTING_INTERFACE_GENERATOR_FACTORY_H_
+
 #include "src/cutting_interface/aggregating_generator.h"
 #include "src/cutting_interface/cuts_generator.h"
 
@@ -26,3 +29,5 @@ ConfigureGeneratorFromProto(const GeneratorParameters& generator_parameters) {
 }
 
 }  // namespace minimip
+
+#endif SRC_CUTTING_INTERFACE_GENERATOR_FACTORY_H_

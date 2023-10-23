@@ -20,15 +20,8 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "ortools/base/status_builder.h"
-#include "ortools/base/status_macros.h"
-#include "src/cutting_interface/cuts_runner.h"
+#include "isolver_context.h"
 #include "src/cutting_interface/runner_factory.h"
-#include "src/data_structures/cuts_data.h"
-#include "src/data_structures/mip_data.h"
-#include "src/data_structures/mip_tree.h"
-#include "src/data_structures/problem.h"
-#include "src/lp_interface/lpi.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
 
@@ -37,7 +30,7 @@ namespace minimip {
 // This is the main solver class. It serves as both the main point of contact
 // between MiniMIP and client code. It also owns all global data structures and
 // modules.
-class Solver {
+class Solver : public ISolverContext {
  public:
   // Factory method to create a Solver object from a set of parameters.
   static absl::StatusOr<std::unique_ptr<Solver>> Create(
@@ -65,29 +58,31 @@ class Solver {
 
   absl::StatusOr<MiniMipResult> Solve();
 
-  const MipData& mip_data() const { return mip_data_; }
-  MipData& mutable_mip_data() { return mip_data_; }
+  const MipData& mip_data() const override { return mip_data_; }
+  MipData& mutable_mip_data() override { return mip_data_; }
 
-  const MipTree& mip_tree() const { return mip_tree_; }
-  MipTree& mutable_mip_tree() { return mip_tree_; }
+  const MipTree& mip_tree() const override { return mip_tree_; }
+  MipTree& mutable_mip_tree() override { return mip_tree_; }
 
-  const CutRegistry& cut_registry() const { return cut_registry_; }
-  CutRegistry& mutable_cut_registry() { return cut_registry_; }
+  const CutRegistry& cut_registry() const override { return cut_registry_; }
+  CutRegistry& mutable_cut_registry() override { return cut_registry_; }
 
-  CuttingInterface* mutable_cut_runner() const { return cut_runner_.get(); }
+  CuttingInterface* mutable_cut_runner() const override {
+    return cut_runner_.get();
+  }
 
-  const LPInterface* lpi() const { return lpi_.get(); }
-  LPInterface* mutable_lpi() { return lpi_.get(); }
+  const LPInterface* lpi() const override { return lpi_.get(); }
+  LPInterface* mutable_lpi() override { return lpi_.get(); }
 
-  bool IsIntegerWithinTolerance(double d) const {
+  bool IsIntegerWithinTolerance(double d) const override {
     return std::abs(d - std::round(d)) <= params_.integrality_tolerance();
   }
 
-  bool IsEqualToWithinTolerance(double d, double b) const {
+  bool IsEqualToWithinTolerance(double d, double b) const override {
     return std::abs(d - b) <= params_.numerical_tolerance();
   }
 
-  double FloorWithTolerance(double d) const {
+  double FloorWithTolerance(double d) const override {
     return IsIntegerWithinTolerance(d) ? std::round(d) : std::floor(d);
   }
 

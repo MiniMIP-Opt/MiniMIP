@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef SRC_CUTTING_INTERFACE_SELECTOR_FACTORY_H_
+#define SRC_CUTTING_INTERFACE_SELECTOR_FACTORY_H_
+
 #include "src/cutting_interface/cuts_selector.h"
 #include "src/cutting_interface/hybrid_selector.h"
 
@@ -26,3 +29,5 @@ inline absl::StatusOr<std::unique_ptr<CutSelector>> ConfigureSelectorFromProto(
 }
 
 }  // namespace minimip
+
+#endif  // SRC_CUTTING_INTERFACE_SELECTOR_FACTORY_H_

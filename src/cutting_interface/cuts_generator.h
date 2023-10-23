@@ -24,7 +24,7 @@ namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the generator.
-class Solver;
+class ISolverContext;
 
 class CutGenerator {
  public:
@@ -34,7 +34,7 @@ class CutGenerator {
   // cuts could be generated given the current state. If called multiple times,
   // the generator is expected to continue where it left of, if appropriate.
   virtual absl::StatusOr<std::vector<CutData>> GenerateCuttingPlanes(
-      const Solver& solver) = 0;
+      const ISolverContext& context) = 0;
 };
 
 }  // namespace minimip

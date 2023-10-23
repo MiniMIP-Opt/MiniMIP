@@ -18,23 +18,22 @@
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_runner.h"
 #include "src/parameters.pb.h"
-#include "src/solver.h"
 
 namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the selector.
-class Solver;
+class ISolverContext;
 
 class DefaultRunner : CuttingInterface {
  public:
   explicit DefaultRunner(const RunnerParameters& params)
       : params_(params.default_runner_parameters()) {}
 
-  bool CutCondition(const Solver& solver) final;
+  bool CutCondition(const ISolverContext& context) final;
 
-  virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, LPInterface* mutable_lpi,
+  absl::Status SeparateCurrentLPSolution(
+      ISolverContext& context, LPInterface* mutable_lpi,
       CutRegistry& mutable_cut_registry) final;
 
  private:

@@ -16,7 +16,7 @@
 
 namespace minimip {
 
-bool DefaultRunner::CutCondition(const Solver& solver) {
+bool DefaultRunner::CutCondition(const ISolverContext& context) {
   // max cutrounds per node
 
   // max cuts
@@ -30,22 +30,22 @@ bool DefaultRunner::CutCondition(const Solver& solver) {
 }
 
 absl::Status DefaultRunner::SeparateCurrentLPSolution(
-    const Solver& solver, LPInterface* mutable_lpi,
+    ISolverContext& context, LPInterface* mutable_lpi,
     CutRegistry& mutable_cut_registry) {
   int i = 0;
 
-  while (i < 1) {  // CutCondition(solver)
+  while (i < 1) {  // CutCondition(context)
     std::vector<int> new_cut_indices;
 
     for (const std::unique_ptr<CutGenerator>& generator : generators_) {
       absl::StatusOr<std::vector<CutData>> cuts =
-          generator->GenerateCuttingPlanes(solver);
+          generator->GenerateCuttingPlanes(context);
       if (cuts.status() != absl::OkStatus()) {
         return cuts.status();
       }
 
       absl::StatusOr<std::vector<CutData>> filtered_cuts =
-          selector_->SelectCuttingPlanes(solver, cuts.value());
+          selector_->SelectCuttingPlanes(context, cuts.value());
 
       if (filtered_cuts.status() != absl::OkStatus()) {
         return filtered_cuts.status();

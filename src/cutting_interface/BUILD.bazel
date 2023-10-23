@@ -31,7 +31,7 @@ cc_library(
     srcs = ["aggregating_generator.cc"],
     hdrs = ["aggregating_generator.h"],
     deps = [
-        "//src:solver",
+        "//src:isolver_context",
         "//src/cutting_interface:cuts_generator",
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_macros",
@@ -90,7 +90,7 @@ cc_library(
     srcs = ["hybrid_selector.cc"],
     hdrs = ["hybrid_selector.h"],
     deps = [
-        "//src:solver",
+        "//src:isolver_context",
         "//src/cutting_interface:cuts_selector",
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_macros",

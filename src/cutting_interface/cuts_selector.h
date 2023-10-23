@@ -25,7 +25,7 @@ namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the selector.
-class Solver;
+class ISolverContext;
 
 // NOTE: This file should include the default scoring function as the efficacy
 //      of a given cutting plane in regard to the current LP solution as a
@@ -41,7 +41,7 @@ class CutSelector {
   // Select up to `max_num_cuts` cutting planes.
   // Returns the selected cuts given the current state.
   virtual absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
-      const Solver& solver, std::vector<CutData>& cuts) = 0;
+      const ISolverContext& context, std::vector<CutData>& cuts) = 0;
 };
 
 }  // namespace minimip
