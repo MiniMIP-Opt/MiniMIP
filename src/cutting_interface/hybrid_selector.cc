@@ -70,7 +70,7 @@ bool TwoCutsAreOrthogonal(const CutData& cut_reference, const CutData& cut,
 }  // namespace
 
 absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
-    const ISolverContext& context, std::vector<CutData>& cuts) {
+    const SolverContextInterface& context, std::vector<CutData>& cuts) {
   // 1. Compute the score for each cut
   for (CutData& cut : cuts) {
     cut.SetScore(ComputeCutScore(params_, cut));

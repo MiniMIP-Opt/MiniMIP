@@ -24,19 +24,20 @@ namespace minimip {
 namespace {
 
 // Compute the fractionality of a real value.
-double Fractionality(const ISolverContext& context, double v) {
+double Fractionality(const SolverContextInterface& context, double v) {
   return context.IsIntegerWithinTolerance(v) ? 0.0 : v - std::floor(v);
 }
 
 // Check if a slack variable must by integer valued.
-bool HasIntegralSlackVariable(const ISolverContext& context, RowIndex row) {
+bool HasIntegralSlackVariable(const SolverContextInterface& context,
+                              RowIndex row) {
   return context.mip_data().is_integral_constraint()[row];
 }
 
 // Round the coefficient of a single non-negative integer variable using Mixed
 // Integer Rounding.
-double MIRRoundInteger(const ISolverContext& context, double coefficient,
-                       double f0) {
+double MIRRoundInteger(const SolverContextInterface& context,
+                       double coefficient, double f0) {
   const double fj = Fractionality(context, coefficient);
   return fj <= f0
              ? context.FloorWithTolerance(coefficient)
@@ -51,7 +52,7 @@ double MIRRoundContinuous(double coefficient, double f0) {
 
 // Round the coefficient of a single non-negative integer variable using strong
 // Chvatal-Gomory rounding.
-double CGRoundInteger(const ISolverContext& context, double coefficient,
+double CGRoundInteger(const SolverContextInterface& context, double coefficient,
                       double k, double f0) {
   const double fj = Fractionality(context, coefficient);
   const double p = fj <= f0 ? 0 : std::ceil(k * (fj - f0) / (1 - f0));
@@ -66,7 +67,7 @@ double CGRoundInteger(const ISolverContext& context, double coefficient,
 // Creates a row aggregation by summing rows with the given weights. See the
 // top-level comment in the header file for details.
 AggregatedRow AggregateByWeight(
-    const ISolverContext& context, const SparseCol& weights,
+    const SolverContextInterface& context, const SparseCol& weights,
     const absl::StrongVector<RowIndex, bool>& use_right_hand_side) {
   AggregatedRow aggregated_row;
   for (auto [row, weight] : weights.entries()) {
@@ -95,7 +96,7 @@ AggregatedRow AggregateByWeight(
 // `TransformBackToOriginalVariables` before the resulting cut is used or slack
 // variables are substituted.
 [[nodiscard]] bool TransformToNonNegativeVariables(
-    const ISolverContext& context, AggregatedRow& aggregated_row) {
+    const SolverContextInterface& context, AggregatedRow& aggregated_row) {
   bool success = true;
   aggregated_row.variable_coefficients.Transform([&context, &aggregated_row,
                                                   &success](
@@ -147,7 +148,7 @@ AggregatedRow AggregateByWeight(
 
 // The inverse of `TransformToNonNegativeVariables`.
 [[nodiscard]] bool TransformBackToOriginalVariables(
-    const ISolverContext& context, AggregatedRow& aggregated_row) {
+    const SolverContextInterface& context, AggregatedRow& aggregated_row) {
   bool success = true;
   aggregated_row.variable_coefficients.Transform(
       [&context, &aggregated_row, &success](ColIndex column,
@@ -189,7 +190,7 @@ AggregatedRow AggregateByWeight(
 
 // Substitutes all slack variables using their definition. See the top-level
 // comment in the header file for details.
-void SubstituteSlackVariables(const ISolverContext& context,
+void SubstituteSlackVariables(const SolverContextInterface& context,
                               AggregatedRow& aggregated_row) {
   for (const auto [row, slack_coefficient] :
        aggregated_row.slack_coefficients.entries()) {
@@ -210,7 +211,7 @@ void SubstituteSlackVariables(const ISolverContext& context,
 // information. `true` means that the right hand side should be chosen, while
 // `false` means the left hand side.
 absl::StatusOr<absl::StrongVector<RowIndex, bool>> ChooseActiveSidesByBasis(
-    const ISolverContext& context) {
+    const SolverContextInterface& context) {
   ASSIGN_OR_RETURN((const absl::StrongVector<RowIndex, double> activities),
                    context.lpi()->GetRowActivities());
 
@@ -252,7 +253,7 @@ bool RemovesLPOptimum(const SparseRow& row, double right_hand_side,
 }  // namespace
 
 std::optional<AggregatedRow> MIRRounder::RoundAggregatedRow(
-    const ISolverContext& context, AggregatedRow aggregated_row) const {
+    const SolverContextInterface& context, AggregatedRow aggregated_row) const {
   const double f0 = Fractionality(context, aggregated_row.right_hand_side);
   aggregated_row.variable_coefficients.Transform(
       [f0, &context](ColIndex col, double coefficient) {
@@ -273,7 +274,7 @@ std::optional<AggregatedRow> MIRRounder::RoundAggregatedRow(
 }
 
 std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
-    const ISolverContext& context, AggregatedRow aggregated_row) const {
+    const SolverContextInterface& context, AggregatedRow aggregated_row) const {
   // CG rounding cannot be applied if there are continuous variables with
   // negative coefficients.
   if (!std::all_of(aggregated_row.slack_coefficients.entries().begin(),
@@ -326,7 +327,8 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
 }
 
 absl::StatusOr<std::vector<CutData>>
-TableauRoundingGenerator::GenerateCuttingPlanes(const ISolverContext& context) {
+TableauRoundingGenerator::GenerateCuttingPlanes(
+    const SolverContextInterface& context) {
   const int max_num_cuts = params_.max_num_cuts();
   if (!context.lpi()->IsSolved()) {
     return absl::FailedPreconditionError(

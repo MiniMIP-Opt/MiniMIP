@@ -27,30 +27,30 @@ namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the cutting interface.
-class ISolverContext;
+class SolverContextInterface;
 
-class CuttingInterface {
+class CutRunnerInterface {
  public:
-  virtual ~CuttingInterface() = default;
+  virtual ~CutRunnerInterface() = default;
 
   // TODO(CG): add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      ISolverContext& context, LPInterface* mutable_lpi,
+      SolverContextInterface& context, LPInterface* mutable_lpi,
       CutRegistry& mutable_cut_registry) = 0;
 
-  virtual bool CutCondition(const ISolverContext& context) = 0;
+  virtual bool CutCondition(const SolverContextInterface& context) = 0;
 
-  void AddGenerator(std::unique_ptr<CutGenerator> generator) {
+  void AddGenerator(std::unique_ptr<CutGeneratorInterface> generator) {
     generators_.push_back(std::move(generator));
   }
 
-  void AddSelector(std::unique_ptr<CutSelector> selector) {
+  void AddSelector(std::unique_ptr<CutSelectorInterface> selector) {
     selector_ = std::move(selector);
   }
 
  protected:
-  std::vector<std::unique_ptr<CutGenerator>> generators_;
-  std::unique_ptr<CutSelector> selector_;
+  std::vector<std::unique_ptr<CutGeneratorInterface>> generators_;
+  std::unique_ptr<CutSelectorInterface> selector_;
 };
 
 }  // namespace minimip

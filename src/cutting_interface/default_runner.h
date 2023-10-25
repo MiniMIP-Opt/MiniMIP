@@ -15,25 +15,52 @@
 #ifndef MINIMIP_SRC_CUTTING_INTERFACE_DEFAULT_RUNNER_H_
 #define MINIMIP_SRC_CUTTING_INTERFACE_DEFAULT_RUNNER_H_
 
+#include <vector>
+
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_runner.h"
+#include "src/cutting_interface/generator_factory.h"
+#include "src/cutting_interface/selector_factory.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the selector.
-class ISolverContext;
+class SolverContextInterface;
 
-class DefaultRunner : CuttingInterface {
+class DefaultRunner : public CutRunnerInterface {
  public:
-  explicit DefaultRunner(const RunnerParameters& params)
-      : params_(params.default_runner_parameters()) {}
+  explicit DefaultRunner(const CutRunnerParameters& params)
+      : params_(params.default_runner_parameters()) {
+    // Check and initialize the cut generators.
+    for (const auto& generator_params : params.generator_parameters()) {
+      auto generator_or_status = ConfigureGeneratorFromProto(generator_params);
+      if (!generator_or_status.ok()) {
+        // TODO: Handle the error (logging, exceptions, etc.)
+        continue;
+      }
+      AddGenerator(std::move(generator_or_status.value()));
+    }
+    // TODO: Assuming there's only one selector, adjust as needed if there can
+    // be multiple
+    if (!params.selector_parameters().empty()) {
+      const auto& selector_params =
+          params.selector_parameters(0);  // Getting the first selector
+      auto selector_or_status = ConfigureSelectorFromProto(selector_params);
+      if (!selector_or_status.ok()) {
+        // Handle the error (logging, exceptions, etc.)
+        // ...
+      } else {
+        AddSelector(std::move(selector_or_status.value()));
+      }
+    }
+  }
 
-  bool CutCondition(const ISolverContext& context) final;
+  bool CutCondition(const SolverContextInterface& context) final;
 
   absl::Status SeparateCurrentLPSolution(
-      ISolverContext& context, LPInterface* mutable_lpi,
+      SolverContextInterface& context, LPInterface* mutable_lpi,
       CutRegistry& mutable_cut_registry) final;
 
  private:

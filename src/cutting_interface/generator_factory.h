@@ -20,8 +20,9 @@
 
 namespace minimip {
 
-inline absl::StatusOr<std::unique_ptr<CutGenerator>>
-ConfigureGeneratorFromProto(const GeneratorParameters& generator_parameters) {
+inline absl::StatusOr<std::unique_ptr<CutGeneratorInterface>>
+ConfigureGeneratorFromProto(
+    const CutGeneratorParameters& generator_parameters) {
   if (generator_parameters.has_tableau_rounding_generator_parameters()) {
     return std::make_unique<TableauRoundingGenerator>(generator_parameters);
   }
@@ -30,4 +31,4 @@ ConfigureGeneratorFromProto(const GeneratorParameters& generator_parameters) {
 
 }  // namespace minimip
 
-#endif SRC_CUTTING_INTERFACE_GENERATOR_FACTORY_H_
+#endif  // SRC_CUTTING_INTERFACE_GENERATOR_FACTORY_H_

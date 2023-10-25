@@ -34,10 +34,11 @@ using testing::Not;
 
 enum class CutGeneratorType { kGomoryMixedInteger, kGomoryStrongCG };
 
-std::unique_ptr<CutGenerator> CreateCutGenerator(CutGeneratorType type) {
+std::unique_ptr<CutGeneratorInterface> CreateCutGenerator(
+    CutGeneratorType type) {
   switch (type) {
     case CutGeneratorType::kGomoryMixedInteger: {
-      GeneratorParameters params;
+      CutGeneratorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
             tableau_rounding_generator_parameters: {
@@ -47,7 +48,7 @@ std::unique_ptr<CutGenerator> CreateCutGenerator(CutGeneratorType type) {
       return std::make_unique<TableauRoundingGenerator>(params);
     }
     case CutGeneratorType::kGomoryStrongCG: {
-      GeneratorParameters params;
+      CutGeneratorParameters params;
       CHECK(google::protobuf::TextFormat::ParseFromString(
           R"pb(
             tableau_rounding_generator_parameters: {
@@ -69,7 +70,7 @@ class SmallModelSmokeTest
 
     // Call the Create function to create a Solver object
     ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                         Solver::Create(MiniMipParameters{}, data.first));
+                         Solver::Create(data.first));
 
     solver_ = std::move(solver);
     optimum_ = std::move(data.second);
@@ -268,7 +269,7 @@ class SmallModelSmokeTest
         });
   }
 
-  std::unique_ptr<CutGenerator> generator_;
+  std::unique_ptr<CutGeneratorInterface> generator_;
   std::unique_ptr<Solver> solver_;
   SparseRow optimum_;
 };

@@ -20,26 +20,55 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "isolver_context.h"
+#include "solver_context_interface.h"
 #include "src/cutting_interface/runner_factory.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {
 
+namespace {
+// Method to generate default MiniMipParameters
+MiniMipParameters CreateDefaultParameters() {
+  MiniMipParameters default_params;
+
+  default_params.mutable_lp_parameters();
+
+  // DefaultRunner as the default.
+  CutRunnerParameters* cut_runner_params = default_params.mutable_cut_runners();
+  cut_runner_params->mutable_default_runner_parameters();
+
+  // TableauRoundingGenerator as the default.
+  CutGeneratorParameters* generator_param = default_params.add_cut_generators();
+  generator_param->mutable_tableau_rounding_generator_parameters();
+
+  // HybridSelector as the default
+  CutSelectorParameters* selector_param = default_params.add_cut_selectors();
+  selector_param->mutable_hybrid_selector_parameters();
+
+  return default_params;
+}
+}  // namespace
+
 // This is the main solver class. It serves as both the main point of contact
 // between MiniMIP and client code. It also owns all global data structures and
 // modules.
-class Solver : public ISolverContext {
+class Solver : public SolverContextInterface {
  public:
   // Factory method to create a Solver object from a set of parameters.
   static absl::StatusOr<std::unique_ptr<Solver>> Create(
-      const MiniMipParameters& params, const MiniMipProblem& problem) {
+      const MiniMipProblem& problem = MiniMipProblem(),
+      const MiniMipParameters& user_params = MiniMipParameters()) {
     const std::string problem_error = FindErrorInMiniMipProblem(problem);
     if (!problem_error.empty()) {
       return util::InvalidArgumentErrorBuilder()
              << "Error found in problem: " << problem_error;
     }
+    MiniMipParameters params = CreateDefaultParameters();
+
+    // The user's settings will overwrite the defaults where they're provided.
+    params.MergeFrom(user_params);
+
     MipData mip_data(problem);
     MipTree mip_tree;
     CutRegistry cut_registry;
@@ -47,8 +76,8 @@ class Solver : public ISolverContext {
     ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
                      ConfigureLPSolverFromProto(params.lp_parameters()));
 
-    ASSIGN_OR_RETURN(std::unique_ptr<CuttingInterface> cut_runner,
-                     ConfigureRunnerFromProto(params.cut_runner()));
+    ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
+                     ConfigureRunnerFromProto(params.cut_runners()));
 
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree),
@@ -67,7 +96,7 @@ class Solver : public ISolverContext {
   const CutRegistry& cut_registry() const override { return cut_registry_; }
   CutRegistry& mutable_cut_registry() override { return cut_registry_; }
 
-  CuttingInterface* mutable_cut_runner() const override {
+  CutRunnerInterface* mutable_cut_runner() const override {
     return cut_runner_.get();
   }
 
@@ -103,14 +132,15 @@ class Solver : public ISolverContext {
 
   // Entry-point for the cut API, used to create and activate cuts in the main
   // cut-and-price loop (not yet implemented).
-  std::unique_ptr<CuttingInterface> cut_runner_;
+  std::unique_ptr<CutRunnerInterface> cut_runner_;
 
   // Handle to an LP solver.
   std::unique_ptr<LPInterface> lpi_;
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
-         CutRegistry cut_registry, std::unique_ptr<CuttingInterface> cut_runner,
+         CutRegistry cut_registry,
+         std::unique_ptr<CutRunnerInterface> cut_runner,
          std::unique_ptr<LPInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
@@ -121,10 +151,10 @@ class Solver : public ISolverContext {
 };
 
 // Convenience function to create a solver and solve the given problem.
-inline absl::StatusOr<MiniMipResult> Solve(const MiniMipParameters& parameters,
-                                           const MiniMipProblem& problem) {
+inline absl::StatusOr<MiniMipResult> Solve(
+    const MiniMipProblem& problem, const MiniMipParameters& user_params) {
   ASSIGN_OR_RETURN(std::unique_ptr<Solver> solver,
-                   Solver::Create(parameters, problem));
+                   Solver::Create(problem, user_params));
   return solver->Solve();
 }
 

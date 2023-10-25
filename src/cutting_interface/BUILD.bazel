@@ -31,7 +31,7 @@ cc_library(
     srcs = ["aggregating_generator.cc"],
     hdrs = ["aggregating_generator.h"],
     deps = [
-        "//src:isolver_context",
+        "//src:solver_context_interface",
         "//src/cutting_interface:cuts_generator",
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_macros",
@@ -39,7 +39,7 @@ cc_library(
 )
 
 cc_library(
-    name = "cutting_interface",
+    name = "cuts_runner",
     hdrs = ["cuts_runner.h"],
     deps = [
         ":cuts_selector",
@@ -55,9 +55,9 @@ cc_library(
     srcs = ["default_runner.cc"],
     hdrs = ["default_runner.h"],
     deps = [
-        ":hybrid_selector",
-        ":aggregating_generator",
-        "//src/cutting_interface:cutting_interface",
+        ":selector_factory",
+        ":generator_factory",
+        "//src/cutting_interface:cuts_runner",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
     ],
@@ -90,7 +90,7 @@ cc_library(
     srcs = ["hybrid_selector.cc"],
     hdrs = ["hybrid_selector.h"],
     deps = [
-        "//src:isolver_context",
+        "//src:solver_context_interface",
         "//src/cutting_interface:cuts_selector",
         "//src/lp_interface:lpi",
         "@com_google_ortools//ortools/base:status_macros",

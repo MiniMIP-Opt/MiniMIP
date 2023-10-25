@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_ISOLVER_CONTEXT_H_
-#define SRC_ISOLVER_CONTEXT_H_
+#ifndef SRC_SOLVER_CONTEXT_INTERFACE_H_
+#define SRC_SOLVER_CONTEXT_INTERFACE_H_
 
 #include "src/cutting_interface/cuts_runner.h"
 #include "src/data_structures/cuts_data.h"
@@ -24,9 +24,9 @@
 
 namespace minimip {
 
-class ISolverContext {
+class SolverContextInterface {
  public:
-  virtual ~ISolverContext() = default;
+  virtual ~SolverContextInterface() = default;
 
   virtual const MipData& mip_data() const = 0;
   virtual MipData& mutable_mip_data() = 0;
@@ -37,7 +37,7 @@ class ISolverContext {
   virtual const CutRegistry& cut_registry() const = 0;
   virtual CutRegistry& mutable_cut_registry() = 0;
 
-  virtual CuttingInterface* mutable_cut_runner() const = 0;
+  virtual CutRunnerInterface* mutable_cut_runner() const = 0;
 
   virtual const LPInterface* lpi() const = 0;
   virtual LPInterface* mutable_lpi() = 0;
@@ -50,4 +50,4 @@ class ISolverContext {
 };
 
 }  // namespace minimip
-#endif  // SRC_ISOLVER_CONTEXT_H_
+#endif  // SRC_SOLVER_CONTEXT_INTERFACE_H_

@@ -20,7 +20,7 @@
 
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_generator.h"
-#include "src/isolver_context.h"
+#include "src/solver_context_interface.h"
 
 // The cut generators in this file creates cutting planes by rounding row
 // aggregations. Assume that row i in the LP is given by
@@ -90,7 +90,8 @@ class Rounder {
   virtual ~Rounder() = default;
 
   virtual std::optional<AggregatedRow> RoundAggregatedRow(
-      const ISolverContext& context, AggregatedRow aggregated_row) const = 0;
+      const SolverContextInterface& context,
+      AggregatedRow aggregated_row) const = 0;
 
   // Add a virtual function to return the name of the rounder
   virtual std::string GetName() const = 0;
@@ -100,7 +101,8 @@ class Rounder {
 class MIRRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
-      const ISolverContext& context, AggregatedRow aggregated_row) const final;
+      const SolverContextInterface& context,
+      AggregatedRow aggregated_row) const final;
 
   std::string GetName() const override { return "MIR"; }
 };
@@ -111,14 +113,15 @@ class MIRRounder : public Rounder {
 class StrongCGRounder : public Rounder {
  public:
   std::optional<AggregatedRow> RoundAggregatedRow(
-      const ISolverContext& context, AggregatedRow aggregated_row) const final;
+      const SolverContextInterface& context,
+      AggregatedRow aggregated_row) const final;
 
   std::string GetName() const override { return "SCG"; }
 };
 
-class TableauRoundingGenerator : public CutGenerator {
+class TableauRoundingGenerator : public CutGeneratorInterface {
  public:
-  explicit TableauRoundingGenerator(GeneratorParameters params)
+  explicit TableauRoundingGenerator(CutGeneratorParameters params)
       : params_(std::move(params)) {
     DCHECK(params_.has_tableau_rounding_generator_parameters());
     if (params_.tableau_rounding_generator_parameters()
@@ -132,11 +135,11 @@ class TableauRoundingGenerator : public CutGenerator {
   }
 
   absl::StatusOr<std::vector<CutData>> GenerateCuttingPlanes(
-      const ISolverContext& context) final;
+      const SolverContextInterface& context) final;
 
  private:
   std::vector<std::unique_ptr<Rounder>> rounders_;
-  const GeneratorParameters params_;
+  const CutGeneratorParameters params_;
 };
 
 }  // namespace minimip

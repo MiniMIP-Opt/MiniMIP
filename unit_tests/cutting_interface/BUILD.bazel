@@ -27,6 +27,7 @@ cc_test(
         "//src/cutting_interface:aggregating_generator",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
+        "//src:solver",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
@@ -38,6 +39,7 @@ cc_test(
     srcs = ["hybrid_selector_test.cc"],
     deps = [
         "//src/cutting_interface:hybrid_selector",
+        "//src:solver",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",

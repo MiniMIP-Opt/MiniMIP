@@ -16,10 +16,10 @@ cc_proto_library(
 )
 
 cc_library(
-    name = "isolver_context",
-    hdrs = ["isolver_context.h"],
+    name = "solver_context_interface",
+    hdrs = ["solver_context_interface.h"],
     deps = [
-        "//src/cutting_interface:cutting_interface",
+        "//src/cutting_interface:cuts_runner",
         "//src/data_structures:cuts_data",
         "//src/data_structures:mip_data",
         "//src/data_structures:mip_tree",
@@ -34,7 +34,7 @@ cc_library(
     hdrs = ["solver.h"],
     deps = [
         ":parameters_cc_proto",
-        ":isolver_context",
+        ":solver_context_interface",
         "//src/lp_interface:lpi_factory",
         "//src/cutting_interface:runner_factory",
     ],

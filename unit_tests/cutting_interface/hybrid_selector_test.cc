@@ -34,7 +34,7 @@ using testing::Not;
 // This is a helper function to create the selector parameters.
 enum class CutSelectorType { kHybridSelectorUnsigned, kHybridSelectorSigned };
 
-std::unique_ptr<CutSelector> CreateCutSelector(CutSelectorType type) {
+std::unique_ptr<CutSelectorInterface> CreateCutSelector(CutSelectorType type) {
   switch (type) {
     case CutSelectorType::kHybridSelectorUnsigned: {
       CutSelectorParameters params;
@@ -66,7 +66,7 @@ class MinimalCutSelectorTest
 
     // Call the Create function to create a Solver object
     ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                         Solver::Create(MiniMipParameters{}, problem));
+                         Solver::Create(problem));
 
     solver_ = std::move(solver);
   }
@@ -110,7 +110,7 @@ class MinimalCutSelectorTest
     return problem;
   }
 
-  std::unique_ptr<CutSelector> selector_;
+  std::unique_ptr<CutSelectorInterface> selector_;
   std::unique_ptr<Solver> solver_;
 };
 
@@ -140,8 +140,7 @@ TEST_P(MinimalCutSelectorTest, SelectsFirstCutIfAllAreIdentical) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectsIdenticalCutIfItIsForced) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.0}, {1, 1.5}});
 
@@ -161,8 +160,7 @@ TEST_P(MinimalCutSelectorTest, SelectsIdenticalCutIfItIsForced) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectsParallelCutWithHigherScore) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.0}, {1, 1.5}});
 
@@ -180,8 +178,7 @@ TEST_P(MinimalCutSelectorTest, SelectsParallelCutWithHigherScore) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectsForcedParallelCutWithLowerScoreLast) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.0}, {1, 1.5}});
 
@@ -201,8 +198,7 @@ TEST_P(MinimalCutSelectorTest, SelectsForcedParallelCutWithLowerScoreLast) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectsAllOrthgonalCuts) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.0}, {1, 1.5}});
 
@@ -237,8 +233,7 @@ TEST_P(MinimalCutSelectorTest, SelectsAllOrthgonalCuts) {
 }
 
 TEST_P(MinimalCutSelectorTest, FiltersOrthogonalCutBelowScoreThreshold) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.5}, {1, 1.0}});
 
@@ -257,8 +252,7 @@ TEST_P(MinimalCutSelectorTest, FiltersOrthogonalCutBelowScoreThreshold) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectsNoCutsIfNoneAreAboveScoreThreshold) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.5}, {1, 1.0}});
 
@@ -275,8 +269,7 @@ TEST_P(MinimalCutSelectorTest, SelectsNoCutsIfNoneAreAboveScoreThreshold) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectBetterOrthogonalCut) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.5}, {1, 1.5}});
 
@@ -298,8 +291,7 @@ TEST_P(MinimalCutSelectorTest, SelectBetterOrthogonalCut) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectBestCutsFirstAndForcedCutsInPosition) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.5}, {1, 1.5}});
 
@@ -323,8 +315,7 @@ TEST_P(MinimalCutSelectorTest, SelectBestCutsFirstAndForcedCutsInPosition) {
 }
 
 TEST_P(MinimalCutSelectorTest, SelectInvertedCutIfSignedOrthogonalityIsUsed) {
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, MiniMipProblem{}));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.5}, {1, 1.0}});
 

@@ -64,8 +64,7 @@ TEST(CutRunnerTests, SimpleSolve) {
   problem.is_maximization = true;
   optimum = CreateSparseRow({{0, 3}, {1, 0}});
 
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(MiniMipParameters{}, problem));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
   CHECK_OK(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data()));
   CHECK_OK(solver->mutable_lpi()->SolveLPWithDualSimplex());
