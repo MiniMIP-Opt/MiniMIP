@@ -76,7 +76,7 @@ double CutRegistry::ComputeEfficacy(
 int CutRegistry::AddCut(CutData&& cut_data) {
   cut_data.SetIndex(cuts_.size());
   cuts_.push_back(std::move(cut_data));
-  return cuts_.size();
+  return cut_data.index();
 }
 
 // Activate stored cut.

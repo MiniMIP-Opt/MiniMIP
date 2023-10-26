@@ -43,7 +43,7 @@ class Solver : public SolverContextInterface {
              << "Error found in problem: " << problem_error;
     }
     // The user's settings will overwrite the defaults where they're provided.
-    MiniMipParameters params = UserParameters(user_params);
+    MiniMipParameters params = UserCustomizedParameters(user_params);
 
     MipData mip_data(problem);
     MipTree mip_tree;

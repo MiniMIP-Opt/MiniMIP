@@ -35,8 +35,7 @@ class CutRunnerInterface {
 
   // TODO(CG): add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      SolverContextInterface& context, LPInterface* mutable_lpi,
-      CutRegistry& mutable_cut_registry) = 0;
+      SolverContextInterface& context) = 0;
 
   virtual bool CutCondition(const SolverContextInterface& context) = 0;
 

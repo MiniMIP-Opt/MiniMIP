@@ -88,10 +88,10 @@ TEST(CutRunnerTests, SimpleSolve) {
   ASSERT_TRUE(solver->IsEqualToWithinTolerance(
       solver->lpi()->GetObjectiveValue(), 28.0 / 3.0));
 
-  ASSERT_OK(solver->mutable_cut_runner()->SeparateCurrentLPSolution(
-      *solver, solver->mutable_lpi(), solver->mutable_cut_registry()));
+  ASSERT_OK(
+      solver->mutable_cut_runner()->SeparateCurrentLPSolution(*solver.get()));
 
-  std::cout << solver->lpi()->GetObjectiveValue() << std::endl;
+  double x = solver->lpi()->GetObjectiveValue();
 
   ASSERT_TRUE(solver->lpi()->IsSolved());
   ASSERT_TRUE(solver->lpi()->IsOptimal());

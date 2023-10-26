@@ -55,9 +55,7 @@ class DefaultRunner : public CutRunnerInterface {
 
   bool CutCondition(const SolverContextInterface& context) final;
 
-  absl::Status SeparateCurrentLPSolution(
-      SolverContextInterface& context, LPInterface* mutable_lpi,
-      CutRegistry& mutable_cut_registry) final;
+  absl::Status SeparateCurrentLPSolution(SolverContextInterface& context) final;
 
  private:
   const DefaultRunnerParameters& params_;
