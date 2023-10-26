@@ -24,31 +24,9 @@
 #include "src/cutting_interface/runner_factory.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
+#include "src/parameters_factory.h"
 
 namespace minimip {
-
-namespace {
-// Method to generate default MiniMipParameters
-MiniMipParameters CreateDefaultParameters() {
-  MiniMipParameters default_params;
-
-  default_params.mutable_lp_parameters();
-
-  // DefaultRunner as the default.
-  CutRunnerParameters* cut_runner_params = default_params.mutable_cut_runners();
-  cut_runner_params->mutable_default_runner_parameters();
-
-  // TableauRoundingGenerator as the default.
-  CutGeneratorParameters* generator_param = default_params.add_cut_generators();
-  generator_param->mutable_tableau_rounding_generator_parameters();
-
-  // HybridSelector as the default
-  CutSelectorParameters* selector_param = default_params.add_cut_selectors();
-  selector_param->mutable_hybrid_selector_parameters();
-
-  return default_params;
-}
-}  // namespace
 
 // This is the main solver class. It serves as both the main point of contact
 // between MiniMIP and client code. It also owns all global data structures and
@@ -64,10 +42,8 @@ class Solver : public SolverContextInterface {
       return util::InvalidArgumentErrorBuilder()
              << "Error found in problem: " << problem_error;
     }
-    MiniMipParameters params = CreateDefaultParameters();
-
     // The user's settings will overwrite the defaults where they're provided.
-    params.MergeFrom(user_params);
+    MiniMipParameters params = UserParameters(user_params);
 
     MipData mip_data(problem);
     MipTree mip_tree;

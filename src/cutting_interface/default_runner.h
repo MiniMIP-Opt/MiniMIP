@@ -37,24 +37,20 @@ class DefaultRunner : public CutRunnerInterface {
     for (const auto& generator_params : params.generator_parameters()) {
       auto generator_or_status = ConfigureGeneratorFromProto(generator_params);
       if (!generator_or_status.ok()) {
-        // TODO: Handle the error (logging, exceptions, etc.)
+        LOG(ERROR) << "Could not configure generator: "
+                   << generator_or_status.status();
         continue;
       }
       AddGenerator(std::move(generator_or_status.value()));
     }
-    // TODO: Assuming there's only one selector, adjust as needed if there can
-    // be multiple
-    if (!params.selector_parameters().empty()) {
-      const auto& selector_params =
-          params.selector_parameters(0);  // Getting the first selector
-      auto selector_or_status = ConfigureSelectorFromProto(selector_params);
-      if (!selector_or_status.ok()) {
-        // Handle the error (logging, exceptions, etc.)
-        // ...
-      } else {
-        AddSelector(std::move(selector_or_status.value()));
-      }
+
+    auto selector_or_status =
+        ConfigureSelectorFromProto(params.selector_parameters().Get(0));
+    if (!selector_or_status.ok()) {
+      LOG(ERROR) << "Could not configure selector: "
+                 << selector_or_status.status();
     }
+    AddSelector(std::move(selector_or_status.value()));
   }
 
   bool CutCondition(const SolverContextInterface& context) final;

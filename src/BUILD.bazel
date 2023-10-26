@@ -16,6 +16,12 @@ cc_proto_library(
 )
 
 cc_library(
+    name = "parameters_factory",
+    hdrs = ["parameters_factory.h"],
+    deps = [":parameters_cc_proto"],
+)
+
+cc_library(
     name = "solver_context_interface",
     hdrs = ["solver_context_interface.h"],
     deps = [
@@ -33,7 +39,7 @@ cc_library(
     srcs = ["solver.cc"],
     hdrs = ["solver.h"],
     deps = [
-        ":parameters_cc_proto",
+        ":parameters_factory",
         ":solver_context_interface",
         "//src/lp_interface:lpi_factory",
         "//src/cutting_interface:runner_factory",

@@ -21,7 +21,20 @@
 
 namespace minimip {
 
-// TODO: Implement CutRunnerTests.
+TEST(CutRunnerTests, CreateCutRunner) {
+  CutRunnerParameters default_runner_params = DefaultCutRunnerParameters();
+
+  // checks the default number of available generators and selectors
+  ASSERT_EQ(default_runner_params.generator_parameters().size(), 1);
+  ASSERT_EQ(default_runner_params.selector_parameters().size(), 1);
+
+  // At this point, the default_params object has explicitly instantiated the
+  // nested messages, so they are "set" even though their fields are at default
+  // values.
+
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<CutRunnerInterface> runner,
+                       ConfigureRunnerFromProto(default_runner_params));
+}
 
 TEST(CutRunnerTests, SimpleSolve) {
   MiniMipProblem problem;
@@ -77,6 +90,11 @@ TEST(CutRunnerTests, SimpleSolve) {
 
   ASSERT_OK(solver->mutable_cut_runner()->SeparateCurrentLPSolution(
       *solver, solver->mutable_lpi(), solver->mutable_cut_registry()));
+
+  std::cout << solver->lpi()->GetObjectiveValue() << std::endl;
+
+  ASSERT_TRUE(solver->lpi()->IsSolved());
+  ASSERT_TRUE(solver->lpi()->IsOptimal());
 }
 
 }  // namespace minimip
