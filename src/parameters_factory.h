@@ -57,7 +57,7 @@ inline MiniMipParameters DefaultMiniMipParameters() {
   default_params.mutable_lp_parameters();
 
   // Initialize the default CutRunner parameters.
-  *default_params.mutable_cut_runners() = DefaultCutRunnerParameters();
+  *default_params.mutable_cut_runner() = DefaultCutRunnerParameters();
 
   return default_params;
 }

@@ -191,7 +191,7 @@ message MiniMipParameters {
   // Parameters to forward to the underlying LP solver.
   optional LPParameters lp_parameters = 3;
 
-  optional CutRunnerParameters cut_runners = 4;
+  optional CutRunnerParameters cut_runner = 4;
 
   repeated CutGeneratorParameters cut_generators = 5;
 
