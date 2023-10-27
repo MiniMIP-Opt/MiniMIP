@@ -26,7 +26,7 @@ message TableauRoundingGeneratorParameters {
   optional bool use_strong_cg_rounding = 2 [default = true];
 }
 
-message GeneratorParameters {
+message CutGeneratorParameters {
 
   // The maximum number of cuts this CutGenerator should add per separation round. Zero value means
   // the CutGenerator is turned off.
@@ -34,19 +34,6 @@ message GeneratorParameters {
 
   oneof generator_specific {
     TableauRoundingGeneratorParameters tableau_rounding_generator_parameters = 2;
-  }
-
-}
-
-// Cutrunner Parameters  @TODO: Add more cut runner parameters and commentary
-message SomeCutRunnerParameters {
-
-}
-
-message CutRunnerParameters {
-
-  oneof runner_specific {
-    SomeCutRunnerParameters some_cut_runner_parameters = 1;
   }
 
 }
@@ -84,6 +71,24 @@ message CutSelectorParameters {
 
   oneof selector_specific {
     HybridSelectorParameters hybrid_selector_parameters = 2;
+  }
+
+}
+
+// Cutrunner Parameters
+message DefaultRunnerParameters {
+  optional int32 max_iterations = 1 [default = 100];
+  optional int32 max_num_cuts = 2 [default = 100];
+  optional int32 max_num_cuts_root = 3 [default = 100];
+}
+
+message CutRunnerParameters {
+
+  repeated CutGeneratorParameters generator_parameters = 1;
+  repeated CutSelectorParameters selector_parameters = 2;
+
+  oneof runner_specific {
+    DefaultRunnerParameters default_runner_parameters = 3;
   }
 
 }
@@ -182,18 +187,22 @@ message LpParameters {
 }
 
 message MiniMipParameters {
+  // A value v is considered integral within MiniMip if
+  // abs(v - round(v)) <= integrality_tolerance.
+  optional double integrality_tolerance = 1 [default = 1e-6];
+
+  // A value v is considered equal to zero within MiniMip if
+  // abs(v) <= numerical_tolerance.
+  optional double numerical_tolerance = 2 [default = 1e-9];
+
   // Parameters to forward to the underlying LP solver. These will be used to
   // instantiate the "main" LP solver in MiniMip (i.e., the one used to solve
   // nodes' relaxations while exploring the search tree).
-  optional LpParameters lp_parameters = 1;
+  optional LpParameters lp_parameters = 3;
 
-  // A value v is considered integral within MiniMip if
-  // abs(v - round(v)) <= integrality_tolerance.
-  optional double integrality_tolerance = 2 [default = 1e-6];
+  optional CutRunnerParameters cut_runner = 4;
 
-  optional CutRunnerParameters cut_runner = 3;
+  repeated CutGeneratorParameters cut_generators = 5;
 
-  repeated GeneratorParameters generators = 4;
-
-  repeated CutSelectorParameters selectors = 5;
+  repeated CutSelectorParameters cut_selectors = 6;
 }

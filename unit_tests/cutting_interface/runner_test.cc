@@ -14,13 +14,87 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/data_structures/mip_data.h"
+#include "src/cutting_interface/cuts_runner.h"
+#include "src/parameters.pb.h"
+#include "src/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
 
-// TODO: Implement CutRunnerTests.
+TEST(CutRunnerTests, CreateCutRunner) {
+  CutRunnerParameters default_runner_params = DefaultCutRunnerParameters();
 
-TEST(CutRunnerTests, EmptyTest) { MipData mip_data; }
+  // checks the default number of available generators and selectors
+  ASSERT_EQ(default_runner_params.generator_parameters().size(), 1);
+  ASSERT_EQ(default_runner_params.selector_parameters().size(), 1);
+
+  // At this point, the default_params object has explicitly instantiated the
+  // nested messages, so they are "set" even though their fields are at default
+  // values.
+
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<CutRunnerInterface> runner,
+                       ConfigureRunnerFromProto(default_runner_params));
+}
+
+TEST(CutRunnerTests, SimpleSolve) {
+  MiniMipProblem problem;
+  SparseRow optimum;
+
+  // Another small integer problem that requires proper use of slack
+  // variables.
+  //
+  // max: z = 3x_1 + 2x_2
+  //  x_1 + 2x_2 <= 4
+  // 2x_1 +  x_2 <= 6
+  // x_1, x_2 >= 0
+  // x_1 integer
+
+  problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                              .objective_coefficient = 3.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                              .objective_coefficient = 2.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = false});
+  problem.constraints.push_back(MiniMipConstraint{
+      .name = "ct1",
+      .var_indices = {0, 1},
+      .coefficients = {1.0, 2.0},
+      .left_hand_side = -kInf,
+      .right_hand_side = 4.0,
+  });
+  problem.constraints.push_back(MiniMipConstraint{
+      .name = "ct2",
+      .var_indices = {0, 1},
+      .coefficients = {2.0, 1.0},
+      .left_hand_side = -kInf,
+      .right_hand_side = 6,
+  });
+
+  problem.is_maximization = true;
+  optimum = CreateSparseRow({{0, 3}, {1, 0}});
+
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
+
+  CHECK_OK(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data()));
+  CHECK_OK(solver->mutable_lpi()->SolveLpWithDualSimplex());
+
+  ASSERT_TRUE(solver->lpi()->IsSolved());
+  ASSERT_TRUE(solver->lpi()->IsOptimal());
+
+  ASSERT_TRUE(solver->IsEqualToWithinTolerance(
+      solver->lpi()->GetObjectiveValue(), 28.0 / 3.0));
+
+  ASSERT_OK(
+      solver->mutable_cut_runner()->SeparateCurrentLPSolution(*solver.get()));
+
+  double x = solver->lpi()->GetObjectiveValue();
+
+  ASSERT_TRUE(solver->lpi()->IsSolved());
+  ASSERT_TRUE(solver->lpi()->IsOptimal());
+}
 
 }  // namespace minimip

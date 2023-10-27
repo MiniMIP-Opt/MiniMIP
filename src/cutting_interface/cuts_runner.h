@@ -21,40 +21,35 @@
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_generator.h"
 #include "src/cutting_interface/cuts_selector.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
 // Forward declaration of Solver. This is required to break the circular
 // dependency between the solver and the cutting interface.
-class Solver;
+class SolverContextInterface;
 
-class CuttingInterface {
+class CutRunnerInterface {
  public:
-  virtual ~CuttingInterface() = default;
+  virtual ~CutRunnerInterface() = default;
 
-  // TODO: add searchtree etc.
+  // TODO(CG): add searchtree etc.
   virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutRegistry& mutable_cut_registry) = 0;
+      SolverContextInterface& context) = 0;
 
-  void AddGenerator(std::unique_ptr<CutGenerator> generator) {
+  virtual bool CutCondition(const SolverContextInterface& context) = 0;
+
+  void AddGenerator(std::unique_ptr<CutGeneratorInterface> generator) {
     generators_.push_back(std::move(generator));
   }
 
-  void AddSelector(std::unique_ptr<CutSelector> selector) {
+  void AddSelector(std::unique_ptr<CutSelectorInterface> selector) {
     selector_ = std::move(selector);
   }
 
  protected:
-  std::vector<std::unique_ptr<CutGenerator>> generators_;
-  std::unique_ptr<CutSelector> selector_;
-};
-
-class CutRunner : CuttingInterface {
- public:
-  virtual ~CutRunner() = default;
-
-  virtual absl::Status SeparateCurrentLPSolution(
-      const Solver& solver, CutRegistry& mutable_cut_registry) final;
+  std::vector<std::unique_ptr<CutGeneratorInterface>> generators_;
+  std::unique_ptr<CutSelectorInterface> selector_;
 };
 
 }  // namespace minimip

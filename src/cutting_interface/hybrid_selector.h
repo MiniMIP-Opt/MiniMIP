@@ -20,7 +20,7 @@
 
 #include "ortools/base/status_macros.h"
 #include "src/cutting_interface/cuts_selector.h"
-#include "src/solver.h"
+#include "src/solver_context_interface.h"
 
 // TODO(Cgraczyk): Add a check that duplicates are removed.
 // The cutselector should not be responsible for removing duplicates.
@@ -33,14 +33,14 @@
 
 namespace minimip {
 
-class HybridSelector : public CutSelector {
+class HybridSelector : public CutSelectorInterface {
  public:
   explicit HybridSelector(const CutSelectorParameters& params)
       : max_num_cuts_(params.max_num_cuts()),
         params_(params.hybrid_selector_parameters()) {}
 
   absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
-      const Solver& solver, std::vector<CutData>& cuts) final;
+      const SolverContextInterface& context, std::vector<CutData>& cuts) final;
 
  private:
   int max_num_cuts_;
@@ -49,4 +49,4 @@ class HybridSelector : public CutSelector {
 
 }  // namespace minimip
 
-#endif  // MINIMIP_SRC_CUTTING_INTERFACE_HYBRID_SELECTOR_H_
+#endif  // SRC_CUTTING_INTERFACE_HYBRID_SELECTOR_H_

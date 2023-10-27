@@ -20,33 +20,31 @@
 #include <vector>
 
 #include "absl/status/status.h"
-#include "ortools/base/status_builder.h"
-#include "ortools/base/status_macros.h"
-#include "src/cutting_interface/cuts_runner.h"
+#include "solver_context_interface.h"
 #include "src/cutting_interface/runner_factory.h"
-#include "src/data_structures/cuts_data.h"
-#include "src/data_structures/mip_data.h"
-#include "src/data_structures/mip_tree.h"
-#include "src/data_structures/problem.h"
-#include "src/lp_interface/lpi.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
+#include "src/parameters_factory.h"
 
 namespace minimip {
 
 // This is the main solver class. It serves as both the main point of contact
 // between MiniMIP and client code. It also owns all global data structures and
 // modules.
-class Solver {
+class Solver : public SolverContextInterface {
  public:
   // Factory method to create a Solver object from a set of parameters.
   static absl::StatusOr<std::unique_ptr<Solver>> Create(
-      const MiniMipParameters& params, const MiniMipProblem& problem) {
+      const MiniMipProblem& problem = MiniMipProblem(),
+      const MiniMipParameters& user_params = MiniMipParameters()) {
     const std::string problem_error = FindErrorInMiniMipProblem(problem);
     if (!problem_error.empty()) {
       return util::InvalidArgumentErrorBuilder()
              << "Error found in problem: " << problem_error;
     }
+    // The user's settings will overwrite the defaults where they're provided.
+    MiniMipParameters params = UserCustomizedParameters(user_params);
+
     MipData mip_data(problem);
     MipTree mip_tree;
     CutRegistry cut_registry;
@@ -54,8 +52,8 @@ class Solver {
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
                      CreateLpSolver(params.lp_parameters()));
 
-    ASSIGN_OR_RETURN(std::unique_ptr<CuttingInterface> cut_runner,
-                     ConfigureCutInterfaceFromProto(params.cut_runner()));
+    ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
+                     ConfigureRunnerFromProto(params.cut_runner()));
 
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree),
@@ -65,23 +63,31 @@ class Solver {
 
   absl::StatusOr<MiniMipResult> Solve();
 
-  const MipData& mip_data() const { return mip_data_; }
-  MipData& mutable_mip_data() { return mip_data_; }
+  const MipData& mip_data() const override { return mip_data_; }
+  MipData& mutable_mip_data() override { return mip_data_; }
 
-  const MipTree& mip_tree() const { return mip_tree_; }
-  MipTree& mutable_mip_tree() { return mip_tree_; }
+  const MipTree& mip_tree() const override { return mip_tree_; }
+  MipTree& mutable_mip_tree() override { return mip_tree_; }
 
-  const CutRegistry& cut_registry() const { return cut_registry_; }
-  CutRegistry& mutable_cut_registry() { return cut_registry_; }
+  const CutRegistry& cut_registry() const override { return cut_registry_; }
+  CutRegistry& mutable_cut_registry() override { return cut_registry_; }
 
-  const LpInterface* lpi() const { return lpi_.get(); }
-  LpInterface* mutable_lpi() { return lpi_.get(); }
+  CutRunnerInterface* mutable_cut_runner() const override {
+    return cut_runner_.get();
+  }
 
-  bool IsIntegerWithinTolerance(double d) const {
+  const LpInterface* lpi() const override { return lpi_.get(); }
+  LpInterface* mutable_lpi() override { return lpi_.get(); }
+
+  bool IsIntegerWithinTolerance(double d) const override {
     return std::abs(d - std::round(d)) <= params_.integrality_tolerance();
   }
 
-  double FloorWithTolerance(double d) const {
+  bool IsEqualToWithinTolerance(double d, double b) const override {
+    return std::abs(d - b) <= params_.numerical_tolerance();
+  }
+
+  double FloorWithTolerance(double d) const override {
     return IsIntegerWithinTolerance(d) ? std::round(d) : std::floor(d);
   }
 
@@ -99,29 +105,31 @@ class Solver {
 
   // Contains all currently active and stored cuts.
   CutRegistry cut_registry_;
+
   // Entry-point for the cut API, used to create and activate cuts in the main
   // cut-and-price loop (not yet implemented).
-  std::unique_ptr<CuttingInterface> cut_runner_;
+  std::unique_ptr<CutRunnerInterface> cut_runner_;
+
   // Handle to an LP solver.
   std::unique_ptr<LpInterface> lpi_;
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
-         CutRegistry cut_registry, std::unique_ptr<CuttingInterface> cut_runner,
+         CutRegistry cut_registry, std::unique_ptr<CutRunnerInterface> cut_runner,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
-        cut_registry_(std::move(cut_registry)),
+        cut_registry_{std::move(cut_registry)},
         cut_runner_{std::move(cut_runner)},
         lpi_{std::move(lpi)} {}
 };
 
 // Convenience function to create a solver and solve the given problem.
-inline absl::StatusOr<MiniMipResult> Solve(const MiniMipParameters& parameters,
-                                           const MiniMipProblem& problem) {
+inline absl::StatusOr<MiniMipResult> Solve(
+    const MiniMipProblem& problem, const MiniMipParameters& user_params) {
   ASSIGN_OR_RETURN(std::unique_ptr<Solver> solver,
-                   Solver::Create(parameters, problem));
+                   Solver::Create(problem, user_params));
   return solver->Solve();
 }
 
