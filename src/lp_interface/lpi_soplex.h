@@ -23,21 +23,20 @@
 #include "ortools/util/file_util.h"
 #include "soplex.h"
 #include "src/lp_interface/lpi.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
-class LPSoplexInterface : public LPInterface {
+class LpSoplexInterface : public LpInterface {
  public:
-  LPSoplexInterface();
+  LpSoplexInterface();
 
-  ~LPSoplexInterface() override;
+  ~LpSoplexInterface() override;
 
   // ==========================================================================
   // LP model setters.
   // ==========================================================================
 
-  // Sets the entire problem: variables, constraints, objective, bounds, sides,
-  // and names.
   absl::Status PopulateFromMipData(const MipData& mip_data) final;
 
   absl::Status AddColumn(const SparseCol& col, double lower_bound,
@@ -105,8 +104,8 @@ class LPSoplexInterface : public LPInterface {
   // Solving methods.
   // ==========================================================================
 
-  absl::Status SolveLPWithPrimalSimplex() final;
-  absl::Status SolveLPWithDualSimplex() final;
+  absl::Status SolveLpWithPrimalSimplex() final;
+  absl::Status SolveLpWithDualSimplex() final;
   absl::Status StartStrongBranching() final;
   absl::Status EndStrongBranching() final;
 
@@ -161,14 +160,14 @@ class LPSoplexInterface : public LPInterface {
   // Getters and setters of the basis.
   // ==========================================================================
 
-  absl::StatusOr<absl::StrongVector<ColIndex, LPBasisStatus>>
+  absl::StatusOr<absl::StrongVector<ColIndex, LpBasisStatus>>
   GetBasisStatusForColumns() const final;
-  absl::StatusOr<absl::StrongVector<RowIndex, LPBasisStatus>>
+  absl::StatusOr<absl::StrongVector<RowIndex, LpBasisStatus>>
   GetBasisStatusForRows() const final;
 
   absl::Status SetBasisStatusForColumnsAndRows(
-      const absl::StrongVector<ColIndex, LPBasisStatus>& column_basis_statuses,
-      const absl::StrongVector<RowIndex, LPBasisStatus>& row_basis_statuses)
+      const absl::StrongVector<ColIndex, LpBasisStatus>& column_basis_statuses,
+      const absl::StrongVector<RowIndex, LpBasisStatus>& row_basis_statuses)
       final;
 
   std::vector<ColOrRowIndex> GetColumnsAndRowsInBasis() const final;
@@ -193,13 +192,8 @@ class LPSoplexInterface : public LPInterface {
   // Getters and setters of the parameters.
   // ==========================================================================
 
-  absl::StatusOr<int> GetIntegerParameter(LPParameter type) const final;
-
-  absl::Status SetIntegerParameter(LPParameter type, int param_value) final;
-
-  absl::StatusOr<double> GetRealParameter(LPParameter type) const final;
-
-  absl::Status SetRealParameter(LPParameter type, double param_value) final;
+  LpParameters GetLpParameters() const final;
+  absl::Status SetLpParameters(const LpParameters& lp_parameters) final;
 
   // ==========================================================================
   // Numerical methods.
@@ -212,14 +206,14 @@ class LPSoplexInterface : public LPInterface {
   // File interface methods.
   // ==========================================================================
 
-  absl::Status ReadLPFromFile(const std::string& file_path) final;
+  absl::Status ReadLpFromFile(const std::string& file_path) final;
 
   // Note that Soplex splits double-sided constraints in the stored file. I.e.
   // l_j <= sum(a_ijx_i) <= u_j
   // becomes
   // l_j <= sum(a_ijx_i)
   //        sum(a_ijx_i) <= u_j
-  absl::StatusOr<std::string> WriteLPToFile(
+  absl::StatusOr<std::string> WriteLpToFile(
       const std::string& file_path) const final;
 
   // ==========================================================================
@@ -227,11 +221,18 @@ class LPSoplexInterface : public LPInterface {
   // ==========================================================================
 
  private:
-  double objective_limit() const;
+  double feasibility_tolerance() const {
+    DCHECK(spx_ != nullptr);
+    return spx_->realParam(soplex::SoPlex::FEASTOL);
+  }
 
-  double feasibility_tolerance() const;
-
-  double optimality_tolerance() const;
+  double objective_limit() const {
+    DCHECK(spx_ != nullptr);
+    return (spx_->intParam(soplex::SoPlex::OBJSENSE) ==
+            soplex::SoPlex::OBJSENSE_MINIMIZE)
+               ? spx_->realParam(soplex::SoPlex::OBJLIMIT_UPPER)
+               : spx_->realParam(soplex::SoPlex::OBJLIMIT_LOWER);
+  }
 
   // Marks the current LP to be unsolved.
   void InvalidateSolution();
@@ -244,10 +245,6 @@ class LPSoplexInterface : public LPInterface {
 
   void SavePreStrongbranchingBasis();
 
-  bool GetLPInfo() const;
-
-  bool GetFromScratch() const;
-
   bool CheckConsistentBounds() const;
 
   bool CheckConsistentSides() const;
@@ -256,35 +253,26 @@ class LPSoplexInterface : public LPInterface {
 
   soplex::DataArray<soplex::SPxSolver::VarStatus>& ColumnsBasisStatus();
 
-  void SetFromScratch(bool from_scratch);
-
-  void SetLPInfo(bool lp_info);
-
-  soplex::SPxSolver::Status LPSolve(bool print_warning);
+  soplex::SPxSolver::Status LpSolve(bool print_warning);
 
   // solves LP -- used for both, primal and dual simplex, because SoPlex doesn't
   // distinct the two cases
   absl::Status SoPlexSolve();
 
   // ==========================================================================
-  // Member variables of the SoplexLPInterface.
+  // Member variables of the SoplexLpInterface.
   // ==========================================================================
 
   // SoPlex solver implementing primal and dual simplex algorithm.
   std::unique_ptr<soplex::SoPlex> spx_;
 
-  // Currently used pricing strategy.
-  LPPricing pricing_;
+  // Whether to start solving from scratch (i.e., don't leverage
+  // incrementalism).
+  bool solve_from_scratch_;
 
   // Whether the LP that is currently loaded inside `spx_` has already been
   // solved.
   bool is_solved_;
-
-  // Sets the verbosity to kSoPlexVerbosityLevel if true or zero otherwise.
-  bool lp_info_;
-
-  // Sets if starting basis should be deleted.
-  bool from_scratch_;
 
   // The column basis status used for strong branching.
   soplex::DataArray<soplex::SPxSolver::VarStatus> col_basis_status_;

@@ -44,13 +44,13 @@ using testing::UnorderedElementsAre;
 namespace minimip {
 namespace {
 
-class LPInterfaceImplementationTest
-    : public ::testing::TestWithParam<LPParameters::SolverType> {
+class LpInterfaceImplementationTest
+    : public ::testing::TestWithParam<LpParameters::SolverType> {
  protected:
   void SetUp() override {
-    LPParameters lp_params;
+    LpParameters lp_params;
     lp_params.set_lp_solver_type(GetParam());
-    lpi_ = ConfigureLPSolverFromProto(lp_params).value();
+    lpi_ = CreateLpSolver(lp_params).value();
     solver_inf_ = lpi_->Infinity();
   }
 
@@ -204,14 +204,14 @@ class LPInterfaceImplementationTest
   }
 
   double solver_inf_;
-  std::unique_ptr<LPInterface> lpi_;
+  std::unique_ptr<LpInterface> lpi_;
 };
 
-class ModelConstructionTest : public LPInterfaceImplementationTest {};
+class ModelConstructionTest : public LpInterfaceImplementationTest {};
 
 INSTANTIATE_TEST_SUITE_P(All, ModelConstructionTest,
-                         testing::ValuesIn({LPParameters::LP_GLOP,
-                                            LPParameters::LP_SOPLEX}));
+                         testing::ValuesIn({LpParameters::LP_GLOP,
+                                            LpParameters::LP_SOPLEX}));
 
 TEST_P(ModelConstructionTest, AddColumnRow) {
   ASSERT_EQ(lpi_->GetNumberOfColumns(), 0);
@@ -415,7 +415,7 @@ TEST_P(ModelConstructionTest, AddColumnsRowsBatched) {
 
 TEST_P(ModelConstructionTest, Clear) {
   ASSERT_OK(InitSimpleProblem(4, 5));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
   EXPECT_EQ(lpi_->GetNumberOfColumns(), 4);
   EXPECT_EQ(lpi_->GetNumberOfRows(), 5);
@@ -460,7 +460,7 @@ TEST_P(ModelConstructionTest, ClearStateDoesNotClearModel) {
 
 TEST_P(ModelConstructionTest, DeleteSingleRow) {
   ASSERT_OK(InitSimpleProblem(4, 5));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
   ASSERT_OK(lpi_->DeleteRows(RowIndex(0), RowIndex(0)));
   EXPECT_FALSE(lpi_->IsSolved());
@@ -477,7 +477,7 @@ TEST_P(ModelConstructionTest, DeleteSingleRow) {
                   ElementsAre(12, 13, 14, 15), ElementsAre(17, 18, 19, 20)));
 
   ASSERT_OK(InitSimpleProblem(4, 5));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
   ASSERT_OK(lpi_->DeleteRows(RowIndex(2), RowIndex(2)));
   EXPECT_FALSE(lpi_->IsSolved());
@@ -494,7 +494,7 @@ TEST_P(ModelConstructionTest, DeleteSingleRow) {
                   ElementsAre(11, 12, 14, 15), ElementsAre(16, 17, 19, 20)));
 
   ASSERT_OK(InitSimpleProblem(4, 5));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
   ASSERT_OK(lpi_->DeleteRows(RowIndex(4), RowIndex(4)));
   EXPECT_FALSE(lpi_->IsSolved());
@@ -513,7 +513,7 @@ TEST_P(ModelConstructionTest, DeleteSingleRow) {
 
 TEST_P(ModelConstructionTest, DeleteMultipleRows) {
   ASSERT_OK(InitSimpleProblem(4, 5));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
   ASSERT_OK(lpi_->DeleteRows(RowIndex(2), RowIndex(3)));
   EXPECT_FALSE(lpi_->IsSolved());
@@ -529,7 +529,7 @@ TEST_P(ModelConstructionTest, DeleteMultipleRows) {
                           ElementsAre(11, 12, 15), ElementsAre(16, 17, 20)));
 
   ASSERT_OK(InitSimpleProblem(4, 5));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_TRUE(lpi_->IsSolved());
   ASSERT_OK(lpi_->DeleteRows(RowIndex(0), RowIndex(4)));
   EXPECT_FALSE(lpi_->IsSolved());
@@ -547,7 +547,7 @@ TEST_P(ModelConstructionTest, DeleteMultipleRows) {
 TEST_P(ModelConstructionTest, DeleteRowSet) {
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK_AND_ASSIGN(
         (const absl::StrongVector<RowIndex, RowIndex> row_mapping),
@@ -569,7 +569,7 @@ TEST_P(ModelConstructionTest, DeleteRowSet) {
 
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK_AND_ASSIGN(
         (const absl::StrongVector<RowIndex, RowIndex> row_mapping),
@@ -591,7 +591,7 @@ TEST_P(ModelConstructionTest, DeleteRowSet) {
 
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK_AND_ASSIGN(
         (const absl::StrongVector<RowIndex, RowIndex> row_mapping),
@@ -614,7 +614,7 @@ TEST_P(ModelConstructionTest, DeleteRowSet) {
 TEST_P(ModelConstructionTest, DeleteSingleColumn) {
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK(lpi_->DeleteColumns(ColIndex(0), ColIndex(0)));
     EXPECT_FALSE(lpi_->IsSolved());
@@ -632,7 +632,7 @@ TEST_P(ModelConstructionTest, DeleteSingleColumn) {
 
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK(lpi_->DeleteColumns(ColIndex(1), ColIndex(1)));
     EXPECT_FALSE(lpi_->IsSolved());
@@ -650,7 +650,7 @@ TEST_P(ModelConstructionTest, DeleteSingleColumn) {
 
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK(lpi_->DeleteColumns(ColIndex(3), ColIndex(3)));
     EXPECT_FALSE(lpi_->IsSolved());
@@ -670,7 +670,7 @@ TEST_P(ModelConstructionTest, DeleteSingleColumn) {
 TEST_P(ModelConstructionTest, DeleteMultipleColumns) {
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK(lpi_->DeleteColumns(ColIndex(1), ColIndex(2)));
     EXPECT_FALSE(lpi_->IsSolved());
@@ -687,7 +687,7 @@ TEST_P(ModelConstructionTest, DeleteMultipleColumns) {
 
   {
     ASSERT_OK(InitSimpleProblem(4, 5));
-    ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+    ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     EXPECT_TRUE(lpi_->IsSolved());
     ASSERT_OK(lpi_->DeleteColumns(ColIndex(0), ColIndex(3)));
     EXPECT_FALSE(lpi_->IsSolved());
@@ -707,7 +707,7 @@ TEST_P(ModelConstructionTest, SetObjectiveCoefficients) {
     for (double c2 : {-1.0, 0.0, 1.0}) {
       SCOPED_TRACE(absl::StrFormat("c1=%lf, c2=%lf", c1, c2));
       ASSERT_OK(InitEmptyProblem(2, 2));
-      ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
 
       EXPECT_TRUE(lpi_->IsSolved());
       EXPECT_OK(lpi_->SetObjectiveCoefficient(ColIndex(0), c1));
@@ -729,7 +729,7 @@ TEST_P(ModelConstructionTest, SetColumnBounds) {
           SCOPED_TRACE(absl::StrFormat("lb1=%lf, lb2=%lf, ub1=%lf, ub2=%lf",
                                        lb1, lb2, ub1, ub2));
           ASSERT_OK(InitEmptyProblem(2, 2));
-          ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+          ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
 
           EXPECT_TRUE(lpi_->IsSolved());
           ASSERT_OK(lpi_->SetColumnBounds(ColIndex(0), lb1, ub1));
@@ -755,7 +755,7 @@ TEST_P(ModelConstructionTest, SetRowSides) {
           SCOPED_TRACE(absl::StrFormat("l1=%lf, l2=%lf, r1=%lf, r2=%lf", l1, l2,
                                        r1, r2));
           ASSERT_OK(InitEmptyProblem(2, 2));
-          ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+          ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
 
           EXPECT_TRUE(lpi_->IsSolved());
           ASSERT_OK(lpi_->SetRowSides(RowIndex(0), l1, r1));
@@ -890,7 +890,7 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
   }
 }
 
-class FileTest : public LPInterfaceImplementationTest {
+class FileTest : public LpInterfaceImplementationTest {
  protected:
   static absl::StatusOr<std::string> GetTemporaryFile() {
     const char* name = std::tmpnam(nullptr);
@@ -907,14 +907,14 @@ class FileTest : public LPInterfaceImplementationTest {
 };
 
 INSTANTIATE_TEST_SUITE_P(All, FileTest,
-                         testing::ValuesIn({LPParameters::LP_GLOP,
-                                            LPParameters::LP_SOPLEX}));
+                         testing::ValuesIn({LpParameters::LP_GLOP,
+                                            LpParameters::LP_SOPLEX}));
 
-TEST_P(FileTest, WritesLPToFile) {
+TEST_P(FileTest, WritesLpToFile) {
   ASSERT_OK(InitSimpleProblem(3, 4));
   ASSERT_OK_AND_ASSIGN(const std::string file_path, GetTemporaryFile());
   ASSERT_OK_AND_ASSIGN(const std::string actual_path,
-                       lpi_->WriteLPToFile(file_path));
+                       lpi_->WriteLpToFile(file_path));
 
   EXPECT_THAT(actual_path, StartsWith(file_path));
   if (actual_path != file_path) {
@@ -926,7 +926,7 @@ TEST_P(FileTest, WritesLPToFile) {
   EXPECT_TRUE(FileExists(actual_path));
 }
 
-TEST_P(FileTest, LoadLPFromFile) {
+TEST_P(FileTest, LoadLpFromFile) {
   // max z = 2 x1 +    x2
   //           x1 +    x2 <= 1
   //           x1         <= 3/4
@@ -941,7 +941,7 @@ TEST_P(FileTest, LoadLPFromFile) {
       /*left_hand_sides=*/{-solver_inf_, -solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{1, 0.75, 10},
       /*matrix=*/{{1, 1, 8}, {1, 0, 20}}));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   ASSERT_THAT(lpi_->GetObjectiveValue(), DoubleEq(1.7));
   {
     ASSERT_OK_AND_ASSIGN(
@@ -952,15 +952,15 @@ TEST_P(FileTest, LoadLPFromFile) {
 
   ASSERT_OK_AND_ASSIGN(const std::string file_path, GetTemporaryFile());
   ASSERT_OK_AND_ASSIGN(const std::string actual_path,
-                       lpi_->WriteLPToFile(file_path));
+                       lpi_->WriteLpToFile(file_path));
   ASSERT_TRUE(FileExists(actual_path));
   ASSERT_OK(lpi_->Clear());
-  ASSERT_OK(lpi_->ReadLPFromFile(actual_path));
+  ASSERT_OK(lpi_->ReadLpFromFile(actual_path));
 
   // The loaded model is allowed to differ from original one, as long as it
   // doesn't change the solution space. We therefore test by checking the solve
   // results, rather than checking model properties directly.
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_THAT(lpi_->GetObjectiveValue(), DoubleEq(1.7));
   {
     ASSERT_OK_AND_ASSIGN(
@@ -972,7 +972,7 @@ TEST_P(FileTest, LoadLPFromFile) {
   ASSERT_EQ(std::remove(actual_path.c_str()), 0);
 }
 
-class SolveTest : public LPInterfaceImplementationTest {
+class SolveTest : public LpInterfaceImplementationTest {
  protected:
   // The row order of the B matrix depends on the order of the variables in the
   // basis. To make sure that it is correct, we must therefore ensure a
@@ -1065,8 +1065,8 @@ class SolveTest : public LPInterfaceImplementationTest {
 };
 
 INSTANTIATE_TEST_SUITE_P(All, SolveTest,
-                         testing::ValuesIn({LPParameters::LP_GLOP,
-                                            LPParameters::LP_SOPLEX}));
+                         testing::ValuesIn({LpParameters::LP_GLOP,
+                                            LpParameters::LP_SOPLEX}));
 
 // Compute <v1 | v2>
 template <typename Container1, typename Container2>
@@ -1124,9 +1124,9 @@ TEST_P(SolveTest, PrimalDualFeasible1) {
         /*right_hand_sides=*/{10, 15},
         /*matrix=*/{{2, 1}, {1, 3}}));
     if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     } else {
-      ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
     }
 
     // Check solve status.
@@ -1163,15 +1163,15 @@ TEST_P(SolveTest, PrimalDualFeasible1) {
 
     // Check basis status
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
-    EXPECT_THAT(column_basis_status, ElementsAre(LPBasisStatus::kBasic,
-                                                 LPBasisStatus::kAtLowerBound));
+    EXPECT_THAT(column_basis_status, ElementsAre(LpBasisStatus::kBasic,
+                                                 LpBasisStatus::kAtLowerBound));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
-    EXPECT_THAT(row_basis_status, ElementsAre(LPBasisStatus::kAtUpperBound,
-                                              LPBasisStatus::kBasic));
+    EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound,
+                                              LpBasisStatus::kBasic));
     ASSERT_THAT(lpi_->GetColumnsAndRowsInBasis(),
                 UnorderedElementsAre(ColOrRowIndex(RowIndex(3)),
                                      ColOrRowIndex(ColIndex(0))));
@@ -1245,9 +1245,9 @@ TEST_P(SolveTest, PrimalDualFeasible2) {
         /*right_hand_sides=*/{1, 0.75, 10},
         /*matrix=*/{{1, 1, 8}, {1, 0, 20}}));
     if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     } else {
-      ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
     }
 
     // Check solve status.
@@ -1284,16 +1284,16 @@ TEST_P(SolveTest, PrimalDualFeasible2) {
 
     // Check basis status
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
     EXPECT_THAT(column_basis_status,
-                ElementsAre(LPBasisStatus::kBasic, LPBasisStatus::kBasic));
+                ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kBasic));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
     EXPECT_THAT(row_basis_status,
-                ElementsAre(LPBasisStatus::kBasic, LPBasisStatus::kAtUpperBound,
-                            LPBasisStatus::kAtUpperBound));
+                ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kAtUpperBound,
+                            LpBasisStatus::kAtUpperBound));
     ASSERT_THAT(lpi_->GetColumnsAndRowsInBasis(),
                 UnorderedElementsAre(ColOrRowIndex(RowIndex(2)),
                                      ColOrRowIndex(ColIndex(0)),
@@ -1372,9 +1372,9 @@ TEST_P(SolveTest, PrimalUnboundedDualInfeasible) {
         /*right_hand_sides=*/{10, 15},
         /*matrix=*/{{2, 1}, {1, 3}}));
     if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     } else {
-      ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
     }
 
     // Check solve status.
@@ -1407,7 +1407,7 @@ TEST_P(SolveTest, PrimalUnboundedRayMaximization) {
       /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{10, 15},
       /*matrix=*/{{2, 1}, {1, 3}}));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
   EXPECT_TRUE(lpi_->IsPrimalUnbounded());
 
@@ -1450,7 +1450,7 @@ TEST_P(SolveTest, PrimalUnboundedRayMinimization) {
       /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
       /*right_hand_sides=*/{10, 15},
       /*matrix=*/{{2, 1}, {1, 3}}));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
   EXPECT_TRUE(lpi_->IsPrimalUnbounded());
 
@@ -1487,7 +1487,7 @@ TEST_P(SolveTest, PrimalInfeasibleDualUnbounded) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LPParameters::LP_SOPLEX) {
+  if (GetParam() == LpParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1503,9 +1503,9 @@ TEST_P(SolveTest, PrimalInfeasibleDualUnbounded) {
         /*right_hand_sides=*/{3, 1},
         /*matrix=*/{{2, 1}, {1, 3}}));
     if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     } else {
-      ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
     }
 
     // Check solve status.
@@ -1532,7 +1532,7 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LPParameters::LP_SOPLEX) {
+  if (GetParam() == LpParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1544,7 +1544,7 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
       /*left_hand_sides=*/{3, 1},
       /*right_hand_sides=*/{3, 1},
       /*matrix=*/{{2, 1}, {1, 3}}));
-  ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
   EXPECT_TRUE(lpi_->IsDualUnbounded());
 
@@ -1579,7 +1579,7 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LPParameters::LP_SOPLEX) {
+  if (GetParam() == LpParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1591,7 +1591,7 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
       /*left_hand_sides=*/{3, 1},
       /*right_hand_sides=*/{3, 1},
       /*matrix=*/{{2, 1}, {1, 3}}));
-  ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
   EXPECT_TRUE(lpi_->IsDualUnbounded());
 
@@ -1625,7 +1625,7 @@ TEST_P(SolveTest, PrimalDualInfeasible) {
   //
   // Note that the two constraints contradict each other, both in the
   // primal and in the dual.
-  if (GetParam() == LPParameters::LP_SOPLEX) {
+  if (GetParam() == LpParameters::LP_SOPLEX) {
     GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
                     "models, so this test is temporarily disabled.";
   }
@@ -1641,9 +1641,9 @@ TEST_P(SolveTest, PrimalDualInfeasible) {
         /*right_hand_sides=*/{0, -1},
         /*matrix=*/{{1, -1}, {-1, 1}}));
     if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
     } else {
-      ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
     }
 
     // Check solve status.
@@ -1686,9 +1686,9 @@ TEST_P(SolveTest, SolveFromGivenPrimalBasis) {
   // Starting at the origin, we can take two paths to the optimum, both
   // requiring two iterations.
   ASSERT_OK(lpi_->SetBasisStatusForColumnsAndRows(
-      {LPBasisStatus::kAtLowerBound, LPBasisStatus::kAtLowerBound},
-      {LPBasisStatus::kBasic, LPBasisStatus::kBasic}));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      {LpBasisStatus::kAtLowerBound, LpBasisStatus::kAtLowerBound},
+      {LpBasisStatus::kBasic, LpBasisStatus::kBasic}));
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_EQ(lpi_->GetNumIterations(), 2);
 
   {
@@ -1699,23 +1699,23 @@ TEST_P(SolveTest, SolveFromGivenPrimalBasis) {
                          lpi_->GetPrimalValues());
     EXPECT_THAT(solution, Pointwise(DoubleEq(), {1.0, 1.0}));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
     EXPECT_THAT(column_basis_status,
-                ElementsAre(LPBasisStatus::kBasic, LPBasisStatus::kBasic));
+                ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kBasic));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
-    EXPECT_THAT(row_basis_status, ElementsAre(LPBasisStatus::kAtUpperBound,
-                                              LPBasisStatus::kAtUpperBound));
+    EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound,
+                                              LpBasisStatus::kAtUpperBound));
   }
 
   // We now start in the point (1.5, 0), from which the optimum can be found
   // in a single iteration.
   ASSERT_OK(lpi_->SetBasisStatusForColumnsAndRows(
-      {LPBasisStatus::kBasic, LPBasisStatus::kAtLowerBound},
-      {LPBasisStatus::kAtUpperBound, LPBasisStatus::kBasic}));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+      {LpBasisStatus::kBasic, LpBasisStatus::kAtLowerBound},
+      {LpBasisStatus::kAtUpperBound, LpBasisStatus::kBasic}));
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   EXPECT_EQ(lpi_->GetNumIterations(), 1);
 
   {
@@ -1726,15 +1726,15 @@ TEST_P(SolveTest, SolveFromGivenPrimalBasis) {
                          lpi_->GetPrimalValues());
     EXPECT_THAT(solution, Pointwise(DoubleEq(), {1.0, 1.0}));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
     EXPECT_THAT(column_basis_status,
-                ElementsAre(LPBasisStatus::kBasic, LPBasisStatus::kBasic));
+                ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kBasic));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
-    EXPECT_THAT(row_basis_status, ElementsAre(LPBasisStatus::kAtUpperBound,
-                                              LPBasisStatus::kAtUpperBound));
+    EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound,
+                                              LpBasisStatus::kAtUpperBound));
   }
 }
 
@@ -1757,9 +1757,9 @@ TEST_P(SolveTest, SolveFromGivenDualBasis) {
   // We now start in the point (3, 0), which is dual feasible but not optimal.
   // From here the optimum can be found in a single iteration.
   ASSERT_OK(lpi_->SetBasisStatusForColumnsAndRows(
-      {LPBasisStatus::kBasic, LPBasisStatus::kAtLowerBound},
-      {LPBasisStatus::kBasic, LPBasisStatus::kAtUpperBound}));
-  ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+      {LpBasisStatus::kBasic, LpBasisStatus::kAtLowerBound},
+      {LpBasisStatus::kBasic, LpBasisStatus::kAtUpperBound}));
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
   EXPECT_EQ(lpi_->GetNumIterations(), 1);
 
   {
@@ -1770,15 +1770,15 @@ TEST_P(SolveTest, SolveFromGivenDualBasis) {
                          lpi_->GetPrimalValues());
     EXPECT_THAT(solution, Pointwise(DoubleEq(), {1.0, 1.0}));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
     EXPECT_THAT(column_basis_status,
-                ElementsAre(LPBasisStatus::kBasic, LPBasisStatus::kBasic));
+                ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kBasic));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
-    EXPECT_THAT(row_basis_status, ElementsAre(LPBasisStatus::kAtUpperBound,
-                                              LPBasisStatus::kAtUpperBound));
+    EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound,
+                                              LpBasisStatus::kAtUpperBound));
   }
 }
 
@@ -1795,7 +1795,7 @@ TEST_P(SolveTest, DualIncrementality) {
       /*left_hand_sides=*/{-solver_inf_},
       /*right_hand_sides=*/{3},
       /*matrix=*/{{2}, {1}}));
-  ASSERT_OK(lpi_->SolveLPWithPrimalSimplex());
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
   ASSERT_TRUE(lpi_->IsOptimal());
 
@@ -1805,14 +1805,14 @@ TEST_P(SolveTest, DualIncrementality) {
                          lpi_->GetPrimalValues());
     EXPECT_THAT(solution, Pointwise(DoubleEq(), {0.0, 3.0}));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
-    EXPECT_THAT(column_basis_status, ElementsAre(LPBasisStatus::kAtLowerBound,
-                                                 LPBasisStatus::kBasic));
+    EXPECT_THAT(column_basis_status, ElementsAre(LpBasisStatus::kAtLowerBound,
+                                                 LpBasisStatus::kBasic));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
-    EXPECT_THAT(row_basis_status, ElementsAre(LPBasisStatus::kAtUpperBound));
+    EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound));
   }
 
   // We now add the constraint x2 <= 2, making (0.5, 2) the new optimum.
@@ -1821,7 +1821,7 @@ TEST_P(SolveTest, DualIncrementality) {
 
   // Since the basis should be retained, it should now only take a single
   // iteration to reach the new optimum.
-  ASSERT_OK(lpi_->SolveLPWithDualSimplex());
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
   ASSERT_TRUE(lpi_->IsOptimal());
   EXPECT_EQ(lpi_->GetNumIterations(), 1);
@@ -1832,15 +1832,15 @@ TEST_P(SolveTest, DualIncrementality) {
                          lpi_->GetPrimalValues());
     EXPECT_THAT(solution, Pointwise(DoubleEq(), {0.5, 2.0}));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<ColIndex, LPBasisStatus> column_basis_status),
+        (const absl::StrongVector<ColIndex, LpBasisStatus> column_basis_status),
         lpi_->GetBasisStatusForColumns());
     EXPECT_THAT(column_basis_status,
-                ElementsAre(LPBasisStatus::kBasic, LPBasisStatus::kBasic));
+                ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kBasic));
     ASSERT_OK_AND_ASSIGN(
-        (const absl::StrongVector<RowIndex, LPBasisStatus> row_basis_status),
+        (const absl::StrongVector<RowIndex, LpBasisStatus> row_basis_status),
         lpi_->GetBasisStatusForRows());
-    EXPECT_THAT(row_basis_status, ElementsAre(LPBasisStatus::kAtUpperBound,
-                                              LPBasisStatus::kAtUpperBound));
+    EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound,
+                                              LpBasisStatus::kAtUpperBound));
   }
 }
 
