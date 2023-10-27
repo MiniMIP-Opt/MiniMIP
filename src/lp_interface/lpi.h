@@ -328,7 +328,7 @@ class LpInterface {
 
   // Returns the objective value corresponding to `GetPrimalValues()`.
   // `IsOptimal()` must be true when calling this.
-  virtual double GetObjectiveValue() const = 0;
+  virtual double GetObjectiveValue() = 0;
 
   // Returns the primal values for all columns (i.e., the solution).
   // `IsOptimal()` must be true when calling this.

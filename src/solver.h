@@ -51,8 +51,8 @@ class Solver {
     MipTree mip_tree;
     CutRegistry cut_registry;
 
-    ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
-                     ConfigureLPSolverFromProto(params.lp_parameters()));
+    ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
+                     CreateLpSolver(params.lp_parameters()));
 
     ASSIGN_OR_RETURN(std::unique_ptr<CuttingInterface> cut_runner,
                      ConfigureCutInterfaceFromProto(params.cut_runner()));
@@ -74,8 +74,8 @@ class Solver {
   const CutRegistry& cut_registry() const { return cut_registry_; }
   CutRegistry& mutable_cut_registry() { return cut_registry_; }
 
-  const LPInterface* lpi() const { return lpi_.get(); }
-  LPInterface* mutable_lpi() { return lpi_.get(); }
+  const LpInterface* lpi() const { return lpi_.get(); }
+  LpInterface* mutable_lpi() { return lpi_.get(); }
 
   bool IsIntegerWithinTolerance(double d) const {
     return std::abs(d - std::round(d)) <= params_.integrality_tolerance();
@@ -103,12 +103,12 @@ class Solver {
   // cut-and-price loop (not yet implemented).
   std::unique_ptr<CuttingInterface> cut_runner_;
   // Handle to an LP solver.
-  std::unique_ptr<LPInterface> lpi_;
+  std::unique_ptr<LpInterface> lpi_;
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
          CutRegistry cut_registry, std::unique_ptr<CuttingInterface> cut_runner,
-         std::unique_ptr<LPInterface> lpi)
+         std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
