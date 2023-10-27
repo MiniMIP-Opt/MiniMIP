@@ -35,14 +35,27 @@
 #include "src/data_structures/mip_data.h"
 #include "src/data_structures/mip_types.h"
 #include "src/data_structures/strong_sparse_vector.h"
-#include "src/lp_interface/lp_types.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
-// LPInterface is used by MiniMIP to communicate with an underlying LP solver.
-class LPInterface {
+// LP basis status for columns and rows.
+enum class LpBasisStatus {
+  kBasic = 0,         // (slack) variable is basic
+  kAtLowerBound = 1,  // (slack) variable is at its lower bound
+  kAtUpperBound = 2,  // (slack) variable is at its upper bound
+  kFixed = 3,         // variable fixed to identical bounds
+  kFree = 4,          // free variable is non-basic and set to zero
+};
+
+inline std::ostream& operator<<(std::ostream& out, LpBasisStatus basis_status) {
+  return out << static_cast<int>(basis_status);
+}
+
+// LpInterface is used by MiniMIP to communicate with an underlying LP solver.
+class LpInterface {
  public:
-  virtual ~LPInterface() = default;
+  virtual ~LpInterface() = default;
 
   // ==========================================================================
   // LP model setters.
@@ -207,10 +220,10 @@ class LPInterface {
   // ==========================================================================
 
   // Calls primal simplex to solve the currently loaded LP.
-  virtual absl::Status SolveLPWithPrimalSimplex() = 0;
+  virtual absl::Status SolveLpWithPrimalSimplex() = 0;
 
   // Calls dual simplex to solve the currently loaded LP.
-  virtual absl::Status SolveLPWithDualSimplex() = 0;
+  virtual absl::Status SolveLpWithDualSimplex() = 0;
 
   // Informs the LP solver to enter "strong branching" mode. This may entail
   // setting loose precision requirements, stringent iteration / time limits,
@@ -349,16 +362,16 @@ class LPInterface {
   // ==========================================================================
 
   // Returns the basis status for all variables.
-  virtual absl::StatusOr<absl::StrongVector<ColIndex, LPBasisStatus>>
+  virtual absl::StatusOr<absl::StrongVector<ColIndex, LpBasisStatus>>
   GetBasisStatusForColumns() const = 0;
 
   // Returns the basis status for all constraints.
-  virtual absl::StatusOr<absl::StrongVector<RowIndex, LPBasisStatus>>
+  virtual absl::StatusOr<absl::StrongVector<RowIndex, LpBasisStatus>>
   GetBasisStatusForRows() const = 0;
 
   virtual absl::Status SetBasisStatusForColumnsAndRows(
-      const absl::StrongVector<ColIndex, LPBasisStatus>& col_statuses,
-      const absl::StrongVector<RowIndex, LPBasisStatus>& row_statuses) = 0;
+      const absl::StrongVector<ColIndex, LpBasisStatus>& col_statuses,
+      const absl::StrongVector<RowIndex, LpBasisStatus>& row_statuses) = 0;
 
   // Returns the indices of the basic columns and rows. The size of the returned
   // vector is always `GetNumberOfRows()`.
@@ -402,19 +415,17 @@ class LPInterface {
   // Getters and setters of the parameters.
   // ==========================================================================
 
-  // Gets an integer parameter of LP.
-  // TODO(lpawel): Setting boolean parameters is currently done via "integer"
-  // parameters. Fix this.
-  virtual absl::StatusOr<int> GetIntegerParameter(LPParameter type) const = 0;
+  // Gets current parameters.
+  virtual LpParameters GetLpParameters() const = 0;
 
-  // Sets an integer parameter of LP.
-  virtual absl::Status SetIntegerParameter(LPParameter type, int param_val) = 0;
-
-  // Gets a floating point parameter of LP.
-  virtual absl::StatusOr<double> GetRealParameter(LPParameter type) const = 0;
-
-  // Sets a floating point parameter of LP.
-  virtual absl::Status SetRealParameter(LPParameter type, double param_val) = 0;
+  // Sets new paramters. To override some parameters do:
+  //  LpParameters params = lpi.GetLpParameters();
+  //  ... override selected fields in `params`
+  //  lpi.SetLpParameters(params);
+  // Note, it is forbidden to change `lp_solver_type` (this is decided during
+  // creation of a specific instances of LPI implementation). No parameters are
+  // changed if there was an error.
+  virtual absl::Status SetLpParameters(const LpParameters& params) = 0;
 
   // ==========================================================================
   // Numerical methods.
@@ -442,14 +453,19 @@ class LPInterface {
   // objective values, but e.g. the order of variables may be different, and
   // double-sided constraints may be split to two single-sided constraints. This
   // should be documented for each implementation.
-  virtual absl::Status ReadLPFromFile(const std::string& file_path) = 0;
+  virtual absl::Status ReadLpFromFile(const std::string& file_path) = 0;
 
   // Writes an LP to a file in the format supported by the underlying LP solver
   // (may differ between implementations). Returns the path to the written file.
   // This may differ from the provided path in the file extension only.
-  virtual absl::StatusOr<std::string> WriteLPToFile(
+  virtual absl::StatusOr<std::string> WriteLpToFile(
       const std::string& file_path) const = 0;
 };
+
+// Function to validate LpParameters. This is "high-level" validation (e.g.,
+// whether some fields are withing valid ranges). Specific LP solvers can then
+// implement further validation internally (see, e.g., lpi_glop.cc).
+absl::Status LpParametersAreValid(const LpParameters& params);
 
 }  // namespace minimip
 #endif  // SRC_LP_INTERFACE_LPI_H_

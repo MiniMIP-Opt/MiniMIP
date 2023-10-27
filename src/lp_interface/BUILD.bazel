@@ -18,9 +18,10 @@ cmake(
 
 cc_library(
     name = "lpi",
+    srcs = ["lpi.cc"],
     hdrs = ["lpi.h"],
     deps = [
-        ":lp_types",
+        "//src:parameters_cc_proto",
         "//src/data_structures:mip_data",
         "//src/data_structures:mip_types",
         "//src/data_structures:strong_sparse_vector",
@@ -38,6 +39,7 @@ cc_library(
     hdrs = ["lpi_glop.h"],
     deps = [
         ":lpi",
+        "//src:parameters_cc_proto",
         "@com_google_ortools//ortools/base",
         "@com_google_ortools//ortools/glop:lp_solver",
         "@com_google_ortools//ortools/glop:revised_simplex",
@@ -59,6 +61,7 @@ cc_library(
     deps = [
         ":lpi",
         ":soplex",
+        "//src:parameters_cc_proto",
         "@com_google_ortools//ortools/util:file_util",
     ],
 )
@@ -76,9 +79,4 @@ cc_library(
         "//src:parameters_cc_proto",
         "@com_google_ortools//ortools/base",
     ],
-)
-
-cc_library(
-    name = "lp_types",
-    hdrs = ["lp_types.h"],
 )

@@ -15,14 +15,13 @@
 #ifndef SRC_LP_INTERFACE_LPI_FACTORY_H_
 #define SRC_LP_INTERFACE_LPI_FACTORY_H_
 
-#include "lp_types.h"
 #include "src/lp_interface/lpi.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {
 
-absl::StatusOr<std::unique_ptr<LPInterface>> ConfigureLPSolverFromProto(
-    const LPParameters& params);
+absl::StatusOr<std::unique_ptr<LpInterface>> CreateLpSolver(
+    const LpParameters& params);
 
 }  // namespace minimip
 

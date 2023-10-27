@@ -30,21 +30,19 @@
 #include "ortools/util/file_util.h"
 #include "ortools/util/stats.h"
 #include "ortools/util/strong_integers.h"
-#include "src/lp_interface/lp_types.h"
 #include "src/lp_interface/lpi.h"
+#include "src/parameters.pb.h"
 
 namespace minimip {
 
-class LPGlopInterface : public LPInterface {
+class LpGlopInterface : public LpInterface {
  public:
-  LPGlopInterface();
+  LpGlopInterface();
 
   // ==========================================================================
   // LP model setters.
   // ==========================================================================
 
-  // Sets the entire problem: variables, constraints, objective, bounds, sides,
-  // and names.
   absl::Status PopulateFromMipData(const MipData& mip_data) final;
 
   absl::Status AddColumn(const SparseCol& col, double lower_bound,
@@ -112,8 +110,8 @@ class LPGlopInterface : public LPInterface {
   // Solving methods.
   // ==========================================================================
 
-  absl::Status SolveLPWithPrimalSimplex() final;
-  absl::Status SolveLPWithDualSimplex() final;
+  absl::Status SolveLpWithPrimalSimplex() final;
+  absl::Status SolveLpWithDualSimplex() final;
   absl::Status StartStrongBranching() final;
   absl::Status EndStrongBranching() final;
 
@@ -164,14 +162,14 @@ class LPGlopInterface : public LPInterface {
   // Getters and setters of the basis.
   // ==========================================================================
 
-  absl::StatusOr<absl::StrongVector<ColIndex, LPBasisStatus>>
+  absl::StatusOr<absl::StrongVector<ColIndex, LpBasisStatus>>
   GetBasisStatusForColumns() const final;
-  absl::StatusOr<absl::StrongVector<RowIndex, LPBasisStatus>>
+  absl::StatusOr<absl::StrongVector<RowIndex, LpBasisStatus>>
   GetBasisStatusForRows() const final;
 
   absl::Status SetBasisStatusForColumnsAndRows(
-      const absl::StrongVector<ColIndex, LPBasisStatus>& column_basis_statuses,
-      const absl::StrongVector<RowIndex, LPBasisStatus>& row_basis_statuses)
+      const absl::StrongVector<ColIndex, LpBasisStatus>& column_basis_statuses,
+      const absl::StrongVector<RowIndex, LpBasisStatus>& row_basis_statuses)
       final;
 
   std::vector<ColOrRowIndex> GetColumnsAndRowsInBasis() const final;
@@ -179,6 +177,7 @@ class LPGlopInterface : public LPInterface {
   // ==========================================================================
   // Getters of vectors in the inverted basis matrix.
   // ==========================================================================
+
   absl::StatusOr<SparseRow> GetSparseRowOfBInverted(
       RowIndex row_in_basis) const final;
 
@@ -195,13 +194,8 @@ class LPGlopInterface : public LPInterface {
   // Getters and setters of the parameters.
   // ==========================================================================
 
-  absl::StatusOr<int> GetIntegerParameter(LPParameter type) const final;
-
-  absl::Status SetIntegerParameter(LPParameter type, int param_value) final;
-
-  absl::StatusOr<double> GetRealParameter(LPParameter type) const final;
-
-  absl::Status SetRealParameter(LPParameter type, double param_value) final;
+  LpParameters GetLpParameters() const final;
+  absl::Status SetLpParameters(const LpParameters& lp_parameters) final;
 
   // ==========================================================================
   // Numerical methods.
@@ -214,9 +208,9 @@ class LPGlopInterface : public LPInterface {
   // File interface methods.
   // ==========================================================================
 
-  absl::Status ReadLPFromFile(const std::string& file_path) final;
+  absl::Status ReadLpFromFile(const std::string& file_path) final;
 
-  absl::StatusOr<std::string> WriteLPToFile(
+  absl::StatusOr<std::string> WriteLpToFile(
       const std::string& file_path) const final;
 
  private:
@@ -240,28 +234,21 @@ class LPGlopInterface : public LPInterface {
   // directly (and not `glop::LpSolver`) to bypass the extra layers for speed.
   operations_research::glop::RevisedSimplex solver_;
 
-  // Glop current parameters.
-  operations_research::glop::GlopParameters parameters_;
+  // Whether to solve from scratch on next solve.
+  bool solve_from_scratch_;
 
   // Scaler to compute `scaled_lp_` from `lp_`.
   operations_research::glop::LpScalingHelper scaler_;
 
   // Indicator whether we need to recompute `scaled_lp_` from `lp_` on next
   // solve.
-  bool lp_modified_since_last_solve_;
+  bool lp_modified_since_last_solve_ = true;
 
   // Indicator whether the last solve hit a time limit.
-  bool lp_time_limit_was_reached_;
+  bool lp_time_limit_was_reached_ = false;
 
   // Number of simplex iterations executed since the last solve.
-  int64_t num_iterations_of_last_solve_;
-
-  // Store the values of some parameters in order to be able to return them
-  bool lp_info_;       // whether additional output is turned on
-  LPPricing pricing_;  // MiniMIP pricing setting
-  bool from_scratch_;  // store whether basis is ignored for next solving call
-  int num_threads_;    // number of threads used to solve the LP (0 = automatic)
-  int timing_;         // type of timer (1 - cpu, 2 - wallclock, 0 - off)
+  int64_t num_iterations_of_last_solve_ = 0;
 
   // Temporary vectors allocated here for speed. This gain is non-negligible
   // because in many situations, only a few entries of these vectors are
@@ -270,7 +257,7 @@ class LPGlopInterface : public LPInterface {
   std::unique_ptr<operations_research::glop::ScatteredRow> tmp_row_;
   std::unique_ptr<operations_research::glop::ScatteredColumn> tmp_column_;
 
-};  // class LPGlopInterface
+};  // class LpGlopInterface
 
 }  // namespace minimip
 
