@@ -80,7 +80,7 @@ TEST(CutRunnerTests, SimpleSolve) {
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
   CHECK_OK(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data()));
-  CHECK_OK(solver->mutable_lpi()->SolveLPWithDualSimplex());
+  CHECK_OK(solver->mutable_lpi()->SolveLpWithDualSimplex());
 
   ASSERT_TRUE(solver->lpi()->IsSolved());
   ASSERT_TRUE(solver->lpi()->IsOptimal());

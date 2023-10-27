@@ -32,7 +32,7 @@ bool DefaultRunner::CutCondition(const SolverContextInterface& context) {
 absl::Status DefaultRunner::SeparateCurrentLPSolution(
     SolverContextInterface& context) {
   int i = 0;
-  LPInterface* mutable_lpi = context.mutable_lpi();
+  LpInterface* mutable_lpi = context.mutable_lpi();
 
   while (i < 1) {  // CutCondition(context)
     std::vector<int> new_cut_indices;
@@ -63,7 +63,7 @@ absl::Status DefaultRunner::SeparateCurrentLPSolution(
       RETURN_IF_ERROR(mutable_lpi->AddRow(cut.row(), -mutable_lpi->Infinity(),
                                           cut.right_hand_side(), cut.name()));
     }
-    RETURN_IF_ERROR(mutable_lpi->SolveLPWithDualSimplex());
+    RETURN_IF_ERROR(mutable_lpi->SolveLpWithDualSimplex());
     i++;
   }
   return absl::OkStatus();

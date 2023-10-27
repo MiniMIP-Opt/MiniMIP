@@ -255,7 +255,7 @@ class SmallModelSmokeTest
       RETURN_IF_ERROR(solver_->mutable_lpi()->AddRow(
           cut.row(), -solver_->lpi()->Infinity(), cut.right_hand_side(), ""));
     }
-    return solver_->mutable_lpi()->SolveLPWithDualSimplex();
+    return solver_->mutable_lpi()->SolveLpWithDualSimplex();
   }
 
   absl::StatusOr<bool> SolutionIsMipFeasible() {
@@ -285,7 +285,7 @@ INSTANTIATE_TEST_SUITE_P(
                      testing::Range(0, 4)));
 
 TEST_P(SmallModelSmokeTest, SmokeTest) {
-  ASSERT_OK(solver_->mutable_lpi()->SolveLPWithPrimalSimplex());
+  ASSERT_OK(solver_->mutable_lpi()->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(solver_->lpi()->IsSolved());
   ASSERT_TRUE(solver_->lpi()->IsOptimal());
   for (int i = 0; i < 10; ++i) {

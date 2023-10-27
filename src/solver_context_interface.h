@@ -39,8 +39,8 @@ class SolverContextInterface {
 
   virtual CutRunnerInterface* mutable_cut_runner() const = 0;
 
-  virtual const LPInterface* lpi() const = 0;
-  virtual LPInterface* mutable_lpi() = 0;
+  virtual const LpInterface* lpi() const = 0;
+  virtual LpInterface* mutable_lpi() = 0;
 
   virtual bool IsIntegerWithinTolerance(double d) const = 0;
 

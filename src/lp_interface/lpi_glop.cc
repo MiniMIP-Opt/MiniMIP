@@ -29,6 +29,7 @@ using operations_research::glop::DenseColumn;
 using operations_research::glop::DenseRow;
 using operations_research::glop::Fractional;
 using operations_research::glop::GetProblemStatusString;
+using operations_research::glop::GlopParameters;
 using operations_research::glop::ProblemStatus;
 using operations_research::glop::RowToColIndex;
 using operations_research::glop::ScatteredColumn;
@@ -47,55 +48,55 @@ namespace minimip {
 
 namespace {
 
-LPBasisStatus ConvertGlopVariableStatus(VariableStatus status,
+LpBasisStatus ConvertGlopVariableStatus(VariableStatus status,
                                         double reduced_cost) {
   switch (status) {
     case VariableStatus::BASIC:
-      return LPBasisStatus::kBasic;
+      return LpBasisStatus::kBasic;
     case VariableStatus::AT_UPPER_BOUND:
-      return LPBasisStatus::kAtUpperBound;
+      return LpBasisStatus::kAtUpperBound;
     case VariableStatus::AT_LOWER_BOUND:
-      return LPBasisStatus::kAtLowerBound;
+      return LpBasisStatus::kAtLowerBound;
     case VariableStatus::FREE:
-      return LPBasisStatus::kFree;
+      return LpBasisStatus::kFree;
     case VariableStatus::FIXED_VALUE:
-      return reduced_cost > 0.0 ? LPBasisStatus::kAtLowerBound
-                                : LPBasisStatus::kAtUpperBound;
+      return reduced_cost > 0.0 ? LpBasisStatus::kAtLowerBound
+                                : LpBasisStatus::kAtUpperBound;
     default:
       LOG(FATAL) << "Unknown Glop column basis status.";
   }
 }
 
-LPBasisStatus ConvertGlopConstraintStatus(ConstraintStatus status,
+LpBasisStatus ConvertGlopConstraintStatus(ConstraintStatus status,
                                           double dual_value) {
   switch (status) {
     case ConstraintStatus::BASIC:
-      return LPBasisStatus::kBasic;
+      return LpBasisStatus::kBasic;
     case ConstraintStatus::AT_UPPER_BOUND:
-      return LPBasisStatus::kAtUpperBound;
+      return LpBasisStatus::kAtUpperBound;
     case ConstraintStatus::AT_LOWER_BOUND:
-      return LPBasisStatus::kAtLowerBound;
+      return LpBasisStatus::kAtLowerBound;
     case ConstraintStatus::FREE:
-      return LPBasisStatus::kFree;
+      return LpBasisStatus::kFree;
     case ConstraintStatus::FIXED_VALUE:
-      return dual_value > 0.0 ? LPBasisStatus::kAtLowerBound
-                              : LPBasisStatus::kAtUpperBound;
+      return dual_value > 0.0 ? LpBasisStatus::kAtLowerBound
+                              : LpBasisStatus::kAtUpperBound;
     default:
       LOG(FATAL) << "Unknown Glop row basis status.";
   }
 }
 
-VariableStatus ConvertMiniMIPVariableStatus(LPBasisStatus status) {
+VariableStatus ConvertMiniMIPVariableStatus(LpBasisStatus status) {
   switch (status) {
-    case LPBasisStatus::kBasic:
+    case LpBasisStatus::kBasic:
       return VariableStatus::BASIC;
-    case LPBasisStatus::kAtUpperBound:
+    case LpBasisStatus::kAtUpperBound:
       return VariableStatus::AT_UPPER_BOUND;
-    case LPBasisStatus::kAtLowerBound:
+    case LpBasisStatus::kAtLowerBound:
       return VariableStatus::AT_LOWER_BOUND;
-    case LPBasisStatus::kFixed:
+    case LpBasisStatus::kFixed:
       return VariableStatus::FIXED_VALUE;
-    case LPBasisStatus::kFree:
+    case LpBasisStatus::kFree:
       return VariableStatus::FREE;
     default:
       LOG(FATAL) << "Unknown MiniMip col basis status.";
@@ -103,19 +104,19 @@ VariableStatus ConvertMiniMIPVariableStatus(LPBasisStatus status) {
 }
 
 VariableStatus ConvertMiniMIPConstraintStatusToSlackStatus(
-    LPBasisStatus status) {
+    LpBasisStatus status) {
   // We swap lower and upper bound, because Glop adds slacks with -1.0
   // coefficient, whereas LP interface assumes slacks with +1.0 coefficient.
   switch (status) {
-    case LPBasisStatus::kBasic:
+    case LpBasisStatus::kBasic:
       return VariableStatus::BASIC;
-    case LPBasisStatus::kAtUpperBound:
+    case LpBasisStatus::kAtUpperBound:
       return VariableStatus::AT_LOWER_BOUND;
-    case LPBasisStatus::kAtLowerBound:
+    case LpBasisStatus::kAtLowerBound:
       return VariableStatus::AT_UPPER_BOUND;
-    case LPBasisStatus::kFixed:
+    case LpBasisStatus::kFixed:
       return VariableStatus::FIXED_VALUE;
-    case LPBasisStatus::kFree:
+    case LpBasisStatus::kFree:
       return VariableStatus::FREE;
     default:
       LOG(FATAL) << "Unknown MiniMip row basis status.";
@@ -130,24 +131,24 @@ bool IsDualBoundValid(ProblemStatus status) {
 
 }  // namespace
 
-LPGlopInterface::LPGlopInterface()
+LpGlopInterface::LpGlopInterface()
     : lp_modified_since_last_solve_(true),
       lp_time_limit_was_reached_(false),
-      num_iterations_of_last_solve_(0),
-      lp_info_(false),
-      pricing_(LPPricing::kDefault),
-      from_scratch_(false),
-      num_threads_(0),
-      timing_(0) {
+      num_iterations_of_last_solve_(0) {
   tmp_row_ = std::make_unique<ScatteredRow>();
   tmp_column_ = std::make_unique<ScatteredColumn>();
+  // We set the parameters explicitly to the default values, because
+  // `SetLpParameters` decides some default values (e.g., default tolerances).
+  // This way all parameter values are consistent from the start and do not
+  // depend on Glop implementation.
+  CHECK_OK(SetLpParameters(LpParameters()));
 }
 
 // ==========================================================================
 // LP model setters.
 // ==========================================================================
 
-absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
+absl::Status LpGlopInterface::PopulateFromMipData(const MipData& mip_data) {
   RETURN_IF_ERROR(Clear());
   DCHECK_EQ(mip_data.constraint_names().size(),
             mip_data.left_hand_sides().size());
@@ -172,7 +173,7 @@ absl::Status LPGlopInterface::PopulateFromMipData(const MipData& mip_data) {
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::AddColumn(const SparseCol& col_data,
+absl::Status LpGlopInterface::AddColumn(const SparseCol& col_data,
                                         double lower_bound, double upper_bound,
                                         double objective_coefficient,
                                         const std::string& name) {
@@ -201,7 +202,7 @@ absl::Status LPGlopInterface::AddColumn(const SparseCol& col_data,
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::AddColumns(
+absl::Status LpGlopInterface::AddColumns(
     const StrongSparseMatrix& matrix,
     const absl::StrongVector<ColIndex, double>& lower_bounds,
     const absl::StrongVector<ColIndex, double>& upper_bounds,
@@ -219,7 +220,7 @@ absl::Status LPGlopInterface::AddColumns(
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::DeleteColumns(ColIndex first_col,
+absl::Status LpGlopInterface::DeleteColumns(ColIndex first_col,
                                             ColIndex last_col) {
   DCHECK_GE(first_col, ColIndex(0));
   DCHECK_GE(last_col, first_col);
@@ -238,7 +239,7 @@ absl::Status LPGlopInterface::DeleteColumns(ColIndex first_col,
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::AddRow(const SparseRow& row_data,
+absl::Status LpGlopInterface::AddRow(const SparseRow& row_data,
                                      double left_hand_side,
                                      double right_hand_side,
                                      const std::string& name) {
@@ -266,7 +267,7 @@ absl::Status LPGlopInterface::AddRow(const SparseRow& row_data,
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::AddRows(
+absl::Status LpGlopInterface::AddRows(
     const absl::StrongVector<RowIndex, SparseRow>& rows,
     const absl::StrongVector<RowIndex, double>& left_hand_sides,
     const absl::StrongVector<RowIndex, double>& right_hand_sides,
@@ -281,7 +282,7 @@ absl::Status LPGlopInterface::AddRows(
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::DeleteRows(RowIndex first_row,
+absl::Status LpGlopInterface::DeleteRows(RowIndex first_row,
                                          RowIndex last_row) {
   DCHECK_GE(first_row, RowIndex(0));
   DCHECK_GE(last_row, first_row);
@@ -298,7 +299,7 @@ absl::Status LPGlopInterface::DeleteRows(RowIndex first_row,
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, RowIndex>>
-LPGlopInterface::DeleteRowSet(
+LpGlopInterface::DeleteRowSet(
     const absl::StrongVector<RowIndex, bool>& rows_to_delete) {
   DCHECK_EQ(rows_to_delete.size(), GetNumberOfRows());
   DenseBooleanColumn glop_rows_to_delete(rows_to_delete.begin(),
@@ -319,7 +320,7 @@ LPGlopInterface::DeleteRowSet(
   return row_mapping;
 }
 
-void LPGlopInterface::DeleteRowsAndUpdateCurrentBasis(
+void LpGlopInterface::DeleteRowsAndUpdateCurrentBasis(
     const DenseBooleanColumn& rows_to_delete) {
   const GlopRowIndex num_rows = lp_.num_constraints();
   const GlopColIndex num_cols = lp_.num_variables();
@@ -345,20 +346,20 @@ void LPGlopInterface::DeleteRowsAndUpdateCurrentBasis(
   lp_modified_since_last_solve_ = true;
 }
 
-absl::Status LPGlopInterface::Clear() {
+absl::Status LpGlopInterface::Clear() {
   VLOG(3) << "Clearing Glop.";
   lp_.Clear();
   lp_modified_since_last_solve_ = true;
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::ClearState() {
+absl::Status LpGlopInterface::ClearState() {
   VLOG(3) << "Clear Glop state.";
   solver_.ClearStateForNextSolve();
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::SetColumnBounds(ColIndex col, double lower_bound,
+absl::Status LpGlopInterface::SetColumnBounds(ColIndex col, double lower_bound,
                                               double upper_bound) {
   DCHECK_GE(col, 0);
   DCHECK_LT(col, GetNumberOfColumns());
@@ -372,7 +373,7 @@ absl::Status LPGlopInterface::SetColumnBounds(ColIndex col, double lower_bound,
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::SetRowSides(RowIndex row, double left_hand_side,
+absl::Status LpGlopInterface::SetRowSides(RowIndex row, double left_hand_side,
                                           double right_hand_side) {
   DCHECK_GE(row, 0);
   DCHECK_LT(row, GetNumberOfRows());
@@ -388,14 +389,14 @@ absl::Status LPGlopInterface::SetRowSides(RowIndex row, double left_hand_side,
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::SetObjectiveSense(bool is_maximization) {
+absl::Status LpGlopInterface::SetObjectiveSense(bool is_maximization) {
   VLOG(3) << "Setting maximize=" << is_maximization << ".";
   lp_.SetMaximizationProblem(is_maximization);
   lp_modified_since_last_solve_ = true;
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::SetObjectiveCoefficient(
+absl::Status LpGlopInterface::SetObjectiveCoefficient(
     ColIndex col, double objective_coefficient) {
   DCHECK_GE(col, 0);
   DCHECK_LT(col, GetNumberOfColumns());
@@ -411,23 +412,23 @@ absl::Status LPGlopInterface::SetObjectiveCoefficient(
 // LP model getters.
 // ==========================================================================
 
-RowIndex LPGlopInterface::GetNumberOfRows() const {
+RowIndex LpGlopInterface::GetNumberOfRows() const {
   return RowIndex(lp_.num_constraints().value());
 }
 
-ColIndex LPGlopInterface::GetNumberOfColumns() const {
+ColIndex LpGlopInterface::GetNumberOfColumns() const {
   return ColIndex(lp_.num_variables().value());
 }
 
-bool LPGlopInterface::IsMaximization() const {
+bool LpGlopInterface::IsMaximization() const {
   return lp_.IsMaximizationProblem();
 }
 
-int64_t LPGlopInterface::GetNumberOfNonZeros() const {
+int64_t LpGlopInterface::GetNumberOfNonZeros() const {
   return lp_.num_entries().value();
 }
 
-SparseCol LPGlopInterface::GetSparseColumnCoefficients(ColIndex col) const {
+SparseCol LpGlopInterface::GetSparseColumnCoefficients(ColIndex col) const {
   DCHECK_GE(col, ColIndex(0));
   DCHECK_LT(col, GetNumberOfColumns());
   const SparseColumn& column_in_glop =
@@ -444,7 +445,7 @@ SparseCol LPGlopInterface::GetSparseColumnCoefficients(ColIndex col) const {
   return col_data;
 }
 
-SparseRow LPGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
+SparseRow LpGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
   DCHECK_GE(row, RowIndex(0));
   DCHECK_LT(row, GetNumberOfRows());
   // Note, there is no casting from col to row in Glop, hence we keep the row
@@ -463,37 +464,37 @@ SparseRow LPGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
   return row_data;
 }
 
-double LPGlopInterface::GetObjectiveCoefficient(ColIndex col) const {
+double LpGlopInterface::GetObjectiveCoefficient(ColIndex col) const {
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   return lp_.objective_coefficients()[GlopColIndex(col.value())];
 }
 
-double LPGlopInterface::GetLowerBound(ColIndex col) const {
+double LpGlopInterface::GetLowerBound(ColIndex col) const {
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   return lp_.variable_lower_bounds()[GlopColIndex(col.value())];
 }
 
-double LPGlopInterface::GetUpperBound(ColIndex col) const {
+double LpGlopInterface::GetUpperBound(ColIndex col) const {
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   return lp_.variable_upper_bounds()[GlopColIndex(col.value())];
 }
 
-double LPGlopInterface::GetLeftHandSide(RowIndex row) const {
+double LpGlopInterface::GetLeftHandSide(RowIndex row) const {
   CHECK_GE(row, 0);
   CHECK_LT(row, GetNumberOfRows());
   return lp_.constraint_lower_bounds()[GlopRowIndex(row.value())];
 }
 
-double LPGlopInterface::GetRightHandSide(RowIndex row) const {
+double LpGlopInterface::GetRightHandSide(RowIndex row) const {
   CHECK_GE(row, 0);
   CHECK_LT(row, GetNumberOfRows());
   return lp_.constraint_upper_bounds()[GlopRowIndex(row.value())];
 }
 
-double LPGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
+double LpGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   CHECK_GE(row, 0);
@@ -508,7 +509,7 @@ double LPGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
 // ============================================================================
 
 // NOLINTNEXTLINE(misc-no-recursion)
-absl::Status LPGlopInterface::SolveInternal(bool recursive,
+absl::Status LpGlopInterface::SolveInternal(bool recursive,
                                             TimeLimit* time_limit) {
   // Recompute `scaled_lp_`.
   if (lp_modified_since_last_solve_) {
@@ -516,7 +517,7 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
     scaled_lp_.PopulateFromLinearProgram(lp_);
     scaled_lp_.AddSlackVariablesWhereNecessary(false);
 
-    if (parameters_.use_scaling()) {
+    if (solver_.GetParameters().use_scaling()) {
       // TODO(lpawel): Avoid rescaling if nothing changed.
       scaler_.Scale(&scaled_lp_);
     } else {
@@ -524,14 +525,12 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
     }
   }
 
-  solver_.SetParameters(parameters_);
-
   if (!recursive) {
     num_iterations_of_last_solve_ = 0;
     lp_time_limit_was_reached_ = false;
   }
 
-  if (from_scratch_) {
+  if (solve_from_scratch_) {
     solver_.ClearStateForNextSolve();
   }
 
@@ -557,17 +556,19 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
   // to solve the unscaled version from scratch.
   if ((status == ProblemStatus::PRIMAL_FEASIBLE ||
        status == ProblemStatus::OPTIMAL) &&
-      parameters_.use_scaling()) {
+      solver_.GetParameters().use_scaling()) {
     const auto primal_values = GetPrimalValues();
     CHECK_OK(primal_values);
     const operations_research::glop::DenseRow solution(primal_values->begin(),
                                                        primal_values->end());
-    if (!lp_.SolutionIsLPFeasible(solution,
-                                  parameters_.primal_feasibility_tolerance())) {
+    if (!lp_.SolutionIsLPFeasible(
+            solution, solver_.GetParameters().primal_feasibility_tolerance())) {
       VLOG(1) << "Solution not feasible w.r.t. absolute tolerance "
-              << parameters_.primal_feasibility_tolerance()
+              << solver_.GetParameters().primal_feasibility_tolerance()
               << ". Will re-optimize.";
-      parameters_.set_use_scaling(false);
+      GlopParameters glop_params = solver_.GetParameters();
+      glop_params.set_use_scaling(false);
+      solver_.SetParameters(glop_params);
 
       // This is needed to force setting `scaled_lp_ = lp_` in the recursive
       // call.
@@ -575,7 +576,8 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
       lp_modified_since_last_solve_ = true;
 
       RETURN_IF_ERROR(SolveInternal(/*recursive=*/true, time_limit));
-      parameters_.set_use_scaling(true);
+      glop_params.set_use_scaling(true);
+      solver_.SetParameters(glop_params);
     }
   }
 
@@ -587,39 +589,44 @@ absl::Status LPGlopInterface::SolveInternal(bool recursive,
 // Solving methods.
 // ==========================================================================
 
-absl::Status LPGlopInterface::SolveLPWithPrimalSimplex() {
+absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
   VLOG(3) << "Solving with primal simplex: "
           << "num_cols=" << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
+
+  GlopParameters glop_params = solver_.GetParameters();
   std::unique_ptr<TimeLimit> time_limit =
-      TimeLimit::FromParameters(parameters_);
-  parameters_.set_use_dual_simplex(false);
+      TimeLimit::FromParameters(glop_params);
+  glop_params.set_use_dual_simplex(false);
+  solver_.SetParameters(glop_params);
   return SolveInternal(/*recursive=*/false, time_limit.get());
 }
 
-absl::Status LPGlopInterface::SolveLPWithDualSimplex() {
+absl::Status LpGlopInterface::SolveLpWithDualSimplex() {
   VLOG(3) << "Solving with dual simplex: "
           << "num_cols=" << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
+  GlopParameters glop_params = solver_.GetParameters();
   std::unique_ptr<TimeLimit> time_limit =
-      TimeLimit::FromParameters(parameters_);
-  parameters_.set_use_dual_simplex(true);
+      TimeLimit::FromParameters(glop_params);
+  glop_params.set_use_dual_simplex(true);
+  solver_.SetParameters(glop_params);
   return SolveInternal(/*recursive=*/false, time_limit.get());
 }
 
-absl::Status LPGlopInterface::StartStrongBranching() {
+absl::Status LpGlopInterface::StartStrongBranching() {
   // TODO(lpawel): Save Glop state and tune Glop towards strong branching (and
   // avoid rescaling completely when in strong branching).
   return absl::OkStatus();
 }
 
-absl::Status LPGlopInterface::EndStrongBranching() {
+absl::Status LpGlopInterface::EndStrongBranching() {
   // TODO(lpawel): Restore the saved Glop state.
   return absl::OkStatus();
 }
 
-absl::StatusOr<LPGlopInterface::StrongBranchResult>
-LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
+absl::StatusOr<LpGlopInterface::StrongBranchResult>
+LpGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
                                             int iteration_limit) {
   DCHECK_GE(col, ColIndex(0));
   DCHECK_LT(col, GetNumberOfColumns());
@@ -636,12 +643,13 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 
   // Configure solver.
   // TODO(lpawel): Use the iteration limit and incrementality.
-  parameters_.set_use_dual_simplex(true);
-  solver_.SetParameters(parameters_);
-  const Fractional eps = parameters_.primal_feasibility_tolerance();
+  GlopParameters glop_params = solver_.GetParameters();
+  glop_params.set_use_dual_simplex(true);
+  solver_.SetParameters(glop_params);
+  const Fractional eps = glop_params.primal_feasibility_tolerance();
 
   std::unique_ptr<TimeLimit> time_limit =
-      TimeLimit::FromParameters(parameters_);
+      TimeLimit::FromParameters(glop_params);
 
   StrongBranchResult result;
 
@@ -659,11 +667,9 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
     }
   } else {
     result.down_valid = true;
-    if (lp_.IsMaximizationProblem()) {
-      result.dual_bound_down_branch = parameters_.objective_lower_limit();
-    } else {
-      result.dual_bound_down_branch = parameters_.objective_upper_limit();
-    }
+    result.dual_bound_down_branch = lp_.IsMaximizationProblem()
+                                        ? glop_params.objective_lower_limit()
+                                        : glop_params.objective_upper_limit();
   }
 
   // Up branch.
@@ -680,11 +686,9 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
     }
   } else {
     result.up_valid = true;
-    if (lp_.IsMaximizationProblem()) {
-      result.dual_bound_up_branch = parameters_.objective_lower_limit();
-    } else {
-      result.dual_bound_up_branch = parameters_.objective_upper_limit();
-    }
+    result.dual_bound_up_branch = lp_.IsMaximizationProblem()
+                                      ? glop_params.objective_lower_limit()
+                                      : glop_params.objective_upper_limit();
   }
 
   //  Restore the bounds.
@@ -697,64 +701,64 @@ LPGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 // Solution information getters.
 // ==========================================================================
 
-bool LPGlopInterface::IsSolved() const {
+bool LpGlopInterface::IsSolved() const {
   // TODO(lpawel): Track this to avoid unneeded resolving.
   return (!lp_modified_since_last_solve_);
 }
 
-bool LPGlopInterface::ExistsPrimalRay() const {
+bool LpGlopInterface::ExistsPrimalRay() const {
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
-bool LPGlopInterface::HasPrimalRay() const {
+bool LpGlopInterface::HasPrimalRay() const {
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
-bool LPGlopInterface::IsPrimalUnbounded() const {
+bool LpGlopInterface::IsPrimalUnbounded() const {
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
-bool LPGlopInterface::IsPrimalInfeasible() const {
+bool LpGlopInterface::IsPrimalInfeasible() const {
   const ProblemStatus status = solver_.GetProblemStatus();
   return status == ProblemStatus::DUAL_UNBOUNDED ||
          status == ProblemStatus::PRIMAL_INFEASIBLE;
 }
 
-bool LPGlopInterface::IsPrimalFeasible() const {
+bool LpGlopInterface::IsPrimalFeasible() const {
   const ProblemStatus status = solver_.GetProblemStatus();
   return status == ProblemStatus::PRIMAL_FEASIBLE ||
          status == ProblemStatus::OPTIMAL;
 }
 
-bool LPGlopInterface::ExistsDualRay() const {
+bool LpGlopInterface::ExistsDualRay() const {
   return solver_.GetProblemStatus() == ProblemStatus::DUAL_UNBOUNDED;
 }
 
-bool LPGlopInterface::HasDualRay() const {
+bool LpGlopInterface::HasDualRay() const {
   return solver_.GetProblemStatus() == ProblemStatus::DUAL_UNBOUNDED;
 }
 
-bool LPGlopInterface::IsDualUnbounded() const {
+bool LpGlopInterface::IsDualUnbounded() const {
   return solver_.GetProblemStatus() == ProblemStatus::DUAL_UNBOUNDED;
 }
 
-bool LPGlopInterface::IsDualInfeasible() const {
+bool LpGlopInterface::IsDualInfeasible() const {
   const ProblemStatus status = solver_.GetProblemStatus();
   return status == ProblemStatus::PRIMAL_UNBOUNDED ||
          status == ProblemStatus::DUAL_INFEASIBLE;
 }
 
-bool LPGlopInterface::IsDualFeasible() const {
+bool LpGlopInterface::IsDualFeasible() const {
   const ProblemStatus status = solver_.GetProblemStatus();
   return status == ProblemStatus::DUAL_FEASIBLE ||
          status == ProblemStatus::OPTIMAL;
 }
 
-bool LPGlopInterface::IsOptimal() const {
+bool LpGlopInterface::IsOptimal() const {
   return solver_.GetProblemStatus() == ProblemStatus::OPTIMAL;
 }
 
-bool LPGlopInterface::IsStable() const {
+bool LpGlopInterface::IsStable() const {
   // For correctness, we need to report "unstable" if Glop was not able to
   // prove optimality because of numerical issues. Currently, Glop still
   // reports primal/dual feasible if at the end, one status is within the
@@ -777,35 +781,34 @@ bool LPGlopInterface::IsStable() const {
   return true;
 }
 
-bool LPGlopInterface::ObjectiveLimitIsExceeded() const {
+bool LpGlopInterface::ObjectiveLimitIsExceeded() const {
   return solver_.objective_limit_reached();
 }
 
-bool LPGlopInterface::TimeLimitIsExceeded() const {
+bool LpGlopInterface::TimeLimitIsExceeded() const {
   return lp_time_limit_was_reached_;
 }
 
-bool LPGlopInterface::IterationLimitIsExceeded() const {
+bool LpGlopInterface::IterationLimitIsExceeded() const {
   // We might have accumulated iterations across 2 recursive solves,
   // hence _GE, and not _EQ.
   DCHECK_GE(num_iterations_of_last_solve_, solver_.GetNumberOfIterations());
-  // The limit of -1 means there is no limit.
-  return parameters_.max_number_of_iterations() != -1 &&
+  return solver_.GetParameters().max_number_of_iterations() != -1 &&
          num_iterations_of_last_solve_ >=
-             parameters_.max_number_of_iterations();
+             solver_.GetParameters().max_number_of_iterations();
 }
 
-int64_t LPGlopInterface::GetNumIterations() const {
+int64_t LpGlopInterface::GetNumIterations() const {
   return num_iterations_of_last_solve_;
 }
 
-double LPGlopInterface::GetObjectiveValue() const {
+double LpGlopInterface::GetObjectiveValue() const {
   DCHECK(IsOptimal());
   return solver_.GetObjectiveValue();
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
-LPGlopInterface::GetPrimalValues() const {
+LpGlopInterface::GetPrimalValues() const {
   DCHECK(IsOptimal());
   absl::StrongVector<ColIndex, double> primal_values;
   primal_values.reserve(lp_.num_variables().value());
@@ -817,7 +820,7 @@ LPGlopInterface::GetPrimalValues() const {
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
-LPGlopInterface::GetDualValues() const {
+LpGlopInterface::GetDualValues() const {
   DCHECK(IsOptimal());
   absl::StrongVector<RowIndex, double> dual_values;
   dual_values.reserve(lp_.num_constraints().value());
@@ -829,7 +832,7 @@ LPGlopInterface::GetDualValues() const {
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
-LPGlopInterface::GetReducedCosts() const {
+LpGlopInterface::GetReducedCosts() const {
   DCHECK(IsOptimal());
   absl::StrongVector<ColIndex, double> reduced_costs;
   reduced_costs.reserve(lp_.num_variables().value());
@@ -841,7 +844,7 @@ LPGlopInterface::GetReducedCosts() const {
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
-LPGlopInterface::GetRowActivities() const {
+LpGlopInterface::GetRowActivities() const {
   DCHECK(IsOptimal());
   absl::StrongVector<RowIndex, double> row_activities;
   row_activities.reserve(lp_.num_constraints().value());
@@ -853,7 +856,7 @@ LPGlopInterface::GetRowActivities() const {
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
-LPGlopInterface::GetPrimalRay() const {
+LpGlopInterface::GetPrimalRay() const {
   DCHECK(HasPrimalRay());
   absl::StrongVector<ColIndex, double> primal_ray;
   primal_ray.reserve(lp_.num_variables().value());
@@ -867,7 +870,7 @@ LPGlopInterface::GetPrimalRay() const {
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
-LPGlopInterface::GetDualRay() const {
+LpGlopInterface::GetDualRay() const {
   DCHECK(HasDualRay());
   absl::StrongVector<RowIndex, double> dual_ray;
   dual_ray.reserve(lp_.num_constraints().value());
@@ -884,10 +887,10 @@ LPGlopInterface::GetDualRay() const {
 // Getters and setters of the basis.
 // ==========================================================================
 
-absl::StatusOr<absl::StrongVector<ColIndex, LPBasisStatus>>
-LPGlopInterface::GetBasisStatusForColumns() const {
+absl::StatusOr<absl::StrongVector<ColIndex, LpBasisStatus>>
+LpGlopInterface::GetBasisStatusForColumns() const {
   DCHECK(IsOptimal());
-  absl::StrongVector<ColIndex, LPBasisStatus> statuses;
+  absl::StrongVector<ColIndex, LpBasisStatus> statuses;
   statuses.reserve(lp_.num_variables().value());
   for (GlopColIndex col(0); col < lp_.num_variables(); ++col) {
     statuses.push_back(ConvertGlopVariableStatus(solver_.GetVariableStatus(col),
@@ -896,10 +899,10 @@ LPGlopInterface::GetBasisStatusForColumns() const {
   return statuses;
 }
 
-absl::StatusOr<absl::StrongVector<RowIndex, LPBasisStatus>>
-LPGlopInterface::GetBasisStatusForRows() const {
+absl::StatusOr<absl::StrongVector<RowIndex, LpBasisStatus>>
+LpGlopInterface::GetBasisStatusForRows() const {
   DCHECK(IsOptimal());
-  absl::StrongVector<RowIndex, LPBasisStatus> statuses;
+  absl::StrongVector<RowIndex, LpBasisStatus> statuses;
   statuses.reserve(lp_.num_constraints().value());
   for (GlopRowIndex row(0); row < lp_.num_constraints(); ++row) {
     statuses.push_back(ConvertGlopConstraintStatus(
@@ -908,9 +911,9 @@ LPGlopInterface::GetBasisStatusForRows() const {
   return statuses;
 }
 
-absl::Status LPGlopInterface::SetBasisStatusForColumnsAndRows(
-    const absl::StrongVector<ColIndex, LPBasisStatus>& column_basis_statuses,
-    const absl::StrongVector<RowIndex, LPBasisStatus>& row_basis_statuses) {
+absl::Status LpGlopInterface::SetBasisStatusForColumnsAndRows(
+    const absl::StrongVector<ColIndex, LpBasisStatus>& column_basis_statuses,
+    const absl::StrongVector<RowIndex, LpBasisStatus>& row_basis_statuses) {
   BasisState state;
   state.statuses.reserve(lp_.num_variables() +
                          RowToColIndex(lp_.num_constraints()));
@@ -928,7 +931,7 @@ absl::Status LPGlopInterface::SetBasisStatusForColumnsAndRows(
   return absl::OkStatus();
 }
 
-std::vector<ColOrRowIndex> LPGlopInterface::GetColumnsAndRowsInBasis() const {
+std::vector<ColOrRowIndex> LpGlopInterface::GetColumnsAndRowsInBasis() const {
   std::vector<ColOrRowIndex> basis;
   basis.reserve(GetNumberOfRows().value());
   // The order in which we populate the `basis` is important!
@@ -945,7 +948,7 @@ std::vector<ColOrRowIndex> LPGlopInterface::GetColumnsAndRowsInBasis() const {
 // Getters of vectors in the inverted basis matrix.
 // ==========================================================================
 
-absl::StatusOr<SparseRow> LPGlopInterface::GetSparseRowOfBInverted(
+absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
     RowIndex row_in_basis) const {
   SparseRow sparse_row;
 
@@ -968,7 +971,8 @@ absl::StatusOr<SparseRow> LPGlopInterface::GetSparseRowOfBInverted(
       sparse_row.AddEntry(ColIndex(idx), (*iter).coefficient());
     }
   } else {
-    const Fractional eps = parameters_.primal_feasibility_tolerance();
+    const Fractional eps =
+        solver_.GetParameters().primal_feasibility_tolerance();
     for (GlopColIndex col(0); col < RowToColIndex(lp_.num_constraints());
          ++col) {
       const double value = (*tmp_row_)[col];
@@ -980,7 +984,7 @@ absl::StatusOr<SparseRow> LPGlopInterface::GetSparseRowOfBInverted(
   return sparse_row;
 }
 
-absl::StatusOr<SparseCol> LPGlopInterface::GetSparseColumnOfBInverted(
+absl::StatusOr<SparseCol> LpGlopInterface::GetSparseColumnOfBInverted(
     ColIndex col_in_basis) const {
   SparseCol sparse_column;
   // We need to loop through the rows to extract the values for `col_in_basis`.
@@ -990,14 +994,15 @@ absl::StatusOr<SparseCol> LPGlopInterface::GetSparseColumnOfBInverted(
     scaler_.UnscaleUnitRowLeftSolve(solver_.GetBasis(row), tmp_row_.get());
 
     double value = (*tmp_row_)[GlopColIndex(col_in_basis.value())];
-    if (std::abs(value) >= parameters_.primal_feasibility_tolerance()) {
+    if (std::abs(value) >=
+        solver_.GetParameters().primal_feasibility_tolerance()) {
       sparse_column.AddEntry(RowIndex(row.value()), value);
     }
   }
   return sparse_column;
 }
 
-absl::StatusOr<SparseRow> LPGlopInterface::GetSparseRowOfBInvertedTimesA(
+absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInvertedTimesA(
     RowIndex row_in_basis) const {
   SparseRow sparse_row;
   solver_.GetBasisFactorization().LeftSolveForUnitRow(
@@ -1007,14 +1012,15 @@ absl::StatusOr<SparseRow> LPGlopInterface::GetSparseRowOfBInvertedTimesA(
   for (GlopColIndex col(0); col < lp_.num_variables(); ++col) {
     double value = operations_research::glop::ScalarProduct(
         tmp_row_->values, lp_.GetSparseColumn(col));
-    if (std::abs(value) >= parameters_.primal_feasibility_tolerance()) {
+    if (std::abs(value) >=
+        solver_.GetParameters().primal_feasibility_tolerance()) {
       sparse_row.AddEntry(ColIndex(col.value()), value);
     }
   }
   return sparse_row;
 }
 
-absl::StatusOr<SparseCol> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
+absl::StatusOr<SparseCol> LpGlopInterface::GetSparseColumnOfBInvertedTimesA(
     ColIndex col_in_basis) const {
   SparseCol sparse_column;
   solver_.GetBasisFactorization().RightSolveForProblemColumn(
@@ -1040,7 +1046,8 @@ absl::StatusOr<SparseCol> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
     // Otherwise, we need to iterate through all rows.
     for (GlopRowIndex row(0); row < lp_.num_constraints(); ++row) {
       const double value = (*tmp_column_)[row];
-      if (std::abs(value) > parameters_.primal_feasibility_tolerance()) {
+      if (std::abs(value) >
+          solver_.GetParameters().primal_feasibility_tolerance()) {
         const RowIndex row_in_basis(row.value());
         sparse_column.AddEntry(row_in_basis, value);
       }
@@ -1053,191 +1060,223 @@ absl::StatusOr<SparseCol> LPGlopInterface::GetSparseColumnOfBInvertedTimesA(
 // Getters and setters of the parameters.
 // ==========================================================================
 
-absl::StatusOr<int> LPGlopInterface::GetIntegerParameter(
-    LPParameter type) const {
-  int param_val;
-  switch (type) {
-    case LPParameter::kFromScratch:
-      param_val = static_cast<int>(from_scratch_);
-      break;
-    case LPParameter::kLPInfo:
-      param_val = static_cast<int>(lp_info_);
-      break;
-    case LPParameter::kLPIterationLimit:
-      param_val = static_cast<int>(parameters_.max_number_of_iterations());
-      break;
-    case LPParameter::kPresolving:
-      param_val = static_cast<int>(parameters_.use_preprocessing());
-      break;
-    case LPParameter::kPolishing:
-      param_val = 0;
-      break;
-    case LPParameter::kPricing:
-      param_val = static_cast<int>(pricing_);
-      break;
-    case LPParameter::kRefactor:
-      param_val = 0;
-      break;
-    case LPParameter::kScaling:
-      param_val = static_cast<int>(parameters_.use_scaling());
-      break;
-    case LPParameter::kThreads:
-      param_val = num_threads_;
-      break;
-    case LPParameter::kTiming:
-      param_val = timing_;
-      break;
-    case LPParameter::kRandomSeed:
-      param_val = static_cast<int>(parameters_.random_seed());
-      break;
-    default:
-      return util::InvalidArgumentErrorBuilder()
-             << "Unknown integer parameter type " << type;
+LpParameters LpGlopInterface::GetLpParameters() const {
+  LpParameters params;
+  params.set_lp_solver_type(LpParameters::LP_GLOP);
+
+  params.set_solve_from_scratch(solve_from_scratch_);
+
+  const GlopParameters& glop_params = solver_.GetParameters();
+  if (glop_params.use_scaling()) {
+    switch (glop_params.scaling_method()) {
+      case GlopParameters::DEFAULT:
+        params.set_scaling_strategy(LpParameters::SCALING_DEFAULT);
+        break;
+      case GlopParameters::EQUILIBRATION:
+        params.set_scaling_strategy(LpParameters::SCALING_EQUILIBRATION);
+        break;
+      case GlopParameters::LINEAR_PROGRAM:
+        params.set_scaling_strategy(LpParameters::SCALING_LINEAR_PROGRAM);
+        break;
+    }
+  } else {
+    params.set_scaling_strategy(LpParameters::SCALING_OFF);
   }
 
-  return param_val;
+  params.set_use_presolve(glop_params.use_preprocessing());
+
+  DCHECK_EQ(glop_params.feasibility_rule(), glop_params.optimization_rule());
+  switch (glop_params.feasibility_rule()) {
+    case GlopParameters::DANTZIG:
+      params.set_pricing_strategy(LpParameters::PRICING_DANTZIG);
+      break;
+    case GlopParameters::STEEPEST_EDGE:
+      params.set_pricing_strategy(LpParameters::PRICING_STEEPEST_EDGE);
+      break;
+    case GlopParameters::DEVEX:
+      params.set_pricing_strategy(LpParameters::PRICING_DEVEX);
+      break;
+  }
+
+  params.set_feasibility_tolerance(glop_params.primal_feasibility_tolerance());
+  params.set_optimality_tolerance(glop_params.dual_feasibility_tolerance());
+
+  // 0 means that Glop determines the interval automatically (and doesn't
+  // support user provided values).
+  params.set_refactorization_interval(0);
+
+  params.set_objective_lower_limit(glop_params.objective_lower_limit());
+
+  params.set_objective_upper_limit(glop_params.objective_upper_limit());
+
+  params.set_timing_mode(LpParameters::TIMING_OFF);
+  if (glop_params.max_deterministic_time() <
+      std::numeric_limits<double>::infinity()) {
+    params.set_timing_mode(LpParameters::TIMING_DETERMINISTIC);
+    params.set_time_limit(glop_params.max_deterministic_time());
+    DCHECK_EQ(glop_params.max_time_in_seconds(),
+              std::numeric_limits<double>::infinity());
+  }
+  if (glop_params.max_time_in_seconds() <
+      std::numeric_limits<double>::infinity()) {
+    params.set_timing_mode(absl::GetFlag(FLAGS_time_limit_use_usertime)
+                               ? LpParameters::TIMING_WALLCLOCK
+                               : LpParameters::TIMING_CPU);
+    params.set_time_limit(glop_params.max_time_in_seconds());
+    DCHECK_EQ(glop_params.max_deterministic_time(),
+              std::numeric_limits<double>::infinity());
+  }
+
+  // LpInterface assumes 0 means no limit, but Glop uses -1 to this end.
+  // Hence, we shouldn't ever see 0 == max_number_of_iterations().
+  DCHECK_NE(glop_params.max_number_of_iterations(), 0);
+  params.set_iteration_limit(glop_params.max_number_of_iterations() == -1
+                                 ? 0
+                                 : glop_params.max_number_of_iterations());
+
+  params.set_num_threads(glop_params.num_omp_threads());
+  params.set_random_seed(glop_params.random_seed());
+  params.set_enable_internal_solver_output(glop_params.log_search_progress());
+
+  return params;
 }
 
-absl::Status LPGlopInterface::SetIntegerParameter(LPParameter type,
-                                                  int param_val) {
-  switch (type) {
-    case LPParameter::kFromScratch:
-      from_scratch_ = static_cast<bool>(param_val);
-      break;
-    case LPParameter::kLPInfo:
-      if (param_val == 0) {
-        static_cast<void>(google::SetVLOGLevel("*", google::GLOG_INFO));
-        lp_info_ = false;
-      } else {
-        static_cast<void>(google::SetVLOGLevel("*", google::GLOG_ERROR));
-        lp_info_ = true;
-      }
-      break;
-    case LPParameter::kLPIterationLimit:
-      parameters_.set_max_number_of_iterations(param_val);
-      break;
-    case LPParameter::kPresolving:
-      parameters_.set_use_preprocessing(static_cast<bool>(param_val));
-      break;
-    case LPParameter::kPolishing:
-      if (param_val != 0) {
-        return absl::InvalidArgumentError(
-            "Polishing is not supported by glop.");
-      }
-      break;
-    case LPParameter::kPricing:
-      pricing_ = static_cast<LPPricing>(param_val);
-      switch (pricing_) {
-        case LPPricing::kDefault:
-        case LPPricing::kAuto:
-        case LPPricing::kPartial:
-        case LPPricing::kSteep:
-        case LPPricing::kSteepQStart:
-          parameters_.set_feasibility_rule(
-              operations_research::glop::
-                  GlopParameters_PricingRule_STEEPEST_EDGE);
-          break;
-        case LPPricing::kFull:
-          // Dantzig does not really fit, but use it anyway
-          parameters_.set_feasibility_rule(
-              operations_research::glop::GlopParameters_PricingRule_DANTZIG);
-          break;
-        case LPPricing::kDevex:
-          parameters_.set_feasibility_rule(
-              operations_research::glop::GlopParameters_PricingRule_DEVEX);
-          break;
-        default:
-          return util::InvalidArgumentErrorBuilder()
-                 << "Unknown pricing strategy " << pricing_;
-      }
-      break;
-    case LPParameter::kRefactor:
-      if (param_val != 0) {
-        return absl::InvalidArgumentError(
-            "Glop only supports automatic refactoring.");
-      }
-      break;
-    case LPParameter::kScaling:
-      parameters_.set_use_scaling(static_cast<bool>(param_val));
-      break;
-    case LPParameter::kThreads:
-      num_threads_ = param_val;
-      parameters_.set_num_omp_threads(num_threads_ == 0 ? 1 : num_threads_);
-      break;
-    case LPParameter::kTiming:
-      assert(param_val <= 2);
-      timing_ = param_val;
-      absl::SetFlag(&FLAGS_time_limit_use_usertime, timing_ == 1);
-      break;
-    case LPParameter::kRandomSeed:
-      parameters_.set_random_seed(param_val);
-      break;
-    default:
-      return util::InvalidArgumentErrorBuilder()
-             << "Unknown integer parameter type " << type << " with value "
-             << param_val;
-  }
+namespace {
 
+absl::Status LpParametersAreSupportedByGlop(const LpParameters& params) {
+  RETURN_IF_ERROR(LpParametersAreValid(params));
+
+  if (params.lp_solver_type() != LpParameters::LP_GLOP) {
+    return absl::InvalidArgumentError("Solver type must be LP_GLOP.");
+  }
+  if (params.scaling_strategy() == LpParameters::SCALING_LEAST_SQUARES) {
+    return absl::InvalidArgumentError("Unsupported scaling strategy.");
+  }
+  if (params.pricing_strategy() ==
+          LpParameters::PRICING_STEEPEST_EDGE_QUICK_START ||
+      params.pricing_strategy() == LpParameters::PRICING_PARTIAL_DANTZIG) {
+    return absl::InvalidArgumentError("Unsupported pricing strategy.");
+  }
+  if (params.min_markowitz_threshold() != -1) {
+    return absl::InvalidArgumentError(
+        "Glop only supports default Markowitz threshold.");
+  }
+  if (params.refactorization_interval() != 0) {
+    return absl::InvalidArgumentError(
+        "Glop only supports automatic refactorization.");
+  }
   return absl::OkStatus();
 }
 
-absl::StatusOr<double> LPGlopInterface::GetRealParameter(
-    LPParameter type) const {
-  double param_val;
+}  // namespace
 
-  switch (type) {
-    case LPParameter::kFeasibilityTolerance:
-      param_val = parameters_.primal_feasibility_tolerance();
-      break;
-    case LPParameter::kDualFeasibilityTolerance:
-      param_val = parameters_.dual_feasibility_tolerance();
-      break;
-    case LPParameter::kObjectiveLimit:
-      param_val = lp_.IsMaximizationProblem()
-                      ? parameters_.objective_lower_limit()
-                      : parameters_.objective_upper_limit();
-      break;
-    case LPParameter::kLPTimeLimit:
-      param_val = absl::GetFlag(FLAGS_time_limit_use_usertime)
-                      ? parameters_.max_time_in_seconds()
-                      : parameters_.max_deterministic_time();
-      break;
-    default:
-      return util::InvalidArgumentErrorBuilder()
-             << "Unknown real parameter type " << type;
-  }
-  return param_val;
-}
+absl::Status LpGlopInterface::SetLpParameters(const LpParameters& params) {
+  RETURN_IF_ERROR(LpParametersAreSupportedByGlop(params));
 
-absl::Status LPGlopInterface::SetRealParameter(LPParameter type,
-                                               double param_val) {
-  switch (type) {
-    case LPParameter::kFeasibilityTolerance:
-      parameters_.set_primal_feasibility_tolerance(param_val);
+  solve_from_scratch_ = params.solve_from_scratch();
+
+  GlopParameters glop_params;
+  switch (params.scaling_strategy()) {
+    case LpParameters::SCALING_OFF:
+      glop_params.set_use_scaling(false);
       break;
-    case LPParameter::kDualFeasibilityTolerance:
-      parameters_.set_dual_feasibility_tolerance(param_val);
+    case LpParameters::SCALING_DEFAULT:
+    case LpParameters::SCALING_EQUILIBRATION:
+      glop_params.set_use_scaling(true);
+      glop_params.set_scaling_method(GlopParameters::EQUILIBRATION);
       break;
-    case LPParameter::kObjectiveLimit:
-      if (lp_.IsMaximizationProblem()) {
-        parameters_.set_objective_lower_limit(param_val);
-      } else {
-        parameters_.set_objective_upper_limit(param_val);
-      }
+    case LpParameters::SCALING_LINEAR_PROGRAM:
+      glop_params.set_use_scaling(true);
+      glop_params.set_scaling_method(GlopParameters::LINEAR_PROGRAM);
       break;
-    case LPParameter::kLPTimeLimit:
-      if (absl::GetFlag(FLAGS_time_limit_use_usertime)) {
-        parameters_.set_max_time_in_seconds(param_val);
-      } else {
-        parameters_.set_max_deterministic_time(param_val);
-      }
-      break;
+    case LpParameters::SCALING_LEAST_SQUARES:
     default:
-      return util::InvalidArgumentErrorBuilder()
-             << "Unknown real parameter type " << type << " with value "
-             << param_val;
+      LOG(DFATAL) << "[BUG] Unexpected scaling strategy "
+                  << params.scaling_strategy();
+      return absl::InvalidArgumentError("[BUG] Unexpected scaling strategy.");
   }
 
+  glop_params.set_use_preprocessing(params.use_presolve());
+
+  switch (params.pricing_strategy()) {
+    case LpParameters::PRICING_DEFAULT:
+    case LpParameters::PRICING_STEEPEST_EDGE:
+      glop_params.set_feasibility_rule(
+          operations_research::glop::GlopParameters::STEEPEST_EDGE);
+      glop_params.set_optimization_rule(
+          operations_research::glop::GlopParameters::STEEPEST_EDGE);
+      break;
+    case LpParameters::PRICING_DANTZIG:
+      glop_params.set_feasibility_rule(
+          operations_research::glop::GlopParameters::DANTZIG);
+      glop_params.set_optimization_rule(
+          operations_research::glop::GlopParameters::DANTZIG);
+      break;
+    case LpParameters::PRICING_DEVEX:
+      glop_params.set_feasibility_rule(
+          operations_research::glop::GlopParameters::DEVEX);
+      glop_params.set_optimization_rule(
+          operations_research::glop::GlopParameters::DEVEX);
+      break;
+    case LpParameters::PRICING_STEEPEST_EDGE_QUICK_START:
+    case LpParameters::PRICING_PARTIAL_DANTZIG:
+    default:
+      LOG(DFATAL) << "[BUG] Unexpected pricing strategy "
+                  << params.pricing_strategy();
+      return absl::InvalidArgumentError("[BUG] Unexpected pricing strategy.");
+  }
+
+  glop_params.set_primal_feasibility_tolerance(
+      params.feasibility_tolerance() == -1 ? 1e-8
+                                           : params.feasibility_tolerance());
+
+  glop_params.set_dual_feasibility_tolerance(
+      params.optimality_tolerance() == -1 ? 1e-8
+                                          : params.optimality_tolerance());
+
+  glop_params.set_objective_lower_limit(params.objective_lower_limit());
+  glop_params.set_objective_upper_limit(params.objective_upper_limit());
+
+  switch (params.timing_mode()) {
+    case LpParameters::TIMING_OFF:
+      glop_params.set_max_time_in_seconds(
+          std::numeric_limits<double>::infinity());
+      glop_params.set_max_deterministic_time(
+          std::numeric_limits<double>::infinity());
+      break;
+    case LpParameters::TIMING_DETERMINISTIC:
+      glop_params.set_max_time_in_seconds(
+          std::numeric_limits<double>::infinity());
+      glop_params.set_max_deterministic_time(params.time_limit());
+      break;
+    case LpParameters::TIMING_WALLCLOCK:
+      glop_params.set_max_time_in_seconds(params.time_limit());
+      glop_params.set_max_deterministic_time(
+          std::numeric_limits<double>::infinity());
+      absl::SetFlag(&FLAGS_time_limit_use_usertime, true);
+      break;
+    case LpParameters::TIMING_CPU:
+      glop_params.set_max_time_in_seconds(params.time_limit());
+      glop_params.set_max_deterministic_time(
+          std::numeric_limits<double>::infinity());
+      absl::SetFlag(&FLAGS_time_limit_use_usertime, false);
+      break;
+    default:
+      LOG(DFATAL) << "[BUG] Unexpected timing mode " << params.timing_mode();
+      return absl::InvalidArgumentError("[BUG] Unexpected timing mode.");
+  }
+
+  glop_params.set_max_number_of_iterations(
+      params.iteration_limit() == 0 ? -1 : params.iteration_limit());
+
+  glop_params.set_num_omp_threads(
+      params.num_threads() == 0 ? 1 : params.num_threads());
+
+  glop_params.set_random_seed(params.random_seed());
+
+  glop_params.set_log_search_progress(params.enable_internal_solver_output());
+
+  solver_.SetParameters(glop_params);
   return absl::OkStatus();
 }
 
@@ -1245,11 +1284,11 @@ absl::Status LPGlopInterface::SetRealParameter(LPParameter type,
 // Numerical methods.
 // ==========================================================================
 
-double LPGlopInterface::Infinity() const {
+double LpGlopInterface::Infinity() const {
   return std::numeric_limits<double>::infinity();
 }
 
-bool LPGlopInterface::IsInfinity(double value) const {
+bool LpGlopInterface::IsInfinity(double value) const {
   return value == Infinity();
 }
 
@@ -1257,7 +1296,7 @@ bool LPGlopInterface::IsInfinity(double value) const {
 // File interface methods.
 // ==========================================================================
 
-absl::Status LPGlopInterface::ReadLPFromFile(const std::string& file_path) {
+absl::Status LpGlopInterface::ReadLpFromFile(const std::string& file_path) {
   MPModelProto proto;
   if (!ReadFileToProto(file_path, &proto)) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -1268,7 +1307,7 @@ absl::Status LPGlopInterface::ReadLPFromFile(const std::string& file_path) {
   return absl::OkStatus();
 }
 
-absl::StatusOr<std::string> LPGlopInterface::WriteLPToFile(
+absl::StatusOr<std::string> LpGlopInterface::WriteLpToFile(
     const std::string& file_path) const {
   MPModelProto proto;
   LinearProgramToMPModelProto(lp_, &proto);

@@ -2,7 +2,17 @@
 build --show_timestamps
 build --color=yes
 build --keep_going
-build --cxxopt="--std=c++2a" --repo_env=CC=clang
+# TODO(lpawel): With c++20 or c++2a there was an error on 2023/10/03:
+#
+# /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/chrono:2320:48:
+# error: call to consteval function 'std::chrono::hh_mm_ss::_S_fractional_width'
+# is not a constant expression
+#
+# This is likely due to old `clang` in my toolchain. Note, however, that OR-Tools
+# are compatible with C++17 (and do not support C++20 yet). Hence, it's actually
+# safer to stay with C++17 for a while (it shouldn't matter in practice that much
+# anyway).
+build --repo_env="CC=clang" --cxxopt="--std=c++17"
 
 build:debug -c dbg
 build:debug --copt="-g"

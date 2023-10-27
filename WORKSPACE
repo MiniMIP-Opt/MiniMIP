@@ -154,9 +154,13 @@ filegroup(
 http_archive(
     name = "soplex",
     build_file_content = _ALL_CONTENT,
-    strip_prefix = "soplex-master",
+    # There was an issue with the master, use a stable release instead.
+    # strip_prefix = "soplex-master",
+    strip_prefix = "soplex-release-604",
     urls = [
-        "https://github.com/scipopt/soplex/archive/refs/heads/master.zip",
+        # There was an issue with the master, use a stable release instead.
+        # "https://github.com/scipopt/soplex/archive/refs/heads/master.zip",
+        "https://github.com/scipopt/soplex/archive/refs/tags/release-604.zip",
     ],
     # sha256 = "0b8e7465dc5e98c757cc3650a20a7843ee4c3edf50aaf60bb33fd879690d2c73",
 )

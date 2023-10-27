@@ -27,24 +27,24 @@ std::string FormatRow(const SparseRow& row, int num_columns) {
   return res;
 }
 
-std::string FormatLPBasisStatus(LPBasisStatus status) {
+std::string FormatLPBasisStatus(LpBasisStatus status) {
   switch (status) {
-    case minimip::LPBasisStatus::kAtLowerBound:
+    case minimip::LpBasisStatus::kAtLowerBound:
       return "LOWER_BOUND";
-    case minimip::LPBasisStatus::kAtUpperBound:
+    case minimip::LpBasisStatus::kAtUpperBound:
       return "UPPER_BOUND";
-    case minimip::LPBasisStatus::kBasic:
+    case minimip::LpBasisStatus::kBasic:
       return "BASIC";
-    case minimip::LPBasisStatus::kFixed:
+    case minimip::LpBasisStatus::kFixed:
       return "FIXED";
-    case minimip::LPBasisStatus::kFree:
+    case minimip::LpBasisStatus::kFree:
       return "FREE";
   }
 }
 
 }  // namespace
 
-std::string LPModelDebugString(const LPInterface* lpi) {
+std::string LpModelDebugString(const LpInterface* lpi) {
   const ColIndex num_columns = lpi->GetNumberOfColumns();
   const RowIndex num_rows = lpi->GetNumberOfRows();
   std::string s;
@@ -74,7 +74,7 @@ std::string LPModelDebugString(const LPInterface* lpi) {
   return s;
 }
 
-std::string LPStatusDebugString(const LPInterface* lpi) {
+std::string LpStatusDebugString(const LpInterface* lpi) {
   const ColIndex num_columns = lpi->GetNumberOfColumns();
   const RowIndex num_rows = lpi->GetNumberOfRows();
   std::string s;
@@ -88,14 +88,14 @@ std::string LPStatusDebugString(const LPInterface* lpi) {
       &s, "primal values: ",
       FormatRow(SparseRow(lpi->GetPrimalValues().value()), num_columns.value()),
       "\n");
-  const absl::StrongVector<ColIndex, LPBasisStatus> column_status =
+  const absl::StrongVector<ColIndex, LpBasisStatus> column_status =
       lpi->GetBasisStatusForColumns().value();
   for (ColIndex col(0); col < num_columns; ++col) {
     absl::StrAppend(&s,
                     absl::StrFormat("x%d: %s\n", col.value(),
                                     FormatLPBasisStatus(column_status[col])));
   }
-  const absl::StrongVector<RowIndex, LPBasisStatus> row_status =
+  const absl::StrongVector<RowIndex, LpBasisStatus> row_status =
       lpi->GetBasisStatusForRows().value();
   for (RowIndex row(0); row < num_rows; ++row) {
     absl::StrAppend(&s, absl::StrFormat("constraint %d: %s\n", row.value(),

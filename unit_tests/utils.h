@@ -81,8 +81,8 @@ MATCHER_P2(Activation, linear_expression, matcher,
 
 // Creates a string with information about the model or current LP optimum,
 // respectively. Useful when debugging small models.
-std::string LPModelDebugString(const LPInterface* lpi);
-std::string LPStatusDebugString(const LPInterface* lpi);
+std::string LpModelDebugString(LpInterface* lpi);
+std::string LpStatusDebugString(LpInterface* lpi);
 
 }  // namespace minimip
 

@@ -93,85 +93,93 @@ message CutRunnerParameters {
 
 }
 
-message LPParameters {
+message LpParameters {
+  // The underlying solver to use. Note that some parameters behave differently
+  // depending on the solver type.
   enum SolverType {
     LP_GLOP = 0;
     LP_SOPLEX = 1;
   }
+  optional SolverType lp_solver_type = 1 [default = LP_GLOP];
 
-  enum Pricing {
-    PRICING_DEFAULT = 0;
-    PRICING_AUTO = 1;
-    PRICING_FULL = 2;
-    PRICING_PARTIAL = 3;
-    PRICING_STEEP = 4;
-    PRICING_STEEP_Q_START = 5;
-    PRICING_DEVEX = 6;
+  // Whether to start solving` from scratch. If false, the underlying LP solver
+  // will attempt to leverage incrementalism (if possible).
+  optional bool solve_from_scratch = 2 [default = false];
+
+  // What kind of scaling the LP solver should use. All solvers may not support
+  // all scaling strategies.
+  enum ScalingStrategy {
+    SCALING_OFF = 0;  // No scaling at all.
+    SCALING_DEFAULT = 1;  // LP Solver's default scaling strategy.
+    SCALING_EQUILIBRATION = 2;
+    SCALING_LEAST_SQUARES = 3;
+    SCALING_LINEAR_PROGRAM = 4;
   }
+  optional ScalingStrategy scaling_strategy = 3 [default = SCALING_DEFAULT];
 
-  enum Timing {
+  // Should the LP solver use presolving?
+  optional bool use_presolve = 4 [default = true];
+
+  // Pricing strategy. All solvers may not support all pricing strategies.
+  enum PricingStrategy {
+    PRICING_DEFAULT = 0;  // LP solver's default pricing strategy.
+    PRICING_STEEPEST_EDGE = 1;
+    PRICING_STEEPEST_EDGE_QUICK_START = 2;
+    PRICING_DANTZIG = 3;
+    PRICING_PARTIAL_DANTZIG = 4;
+    PRICING_DEVEX = 5;
+  }
+  optional PricingStrategy pricing_strategy = 5 [default = PRICING_DEFAULT];
+
+  // Feasibility tolerance for primal variables and slacks (aka just feasibility
+  // tolerance). Set to -1 to use LP solver's default tolerance. Must be
+  // non-negative or -1.
+  optional double feasibility_tolerance = 6 [default = -1.0];
+
+  // Feasibility tolerance for dual variables and slacks (aka optimality
+  // tolerance). Set to -1 to use LP solver's default tolerance. Must be
+  // non-negative or -1.
+  optional double optimality_tolerance = 7 [default = -1.0];
+
+  // Minimal Markowitz threshold in LU factorization. Must be between 0 and 1
+  // (or -1 to use LP solver's default), though LP solver may choose to clip
+  // the value (e.g., SoPlex requires this to be between 1e-4 and 1 - 1e-4).
+  optional double min_markowitz_threshold = 8 [default = -1];
+
+  // Refactorization interval. Set to 0 to let the LP solver determine the
+  // refactorization interval automatically. Must be non-negative.
+  optional int32 refactorization_interval = 9 [default = 0];
+
+  // The LP solver stops when the objective value gets smaller than this value.
+  // Note, LP solver may trim this wrt their definition of infinity.
+  optional double objective_lower_limit = 10 [default = -inf];
+
+  // The LP solver stops when the objective value gets larger than this value.
+  // Note, LP solver may trim this wrt their definition of infinity.
+  optional double objective_upper_limit = 11 [default = inf];
+
+  // Timing mode and limit. Not all solvers support all timing modes.
+  // If `timing_mode` is TIMING_OFF, no limit is imposed.
+  // Note, LP solver may trim `time_limit` wrt their definition of infinity.
+  enum TimingMode {
     TIMING_OFF = 0;
     TIMING_WALLCLOCK = 1;
     TIMING_CPU = 2;
+    TIMING_DETERMINISTIC = 3;
   }
+  optional TimingMode timing_mode = 12 [default = TIMING_OFF];
+  optional double time_limit = 13 [default = inf];
 
-  // The underlying solver to use. Note that some parameters behave differently
-  // depending on the solver type.
-  optional SolverType lp_solver_type = 1 [default = LP_GLOP];
+  // Iteration limit for the LP solver. Set to 0 to impose no limit. Must be
+  // non-negative.
+  optional int32 iteration_limit = 14 [default = 0];
 
-  // What kind of scaling the LP solver should use. 0 means no scaling for all
-  // solvers, but the behaviour for other values are solver-specific.
-  optional int32 scaling = 2 [default = 1];
-
-  // Should the LP solver use presolving?
-  optional bool use_presolve = 3 [default = true];
-
-  // Should solutions be polished before they are returned? As of 2022-11-03,
-  // this is not supported by any solvers.
-  optional bool use_polishing = 4 [default = false];
-
-  // Pricing strategy. All solvers may not support all strategies.
-  optional Pricing pricing = 5 [default = PRICING_DEFAULT];
-
-  // Feasibility tolerance for primal variables and slacks. Negative value
-  // means that the solver default should be used.
-  optional double feasibility_tolerance = 6 [default = -1.0];
-
-  // Feasibility tolerance for dual variables and slacks. Negative value
-  // means that the solver default should be used.
-  optional double dual_feasibility_tolerance = 7 [default = -1.0];
-
-  // Markovitz tolerance. Negative value means that the solver default should
-  // be used.
-  optional double markowitz_tolerance = 8 [default = -1.0];
-
-  // Refactorization interval. If 0, refactorization is determined
-  // automatically by the solver.
-  optional int32 refactorization_interval = 9 [default = 0];
-
-  // Should the LP solver stop when a given objective value is achieved?
-  optional bool use_objective_limit = 10 [default = false];
-
-  // The LP solver will stop when the objective value is larger (if
-  // maximization) or smaller (if minimization) than this value. Has no effect
-  // if use_objective_limit = false.
-  optional double objective_limit = 11 [default = 0.0];
-
-  // Time limit for the LP solver. If negative or zero, no limit is used.
-  optional double time_limit = 12 [default = 0.0];
-
-  // Iteration limit for the LP solver. If negative or zero, no limit is used.
-  optional int32 iteration_limit = 13 [default = -1];
-
-  // Timing type.
-  optional Timing timing = 14 [default = TIMING_OFF];
-
-  // Number of thread to use. Set to 0 to let the LP solver determine the
-  // thread count automatically.
+  // Number of thread to use. Set to 0 to let the LP solver determine the number
+  // of threads automatically. Must be non-negative.
   optional int32 num_threads = 15 [default = 0];
 
   // Initial random seed, which may affects e.g. perturbations in the simplex.
-  // Set to 0 to use the solver default.
+  // Set to 0 to use the solver default. Must be non-negative.
   optional int32 random_seed = 16 [default = 0];
 
   // If true, the solver prints extra debugging information to the console.
@@ -179,7 +187,6 @@ message LPParameters {
 }
 
 message MiniMipParameters {
-
   // A value v is considered integral within MiniMip if
   // abs(v - round(v)) <= integrality_tolerance.
   optional double integrality_tolerance = 1 [default = 1e-6];
@@ -188,8 +195,10 @@ message MiniMipParameters {
   // abs(v) <= numerical_tolerance.
   optional double numerical_tolerance = 2 [default = 1e-9];
 
-  // Parameters to forward to the underlying LP solver.
-  optional LPParameters lp_parameters = 3;
+  // Parameters to forward to the underlying LP solver. These will be used to
+  // instantiate the "main" LP solver in MiniMip (i.e., the one used to solve
+  // nodes' relaxations while exploring the search tree).
+  optional LpParameters lp_parameters = 3;
 
   optional CutRunnerParameters cut_runner = 4;
 

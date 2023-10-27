@@ -19,11 +19,11 @@ namespace minimip {
 
 absl::StatusOr<MiniMipResult> Solver::Solve() {
   MipTree tree = this->mutable_mip_tree();
-  LPInterface* lp = this->mutable_lpi();
+  LpInterface* lp = this->mutable_lpi();
   MiniMipResult result;
 
   CHECK_OK(lp->PopulateFromMipData(this->mip_data_));
-  CHECK_OK(lp->SolveLPWithDualSimplex());
+  CHECK_OK(lp->SolveLpWithDualSimplex());
   if (!lp->IsOptimal()) {
     return absl::InternalError("LP is infeasible");
   }
@@ -56,7 +56,7 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
       // Apply branching decisions here based on current_node_data
       // For example, update the bounds of current_node_data.branch_variable
     }
-    CHECK_OK(lp->SolveLPWithDualSimplex());  // Solve the LP
+    CHECK_OK(lp->SolveLpWithDualSimplex());  // Solve the LP
 
     if (!lp->IsOptimal()) {
       tree.CloseNodeAndReclaimNodesUpToRootIfPossible(current_node);

@@ -120,7 +120,7 @@ INSTANTIATE_TEST_SUITE_P(
                     CutSelectorType::kHybridSelectorSigned));
 
 TEST_P(MinimalCutSelectorTest, SelectsFirstCutIfAllAreIdentical) {
-  ASSERT_OK(solver_->mutable_lpi()->SolveLPWithPrimalSimplex());
+  ASSERT_OK(solver_->mutable_lpi()->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(solver_->lpi()->IsSolved());
   ASSERT_TRUE(solver_->lpi()->IsOptimal());
 
