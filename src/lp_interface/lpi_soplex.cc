@@ -656,7 +656,7 @@ LpSoplexInterface::DeleteRowSet(
 
   SOPLEX_TRY(spx_->removeRowsReal(int_deletion_status.data()));
 
-  // Note: We cannot use the same vector for the soplex call above and the row
+  // Note: We cannot use the same vector for the Soplex call above and the row
   // mapping, even though RowIndex internally consists of an int. In addition to
   // being bad practice to depend on a class' internals, the compiler may
   // introduce additional padding meaning RowIndex and int don't have identical
