@@ -63,9 +63,7 @@ class Solver {
     return solver;
   }
 
-  absl::StatusOr<MiniMipResult> Solve() {
-    return absl::UnimplementedError("Solve isn't implemented yet.");
-  }
+  absl::StatusOr<MiniMipResult> Solve();
 
   const MipData& mip_data() const { return mip_data_; }
   MipData& mutable_mip_data() { return mip_data_; }
