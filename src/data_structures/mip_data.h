@@ -33,9 +33,9 @@ enum class VariableType {
   kImpliedInteger = 3,
 };
 
-// ==========================================================================
+// ============================================================================
 // Class storing the internal problem representation
-// ==========================================================================
+// ============================================================================
 
 class MipData {
  public:
@@ -102,6 +102,7 @@ class MipData {
   }
 
  private:
+  // TODO(lpawel): Clean up and comment all fields.
   std::string problem_name_;
   bool is_maximization_ = false;
   double objective_offset_ = 0.0;

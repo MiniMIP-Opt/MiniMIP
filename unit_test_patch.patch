@@ -1,0 +1,684 @@
+diff --git a/src/data_structures/mip_data.cc b/src/data_structures/mip_data.cc
+index 552123e..7b06ec2 100644
+--- a/src/data_structures/mip_data.cc
++++ b/src/data_structures/mip_data.cc
+@@ -56,8 +56,10 @@ MipData::MipData(const MiniMipProblem& problem)
+     if (variable.is_integer) {
+       variable_types_[col_idx] = VariableType::kInteger;
+       integer_variables_.insert(col_idx);
+-      lower_bounds_[col_idx] = std::ceil(lower_bounds_[col_idx]);
+-      upper_bounds_[col_idx] = std::floor(upper_bounds_[col_idx]);
++
++      // TODO(lpawel): Move the logic that makes bounds integral to the
++      // preprocessor.
++      CHECK_LE(lower_bounds_[col_idx], upper_bounds_[col_idx]);
+     } else {
+       variable_types_[col_idx] = VariableType::kFractional;
+     }
+diff --git a/src/data_structures/mip_data.h b/src/data_structures/mip_data.h
+index a38d5b3..8b6580e 100644
+--- a/src/data_structures/mip_data.h
++++ b/src/data_structures/mip_data.h
+@@ -33,9 +33,9 @@ enum class VariableType {
+   kImpliedInteger = 3,
+ };
+ 
+-// ==========================================================================
++// ============================================================================
+ // Class storing the internal problem representation
+-// ==========================================================================
++// ============================================================================
+ 
+ class MipData {
+  public:
+@@ -102,6 +102,7 @@ class MipData {
+   }
+ 
+  private:
++  // TODO(lpawel): Clean up and comment all fields.
+   std::string problem_name_;
+   bool is_maximization_ = false;
+   double objective_offset_ = 0.0;
+diff --git a/src/data_structures/mip_tree.h b/src/data_structures/mip_tree.h
+index 56cc708..8638e48 100644
+--- a/src/data_structures/mip_tree.h
++++ b/src/data_structures/mip_tree.h
+@@ -50,7 +50,7 @@ struct NodeData {
+   // For an active node, this is the index to its parent node (for the root
+   // node it is equal to kInvalidNode). For a free node, this is the index
+   // to the next node in the free list (for the last free node on the list
+-  // is is equal to kInvalidNode).
++  // is equal to kInvalidNode).
+   NodeIndex parent = kInvalidNode;
+ 
+   // Depth of this node. It is 0 for root node, strictly positive for any
+@@ -59,7 +59,7 @@ struct NodeData {
+ 
+   // If this node is *not* a root node then it was created by branching from
+   // some parent. We need to include this branching decision before solving the
+-  // LP relaxation. In particural, we set new bounds on the branched variable.
++  // LP relaxation. In particular, we set new bounds on the branched variable.
+   // For `branch_down`, we will impose the following *upper* bound:
+   //   branch_variable <= std::floor(branch_primal_value_in_parent_lp)
+   // wheres for `!branch_down`, we will impose the following *lower* bound:
+@@ -94,7 +94,7 @@ struct NodeData {
+   std::vector<ColAndValue> implied_upper_bounds;
+ };
+ 
+-// This is the main storage of all nodes in the search tree.
++// This is the main registry of all nodes in the search tree.
+ class MipTree {
+  public:
+   // The tree is initialized with an "empty" root node and one free node.
+diff --git a/src/data_structures/strong_sparse_vector.h b/src/data_structures/strong_sparse_vector.h
+index 9aa5a4d..08d566a 100644
+--- a/src/data_structures/strong_sparse_vector.h
++++ b/src/data_structures/strong_sparse_vector.h
+@@ -123,6 +123,16 @@ class StrongSparseVectorOfDoubles {
+     DCHECK(IsClean());  // This also verifies whether indices are >= 0.
+   }
+ 
++  explicit StrongSparseVectorOfDoubles(
++      const absl::StrongVector<SparseIndex, double>& dense_values)
++      : entries_{}, may_need_cleaning_(false) {
++    for (SparseIndex index(0); index < dense_values.size(); ++index) {
++      if (dense_values[index] != 0.0) {
++        entries_.emplace_back(index, dense_values[index]);
++      }
++    }
++  }
++
+   const absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& entries()
+       const {
+     DCHECK(!MayNeedCleaning())
+@@ -132,7 +142,8 @@ class StrongSparseVectorOfDoubles {
+ 
+   // Use with care! Use this to in-place modify values and indices of entries.
+   // To add new entries use `AddEntry()`. Regardless of what modifications are
+-  // introduced, the vector will be marked for cleaning.
++  // introduced, the vector will be marked for cleaning. For order-preserving
++  // changes, consider using Transform().
+   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& mutable_entries() {
+     DCHECK(!MayNeedCleaning())
+         << "The vector is not clean! Call `CleanUpIfNeeded()`.";
+@@ -200,7 +211,8 @@ class StrongSparseVectorOfDoubles {
+ 
+   double operator[](SparseIndex index) const { return value(index); }
+ 
+-  // Removes all entries, but does not release memory of the underlying storage.
++  // Removes all entries, but does not release memory of the underlying
++  // registry.
+   void Clear() {
+     entries_.clear();
+     may_need_cleaning_ = false;
+@@ -270,6 +282,18 @@ class StrongSparseVectorOfDoubles {
+     });
+   }
+ 
++  // Set v[i] = func(i, v[i]) for each nonzero value in the vector. Useful to
++  // avoid resorting after order-preserving transformations.
++  void Transform(std::function<double(SparseIndex, double)> func) {
++    DCHECK(!may_need_cleaning_);
++    for (auto& [index, value] : entries_) value = func(index, value);
++    entries_.erase(std::remove_if(entries_.begin(), entries_.end(),
++                                  [](const SparseEntry<SparseIndex>& v) {
++                                    return v.value == 0.0;
++                                  }),
++                   entries_.end());
++  }
++
+   StrongSparseVectorOfDoubles operator-() const {
+     DCHECK(!may_need_cleaning_);
+     StrongSparseVectorOfDoubles copy = *this;
+@@ -423,6 +447,20 @@ StrongSparseVectorOfDoubles<SparseIndex> operator*(
+   return vector * scalar;
+ }
+ 
++template <typename SparseIndex>
++std::ostream& operator<<(std::ostream& out,
++                         const StrongSparseVectorOfDoubles<SparseIndex>& v) {
++  bool first = true;
++  out << "{";
++  for (const auto& [index, value] : v.entries()) {
++    if (!first) out << ", ";
++    first = false;
++    out << "{" << index << ", " << value << "}";
++  }
++  out << "}";
++  return out;
++}
++
+ // Note, we need no-throw movable so that `std::vector<SparseRow>::resize()`
+ // uses move semantics.
+ static_assert(std::is_move_assignable<SparseRow>(),
+diff --git a/unit_tests/BUILD.bazel b/unit_tests/BUILD.bazel
+index be54b56..f9d9866 100644
+--- a/unit_tests/BUILD.bazel
++++ b/unit_tests/BUILD.bazel
+@@ -6,8 +6,11 @@ package(default_visibility = ["//visibility:public"])
+ 
+ cc_library(
+     name = "utils",
++    srcs = ["utils.cc"],
+     hdrs = ["utils.h"],
+     deps = [
++        "//src/data_structures:strong_sparse_vector",
++        "//src/lp_interface:lpi",
+         "@com_google_absl//absl/status",
+         "@com_google_googletest//:gtest",
+         "@com_google_ortools//ortools/base:status_macros",
+diff --git a/unit_tests/data_structures/mip_data_test.cc b/unit_tests/data_structures/mip_data_test.cc
+index 366170d..73f0b6f 100644
+--- a/unit_tests/data_structures/mip_data_test.cc
++++ b/unit_tests/data_structures/mip_data_test.cc
+@@ -77,20 +77,6 @@ TEST(MipDataTests, PopulatesVariables) {
+   EXPECT_THAT(mip_data.variable_names(), ElementsAreArray({"Bar"}));
+ }
+ 
+-TEST(MipDataTests, IntegerVariableBoundsAreTightened) {
+-  const MiniMipVariable variable = {.name = "Bar",
+-                                    .objective_coefficient = 13.2,
+-                                    .lower_bound = -1.2,
+-                                    .upper_bound = 7.5,
+-                                    .is_integer = true};
+-  const MiniMipProblem problem = {.variables = {variable}};
+-
+-  const MipData mip_data(problem);
+-  EXPECT_THAT(mip_data.lower_bounds(), ElementsAre(-1.0));
+-  EXPECT_THAT(mip_data.upper_bounds(), ElementsAre(7.0));
+-  EXPECT_EQ(mip_data.objective().value(ColIndex(0)), 13.2);
+-}
+-
+ TEST(MipDataTests, PopulatesConstraints) {
+   const MiniMipVariable variable = {.name = "Bar",
+                                     .objective_coefficient = 13.0,
+diff --git a/unit_tests/data_structures/strong_sparse_matrix_test.cc b/unit_tests/data_structures/strong_sparse_matrix_test.cc
+index fbde888..07f6060 100644
+--- a/unit_tests/data_structures/strong_sparse_matrix_test.cc
++++ b/unit_tests/data_structures/strong_sparse_matrix_test.cc
+@@ -19,6 +19,7 @@
+ 
+ #include "ortools/base/commandlineflags.h"
+ #include "ortools/base/logging.h"
++#include "unit_tests/utils.h"
+ 
+ namespace minimip {
+ namespace {
+@@ -50,12 +51,17 @@ TEST(StrongSparseMatrix, InitializeAndGetValues) {
+   // CopyDenseIntoSparseMatrix(dense, &sparse);
+   EXPECT_EQ(sparse.num_rows(), RowIndex(2));
+   EXPECT_EQ(sparse.num_cols(), ColIndex(3));
+-  EXPECT_THAT(sparse.row(RowIndex(0)).entries(),
+-              ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 3.0)));
+-  EXPECT_THAT(sparse.row(RowIndex(1)).entries(), ElementsAre(RowEntry(ColIndex(1), 2.0)));
+-  EXPECT_THAT(sparse.col(ColIndex(0)).entries(), ElementsAre(ColEntry(RowIndex(0), 1.0)));
+-  EXPECT_THAT(sparse.col(ColIndex(1)).entries(), ElementsAre(ColEntry(RowIndex(1), 2.0)));
+-  EXPECT_THAT(sparse.col(ColIndex(2)).entries(), ElementsAre(ColEntry(RowIndex(0), 3.0)));
++  EXPECT_THAT(
++      sparse.row(RowIndex(0)).entries(),
++      ElementsAre(RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 3.0)));
++  EXPECT_THAT(sparse.row(RowIndex(1)).entries(),
++              ElementsAre(RowEntry(ColIndex(1), 2.0)));
++  EXPECT_THAT(sparse.col(ColIndex(0)).entries(),
++              ElementsAre(ColEntry(RowIndex(0), 1.0)));
++  EXPECT_THAT(sparse.col(ColIndex(1)).entries(),
++              ElementsAre(ColEntry(RowIndex(1), 2.0)));
++  EXPECT_THAT(sparse.col(ColIndex(2)).entries(),
++              ElementsAre(ColEntry(RowIndex(0), 3.0)));
+   for (RowIndex row(0); row < sparse.num_rows(); ++row) {
+     for (ColIndex col(0); col < sparse.num_cols(); ++col) {
+       EXPECT_EQ(sparse.GetCoefficient(col, row), dense[row][col]);
+@@ -65,24 +71,30 @@ TEST(StrongSparseMatrix, InitializeAndGetValues) {
+ 
+ TEST(StrongSparseMatrix, PopulatesColsFromRows) {
+   StrongSparseMatrix sparse(ColIndex(3), RowIndex(2));
+-  SparseRow row1({RowEntry(ColIndex(1), 2.0)});
++  SparseRow row1 = CreateSparseRow({{1, 2.0}});
+   sparse.PopulateRow(RowIndex(0), std::move(row1));
+-  SparseRow row2({RowEntry(ColIndex(0), 1.0), RowEntry(ColIndex(2), 3.0)});
++  SparseRow row2 = CreateSparseRow({{0, 1.0}, {2, 3.0}});
+   sparse.PopulateRow(RowIndex(1), std::move(row2));
+-  EXPECT_THAT(sparse.col(ColIndex(0)).entries(), ElementsAre(ColEntry(RowIndex(1), 1.0)));
+-  EXPECT_THAT(sparse.col(ColIndex(1)).entries(), ElementsAre(ColEntry(RowIndex(0), 2.0)));
+-  EXPECT_THAT(sparse.col(ColIndex(2)).entries(), ElementsAre(ColEntry(RowIndex(1), 3.0)));
++  EXPECT_THAT(sparse.col(ColIndex(0)).entries(),
++              ElementsAre(ColEntry(RowIndex(1), 1.0)));
++  EXPECT_THAT(sparse.col(ColIndex(1)).entries(),
++              ElementsAre(ColEntry(RowIndex(0), 2.0)));
++  EXPECT_THAT(sparse.col(ColIndex(2)).entries(),
++              ElementsAre(ColEntry(RowIndex(1), 3.0)));
+ }
+ 
+ TEST(StrongSparseMatrix, PopulatesRowsFromCols) {
+   StrongSparseMatrix sparse(ColIndex(2), RowIndex(3));
+-  SparseCol col1({ColEntry(RowIndex(1), 2.0)});
++  SparseCol col1 = CreateSparseCol({{1, 2.0}});
+   sparse.PopulateCol(ColIndex(0), std::move(col1));
+-  SparseCol col2({ColEntry(RowIndex(0), 1.0), ColEntry(RowIndex(2), 3.0)});
++  SparseCol col2 = CreateSparseCol({{0, 1.0}, {2, 3.0}});
+   sparse.PopulateCol(ColIndex(1), std::move(col2));
+-  EXPECT_THAT(sparse.row(RowIndex(0)).entries(), ElementsAre(RowEntry(ColIndex(1), 1.0)));
+-  EXPECT_THAT(sparse.row(RowIndex(1)).entries(), ElementsAre(RowEntry(ColIndex(0), 2.0)));
+-  EXPECT_THAT(sparse.row(RowIndex(2)).entries(), ElementsAre(RowEntry(ColIndex(1), 3.0)));
++  EXPECT_THAT(sparse.row(RowIndex(0)).entries(),
++              ElementsAre(RowEntry(ColIndex(1), 1.0)));
++  EXPECT_THAT(sparse.row(RowIndex(1)).entries(),
++              ElementsAre(RowEntry(ColIndex(0), 2.0)));
++  EXPECT_THAT(sparse.row(RowIndex(2)).entries(),
++              ElementsAre(RowEntry(ColIndex(1), 3.0)));
+ }
+ 
+ // TODO(lpawel): Implement more tests after initial review.
+diff --git a/unit_tests/data_structures/strong_sparse_vector_test.cc b/unit_tests/data_structures/strong_sparse_vector_test.cc
+index 544ce50..1871ffe 100644
+--- a/unit_tests/data_structures/strong_sparse_vector_test.cc
++++ b/unit_tests/data_structures/strong_sparse_vector_test.cc
+@@ -49,6 +49,25 @@ TEST(StrongSparseRow, InitializeAndGetValue) {
+   EXPECT_THAT(row.values(), ElementsAre(10.0, 40.0));
+ }
+ 
++TEST(StrongSparseRow, InitializeFromDenseVector) {
++  SparseRow row({0.0, 10.0, 0.0, 0.0, 40.0, 0.0});
++  EXPECT_FALSE(row.MayNeedCleaning());
++  EXPECT_TRUE(row.IsClean());
++  EXPECT_THAT(row.entries(), EntriesAre<ColIndex>({{1, 10.0}, {4, 40.0}}));
++  EXPECT_EQ(row.value(ColIndex(1)), 10.0);
++  EXPECT_EQ(row.value(ColIndex(2)), 0.0);
++  EXPECT_EQ(row.value(ColIndex(3)), 0.0);
++  EXPECT_EQ(row.value(ColIndex(4)), 40.0);
++  EXPECT_EQ(row.value(ColIndex(5)), 0.0);
++  EXPECT_EQ(row[ColIndex(1)], 10.0);
++  EXPECT_EQ(row[ColIndex(2)], 0.0);
++  EXPECT_EQ(row[ColIndex(3)], 0.0);
++  EXPECT_EQ(row[ColIndex(4)], 40.0);
++  EXPECT_EQ(row[ColIndex(5)], 0.0);
++  EXPECT_THAT(row.indices(), ElementsAre(ColIndex(1), ColIndex(4)));
++  EXPECT_THAT(row.values(), ElementsAre(10.0, 40.0));
++}
++
+ TEST(StrongSparseRow, MakeCopy) {
+   SparseRow x = CreateSparseRow({{1, 10.0}});
+   SparseRow y = x;
+@@ -186,6 +205,31 @@ TEST(StrongSparseRowDeathTest, DiesWhenForgotToCleanUpMutatedEntries3) {
+       "The vector is not clean!");
+ }
+ 
++TEST(StrongSparseRow, Transform) {
++  const SparseRow row = CreateSparseRow({{1, 1.0}, {2, 1.0}, {7, 2.5}});
++  {
++    SparseRow mutable_row = row;
++    mutable_row.Transform(
++        [](ColIndex i, double value) { return value * i.value(); });
++    EXPECT_THAT(mutable_row.entries(),
++                EntriesAre<ColIndex>({{1, 1.0}, {2, 2.0}, {7, 17.5}}));
++  }
++
++  {
++    SparseRow mutable_row = row;
++    mutable_row.Transform(
++        [](ColIndex i, double value) { return value * (i.value() - 1); });
++    EXPECT_THAT(mutable_row.entries(),
++                EntriesAre<ColIndex>({{2, 1.0}, {7, 15}}));
++  }
++
++  {
++    SparseRow mutable_row = row;
++    mutable_row.Transform([](ColIndex i, double value) { return 0.0; });
++    EXPECT_THAT(mutable_row.entries(), IsEmpty());
++  }
++}
++
+ TEST(StrongSparseRow, Negation) {
+   const SparseRow row = CreateSparseRow({{2, 3.0}, {3, -2.0}});
+   EXPECT_THAT((-row).entries(), EntriesAre<ColIndex>({{2, -3.0}, {3, 2.0}}));
+diff --git a/unit_tests/gtest_main.cc b/unit_tests/gtest_main.cc
+index a295d58..cbbeccb 100644
+--- a/unit_tests/gtest_main.cc
++++ b/unit_tests/gtest_main.cc
+@@ -27,7 +27,8 @@ int main(int argc, char** argv) {
+   // By default, we log to stderr only, and equal or above log level 2 (where
+   // 0: INFO, 1: WARNING, 2: ERROR, 3: FATAL).
+   absl::SetFlag(&FLAGS_logtostderr, true);
+-  absl::SetFlag(&FLAGS_minloglevel, 2);
++  absl::SetFlag(&FLAGS_minloglevel,
++                std::min(absl::GetFlag(FLAGS_minloglevel), 2));
+   // Parse extra command line arguments that may override, e.g., minloglevel.
+   absl::ParseCommandLine(argc, argv);
+ 
+diff --git a/unit_tests/lp_interface/lpi_test.cc b/unit_tests/lp_interface/lpi_test.cc
+index 93e0e08..30fb13c 100644
+--- a/unit_tests/lp_interface/lpi_test.cc
++++ b/unit_tests/lp_interface/lpi_test.cc
+@@ -1068,45 +1068,6 @@ INSTANTIATE_TEST_SUITE_P(All, SolveTest,
+                          testing::ValuesIn({LpParameters::LP_GLOP,
+                                             LpParameters::LP_SOPLEX}));
+ 
+-// Compute <v1 | v2>
+-template <typename Container1, typename Container2>
+-double DotProduct(const Container1& v1, const Container2& v2) {
+-  CHECK_EQ(v1.size(), v2.size());
+-  double dot = 0;
+-  auto it1 = v1.begin();
+-  auto it2 = v2.begin();
+-  for (; it1 != v1.end(); ++it1, ++it2) dot += (*it1) * (*it2);
+-  return dot;
+-}
+-
+-// Compute v1 + fac*v2
+-template <typename Container1, typename Container2>
+-Container1 Add(Container1 v1, const Container2& v2, double fac) {
+-  CHECK_EQ(v1.size(), v2.size());
+-  auto it1 = v1.begin();
+-  auto it2 = v2.begin();
+-  for (; it1 != v1.end(); ++it1, ++it2) *it1 += fac * (*it2);
+-  return v1;
+-}
+-
+-template <typename Matcher>
+-std::string ExtractMatcherDescription(const Matcher& m) {
+-  std::ostringstream oss;
+-  m.DescribeTo(&oss);
+-  return oss.str();
+-}
+-
+-// EXPECT_THAT(x, Activation(e, m)) checks that the activation of the linear
+-// expression e at point x fulfills the matcher m.
+-MATCHER_P2(Activation, linear_expression, matcher,
+-           absl::StrCat("the activation with expression ",
+-                        testing::PrintToString(linear_expression), " ",
+-                        ExtractMatcherDescription(matcher))) {
+-  double d = DotProduct(arg, linear_expression);
+-  *result_listener << "where the activation is " << d;
+-  return ExplainMatchResult(matcher, d, result_listener);
+-}
+-
+ TEST_P(SolveTest, PrimalDualFeasible1) {
+   // max 3 x1 +   x2
+   //    2 x1 +   x2 <= 10
+@@ -1419,17 +1380,20 @@ TEST_P(SolveTest, PrimalUnboundedRayMaximization) {
+         (const absl::StrongVector<ColIndex, double>& primal_ray),
+         lpi_->GetPrimalRay());
+     ASSERT_EQ(primal_ray.size(), 2);
++    const SparseRow sparse_ray = SparseRow(primal_ray);
+ 
+-    // Ray points in direcion of improving objective
+-    EXPECT_THAT(primal_ray, Activation(std::vector<double>{3, 1}, Gt(0.0)));
++    // Ray points in direction of improving objective
++    EXPECT_THAT(sparse_ray,
++                Activation(CreateSparseRow({{0, 3.0}, {1, 1.0}}), Gt(0.0)));
+ 
+     // Taking a large step in the ray direction still produces a valid
+     // point
+-    const std::vector<double> feasible_point{0, 0};
+-    const std::vector<double> next_point =
+-        Add(feasible_point, primal_ray, 1000);
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
++    const SparseRow feasible_point = CreateSparseRow({});
++    const SparseRow next_point = feasible_point + 1000 * sparse_ray;
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseRow({{0, 2.0}, {1, 1.0}}), Le(10.0)));
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseRow({{0, 1.0}, {1, 3.0}}), Le(15.0)));
+   }
+   ASSERT_FALSE(lpi_->ExistsDualRay());
+   ASSERT_FALSE(lpi_->HasDualRay());
+@@ -1462,17 +1426,20 @@ TEST_P(SolveTest, PrimalUnboundedRayMinimization) {
+         (const absl::StrongVector<ColIndex, double>& primal_ray),
+         lpi_->GetPrimalRay());
+     ASSERT_EQ(primal_ray.size(), 2);
++    const SparseRow sparse_ray = SparseRow(primal_ray);
+ 
+-    // Ray points in direcion of improving objective
+-    EXPECT_THAT(primal_ray, Activation(std::vector<double>{-3, -1}, Lt(0.0)));
++    // Ray points in direction of improving objective
++    EXPECT_THAT(sparse_ray,
++                Activation(CreateSparseRow({{0, -3.0}, {1, -1.0}}), Lt(0.0)));
+ 
+     // Taking a large step in the ray direction still produces a valid
+     // point
+-    const std::vector<double> feasible_point{0, 0};
+-    const std::vector<double> next_point =
+-        Add(feasible_point, primal_ray, 1000);
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
++    const SparseRow feasible_point = CreateSparseRow({});
++    const SparseRow next_point = feasible_point + 1000 * sparse_ray;
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseRow({{0, 2.0}, {1, 1.0}}), Le(10.0)));
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseRow({{0, 1.0}, {1, 3.0}}), Le(15.0)));
+   }
+   ASSERT_FALSE(lpi_->ExistsDualRay());
+   ASSERT_FALSE(lpi_->HasDualRay());
+@@ -1557,16 +1524,20 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
+     ASSERT_OK_AND_ASSIGN((const absl::StrongVector<RowIndex, double>& dual_ray),
+                          lpi_->GetDualRay());
+     ASSERT_EQ(dual_ray.size(), 2);
++    const SparseCol sparse_ray = SparseCol(dual_ray);
+ 
+     // Ray points in direction of improving objective
+-    EXPECT_THAT(dual_ray, Activation(std::vector<double>{-10, -15}, Gt(0.0)));
++    EXPECT_THAT(sparse_ray,
++                Activation(CreateSparseCol({{0, -10.0}, {1, -15.0}}), Gt(0.0)));
+ 
+     // Taking a large step in the ray direction still produces a valid
+     // point
+-    const std::vector<double> feasible_point{0, 0};
+-    const std::vector<double> next_point = Add(feasible_point, dual_ray, 1000);
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
++    const SparseCol feasible_point = CreateSparseCol({});
++    const SparseCol next_point = feasible_point + 1000 * sparse_ray;
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseCol({{0, 2.0}, {1, 1.0}}), Le(10.0)));
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseCol({{0, 1.0}, {1, 3.0}}), Le(15.0)));
+   }
+ }
+ 
+@@ -1604,16 +1575,20 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
+     ASSERT_OK_AND_ASSIGN((const absl::StrongVector<RowIndex, double>& dual_ray),
+                          lpi_->GetDualRay());
+     ASSERT_EQ(dual_ray.size(), 2);
++    const SparseCol sparse_ray = SparseCol(dual_ray);
+ 
+     // Ray points in direction of improving objective
+-    EXPECT_THAT(dual_ray, Activation(std::vector<double>{10, 15}, Lt(0.0)));
++    EXPECT_THAT(sparse_ray,
++                Activation(CreateSparseCol({{0, 10.0}, {1, 15.0}}), Lt(0.0)));
+ 
+     // Taking a large step in the ray direction still produces a valid
+     // point
+-    const std::vector<double> feasible_point{0, 0};
+-    const std::vector<double> next_point = Add(feasible_point, dual_ray, 1000);
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{2, 1}, Le(10.0)));
+-    EXPECT_THAT(next_point, Activation(std::vector<double>{1, 3}, Le(15.0)));
++    const SparseCol feasible_point = CreateSparseCol({});
++    const SparseCol next_point = feasible_point + 1000 * sparse_ray;
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseCol({{0, 2.0}, {1, 1.0}}), Le(10.0)));
++    EXPECT_THAT(next_point,
++                Activation(CreateSparseCol({{0, 1.0}, {1, 3.0}}), Le(15.0)));
+   }
+ }
+ 
+diff --git a/unit_tests/utils.cc b/unit_tests/utils.cc
+new file mode 100644
+index 0000000..74fb4c1
+--- /dev/null
++++ b/unit_tests/utils.cc
+@@ -0,0 +1,120 @@
++// Copyright 2023 the MiniMIP Project
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++#include "unit_tests/utils.h"
++
++namespace minimip {
++namespace {
++
++std::string FormatDouble(double val) { return absl::StrFormat("% 7.2lf", val); }
++
++std::string FormatRow(const SparseRow& row, int num_columns) {
++  std::string res;
++  for (ColIndex col(0); col < num_columns; ++col) {
++    absl::StrAppend(&res, FormatDouble(row[col]));
++  }
++  return res;
++}
++
++std::string FormatLPBasisStatus(LpBasisStatus status) {
++  switch (status) {
++    case minimip::LpBasisStatus::kAtLowerBound:
++      return "LOWER_BOUND";
++    case minimip::LpBasisStatus::kAtUpperBound:
++      return "UPPER_BOUND";
++    case minimip::LpBasisStatus::kBasic:
++      return "BASIC";
++    case minimip::LpBasisStatus::kFixed:
++      return "FIXED";
++    case minimip::LpBasisStatus::kFree:
++      return "FREE";
++  }
++}
++
++}  // namespace
++
++std::string LpModelDebugString(LpInterface* lpi) {
++  const ColIndex num_columns = lpi->GetNumberOfColumns();
++  const RowIndex num_rows = lpi->GetNumberOfRows();
++  std::string s;
++
++  absl::StrAppend(&s, lpi->IsMaximization() ? "max" : "min", ": ");
++  SparseRow obj;
++  for (ColIndex col(0); col < num_columns; ++col) {
++    obj.AddEntry(col, lpi->GetObjectiveCoefficient(col));
++  }
++  absl::StrAppend(&s, FormatRow(obj, num_columns.value()), "\n");
++
++  for (RowIndex row(0); row < num_rows; ++row) {
++    absl::StrAppend(
++        &s,
++        absl::StrFormat(
++            "%s <= %s <= %s\n", FormatDouble(lpi->GetLeftHandSide(row)),
++            FormatRow(lpi->GetSparseRowCoefficients(row), num_columns.value()),
++            FormatDouble(lpi->GetRightHandSide(row))));
++  }
++
++  for (ColIndex col(0); col < num_columns; ++col) {
++    absl::StrAppend(
++        &s, absl::StrFormat("%s <= x%d <= %s\n",
++                            FormatDouble(lpi->GetLowerBound(col)), col.value(),
++                            FormatDouble(lpi->GetUpperBound(col))));
++  }
++  return s;
++}
++
++std::string LpStatusDebugString(LpInterface* lpi) {
++  const ColIndex num_columns = lpi->GetNumberOfColumns();
++  const RowIndex num_rows = lpi->GetNumberOfRows();
++  std::string s;
++
++  if (!lpi->IsSolved()) return "LP isn't solved.";
++  if (!lpi->IsOptimal()) return "LP isn't solved to optimality.";
++
++  absl::StrAppend(
++      &s, "objective value: ", FormatDouble(lpi->GetObjectiveValue()), "\n");
++  absl::StrAppend(
++      &s, "primal values: ",
++      FormatRow(SparseRow(lpi->GetPrimalValues().value()), num_columns.value()),
++      "\n");
++  const absl::StrongVector<ColIndex, LpBasisStatus> column_status =
++      lpi->GetBasisStatusForColumns().value();
++  for (ColIndex col(0); col < num_columns; ++col) {
++    absl::StrAppend(&s,
++                    absl::StrFormat("x%d: %s\n", col.value(),
++                                    FormatLPBasisStatus(column_status[col])));
++  }
++  const absl::StrongVector<RowIndex, LpBasisStatus> row_status =
++      lpi->GetBasisStatusForRows().value();
++  for (RowIndex row(0); row < num_rows; ++row) {
++    absl::StrAppend(&s, absl::StrFormat("constraint %d: %s\n", row.value(),
++                                        FormatLPBasisStatus(row_status[row])));
++  }
++
++  std::vector<ColOrRowIndex> basis = lpi->GetColumnsAndRowsInBasis();
++  for (RowIndex row(0); row < num_rows; ++row) {
++    const std::string name =
++        basis[row.value()].col() == kInvalidCol
++            ? absl::StrFormat("constraint %d", basis[row.value()].row().value())
++            : absl::StrFormat("x%d", basis[row.value()].col().value());
++    absl::StrAppend(
++        &s, absl::StrFormat("basis inverse for %s: %s\n", name,
++                            FormatRow(lpi->GetSparseRowOfBInverted(row).value(),
++                                      num_rows.value())));
++  }
++
++  return s;
++}
++
++}  // namespace minimip
+diff --git a/unit_tests/utils.h b/unit_tests/utils.h
+index b0c941c..992f4a2 100644
+--- a/unit_tests/utils.h
++++ b/unit_tests/utils.h
+@@ -18,6 +18,7 @@
+ #include "absl/status/status.h"
+ #include "ortools/base/status_macros.h"
+ #include "src/data_structures/strong_sparse_vector.h"
++#include "src/lp_interface/lpi.h"
+ 
+ #ifndef UNIT_TESTS_UTILS_H_
+ #define UNIT_TESTS_UTILS_H_
+@@ -30,8 +31,8 @@
+   STATUS_MACROS_IMPL_ASSERT_OK_AND_ASSIGN_( \
+       STATUS_MACROS_IMPL_CONCAT_(_status_or_value, __COUNTER__), lhs, rexpr);
+ #define STATUS_MACROS_IMPL_ASSERT_OK_AND_ASSIGN_(statusor, lhs, rexpr) \
+-  auto statusor = (rexpr);                                             \
+-  ASSERT_OK(statusor.status());                                        \
++  auto(statusor) = (rexpr);                                            \
++  ASSERT_OK((statusor).status());                                      \
+   STATUS_MACROS_IMPL_UNPARENTHESIS(lhs) = std::move(statusor).value()
+ 
+ namespace minimip {
+@@ -60,6 +61,29 @@ auto EntriesAre(const std::vector<std::pair<int, double>>& val) {
+   return testing::ElementsAreArray(vec);
+ }
+ 
++template <typename Matcher>
++std::string ExtractMatcherDescription(const Matcher& m) {
++  std::ostringstream oss;
++  m.DescribeTo(&oss);
++  return oss.str();
++}
++
++// EXPECT_THAT(x, Activation(e, m)) checks that the activation of the linear
++// expression e at point x fulfills the matcher m.
++MATCHER_P2(Activation, linear_expression, matcher,
++           absl::StrCat("the activation with expression ",
++                        testing::PrintToString(linear_expression), " ",
++                        ExtractMatcherDescription(matcher))) {
++  double d = arg.DotProduct(linear_expression);
++  *result_listener << "where the activation is " << d;
++  return ExplainMatchResult(matcher, d, result_listener);
++}
++
++// Creates a string with information about the model or current LP optimum,
++// respectively. Useful when debugging small models.
++std::string LpModelDebugString(LpInterface* lpi);
++std::string LpStatusDebugString(LpInterface* lpi);
++
+ }  // namespace minimip
+ 
+ #endif  // UNIT_TESTS_UTILS_H_
