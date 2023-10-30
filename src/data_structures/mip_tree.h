@@ -57,6 +57,12 @@ struct NodeData {
   // non-root active node, and `kFreeNodeDepth` for any free node.
   int depth = kFreeNodeDepth;
 
+  // Number of cuts added to the node.
+  int n_cuts_added = 0;
+  
+  // Number of separation rounds.
+  int n_separation_rounds = 0;
+
   // If this node is *not* a root node then it was created by branching from
   // some parent. We need to include this branching decision before solving the
   // LP relaxation. In particular, we set new bounds on the branched variable.
