@@ -34,6 +34,10 @@ class SolverContextInterface;
 //      selector should be implemented here, allowing the user to turn off all
 //      cut selection strategies for testing or analytics.
 
+// The CutSelectorInterface provides the interface to implement cut selectors
+// to select the most effective cuts to be included in the LP model. It allows
+// evaluating and ranking of different cuts based on predefined criteria,
+// such that the most impactful cuts are chosen with regard to this metric.
 class CutSelectorInterface {
  public:
   virtual ~CutSelectorInterface() = default;

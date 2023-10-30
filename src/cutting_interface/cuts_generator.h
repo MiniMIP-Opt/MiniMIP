@@ -26,6 +26,10 @@ namespace minimip {
 // dependency between the solver and the generator.
 class SolverContextInterface;
 
+// The CutGeneratorInterface provides an interface for generating valid
+// inequalities (cuts) from the current Linear Programming (LP) solution.
+// It formulates potential cuts based on the current state of the solver
+// and the LP solution's characteristics.
 class CutGeneratorInterface {
  public:
   virtual ~CutGeneratorInterface() = default;

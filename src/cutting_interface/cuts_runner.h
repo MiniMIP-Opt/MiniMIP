@@ -29,6 +29,10 @@ namespace minimip {
 // dependency between the solver and the cutting interface.
 class SolverContextInterface;
 
+// The CutRunnerInterface provides an interface for managing and orchestrating
+// the separation of valid inequalities (cuts) from the current Linear
+// Programming (LP) solution. It evaluates conditions for and runs the cut
+// generation, selects the relevant cuts and separates the LP solution.
 class CutRunnerInterface {
  public:
   virtual ~CutRunnerInterface() = default;
