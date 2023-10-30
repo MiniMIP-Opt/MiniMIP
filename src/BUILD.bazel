@@ -16,16 +16,28 @@ cc_proto_library(
 )
 
 cc_library(
-    name = "solver",
-    hdrs = ["solver.h"],
+    name = "parameters_factory",
+    hdrs = ["parameters_factory.h"],
+    deps = [":parameters_cc_proto"],
+)
+
+cc_library(
+    name = "solver_context_interface",
+    hdrs = ["solver_context_interface.h"],
     deps = [
-        ":parameters_cc_proto",
         "//src/data_structures:mip_data",
         "//src/data_structures:mip_tree",
         "//src/data_structures:problem",
         "//src/lp_interface:lpi",
+    ],
+)
+
+cc_library(
+    name = "solver",
+    hdrs = ["solver.h"],
+    deps = [
+        ":parameters_factory",
+        ":solver_context_interface",
         "//src/lp_interface:lpi_factory",
-        "@com_google_ortools//ortools/base:status_builder",
-        "@com_google_ortools//ortools/base:status_macros",
     ],
 )

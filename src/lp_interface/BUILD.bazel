@@ -70,6 +70,8 @@ cc_library(
     name = "lpi_factory",
     srcs = ["lpi_factory.cc"],
     hdrs = ["lpi_factory.h"],
+    # Required for proper linking with soplex.
+    linkstatic = True,
     deps = [
         ":lpi",
         ":lpi_glop",

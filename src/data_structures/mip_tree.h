@@ -50,16 +50,22 @@ struct NodeData {
   // For an active node, this is the index to its parent node (for the root
   // node it is equal to kInvalidNode). For a free node, this is the index
   // to the next node in the free list (for the last free node on the list
-  // is is equal to kInvalidNode).
+  // is equal to kInvalidNode).
   NodeIndex parent = kInvalidNode;
 
   // Depth of this node. It is 0 for root node, strictly positive for any
   // non-root active node, and `kFreeNodeDepth` for any free node.
   int depth = kFreeNodeDepth;
 
+  // Number of cuts added to the node.
+  int n_cuts_added = 0;
+  
+  // Number of separation rounds.
+  int n_separation_rounds = 0;
+
   // If this node is *not* a root node then it was created by branching from
   // some parent. We need to include this branching decision before solving the
-  // LP relaxation. In particural, we set new bounds on the branched variable.
+  // LP relaxation. In particular, we set new bounds on the branched variable.
   // For `branch_down`, we will impose the following *upper* bound:
   //   branch_variable <= std::floor(branch_primal_value_in_parent_lp)
   // wheres for `!branch_down`, we will impose the following *lower* bound:
@@ -94,7 +100,7 @@ struct NodeData {
   std::vector<ColAndValue> implied_upper_bounds;
 };
 
-// This is the main storage of all nodes in the search tree.
+// This is the main registry of all nodes in the search tree.
 class MipTree {
  public:
   // The tree is initialized with an "empty" root node and one free node.

@@ -18,6 +18,7 @@
 #include "absl/status/status.h"
 #include "ortools/base/status_macros.h"
 #include "src/data_structures/strong_sparse_vector.h"
+#include "src/lp_interface/lpi.h"
 
 #ifndef UNIT_TESTS_UTILS_H_
 #define UNIT_TESTS_UTILS_H_
@@ -30,8 +31,8 @@
   STATUS_MACROS_IMPL_ASSERT_OK_AND_ASSIGN_( \
       STATUS_MACROS_IMPL_CONCAT_(_status_or_value, __COUNTER__), lhs, rexpr);
 #define STATUS_MACROS_IMPL_ASSERT_OK_AND_ASSIGN_(statusor, lhs, rexpr) \
-  auto statusor = (rexpr);                                             \
-  ASSERT_OK(statusor.status());                                        \
+  auto(statusor) = (rexpr);                                            \
+  ASSERT_OK((statusor).status());                                      \
   STATUS_MACROS_IMPL_UNPARENTHESIS(lhs) = std::move(statusor).value()
 
 namespace minimip {
@@ -59,6 +60,29 @@ auto EntriesAre(const std::vector<std::pair<int, double>>& val) {
   for (auto [index, value] : val) vec.push_back({IndexType(index), value});
   return testing::ElementsAreArray(vec);
 }
+
+template <typename Matcher>
+std::string ExtractMatcherDescription(const Matcher& m) {
+  std::ostringstream oss;
+  m.DescribeTo(&oss);
+  return oss.str();
+}
+
+// EXPECT_THAT(x, Activation(e, m)) checks that the activation of the linear
+// expression e at point x fulfills the matcher m.
+MATCHER_P2(Activation, linear_expression, matcher,
+           absl::StrCat("the activation with expression ",
+                        testing::PrintToString(linear_expression), " ",
+                        ExtractMatcherDescription(matcher))) {
+  double d = arg.DotProduct(linear_expression);
+  *result_listener << "where the activation is " << d;
+  return ExplainMatchResult(matcher, d, result_listener);
+}
+
+// Creates a string with information about the model or current LP optimum,
+// respectively. Useful when debugging small models.
+std::string LpModelDebugString(LpInterface* lpi);
+std::string LpStatusDebugString(LpInterface* lpi);
 
 }  // namespace minimip
 

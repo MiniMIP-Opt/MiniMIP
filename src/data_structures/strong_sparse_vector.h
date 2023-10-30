@@ -123,6 +123,16 @@ class StrongSparseVectorOfDoubles {
     DCHECK(IsClean());  // This also verifies whether indices are >= 0.
   }
 
+  explicit StrongSparseVectorOfDoubles(
+      const absl::StrongVector<SparseIndex, double>& dense_values)
+      : entries_{}, may_need_cleaning_(false) {
+    for (SparseIndex index(0); index < dense_values.size(); ++index) {
+      if (dense_values[index] != 0.0) {
+        entries_.emplace_back(index, dense_values[index]);
+      }
+    }
+  }
+
   const absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& entries()
       const {
     DCHECK(!MayNeedCleaning())
@@ -132,7 +142,8 @@ class StrongSparseVectorOfDoubles {
 
   // Use with care! Use this to in-place modify values and indices of entries.
   // To add new entries use `AddEntry()`. Regardless of what modifications are
-  // introduced, the vector will be marked for cleaning.
+  // introduced, the vector will be marked for cleaning. For order-preserving
+  // changes, consider using Transform().
   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& mutable_entries() {
     DCHECK(!MayNeedCleaning())
         << "The vector is not clean! Call `CleanUpIfNeeded()`.";
@@ -200,7 +211,8 @@ class StrongSparseVectorOfDoubles {
 
   double operator[](SparseIndex index) const { return value(index); }
 
-  // Removes all entries, but does not release memory of the underlying storage.
+  // Removes all entries, but does not release memory of the underlying
+  // registry.
   void Clear() {
     entries_.clear();
     may_need_cleaning_ = false;
@@ -268,6 +280,18 @@ class StrongSparseVectorOfDoubles {
     return std::all_of(entries_.begin(), entries_.end(), [](const auto& e) {
       return e.value != 0.0 && e.index >= SparseIndex(0);
     });
+  }
+
+  // Set v[i] = func(i, v[i]) for each nonzero value in the vector. Useful to
+  // avoid resorting after order-preserving transformations.
+  void Transform(std::function<double(SparseIndex, double)> func) {
+    DCHECK(!may_need_cleaning_);
+    for (auto& [index, value] : entries_) value = func(index, value);
+    entries_.erase(std::remove_if(entries_.begin(), entries_.end(),
+                                  [](const SparseEntry<SparseIndex>& v) {
+                                    return v.value == 0.0;
+                                  }),
+                   entries_.end());
   }
 
   StrongSparseVectorOfDoubles operator-() const {
@@ -421,6 +445,20 @@ template <typename SparseIndex>
 StrongSparseVectorOfDoubles<SparseIndex> operator*(
     double scalar, const StrongSparseVectorOfDoubles<SparseIndex>& vector) {
   return vector * scalar;
+}
+
+template <typename SparseIndex>
+std::ostream& operator<<(std::ostream& out,
+                         const StrongSparseVectorOfDoubles<SparseIndex>& v) {
+  bool first = true;
+  out << "{";
+  for (const auto& [index, value] : v.entries()) {
+    if (!first) out << ", ";
+    first = false;
+    out << "{" << index << ", " << value << "}";
+  }
+  out << "}";
+  return out;
 }
 
 // Note, we need no-throw movable so that `std::vector<SparseRow>::resize()`

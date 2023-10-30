@@ -16,68 +16,87 @@
 #define SRC_SOLVER_H
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
-#include "ortools/base/status_builder.h"
-#include "ortools/base/status_macros.h"
-#include "src/data_structures/mip_data.h"
-#include "src/data_structures/mip_tree.h"
-#include "src/data_structures/problem.h"
-#include "src/lp_interface/lpi.h"
+#include "solver_context_interface.h"
+#include "src/cutting_interface/runner_factory.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
+#include "src/parameters_factory.h"
 
 namespace minimip {
 
 // This is the main solver class. It serves as both the main point of contact
 // between MiniMIP and client code. It also owns all global data structures and
 // modules.
-class Solver {
+class Solver : public SolverContextInterface {
  public:
   // Factory method to create a Solver object from a set of parameters.
   static absl::StatusOr<std::unique_ptr<Solver>> Create(
-      const MiniMipParameters& params, const MiniMipProblem& problem) {
+      const MiniMipProblem& problem = MiniMipProblem(),
+      const MiniMipParameters& user_params = MiniMipParameters()) {
     const std::string problem_error = FindErrorInMiniMipProblem(problem);
     if (!problem_error.empty()) {
       return util::InvalidArgumentErrorBuilder()
              << "Error found in problem: " << problem_error;
     }
+    // The user's settings will overwrite the defaults where they're provided.
+    MiniMipParameters params = UserCustomizedParameters(user_params);
+
     MipData mip_data(problem);
     MipTree mip_tree;
-    ASSIGN_OR_RETURN(std::unique_ptr<LPInterface> lpi,
-                     ConfigureLPSolverFromProto(params.lp_parameters()));
+
+    ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
+                     CreateLpSolver(params.lp_parameters()));
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree), std::move(lpi)));
+
     return solver;
   }
 
-  absl::StatusOr<MiniMipResult> Solve() {
-    return absl::UnimplementedError("Solve isn't implemented yet.");
-  }
+  absl::StatusOr<MiniMipResult> Solve();
 
-  const MipData& mip_data() const { return mip_data_; }
-  MipData& mutable_mip_data() { return mip_data_; }
+  const MipData& mip_data() const override { return mip_data_; }
+  MipData& mutable_mip_data() override { return mip_data_; }
 
-  const MipTree& mip_tree() const { return mip_tree_; }
-  MipTree& mutable_mip_tree() { return mip_tree_; }
+  const MipTree& mip_tree() const override { return mip_tree_; }
+  MipTree& mutable_mip_tree() override { return mip_tree_; }
 
-  const LPInterface* lpi() const { return lpi_.get(); }
-  LPInterface* mutable_lpi() { return lpi_.get(); }
+  const LpInterface* lpi() const override { return lpi_.get(); }
+  LpInterface* mutable_lpi() override { return lpi_.get(); }
 
-  bool IsIntegerWithinTolerance(double d) {
+  bool IsIntegerWithinTolerance(double d) const override {
     return std::abs(d - std::round(d)) <= params_.integrality_tolerance();
   }
 
+  bool IsEqualToWithinTolerance(double d, double b) const override {
+    return std::abs(d - b) <= params_.numerical_tolerance();
+  }
+
+  double FloorWithTolerance(double d) const override {
+    return IsIntegerWithinTolerance(d) ? std::round(d) : std::floor(d);
+  }
+
  private:
+  // Parameters specifying the MiniMip configuration.
   const MiniMipParameters params_;
+
+  // The canonical copy of the MIP data. This contains all information from the
+  // original problem, but not cuts etc. For the currently used LP information
+  // (including cuts), see the LPI.
   MipData mip_data_;
+
+  // Contains all open nodes and bound changes.
   MipTree mip_tree_;
-  std::unique_ptr<LPInterface> lpi_;
+
+  // Handle to an LP solver.
+  std::unique_ptr<LpInterface> lpi_;
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
-         std::unique_ptr<LPInterface> lpi)
+         std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
@@ -85,10 +104,10 @@ class Solver {
 };
 
 // Convenience function to create a solver and solve the given problem.
-inline absl::StatusOr<MiniMipResult> Solve(const MiniMipParameters& parameters,
-                                           const MiniMipProblem& problem) {
+inline absl::StatusOr<MiniMipResult> Solve(
+    const MiniMipProblem& problem, const MiniMipParameters& user_params) {
   ASSIGN_OR_RETURN(std::unique_ptr<Solver> solver,
-                   Solver::Create(parameters, problem));
+                   Solver::Create(problem, user_params));
   return solver->Solve();
 }
 
