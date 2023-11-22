@@ -16,6 +16,83 @@ syntax = "proto2";
 
 package minimip;
 
+// This generator extracts rows from the optimal tableau and rounds the resulting coefficients
+// according to different formulas.
+// For more information, see Achterberg: Constraint Integer Programming (2006), ch 8.3-8.4.
+message TableauRoundingGeneratorParameters {
+
+  // Toggle which rounding procedures to apply to the optimal tableau row. At least one must be used.
+  optional bool use_mixed_integer_rounding = 1 [default = true];
+  optional bool use_strong_cg_rounding = 2 [default = true];
+}
+
+message CutGeneratorParameters {
+
+  // The maximum number of cuts this CutGenerator should add per separation round. Zero value means
+  // the CutGenerator is turned off.
+  optional int32 max_num_cuts = 1 [default = 100];
+
+  oneof generator_specific {
+    TableauRoundingGeneratorParameters tableau_rounding_generator_parameters = 2;
+  }
+
+}
+
+// This selector scores cuts via the weighted sum of efficacy, directed cutoff distance, objective parallelism,
+// and integer support.
+message HybridSelectorParameters {
+
+  // The coefficients for the weighted sum of the scoring metrics.
+  optional double efficacy_weight = 1 [default = 1.0];
+  optional double objective_parallelism_weight = 2 [default = 0.1];
+  optional double integer_support_weight = 3 [default = 0.1];
+
+  // The minimum orthogonality between cuts for a cut to enter the LP.
+  optional double minimum_orthogonality = 4 [default = 0.9];
+  optional double minimum_orthogonality_at_root = 5 [default = 0.9];
+
+  // To toggle whether to use the signed cosine angle for filtering parallel cuts,
+  // otherwise the absolute cosine angle is used to evaluate pairwise cut parallelism.
+  optional bool signed_orthogonality = 6 [default = false];
+
+  // The thresholds for good and bad cut scores.
+  optional double score_threshold = 7 [default = 0.000001];
+
+  // The maximum tree depth at which the selector is active, -1 means no limit.
+  optional int64 maximum_tree_depth = 8 [default = -1];
+
+}
+
+message CutSelectorParameters {
+
+  // The maximum number of cuts this Selector should add per separation round. Zero value means
+  // the Selector is turned off, -1 means no limit.
+  optional int32 max_num_cuts = 1 [default = -1];
+
+  oneof selector_specific {
+    HybridSelectorParameters hybrid_selector_parameters = 2;
+  }
+
+}
+
+// Cutrunner Parameters
+message DefaultRunnerParameters {
+  optional int32 max_iterations = 1 [default = 100];
+  optional int32 max_num_cuts = 2 [default = 100];
+  optional int32 max_num_cuts_root = 3 [default = 100];
+}
+
+message CutRunnerParameters {
+
+  repeated CutGeneratorParameters generator_parameters = 1;
+  repeated CutSelectorParameters selector_parameters = 2;
+
+  oneof runner_specific {
+    DefaultRunnerParameters default_runner_parameters = 3;
+  }
+
+}
+
 message LpParameters {
   // The underlying solver to use. Note that some parameters behave differently
   // depending on the solver type.
@@ -110,13 +187,22 @@ message LpParameters {
 }
 
 message MiniMipParameters {
+  // A value v is considered integral within MiniMip if
+  // abs(v - round(v)) <= integrality_tolerance.
+  optional double integrality_tolerance = 1 [default = 1e-6];
+
+  // A value v is considered equal to zero within MiniMip if
+  // abs(v) <= numerical_tolerance.
+  optional double numerical_tolerance = 2 [default = 1e-9];
+
   // Parameters to forward to the underlying LP solver. These will be used to
   // instantiate the "main" LP solver in MiniMip (i.e., the one used to solve
   // nodes' relaxations while exploring the search tree).
-  optional LpParameters lp_parameters = 1;
+  optional LpParameters lp_parameters = 3;
 
-  // A value v is considered integral within MiniMip if
-  // abs(v - round(v)) <= integrality_tolerance.
-  optional double integrality_tolerance = 2 [default = 1e-6];
+  optional CutRunnerParameters cut_runner = 4;
 
+  repeated CutGeneratorParameters cut_generators = 5;
+
+  repeated CutSelectorParameters cut_selectors = 6;
 }

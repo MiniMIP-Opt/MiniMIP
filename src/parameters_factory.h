@@ -1,4 +1,4 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright 2023 the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,13 +18,47 @@
 #include "src/parameters.pb.h"
 
 namespace minimip {
+
+// Create the default CutGenerator parameters.
+// As of 26.10.23: The TableauRoundingGenerator as the default.
+inline CutGeneratorParameters DefaultCutGeneratorParameters() {
+  CutGeneratorParameters params;
+  params.mutable_tableau_rounding_generator_parameters();
+  return params;
+}
+
+// Create the default CutSelector parameters.
+// As of 26.10.23: The HybridSelector as the default.
+inline CutSelectorParameters DefaultCutSelectorParameters() {
+  CutSelectorParameters params;
+  params.mutable_hybrid_selector_parameters();
+  return params;
+}
+
+// Create the default CutRunnerParameters
+// As of 26.10.23: The DefaultRunner is the default.
+inline CutRunnerParameters DefaultCutRunnerParameters() {
+  CutRunnerParameters runner_params;
+  // Set the default runner parameters.
+  runner_params.mutable_default_runner_parameters();
+
+  // Set the default generator and selector parameters.
+  *runner_params.add_generator_parameters() = DefaultCutGeneratorParameters();
+  *runner_params.add_selector_parameters() = DefaultCutSelectorParameters();
+
+  return runner_params;
+}
+
 // Unified factory method to create default parameters
 inline MiniMipParameters DefaultMiniMipParameters() {
   MiniMipParameters default_params;
 
   // initialize LP parameters.
   default_params.mutable_lp_parameters();
-  
+
+  // Initialize the default CutRunner parameters.
+  *default_params.mutable_cut_runner() = DefaultCutRunnerParameters();
+
   return default_params;
 }
 
@@ -42,4 +76,5 @@ inline MiniMipParameters UserCustomizedParameters(
 }
 
 }  // namespace minimip
+
 #endif  // SRC_PARAMETERS_FACTORY_H_

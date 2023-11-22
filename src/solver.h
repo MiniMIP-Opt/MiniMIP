@@ -47,12 +47,17 @@ class Solver : public SolverContextInterface {
 
     MipData mip_data(problem);
     MipTree mip_tree;
+    CutRegistry cut_registry;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
                      CreateLpSolver(params.lp_parameters()));
-    auto solver = std::unique_ptr<Solver>(new Solver(
-        params, std::move(mip_data), std::move(mip_tree), std::move(lpi)));
 
+    ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
+                     CreateCutRunner(params.cut_runner()));
+
+    auto solver = std::unique_ptr<Solver>(new Solver(
+        params, std::move(mip_data), std::move(mip_tree),
+        std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
     return solver;
   }
 
@@ -63,6 +68,13 @@ class Solver : public SolverContextInterface {
 
   const MipTree& mip_tree() const override { return mip_tree_; }
   MipTree& mutable_mip_tree() override { return mip_tree_; }
+
+  const CutRegistry& cut_registry() const override { return cut_registry_; }
+  CutRegistry& mutable_cut_registry() override { return cut_registry_; }
+
+  CutRunnerInterface* mutable_cut_runner() const override {
+    return cut_runner_.get();
+  }
 
   const LpInterface* lpi() const override { return lpi_.get(); }
   LpInterface* mutable_lpi() override { return lpi_.get(); }
@@ -91,15 +103,26 @@ class Solver : public SolverContextInterface {
   // Contains all open nodes and bound changes.
   MipTree mip_tree_;
 
+  // Contains all currently active and stored cuts.
+  CutRegistry cut_registry_;
+
+  // Entry-point for the cut API, used to create and activate cuts in the main
+  // cut-and-price loop (not yet implemented).
+  std::unique_ptr<CutRunnerInterface> cut_runner_;
+
   // Handle to an LP solver.
   std::unique_ptr<LpInterface> lpi_;
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
+         CutRegistry cut_registry,
+         std::unique_ptr<CutRunnerInterface> cut_runner,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
+        cut_registry_{std::move(cut_registry)},
+        cut_runner_{std::move(cut_runner)},
         lpi_{std::move(lpi)} {}
 };
 

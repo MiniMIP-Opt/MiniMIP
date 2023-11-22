@@ -38,6 +38,19 @@ cc_test(
 )
 
 cc_test(
+    name = "cuts_data_test",
+    size = "small",
+    srcs = ["cuts_data_test.cc"],
+    deps = [
+        "//src/data_structures:cuts_data",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
     name = "strong_sparse_vector_test",
     size = "small",
     srcs = ["strong_sparse_vector_test.cc"],

@@ -44,7 +44,7 @@ std::string FormatLPBasisStatus(LpBasisStatus status) {
 
 }  // namespace
 
-std::string LpModelDebugString(LpInterface* lpi) {
+std::string LpModelDebugString(const LpInterface* lpi) {
   const ColIndex num_columns = lpi->GetNumberOfColumns();
   const RowIndex num_rows = lpi->GetNumberOfRows();
   std::string s;
@@ -74,7 +74,7 @@ std::string LpModelDebugString(LpInterface* lpi) {
   return s;
 }
 
-std::string LpStatusDebugString(LpInterface* lpi) {
+std::string LpStatusDebugString(const LpInterface* lpi) {
   const ColIndex num_columns = lpi->GetNumberOfColumns();
   const RowIndex num_rows = lpi->GetNumberOfRows();
   std::string s;

@@ -59,7 +59,7 @@ struct NodeData {
 
   // Number of cuts added to the node.
   int n_cuts_added = 0;
-  
+
   // Number of separation rounds.
   int n_separation_rounds = 0;
 

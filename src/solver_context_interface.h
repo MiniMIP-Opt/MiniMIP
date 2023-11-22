@@ -15,6 +15,8 @@
 #ifndef SRC_SOLVER_CONTEXT_INTERFACE_H_
 #define SRC_SOLVER_CONTEXT_INTERFACE_H_
 
+#include "src/cutting_interface/cuts_runner.h"
+#include "src/data_structures/cuts_data.h"
 #include "src/data_structures/mip_data.h"
 #include "src/data_structures/mip_tree.h"
 #include "src/data_structures/problem.h"
@@ -31,6 +33,11 @@ class SolverContextInterface {
 
   virtual const MipTree& mip_tree() const = 0;
   virtual MipTree& mutable_mip_tree() = 0;
+
+  virtual const CutRegistry& cut_registry() const = 0;
+  virtual CutRegistry& mutable_cut_registry() = 0;
+
+  virtual CutRunnerInterface* mutable_cut_runner() const = 0;
 
   virtual const LpInterface* lpi() const = 0;
   virtual LpInterface* mutable_lpi() = 0;
