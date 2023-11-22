@@ -34,7 +34,8 @@ using testing::Not;
 // This is a helper function to create the selector parameters.
 enum class CutSelectorType { kHybridSelectorUnsigned, kHybridSelectorSigned };
 
-std::unique_ptr<CutSelectorInterface> CreateCutSelector(CutSelectorType type) {
+std::unique_ptr<CutSelectorInterface> CreateTestCutSelector(
+    CutSelectorType type) {
   switch (type) {
     case CutSelectorType::kHybridSelectorUnsigned: {
       CutSelectorParameters params;
@@ -61,7 +62,7 @@ class MinimalCutSelectorTest
   void SetUp() final {
     // Here we initialize the cut selector.
     CutSelectorParameters params;
-    selector_ = CreateCutSelector(std::get<0>(GetParam()));
+    selector_ = CreateTestCutSelector(std::get<0>(GetParam()));
     MiniMipProblem problem = CreateSampleProblem();
 
     // Call the Create function to create a Solver object

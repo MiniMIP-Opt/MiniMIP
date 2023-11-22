@@ -21,8 +21,7 @@
 namespace minimip {
 
 inline absl::StatusOr<std::unique_ptr<CutGeneratorInterface>>
-ConfigureGeneratorFromProto(
-    const CutGeneratorParameters& generator_parameters) {
+CreateCutGenerator(const CutGeneratorParameters& generator_parameters) {
   if (generator_parameters.has_tableau_rounding_generator_parameters()) {
     return std::make_unique<TableauRoundingGenerator>(generator_parameters);
   }

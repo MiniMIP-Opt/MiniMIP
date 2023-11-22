@@ -34,7 +34,7 @@ using testing::Not;
 
 enum class CutGeneratorType { kGomoryMixedInteger, kGomoryStrongCG };
 
-std::unique_ptr<CutGeneratorInterface> CreateCutGenerator(
+std::unique_ptr<CutGeneratorInterface> CreateTestCutGenerator(
     CutGeneratorType type) {
   switch (type) {
     case CutGeneratorType::kGomoryMixedInteger: {
@@ -64,7 +64,7 @@ class SmallModelSmokeTest
     : public testing::TestWithParam<std::tuple<CutGeneratorType, int>> {
  protected:
   void SetUp() final {
-    generator_ = CreateCutGenerator(std::get<0>(GetParam()));
+    generator_ = CreateTestCutGenerator(std::get<0>(GetParam()));
     std::pair<MiniMipProblem, SparseRow> data =
         CreateSampleProblem(std::get<1>(GetParam()));
 

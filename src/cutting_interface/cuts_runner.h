@@ -45,15 +45,30 @@ class CutRunnerInterface {
 
   void AddGenerator(std::unique_ptr<CutGeneratorInterface> generator) {
     generators_.push_back(std::move(generator));
+    num_generators_++;
   }
 
   void AddSelector(std::unique_ptr<CutSelectorInterface> selector) {
+    if (selector_ != nullptr) {
+      LOG(WARNING) << "Overwriting existing selector.";
+    }
     selector_ = std::move(selector);
+  }
+
+  const int num_generators() const { return num_generators_; }
+
+  const std::unique_ptr<CutGeneratorInterface>& generator(int index) const {
+    return generators_[index];
+  }
+
+  const std::unique_ptr<CutSelectorInterface>& selector() const {
+    return selector_;
   }
 
  protected:
   std::vector<std::unique_ptr<CutGeneratorInterface>> generators_;
   std::unique_ptr<CutSelectorInterface> selector_;
+  int num_generators_ = 0;
 };
 
 }  // namespace minimip

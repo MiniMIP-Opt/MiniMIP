@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "gmock/gmock.h"
+#include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 #include "src/cutting_interface/cuts_runner.h"
 #include "src/parameters.pb.h"
@@ -20,6 +21,34 @@
 #include "unit_tests/utils.h"
 
 namespace minimip {
+
+enum class CutGeneratorType { kGomoryMixedInteger, kGomoryStrongCG };
+
+std::unique_ptr<CutGeneratorInterface> CreateTestCutGenerator(
+    CutGeneratorType type) {
+  switch (type) {
+    case CutGeneratorType::kGomoryMixedInteger: {
+      CutGeneratorParameters params;
+      CHECK(google::protobuf::TextFormat::ParseFromString(
+          R"pb(
+            tableau_rounding_generator_parameters: {
+              use_mixed_integer_rounding: true
+            })pb",
+          &params));
+      return std::make_unique<TableauRoundingGenerator>(params);
+    }
+    case CutGeneratorType::kGomoryStrongCG: {
+      CutGeneratorParameters params;
+      CHECK(google::protobuf::TextFormat::ParseFromString(
+          R"pb(
+            tableau_rounding_generator_parameters: {
+              use_strong_cg_rounding: true
+            })pb",
+          &params));
+      return std::make_unique<TableauRoundingGenerator>(params);
+    }
+  }
+}
 
 TEST(CutRunnerTests, CreateCutRunner) {
   CutRunnerParameters default_runner_params = DefaultCutRunnerParameters();
@@ -33,12 +62,14 @@ TEST(CutRunnerTests, CreateCutRunner) {
   // values.
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<CutRunnerInterface> runner,
-                       ConfigureRunnerFromProto(default_runner_params));
+                       CreateCutRunner(default_runner_params));
+
+  ASSERT_TRUE(runner->generator(0) != nullptr);
+  ASSERT_TRUE(runner->selector() != nullptr);
 }
 
 TEST(CutRunnerTests, SimpleSolve) {
   MiniMipProblem problem;
-  SparseRow optimum;
 
   // Another small integer problem that requires proper use of slack
   // variables.
@@ -48,6 +79,8 @@ TEST(CutRunnerTests, SimpleSolve) {
   // 2x_1 +  x_2 <= 6
   // x_1, x_2 >= 0
   // x_1 integer
+  //
+  // ==> max(z) = 9 at x_1 = 3, x_2 = 0
 
   problem.variables.push_back(MiniMipVariable{.name = "x1",
                                               .objective_coefficient = 3.0,
@@ -75,7 +108,6 @@ TEST(CutRunnerTests, SimpleSolve) {
   });
 
   problem.is_maximization = true;
-  optimum = CreateSparseRow({{0, 3}, {1, 0}});
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
@@ -91,7 +123,8 @@ TEST(CutRunnerTests, SimpleSolve) {
   ASSERT_OK(
       solver->mutable_cut_runner()->SeparateCurrentLPSolution(*solver.get()));
 
-  double x = solver->lpi()->GetObjectiveValue();
+  ASSERT_TRUE(solver->IsEqualToWithinTolerance(
+      solver->lpi()->GetObjectiveValue(), 9.0));
 
   ASSERT_TRUE(solver->lpi()->IsSolved());
   ASSERT_TRUE(solver->lpi()->IsOptimal());

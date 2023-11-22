@@ -53,7 +53,7 @@ class Solver : public SolverContextInterface {
                      CreateLpSolver(params.lp_parameters()));
 
     ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
-                     ConfigureRunnerFromProto(params.cut_runner()));
+                     CreateCutRunner(params.cut_runner()));
 
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree),
@@ -115,7 +115,8 @@ class Solver : public SolverContextInterface {
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
-         CutRegistry cut_registry, std::unique_ptr<CutRunnerInterface> cut_runner,
+         CutRegistry cut_registry,
+         std::unique_ptr<CutRunnerInterface> cut_runner,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},

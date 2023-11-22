@@ -35,7 +35,7 @@ class DefaultRunner : public CutRunnerInterface {
       : params_(params.default_runner_parameters()) {
     // Check and initialize the cut generators.
     for (const auto& generator_params : params.generator_parameters()) {
-      auto generator_or_status = ConfigureGeneratorFromProto(generator_params);
+      auto generator_or_status = CreateCutGenerator(generator_params);
       if (!generator_or_status.ok()) {
         LOG(ERROR) << "Could not configure generator: "
                    << generator_or_status.status();
@@ -45,7 +45,7 @@ class DefaultRunner : public CutRunnerInterface {
     }
 
     auto selector_or_status =
-        ConfigureSelectorFromProto(params.selector_parameters().Get(0));
+        CreateCutSelector(params.selector_parameters().Get(0));
     if (!selector_or_status.ok()) {
       LOG(ERROR) << "Could not configure selector: "
                  << selector_or_status.status();
