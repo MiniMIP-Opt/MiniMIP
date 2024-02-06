@@ -53,6 +53,9 @@ inline CutRunnerParameters DefaultCutRunnerParameters() {
 inline MiniMipParameters DefaultMiniMipParameters() {
   MiniMipParameters default_params;
 
+  // Initialize the default CutRunner parameters.
+  default_params.mutable_reader();
+
   // initialize LP parameters.
   default_params.mutable_lp_parameters();
 

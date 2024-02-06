@@ -1,0 +1,37 @@
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "reader",
+    hdrs = ["reader.h"],
+    deps = [
+        "//src:parameters_cc_proto",
+        "//src/data_structures:problem",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cc_library(
+    name = "or_tools_reader",
+    srcs = ["or_tools_reader.cc"],
+    hdrs = ["or_tools_reader.h"],
+    deps = [
+        "//src/reader_interface:reader",
+        "//src:parameters_cc_proto",
+        "@com_google_ortools//ortools/lp_data:mps_reader",
+    ],
+)
+
+cc_library(
+    name = "reader_factory",
+    srcs = ["reader_factory.cc"],
+    hdrs = ["reader_factory.h"],
+    deps = [
+        "//src:parameters_cc_proto",
+        "//src/reader_interface:reader",
+        "//src/reader_interface:or_tools_reader",
+        "@com_google_ortools//ortools/base",
+    ]
+)

@@ -25,6 +25,7 @@
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
 #include "src/parameters_factory.h"
+#include "src/reader_interface/reader_factory.h"
 
 namespace minimip {
 
@@ -37,17 +38,11 @@ class Solver : public SolverContextInterface {
   static absl::StatusOr<std::unique_ptr<Solver>> Create(
       const MiniMipProblem& problem = MiniMipProblem(),
       const MiniMipParameters& user_params = MiniMipParameters()) {
-    const std::string problem_error = FindErrorInMiniMipProblem(problem);
-    if (!problem_error.empty()) {
-      return util::InvalidArgumentErrorBuilder()
-             << "Error found in problem: " << problem_error;
-    }
     // The user's settings will overwrite the defaults where they're provided.
     MiniMipParameters params = UserCustomizedParameters(user_params);
 
-    MipData mip_data(problem);
-    MipTree mip_tree;
-    CutRegistry cut_registry;
+    ASSIGN_OR_RETURN(std::unique_ptr<ReaderInterface> reader,
+                     CreateReader(params.reader()));
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
                      CreateLpSolver(params.lp_parameters()));
@@ -55,9 +50,14 @@ class Solver : public SolverContextInterface {
     ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
                      CreateCutRunner(params.cut_runner()));
 
-    auto solver = std::unique_ptr<Solver>(new Solver(
-        params, std::move(mip_data), std::move(mip_tree),
-        std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
+    MipData mip_data(problem);
+    MipTree mip_tree;
+    CutRegistry cut_registry;
+
+    auto solver = std::unique_ptr<Solver>(
+        new Solver(params, std::move(mip_data), std::move(mip_tree),
+                   std::move(cut_registry), std::move(cut_runner),
+                   std::move(lpi), std::move(reader)));
     return solver;
   }
 
@@ -113,17 +113,22 @@ class Solver : public SolverContextInterface {
   // Handle to an LP solver.
   std::unique_ptr<LpInterface> lpi_;
 
+  // File reader for reading MIP files.
+  std::unique_ptr<ReaderInterface> reader_;
+
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
          CutRegistry cut_registry,
          std::unique_ptr<CutRunnerInterface> cut_runner,
-         std::unique_ptr<LpInterface> lpi)
+         std::unique_ptr<LpInterface> lpi,
+         std::unique_ptr<ReaderInterface> reader)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
         mip_tree_{std::move(mip_tree)},
         cut_registry_{std::move(cut_registry)},
         cut_runner_{std::move(cut_runner)},
-        lpi_{std::move(lpi)} {}
+        lpi_{std::move(lpi)},
+        reader_{std::move(reader)} {}
 };
 
 // Convenience function to create a solver and solve the given problem.

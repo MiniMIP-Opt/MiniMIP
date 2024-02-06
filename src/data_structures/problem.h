@@ -157,16 +157,5 @@ enum class MiniMipStoppingReason {
 // ==========================================================================
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem);
 
-// Read a problem description from an MPS file. See
-// http://lpsolve.sourceforge.net/5.5/mps-format.htm for details on this file
-// format.
-absl::StatusOr<MiniMipProblem> ReadProblemFromMPSFile(
-    const std::string& file_name);
-
-// Same as `ReadProblemFromMPSFile`, but takes the data as a string instead of
-// reading it from disk.
-absl::StatusOr<MiniMipProblem> ReadProblemFromMPSData(
-    const std::string& mps_data);
-
 }  // namespace minimip
 #endif  // SRC_DATA_STRUCTURES_PROBLEM_H_

@@ -1,20 +1,10 @@
 # Testing utilities.
 load("@rules_cc//cc:defs.bzl", "cc_test")
 
-filegroup(
-    name = "problem_test_data",
-    srcs = [
-        "test_data/50v-10.mps",
-    ],
-)
 
 cc_test(
     name = "problem_test",
-    size = "small",
     srcs = ["problem_test.cc"],
-    data = [
-        ":problem_test_data",
-    ],
     deps = [
         "//src/data_structures:problem",
         "//unit_tests:gtest_main",

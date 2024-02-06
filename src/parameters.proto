@@ -186,6 +186,14 @@ message LpParameters {
   optional bool enable_internal_solver_output = 17 [default = false];
 }
 
+message ReaderParameters {
+  // The underlying reader to use. Not all readers may be available in all formats.
+  enum ReaderType {
+    OR_TOOLS = 0;
+  }
+  optional ReaderType reader_type = 1 [default = OR_TOOLS];
+}
+
 message MiniMipParameters {
   // A value v is considered integral within MiniMip if
   // abs(v - round(v)) <= integrality_tolerance.
@@ -205,4 +213,6 @@ message MiniMipParameters {
   repeated CutGeneratorParameters cut_generators = 5;
 
   repeated CutSelectorParameters cut_selectors = 6;
+
+  optional ReaderParameters reader = 7;
 }

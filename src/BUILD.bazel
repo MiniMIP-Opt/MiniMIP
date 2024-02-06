@@ -31,6 +31,7 @@ cc_library(
         "//src/data_structures:mip_tree",
         "//src/data_structures:problem",
         "//src/lp_interface:lpi",
+        "//src/reader_interface:reader",
     ],
 )
 
@@ -43,5 +44,6 @@ cc_library(
         ":solver_context_interface",
         "//src/lp_interface:lpi_factory",
         "//src/cutting_interface:runner_factory",
+        "//src/reader_interface:reader_factory",
     ],
 )

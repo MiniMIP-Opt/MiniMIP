@@ -1,4 +1,4 @@
-// Copyright 2023 the MiniMIP Project
+// Copyright 2022 the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/data_structures/problem.h"
+#ifndef SRC_READER_INTERFACE_READER_FACTORY_H_
+#define SRC_READER_INTERFACE_READER_FACTORY_H_
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "unit_tests/utils.h"
+#include "src/parameters.pb.h"
+#include "src/reader_interface/reader.h"
 
 namespace minimip {
-// TODO(CGraczyk): add tests for FindErrorInMiniMipProblem.
+
+absl::StatusOr<std::unique_ptr<ReaderInterface>> CreateReader(
+    const ReaderParameters& params);
+
 }  // namespace minimip
+
+#endif  // SRC_READER_INTERFACE_READER_FACTORY_H_
