@@ -1,0 +1,30 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+
+cc_library(
+    name = "example",
+    srcs = ["example.cc"],
+    hdrs = ["example.h"],
+    deps = [
+        "@com_google_ortools//ortools/base",
+        "@com_google_ortools//ortools/linear_solver",
+        "@com_google_ortools//ortools/linear_solver:linear_solver_cc_proto",
+    ],
+)
+
+cc_test(
+    name = "example_test",
+    srcs = ["example_test.cc"],
+    deps = [
+        ":example",
+        "//unit_tests:gtest_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_binary(
+    name = "example_main",
+    srcs = ["example_main.cc"],
+    deps = [
+        ":example",
+    ],
+)
