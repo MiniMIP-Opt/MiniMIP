@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/utils/or_tools_reader.h"
+
 #include <algorithm>
 #include <fstream>
 #include <ios>
@@ -24,8 +26,6 @@
 #include "ortools/base/status_macros.h"
 #include "src/data_structures/problem.h"
 #include "src/parameters.pb.h"
-#include "src/reader_interface/reader.h"
-#include "src/reader_interface/reader_factory.h"
 #include "unit_tests/utils.h"
 
 // TODO(CGraczyk): add randomized O(1000) init tests for mip data.
@@ -57,11 +57,6 @@ using testing::Le;
 using testing::SizeIs;
 
 TEST(MiniMipReaderTest, LoadProblemFromMPSFile) {
-  ReaderParameters params;
-  params.set_reader_type(ReaderParameters::OR_TOOLS);
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<ReaderInterface> reader,
-                       CreateReader(params));
-
   constexpr double kInf = std::numeric_limits<double>::infinity();
 
   // We rely on ortools to provide the core reader, so we assume it is well
@@ -69,8 +64,8 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSFile) {
   // MIPLIB2017, which is a medium-size problem with varying types of variables.
   // https://miplib.zib.de/instance_details_50v-10.html
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
-                       reader->ReadProblemDataFromFile(
-                           "unit_tests/reader_interface/test_data/50v-10.mps"));
+                       OrToolsReader::ReadMipProblemFromMPSFile(
+                           "unit_tests/util/test_data/50v-10.mps"));
   EXPECT_EQ(problem.name, "50v-10");
   EXPECT_THAT(problem.hints, IsEmpty());
   EXPECT_EQ(problem.objective_offset, 0.0);
@@ -128,11 +123,6 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSFile) {
 // This is the exact same test as above, but where the file contents is given in
 // a data string.
 TEST(MiniMipReaderTest, LoadProblemFromMPSData) {
-  std::unique_ptr<ReaderInterface> reader;
-  ReaderParameters params;
-  params.set_reader_type(ReaderParameters::OR_TOOLS);
-  ASSERT_OK_AND_ASSIGN(reader, CreateReader(params));
-
   constexpr double kInf = std::numeric_limits<double>::infinity();
 
   // We rely on ortools to provide the core reader, so we assume it is well
@@ -141,9 +131,9 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSData) {
   // https://miplib.zib.de/instance_details_50v-10.html
   ASSERT_OK_AND_ASSIGN(
       const std::string data,
-      ReadFileToString("unit_tests/reader_interface/test_data/50v-10.mps"));
+      ReadFileToString("unit_tests/util/test_data/50v-10.mps"));
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
-                       reader->ReadProblemDataFromString(data));
+                       OrToolsReader::ReadMipProblemFromMPSFile(data));
 
   EXPECT_EQ(problem.name, "50v-10");
   EXPECT_THAT(problem.hints, IsEmpty());

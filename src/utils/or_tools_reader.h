@@ -15,20 +15,20 @@
 #ifndef SRC_OR_TOOLS_READER_H_
 #define SRC_OR_TOOLS_READER_H_
 
-#include "src/reader_interface/reader.h"
+#include "src/data_structures/problem.h"
 
 namespace minimip {
 
-class OrToolsReader : public ReaderInterface {
+class OrToolsReader {
  public:
   OrToolsReader() = default;
 
-  absl::StatusOr<MiniMipProblem> ReadProblemDataFromFile(
-      const std::string& file_path) const final;
+  static absl::StatusOr<MiniMipProblem> ReadMipProblemFromMPSFile(
+      const std::string& file_path);
 
-  absl::StatusOr<MiniMipProblem> ReadProblemDataFromString(
-      const std::string& file_data) const final;
+  static absl::StatusOr<MiniMipProblem> ReadMipProblemFromString(
+      const std::string& file_data);
 };
-}  // namespace minimip
 
+}  // namespace minimip
 #endif  // SRC_OR_TOOLS_READER_H_

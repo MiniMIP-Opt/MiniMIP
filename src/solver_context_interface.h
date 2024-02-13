@@ -21,7 +21,6 @@
 #include "src/data_structures/mip_tree.h"
 #include "src/data_structures/problem.h"
 #include "src/lp_interface/lpi.h"
-#include "src/reader_interface/reader.h"
 
 namespace minimip {
 

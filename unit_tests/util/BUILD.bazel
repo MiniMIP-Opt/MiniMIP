@@ -16,10 +16,9 @@ cc_test(
         ":reader_test_data",
     ],
     deps = [
-        "//src/reader_interface:reader",
-        "//src/reader_interface:reader_factory",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
+        "//src/utils:or_tools_reader",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],

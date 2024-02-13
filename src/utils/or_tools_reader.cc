@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/reader_interface/or_tools_reader.h"
+#include "src/utils/or_tools_reader.h"
 
 #include <fstream>
 
@@ -82,16 +82,17 @@ absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
 }
 }  // namespace
 
-absl::StatusOr<MiniMipProblem> OrToolsReader::ReadProblemDataFromFile(
-    const std::string& file_path) const {
+absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromMPSFile(
+    const std::string& file_path) {
   // If the file isn't found, ortools only logs a warning and returns an empty
   // problem. This may lead to silent failures, so we issue a proper error.
   std::fstream fs(file_path, std::ios_base::in);
   if (!fs.good()) {
     return util::InvalidArgumentErrorBuilder()
            << "File not found: " << file_path;
-  } else if (file_path.rfind(".mps") != file_path.length() - 4) {
-    return absl::InvalidArgumentError("File format not supported");
+  }
+  if (file_path.rfind(".mps") != file_path.length() - 4) {
+    return absl::InvalidArgumentError("Wrong File format.");
   }
 
   ASSIGN_OR_RETURN(const operations_research::MPModelProto model_proto,
@@ -100,8 +101,8 @@ absl::StatusOr<MiniMipProblem> OrToolsReader::ReadProblemDataFromFile(
   return MPModelProtoToMiniMipProblem(model_proto);
 }
 
-absl::StatusOr<MiniMipProblem> OrToolsReader::ReadProblemDataFromString(
-    const std::string& file_data) const {
+absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromString(
+    const std::string& file_data) {
   // Make sure that the data is in MPS format. Otherwise, undefined behaviour is
   // expected.
   ASSIGN_OR_RETURN(const operations_research::MPModelProto model_proto,
@@ -109,17 +110,4 @@ absl::StatusOr<MiniMipProblem> OrToolsReader::ReadProblemDataFromString(
 
   return MPModelProtoToMiniMipProblem(model_proto);
 }
-
-// absl::StatusOr<operations_research::MPModelProto> ReadLpFile(
-//     const std::string& file_path) const {
-//   absl::StatusOr<operations_research::MPModelProto> problem_proto =
-//       operations_research::glop::ParseLP(file_path);
-//
-//   if (!problem_proto.ok()) {
-//     return problem_proto.status();
-//   }
-//
-//   return problem_proto.value();
-// }
-
 }  // namespace minimip
