@@ -34,6 +34,15 @@ cc_library(
 )
 
 cc_library(
+    name = "strong_branching",
+    hdrs = ["strong_branching.h"],
+    srcs = ["strong_branching.cc"],
+    deps = [
+        ":branching_rule",
+    ],
+)
+
+cc_library(
     name = "variable_scoring",
     hdrs = ["vscoring_interface.h"],
     deps = [
