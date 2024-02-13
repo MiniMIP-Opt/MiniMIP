@@ -65,7 +65,7 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSFile) {
   // https://miplib.zib.de/instance_details_50v-10.html
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
                        OrToolsReader::ReadMipProblemFromMPSFile(
-                           "unit_tests/util/test_data/50v-10.mps"));
+                           "unit_tests/utils/test_data/50v-10.mps"));
   EXPECT_EQ(problem.name, "50v-10");
   EXPECT_THAT(problem.hints, IsEmpty());
   EXPECT_EQ(problem.objective_offset, 0.0);
@@ -131,7 +131,7 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSData) {
   // https://miplib.zib.de/instance_details_50v-10.html
   ASSERT_OK_AND_ASSIGN(
       const std::string data,
-      ReadFileToString("unit_tests/util/test_data/50v-10.mps"));
+      ReadFileToString("unit_tests/utils/test_data/50v-10.mps"));
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
                        OrToolsReader::ReadMipProblemFromString(data));
 
