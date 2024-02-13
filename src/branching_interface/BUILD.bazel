@@ -1,0 +1,61 @@
+# Building minimip libraries.
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# All other packages in MiniMIP may use any of the testing utils.
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "branching_interface",
+    hdrs = ["branching_interface.h"],
+    deps = [
+        ":branching_rule",
+        ":variable_scoring",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+    ],
+)
+
+cc_library(
+    name = "branching_rule",
+    hdrs = ["brule_interface.h"],
+    deps = [
+        "//src/data_structures:mip_types",
+    ],
+)
+
+cc_library(
+    name = "random_branching",
+    hdrs = ["random_branching.h"],
+    srcs = ["random_branching.cc"],
+    deps = [
+        ":branching_rule",
+        "@com_google_absl//absl/random:distributions",
+    ],
+)
+
+cc_library(
+    name = "variable_scoring",
+    hdrs = ["vscoring_interface.h"],
+    deps = [
+        "@com_google_absl//absl/random:distributions",
+    ],
+)
+
+cc_library(
+    name = "random_variable_scoring",
+    hdrs = ["random_scoring.h"],
+    srcs = ["random_scoring.cc"],
+    deps = [
+        ":variable_scoring",
+        "@com_google_absl//absl/random:distributions",
+    ],
+)
+
+cc_library(
+    name = "vscore_factory",
+    hdrs = ["vscore_factory.h"],
+    deps = [
+        ":variable_scoring",
+        ":random_variable_scoring",
+    ],
+)
