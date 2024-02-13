@@ -133,7 +133,7 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSData) {
       const std::string data,
       ReadFileToString("unit_tests/util/test_data/50v-10.mps"));
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
-                       OrToolsReader::ReadMipProblemFromMPSFile(data));
+                       OrToolsReader::ReadMipProblemFromString(data));
 
   EXPECT_EQ(problem.name, "50v-10");
   EXPECT_THAT(problem.hints, IsEmpty());
