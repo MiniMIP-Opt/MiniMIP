@@ -27,3 +27,11 @@ cc_library(
     ],
     alwayslink = True,
 )
+
+cc_test(
+    name = "solver_loop_test",
+    srcs = ["solver_loop_test.cc"],
+    deps = [
+        "//src:solver",
+    ],
+)
