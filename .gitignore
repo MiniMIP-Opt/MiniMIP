@@ -26,6 +26,8 @@ compile_commands.json
 .bazelversion
 # User-specific .bazelrc
 user.bazelrc
+# New Version Bazel
+MODULE.*
 
 #specific
 .clwb/
