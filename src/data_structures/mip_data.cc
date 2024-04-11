@@ -33,7 +33,6 @@ MipData::MipData(const MiniMipProblem& problem)
       variable_names_(problem.variables.size()),
       lower_bounds_(problem.variables.size()),
       upper_bounds_(problem.variables.size()),
-      integer_variables_(),
       variable_types_(problem.variables.size()),
       constraint_names_(problem.constraints.size()),
       left_hand_sides_(problem.constraints.size()),

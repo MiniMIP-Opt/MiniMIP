@@ -15,100 +15,130 @@
 #include "src/solver.h"
 
 #include <queue>
+#include <random>
+#include <vector>
+
+
 namespace minimip {
 
+bool CheckMIPFeasibility(const absl::StrongVector<ColIndex, double> &primal_values, const absl::flat_hash_set<ColIndex> &integer_variables, double tolerance) {
+  return std::all_of(integer_variables.begin(), integer_variables.end(),
+                     [&primal_values, tolerance](ColIndex col) {
+                       return std::abs(primal_values[col] - std::round(primal_values[col])) > tolerance;
+                     });
+}
+
 absl::StatusOr<MiniMipResult> Solver::Solve() {
+  // Initialize the mip tree and LP interface
   MipTree tree = this->mutable_mip_tree();
-  LpInterface* lp = this->mutable_lpi();
-  MiniMipResult result;
+  LpInterface *lp = this->mutable_lpi();
+  MiniMipResult result; // TODO: Initialize this with the best known solution
+  std::deque<NodeIndex> node_queue = {kRootNode};
 
-  CHECK_OK(lp->PopulateFromMipData(this->mip_data_));
-  CHECK_OK(lp->SolveLpWithDualSimplex());
-  if (!lp->IsOptimal()) {
-    return absl::InternalError("LP is infeasible");
-  }
+  result.best_solution.objective_value = std::numeric_limits<double>::infinity();
+  result.best_solution.objective_value *= this->mip_data_.is_maximization() ? -1.0 : 1.0; // TODO: make this more general
 
-#ifdef CUTTING
-  // Add CuttingPlane loop here to add cuts to the LP before branching.
-#endif
+  absl::flat_hash_set<ColIndex> integer_variables = this->mip_data_.integer_variables();
+  DenseRow root_lower_bounds = this->mip_data_.lower_bounds();
+  DenseRow root_upper_bounds = this->mip_data_.upper_bounds();
 
-  double objective_value = lp->GetObjectiveValue();
-  absl::StrongVector<ColIndex, double> primal_values =
-      lp->GetPrimalValues().value();
-  absl::flat_hash_set<ColIndex> integer_variables =
-      this->mip_data_.integer_variables();
 
-  tree.SetLpRelaxationDataInNode(kRootNode, objective_value);
-
-  std::deque<NodeIndex> node_deque;
-  node_deque.push_back(kRootNode);
-
-  while (!node_deque.empty()) {
-    NodeIndex current_node = node_deque.front();
-    node_deque.pop_front();
-
-#ifdef CUTTING
-    // Add CuttingPlane loop here to add cuts to the LP before branching.
-#endif
-
+  while (!node_queue.empty()) {
+    // Get the current node from the queue
+    NodeIndex current_node = node_queue.front();
+    node_queue.pop_front();
     NodeData current_node_data = tree.node(current_node);
-    if (current_node_data.parent != kInvalidNode) {
-      // Apply branching decisions here based on current_node_data
-      // For example, update the bounds of current_node_data.branch_variable
-    }
-    CHECK_OK(lp->SolveLpWithDualSimplex());  // Solve the LP
 
-    if (!lp->IsOptimal()) {
+    DenseRow current_lower_bounds = tree.RetrieveLowerBounds(current_node, root_lower_bounds);
+    DenseRow current_upper_bounds = tree.RetrieveUpperBounds(current_node, root_upper_bounds);
+
+    for (ColIndex col : integer_variables ) {
+      CHECK_OK(lp->SetColumnBounds(col, current_lower_bounds[col], current_upper_bounds[col]));
+    }
+
+    // First run the cutting loop to add cuts to the LP before setting the node data
+    #ifdef CUTTING
+        // Add CuttingPlane loop here to add cuts to the LP before branching.
+    #endif
+
+    // Solve and check current LP solution
+    CHECK_OK(lp->SolveLpWithDualSimplex());
+
+    if (!lp->IsOptimal()){
+      if (current_node == kRootNode) {
+        // If the root node's LP solution is not optimal, return the problem status TODO: set result.solve_status etc.
+        return absl::InternalError("The problem is infeasible or unbounded");
+      }
       tree.CloseNodeAndReclaimNodesUpToRootIfPossible(current_node);
       continue;
     }
 
-    // Update the objective value for the current node
-    objective_value = lp->GetObjectiveValue();
-    tree.SetLpRelaxationDataInNode(current_node, objective_value);
+    // Check if solution is MIP feasible
+    double objective_value = this->mip_data_.is_maximization() ? lp->GetObjectiveValue() : -lp->GetObjectiveValue(); // TODO: make general
+    absl::StrongVector<ColIndex, double> primal_values = lp->GetPrimalValues().value();
 
-    // Check if the solution is integral
-    bool is_integral = true;
-    ColIndex branching_variable;
-    double max_fractional_part = 0;
+    bool solution_is_incumbent = std::all_of(integer_variables.begin(), integer_variables.end(),
+                                   [&primal_values, tolerance = params_.integrality_tolerance()](ColIndex col) {
+                                     return std::abs(primal_values[col] - std::round(primal_values[col])) <= tolerance;
+                                   });
 
-    for (ColIndex col : integer_variables) {
-      if (!this->IsIntegerWithinTolerance(primal_values[col])) {
-        is_integral = false;
-        double fractional =
-            primal_values[col] - this->FloorWithTolerance(primal_values[col]);
-        if (fractional > max_fractional_part) {
-          max_fractional_part = fractional;
+    // if the root node is MIP feasible, we can skip the branch and bound process and return the solution
+    if (solution_is_incumbent) {
+      MiniMipSolution solution = {std::vector<double>(primal_values.begin(), primal_values.end()), objective_value};
+
+      if( (this->mip_data_.is_maximization() and result.best_solution.objective_value < objective_value )
+          or ( !this->mip_data_.is_maximization() and result.best_solution.objective_value > objective_value)  ) {
+          result.best_solution = solution;
+        }
+        result.additional_solutions.push_back(solution);
+
+        // If the root node is MIP optimal, return this solution
+        if (current_node == kRootNode or node_queue.empty()) {
+          result.solve_status = MiniMipSolveStatus::kOptimal;
+          return result;
+        }
+
+    }
+    else {
+
+      // Setup branch and bound node data
+      tree.SetLpRelaxationDataInNode(current_node, objective_value);
+
+      // Find the variable with the maximum fractional part to branch on
+      ColIndex branching_variable;
+      double max_fractional_part = 0.0;
+
+      for (ColIndex col : integer_variables) {
+        double value = primal_values[col];
+        double fractional_part = value - std::floor(value);
+        if (fractional_part > max_fractional_part) {
+          max_fractional_part = fractional_part;
           branching_variable = col;
         }
       }
+
+      // Branch on the variable with the maximum fractional part
+      //ASSIGN_OR_RETURN(LpInterface::StrongBranchResult strong_branch_result,
+      //                 lp->SolveDownAndUpStrongBranch(branching_variable, primal_values[branching_variable], 0));
+
+      //result.best_dual_bound = lp->GetObjectiveValue();
+
+        // Assume AddNodeByBranchingFromParent is a function that handles the logic of creating child nodes
+        NodeIndex left_child = tree.AddNodeByBranchingFromParent(current_node,
+                                                                 branching_variable,
+                                                                 true,
+                                                                 primal_values[branching_variable]);
+        NodeIndex right_child = tree.AddNodeByBranchingFromParent(current_node,
+                                                                    branching_variable,
+                                                                    false,
+                                                                    primal_values[branching_variable]);
+
+        // Add logic to process child nodes...
+        node_queue.push_front(left_child);
+        node_queue.push_back(right_child);
+
     }
 
-    if (is_integral) {
-      // Update the incumbent solution if it's better
-      if (objective_value < result.best_solution.objective_value) {
-        result.best_solution.objective_value = objective_value;
-        result.best_solution.variable_values =
-            std::vector<double>(primal_values.begin(), primal_values.end());
-      }
-    } else {
-      // Branch on the variable with the largest fractional part
-      NodeIndex left_child = tree.AddNodeByBranchingFromParent(
-          current_node, branching_variable, true, max_fractional_part);
-      NodeIndex right_child = tree.AddNodeByBranchingFromParent(
-          current_node, branching_variable, false, max_fractional_part);
-
-      // Add the new nodes to the deque for further processing
-      node_deque.push_front(left_child);
-      node_deque.push_back(right_child);
-    }
   }
-
-  if (result.solve_status != MiniMipSolveStatus::kOptimal) {
-    return absl::InternalError("No feasible solution found");
-  }
-
-  return result;
 }
-
 }  // namespace minimip

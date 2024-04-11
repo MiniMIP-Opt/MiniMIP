@@ -58,6 +58,10 @@ class Solver : public SolverContextInterface {
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(mip_tree),
         std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
+
+    // Populate LP with initial problem data
+    CHECK_OK(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data_));
+
     return solver;
   }
 
