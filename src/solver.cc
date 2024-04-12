@@ -28,11 +28,11 @@ bool CheckMIPFeasibility(const absl::StrongVector<ColIndex, double> &primal_valu
                      });
 }
 
-absl::StatusOr<MiniMipResult> Solver::Solve() {
+absl::Status Solver::Solve() {
   // Initialize the mip tree and LP interface
   MipTree tree = this->mutable_mip_tree();
   LpInterface *lp = this->mutable_lpi();
-  MiniMipResult result = this->mutable_result();
+  MiniMipResult &result = this->mutable_result();
   std::deque<NodeIndex> node_queue = {kRootNode};
 
   absl::flat_hash_set<ColIndex> integer_variables = this->mip_data_.integer_variables();
@@ -46,6 +46,7 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
     node_queue.pop_front();
     NodeData current_node_data = tree.node(current_node);
 
+    // Set the LP relaxation bounds for the current node
     DenseRow current_lower_bounds = tree.RetrieveLowerBounds(current_node, root_lower_bounds);
     DenseRow current_upper_bounds = tree.RetrieveUpperBounds(current_node, root_upper_bounds);
 
@@ -70,10 +71,12 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
       continue;
     }
 
-    // Check if solution is MIP feasible
+    // Set the LP relaxation data in the current node
     double objective_value = this->mip_data_.is_maximization() ? lp->GetObjectiveValue() : -lp->GetObjectiveValue(); // TODO: make general
-    absl::StrongVector<ColIndex, double> primal_values = lp->GetPrimalValues().value();
+    tree.SetLpRelaxationDataInNode(current_node, objective_value);
 
+    // Check if solution is MIP feasible
+    absl::StrongVector<ColIndex, double> primal_values = lp->GetPrimalValues().value();
     bool solution_is_incumbent = CheckMIPFeasibility(primal_values, integer_variables, this->params_.integrality_tolerance());
 
     // if the root node is MIP feasible, we can skip the branch and bound process and return the solution
@@ -89,15 +92,11 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
         // If the root node is MIP optimal, return this solution
         if (current_node == kRootNode or node_queue.empty()) {
           result.solve_status = MiniMipSolveStatus::kOptimal;
-          return result;
+          return absl::OkStatus();
         }
 
     }
     else {
-
-      // Setup branch and bound node data
-      tree.SetLpRelaxationDataInNode(current_node, objective_value);
-
       // Find the variable with the maximum fractional part to branch on
       ColIndex branching_variable;
       double max_fractional_part = 0.0;
@@ -111,28 +110,23 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
         }
       }
 
-      // Branch on the variable with the maximum fractional part
-      //ASSIGN_OR_RETURN(LpInterface::StrongBranchResult strong_branch_result,
-      //                 lp->SolveDownAndUpStrongBranch(branching_variable, primal_values[branching_variable], 0));
+      // Assume AddNodeByBranchingFromParent is a function that handles the logic of creating child nodes
+      NodeIndex left_child = tree.AddNodeByBranchingFromParent(current_node,
+                                                               branching_variable,
+                                                               true,
+                                                               primal_values[branching_variable]);
+      NodeIndex right_child = tree.AddNodeByBranchingFromParent(current_node,
+                                                                  branching_variable,
+                                                                  false,
+                                                                  primal_values[branching_variable]);
 
-      //result.best_dual_bound = lp->GetObjectiveValue();
-
-        // Assume AddNodeByBranchingFromParent is a function that handles the logic of creating child nodes
-        NodeIndex left_child = tree.AddNodeByBranchingFromParent(current_node,
-                                                                 branching_variable,
-                                                                 true,
-                                                                 primal_values[branching_variable]);
-        NodeIndex right_child = tree.AddNodeByBranchingFromParent(current_node,
-                                                                    branching_variable,
-                                                                    false,
-                                                                    primal_values[branching_variable]);
-
-        // Add logic to process child nodes...
-        node_queue.push_front(left_child);
-        node_queue.push_back(right_child);
+      // Add logic to process child nodes...
+      node_queue.push_front(left_child);
+      node_queue.push_back(right_child);
 
     }
 
   }
+  return absl::OkStatus();
 }
 }  // namespace minimip

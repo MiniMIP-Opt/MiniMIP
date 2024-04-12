@@ -65,20 +65,19 @@ TEST(SolveLoopTest, RootNode) {
       .right_hand_side = 0.0,
   });
   problem.is_maximization = true;
-  optimum = CreateSparseRow({{0, 1.0}, {1, 1.0}});
 
   // Call the Create function to create a Solver object
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
                        Solver::Create(problem));
 
-  ASSERT_OK_AND_ASSIGN(MiniMipResult result, solver->Solve());
+  ASSERT_OK(solver->Solve());
   ASSERT_TRUE(solver->lpi()->IsSolved());
   ASSERT_TRUE(solver->lpi()->IsOptimal());
 
-  ASSERT_EQ(result.solve_status, MiniMipSolveStatus::kOptimal);
-  ASSERT_FLOAT_EQ(result.best_solution.objective_value, 1.0);
-  ASSERT_FLOAT_EQ(result.best_solution.variable_values[0], 1.0);
-  ASSERT_FLOAT_EQ(result.best_solution.variable_values[1], 1.0);
+  ASSERT_EQ(solver->result().solve_status, MiniMipSolveStatus::kOptimal);
+  ASSERT_FLOAT_EQ(solver->result().best_solution.objective_value, 1.0);
+  ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[0], 1.0);
+  ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[1], 1.0);
 
 }
 }  // namespace minimip

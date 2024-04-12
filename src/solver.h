@@ -68,7 +68,7 @@ class Solver : public SolverContextInterface {
     return solver;
   }
 
-  absl::StatusOr<MiniMipResult> Solve();
+  absl::Status Solve();
 
   const MipData& mip_data() const override { return mip_data_; }
   MipData& mutable_mip_data() override { return mip_data_; }
