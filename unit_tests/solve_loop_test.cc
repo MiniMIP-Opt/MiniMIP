@@ -76,8 +76,6 @@ TEST(SolveLoopTest, RootNode) {
   ASSERT_TRUE(solver->lpi()->IsOptimal());
 
   ASSERT_EQ(result.solve_status, MiniMipSolveStatus::kOptimal);
-
-  // TODO: Write ASSERT(WithinTolerance()) function
   ASSERT_FLOAT_EQ(result.best_solution.objective_value, 1.0);
   ASSERT_FLOAT_EQ(result.best_solution.variable_values[0], 1.0);
   ASSERT_FLOAT_EQ(result.best_solution.variable_values[1], 1.0);

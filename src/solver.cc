@@ -32,11 +32,8 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
   // Initialize the mip tree and LP interface
   MipTree tree = this->mutable_mip_tree();
   LpInterface *lp = this->mutable_lpi();
-  MiniMipResult result; // TODO: Initialize this with the best known solution
+  MiniMipResult result = this->mutable_result();
   std::deque<NodeIndex> node_queue = {kRootNode};
-
-  result.best_solution.objective_value = std::numeric_limits<double>::infinity();
-  result.best_solution.objective_value *= this->mip_data_.is_maximization() ? -1.0 : 1.0; // TODO: make this more general
 
   absl::flat_hash_set<ColIndex> integer_variables = this->mip_data_.integer_variables();
   DenseRow root_lower_bounds = this->mip_data_.lower_bounds();
@@ -77,10 +74,7 @@ absl::StatusOr<MiniMipResult> Solver::Solve() {
     double objective_value = this->mip_data_.is_maximization() ? lp->GetObjectiveValue() : -lp->GetObjectiveValue(); // TODO: make general
     absl::StrongVector<ColIndex, double> primal_values = lp->GetPrimalValues().value();
 
-    bool solution_is_incumbent = std::all_of(integer_variables.begin(), integer_variables.end(),
-                                   [&primal_values, tolerance = params_.integrality_tolerance()](ColIndex col) {
-                                     return std::abs(primal_values[col] - std::round(primal_values[col])) <= tolerance;
-                                   });
+    bool solution_is_incumbent = CheckMIPFeasibility(primal_values, integer_variables, this->params_.integrality_tolerance());
 
     // if the root node is MIP feasible, we can skip the branch and bound process and return the solution
     if (solution_is_incumbent) {
