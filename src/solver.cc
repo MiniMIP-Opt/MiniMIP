@@ -24,7 +24,7 @@ namespace minimip {
 bool CheckMIPFeasibility(const absl::StrongVector<ColIndex, double> &primal_values, const absl::flat_hash_set<ColIndex> &integer_variables, double tolerance) {
   return std::all_of(integer_variables.begin(), integer_variables.end(),
                      [&primal_values, tolerance](ColIndex col) {
-                       return std::abs(primal_values[col] - std::round(primal_values[col])) > tolerance;
+                       return std::abs(primal_values[col] - std::round(primal_values[col])) <= tolerance;
                      });
 }
 
