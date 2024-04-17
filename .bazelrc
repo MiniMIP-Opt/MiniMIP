@@ -2,7 +2,7 @@
 build --show_timestamps
 build --color=yes
 build --keep_going
-build --noenable_bzlmod
+
 # TODO(lpawel): With c++20 or c++2a there was an error on 2023/10/03:
 #
 # /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/chrono:2320:48:
