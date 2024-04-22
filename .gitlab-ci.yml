@@ -9,7 +9,7 @@ build:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   script:
-    - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev
+    - apt-get update && apt-get install -y wget clang clang-format libboost-all-dev
     - wget https://github.com/bazelbuild/bazel/releases/download/6.5.0/bazel-6.5.0-linux-x86_64 -O /usr/local/bin/bazel
     - chmod +x /usr/local/bin/bazel
     - bazel --version
