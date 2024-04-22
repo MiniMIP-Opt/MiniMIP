@@ -7,8 +7,7 @@ build:
     name: debian:12-slim
     entrypoint: [""]
   script:
-    - apt-get update
-    - apt-get install -y wget g++ clang-format-14
+    - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev
     - wget https://github.com/bazelbuild/bazel/releases/download/6.5.0/bazel-6.5.0-linux-x86_64 -O /usr/local/bin/bazel
     - chmod +x /usr/local/bin/bazel
     - bazel --version
