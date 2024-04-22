@@ -1,0 +1,23 @@
+stages:
+  - build
+
+build:
+  stage: build
+  image:
+    name: debian:12-slim
+    entrypoint: [""]
+  script:
+    - apt-get update
+    - apt-get install -y wget clang-format-10
+    - wget https://github.com/bazelbuild/bazel/releases/download/6.5.0/bazel-6.5.0-linux-x86_64 -O /usr/local/bin/bazel
+    - chmod +x /usr/local/bin/bazel
+    - bazel --version
+    - bazel build //src/...
+    - bazel test //unit_tests/...
+    - clang-format-10 -i src/data_structures/*.h src/data_structures/*.cc
+    - clang-format-10 -i src/lp_interface/*.cc src/lp_interface/*.h
+    - clang-format-10 -i unit_tests/*/*.cc
+    - set +e
+    - FAILED_FORMAT=$(git status --porcelain | grep -F "M")
+    - set -e
+    - if [[ "${FAILED_FORMAT}" != "" ]] ; then echo "Formatting not conform"; exit 1; fi
