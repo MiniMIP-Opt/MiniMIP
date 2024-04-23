@@ -20,17 +20,6 @@
 
 namespace minimip {
 
-bool CheckMIPFeasibility(
-    const absl::StrongVector<ColIndex, double>& primal_values,
-    const absl::flat_hash_set<ColIndex>& integer_variables, double tolerance) {
-  return std::all_of(
-      integer_variables.begin(), integer_variables.end(),
-      [&primal_values, tolerance](ColIndex col) {
-        return std::abs(primal_values[col] - std::round(primal_values[col])) <=
-               tolerance;
-      });
-}
-
 absl::Status Solver::Solve() {
 
   std::deque<NodeIndex> node_queue = {kRootNode};
@@ -83,8 +72,7 @@ absl::Status Solver::Solve() {
     absl::StrongVector<ColIndex, double> primal_values =
         lpi_->GetPrimalValues().value();
     bool solution_is_incumbent =
-        CheckMIPFeasibility(primal_values, mip_data_.integer_variables(),
-                            params_.integrality_tolerance());
+        mip_data_.SolutionIsIntegral(primal_values,params_.integrality_tolerance());
 
     // if the root node is MIP feasible, we can skip the branch and bound
     // process and return the solution

@@ -102,4 +102,13 @@ MipData::MipData(const MiniMipProblem& problem)
   }
 }
 
+bool MipData::SolutionIsIntegral(const absl::StrongVector<ColIndex, double>& solution_values, double tolerance) const {
+  return std::all_of(
+      integer_variables_.begin(), integer_variables_.end(),
+      [&solution_values, tolerance](ColIndex col) {
+        return std::abs(solution_values[col] - std::round(solution_values[col])) <=
+            tolerance;
+      });
+}
+
 }  // namespace minimip
