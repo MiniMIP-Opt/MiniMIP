@@ -43,7 +43,7 @@ class MipData {
   // Constructors
   // ==========================================================================
 
-  MipData() : MipData(MiniMipProblem{}){};
+  MipData() : MipData(MiniMipProblem{}) {};
 
   explicit MipData(const MiniMipProblem& problem);
 

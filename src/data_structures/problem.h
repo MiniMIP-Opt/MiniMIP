@@ -71,8 +71,8 @@ struct MiniMipSolutionHint {
 // API Output Datastructures
 // ==========================================================================
 
-enum class MiniMipSolveStatus : std::uint8_t ;
-enum class MiniMipStoppingReason : std::uint8_t ;
+enum class MiniMipSolveStatus : std::uint8_t;
+enum class MiniMipStoppingReason : std::uint8_t;
 
 struct MiniMipSolution {
   // Dense vector with the solution.
@@ -100,7 +100,7 @@ struct MiniMipResult {
   // nodes, etc.
 };
 
-enum class MiniMipSolveStatus : std::uint8_t  {
+enum class MiniMipSolveStatus : std::uint8_t {
   // The provided input problem was invalid.
   kProblemInvalid = 0,
 

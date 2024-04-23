@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/data_structures/mip_tree.h"
+
 #include <fstream>
 
 namespace minimip {
@@ -49,11 +50,13 @@ NodeIndex MipTree::AddNodeByBranchingFromParent(
   nodes_[n].branch_primal_value_in_parent_lp = branch_primal_value_in_parent_lp;
   nodes_[n].depth = nodes_[nodes_[n].parent].depth + 1;
 
-  if (branch_down){
-    ColAndValue col_and_value = {branch_variable, std::floor(branch_primal_value_in_parent_lp)};
+  if (branch_down) {
+    ColAndValue col_and_value = {branch_variable,
+                                 std::floor(branch_primal_value_in_parent_lp)};
     SetImpliedVariableBoundsInNode(n, {col_and_value}, {});
   } else {
-    ColAndValue col_and_value = {branch_variable, std::ceil(branch_primal_value_in_parent_lp)};
+    ColAndValue col_and_value = {branch_variable,
+                                 std::ceil(branch_primal_value_in_parent_lp)};
     SetImpliedVariableBoundsInNode(n, {}, {col_and_value});
   }
 

@@ -50,7 +50,8 @@ class Solver : public SolverContextInterface {
     CutRegistry cut_registry;
 
     MiniMipResult result;
-    result.best_solution.objective_value *= mip_data.is_maximization() ? -1.0 : 1.0;
+    result.best_solution.objective_value *=
+        mip_data.is_maximization() ? -1.0 : 1.0;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
                      CreateLpSolver(params.lp_parameters()));
@@ -110,7 +111,8 @@ class Solver : public SolverContextInterface {
   // (including cuts), see the LPI.
   MipData mip_data_;
 
-  // The result struct of the optimization process. This is updated as the solver progresses and stores incumbents, bounds, etc.
+  // The result struct of the optimization process. This is updated as the
+  // solver progresses and stores incumbents, bounds, etc.
   MiniMipResult result_;
 
   // Contains all open nodes and bound changes.
@@ -127,8 +129,8 @@ class Solver : public SolverContextInterface {
   std::unique_ptr<LpInterface> lpi_;
 
   // Protected constructor, use Create() instead.
-  Solver(MiniMipParameters params, MipData mip_data, MiniMipResult result, MipTree mip_tree,
-         CutRegistry cut_registry,
+  Solver(MiniMipParameters params, MipData mip_data, MiniMipResult result,
+         MipTree mip_tree, CutRegistry cut_registry,
          std::unique_ptr<CutRunnerInterface> cut_runner,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
