@@ -22,10 +22,34 @@ namespace minimip {
 absl::Status Solver::Solve() {
   std::deque<NodeIndex> node_queue = {kRootNode};
 
-  while (!node_queue.empty()) {
-    // Get the current node from the queue
-    const NodeIndex current_node = node_queue.front();
-    node_queue.pop_front();
+  bool backjump = true;
+  int num_consecutive_infeasible_nodes = 0;
+
+  while (true) {
+    if (node_queue.empty()) {
+      LOG(INFO) << "Explored all nodes. Terminating branch-and-bound.";
+      break;
+    }
+
+    // ==========================================================================
+    // Identify next node to explore.
+    // ==========================================================================
+
+    // Get the current node from the queue.
+    // TODO(lpawel): Implement a dedicated node queue class.
+    const NodeIndex current_node =
+        backjump ? node_queue.back() : node_queue.front();
+
+    if (backjump) {
+      node_queue.pop_back();
+    } else {
+      node_queue.pop_front();
+    }
+    backjump = false;
+
+    // ==========================================================================
+    // Solve the lp relaxation check infeasibility
+    // ==========================================================================
 
     // Set the LP relaxation bounds for the current node
     const DenseRow current_lower_bounds =
@@ -39,8 +63,6 @@ absl::Status Solver::Solve() {
     }
 
     // TODO(CG): First run the cutting loop to add cuts to the LP before setting the node data
-
-    // Solve and check current LP solution
     CHECK_OK(lpi_->SolveLpWithDualSimplex());
 
     if (!lpi_->IsOptimal()) {
@@ -50,24 +72,34 @@ absl::Status Solver::Solve() {
         return absl::InternalError("The problem is infeasible or unbounded");
       }
       mip_tree_.CloseNodeAndReclaimNodesUpToRootIfPossible(current_node);
+
+      ++num_consecutive_infeasible_nodes;
+      if (num_consecutive_infeasible_nodes > params_.max_plunge_length()) {
+        num_consecutive_infeasible_nodes = 0;
+        backjump = true;
+      }
       continue;
     }
 
-    // Set the lpi_ relaxation data in the current node
-    double objective_value =
+    // The node was not infeasible -- reset the counter of infeasible nodes.
+    num_consecutive_infeasible_nodes = 0;
+
+    // ==========================================================================
+    // Set lp relaxation data in the current node and check for integrality.
+    // ==========================================================================
+
+    const double objective_value =
         mip_data_.is_maximization()
             ? lpi_->GetObjectiveValue()
             : -lpi_->GetObjectiveValue();  // TODO: make general
     mip_tree_.SetLpRelaxationDataInNode(current_node, objective_value);
 
-    // Check if solution is MIP feasible
     const absl::StrongVector<ColIndex, double> primal_values =
         lpi_->GetPrimalValues().value();
-    bool solution_is_incumbent = mip_data_.SolutionIsIntegral(
+    const bool solution_is_incumbent = mip_data_.SolutionIsIntegral(
         primal_values, params_.integrality_tolerance());
 
-    // if the root node is MIP feasible, we can skip the branch and bound
-    // process and return the solution
+    // The node is integral, there will be no branching from that node.
     if (solution_is_incumbent) {
       const MiniMipSolution solution = {
           std::vector<double>(primal_values.begin(), primal_values.end()),
@@ -78,43 +110,49 @@ absl::Status Solver::Solve() {
           (!mip_data_.is_maximization() and
            result_.best_solution.objective_value > objective_value)) {
         result_.best_solution = solution;
+      } else {
+        // Store all primal solutions found
+        result_.additional_solutions.push_back(solution);
       }
-      result_.additional_solutions.push_back(solution);
-
       // If the root node is MIP optimal, return this solution
-      if (current_node == kRootNode or node_queue.empty()) {
-        result_.solve_status = MiniMipSolveStatus::kOptimal;
-        return absl::OkStatus();
+      if (current_node == kRootNode) {
+        break;
       }
-
-    } else {
-      // Find the variable with the maximum fractional part to branch on
-      ColIndex branching_variable;
-      double max_fractional_part = 0.0;
-
-      for (ColIndex col : mip_data_.integer_variables()) {
-        double value = primal_values[col];
-        double fractional_part = value - std::floor(value);
-        if (fractional_part > max_fractional_part) {
-          max_fractional_part = fractional_part;
-          branching_variable = col;
-        }
-      }
-
-      // Assume AddNodeByBranchingFromParent is a function that handles the
-      // logic of creating child nodes
-      const NodeIndex left_child = mip_tree_.AddNodeByBranchingFromParent(
-          current_node, branching_variable, true,
-          primal_values[branching_variable]);
-      const NodeIndex right_child = mip_tree_.AddNodeByBranchingFromParent(
-          current_node, branching_variable, false,
-          primal_values[branching_variable]);
-
-      // Add logic to process child nodes...
-      node_queue.push_front(left_child);
-      node_queue.push_back(right_child);
+      backjump = true;
+      continue;
     }
+
+    // ==========================================================================
+    // Branching
+    // ==========================================================================
+
+    // TODO (CG): Add branching interface for policy selection
+    // Find the variable with the maximum fractional part to branch on
+    ColIndex branching_variable;
+    double max_fractional_part = 0.0;
+
+    for (ColIndex col : mip_data_.integer_variables()) {
+      double value = primal_values[col];
+      double fractional_part = value - std::floor(value);
+      if (fractional_part > max_fractional_part) {
+        max_fractional_part = fractional_part;
+        branching_variable = col;
+      }
+    }
+
+    // Create binary child nodes for chosen branching variable
+    const NodeIndex left_child = mip_tree_.AddNodeByBranchingFromParent(
+        current_node, branching_variable, true,
+        primal_values[branching_variable]);
+    const NodeIndex right_child = mip_tree_.AddNodeByBranchingFromParent(
+        current_node, branching_variable, false,
+        primal_values[branching_variable]);
+
+    // Add logic to process child nodes...
+    node_queue.push_front(left_child);
+    node_queue.push_back(right_child);
   }
+  result_.solve_status = MiniMipSolveStatus::kOptimal;
   return absl::OkStatus();
 }
 }  // namespace minimip

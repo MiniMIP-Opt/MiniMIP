@@ -48,7 +48,7 @@ class MipData {
   explicit MipData(const MiniMipProblem& problem);
 
   bool SolutionIsIntegral(
-      const absl::StrongVector<ColIndex, double>& primal_values,
+      const absl::StrongVector<ColIndex, double> primal_values,
       double tolerance) const;
   // ==========================================================================
   // Problem getters.
