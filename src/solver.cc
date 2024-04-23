@@ -38,10 +38,7 @@ absl::Status Solver::Solve() {
                                      current_upper_bounds[col]));
     }
 
-// First run the cutting loop to add cuts to the LP before setting the node data
-#ifdef CUTTING
-    // Add CuttingPlane loop here to add cuts to the LP before branching.
-#endif
+    // TODO(CG): First run the cutting loop to add cuts to the LP before setting the node data
 
     // Solve and check current LP solution
     CHECK_OK(lpi_->SolveLpWithDualSimplex());
