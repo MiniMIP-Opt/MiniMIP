@@ -15,32 +15,27 @@
 #include "src/solver.h"
 
 #include <queue>
-#include <random>
 #include <vector>
 
 namespace minimip {
 
 absl::Status Solver::Solve() {
-
   std::deque<NodeIndex> node_queue = {kRootNode};
-  DenseRow root_lower_bounds = mip_data_.lower_bounds();
-  DenseRow root_upper_bounds = mip_data_.upper_bounds();
 
   while (!node_queue.empty()) {
     // Get the current node from the queue
-    NodeIndex current_node = node_queue.front();
+    const NodeIndex current_node = node_queue.front();
     node_queue.pop_front();
-    NodeData current_node_data = mip_tree_.node(current_node);
 
     // Set the LP relaxation bounds for the current node
-    DenseRow current_lower_bounds =
-        mip_tree_.RetrieveLowerBounds(current_node, root_lower_bounds);
-    DenseRow current_upper_bounds =
-        mip_tree_.RetrieveUpperBounds(current_node, root_upper_bounds);
+    const DenseRow current_lower_bounds =
+        mip_tree_.RetrieveLowerBounds(current_node, mip_data_.lower_bounds());
+    const DenseRow current_upper_bounds =
+        mip_tree_.RetrieveUpperBounds(current_node, mip_data_.upper_bounds());
 
     for (ColIndex col : mip_data_.integer_variables()) {
       CHECK_OK(lpi_->SetColumnBounds(col, current_lower_bounds[col],
-                                   current_upper_bounds[col]));
+                                     current_upper_bounds[col]));
     }
 
 // First run the cutting loop to add cuts to the LP before setting the node data
@@ -69,15 +64,15 @@ absl::Status Solver::Solve() {
     mip_tree_.SetLpRelaxationDataInNode(current_node, objective_value);
 
     // Check if solution is MIP feasible
-    absl::StrongVector<ColIndex, double> primal_values =
+    const absl::StrongVector<ColIndex, double> primal_values =
         lpi_->GetPrimalValues().value();
-    bool solution_is_incumbent =
-        mip_data_.SolutionIsIntegral(primal_values,params_.integrality_tolerance());
+    bool solution_is_incumbent = mip_data_.SolutionIsIntegral(
+        primal_values, params_.integrality_tolerance());
 
     // if the root node is MIP feasible, we can skip the branch and bound
     // process and return the solution
     if (solution_is_incumbent) {
-      MiniMipSolution solution = {
+      const MiniMipSolution solution = {
           std::vector<double>(primal_values.begin(), primal_values.end()),
           objective_value};
 
@@ -111,10 +106,10 @@ absl::Status Solver::Solve() {
 
       // Assume AddNodeByBranchingFromParent is a function that handles the
       // logic of creating child nodes
-      NodeIndex left_child = mip_tree_.AddNodeByBranchingFromParent(
+      const NodeIndex left_child = mip_tree_.AddNodeByBranchingFromParent(
           current_node, branching_variable, true,
           primal_values[branching_variable]);
-      NodeIndex right_child = mip_tree_.AddNodeByBranchingFromParent(
+      const NodeIndex right_child = mip_tree_.AddNodeByBranchingFromParent(
           current_node, branching_variable, false,
           primal_values[branching_variable]);
 

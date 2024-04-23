@@ -15,6 +15,7 @@
 #ifndef SRC_DATA_STRUCTURES_PROBLEM_H_
 #define SRC_DATA_STRUCTURES_PROBLEM_H_
 
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <string>
