@@ -133,6 +133,9 @@ absl::Status Solver::Solve() {
 
     for (ColIndex col : mip_data_.integer_variables()) {
       double value = primal_values[col];
+      if (IsIntegerWithinTolerance(value)) {
+        continue;
+      }
       double fractional_part = value - std::floor(value);
       if (fractional_part > max_fractional_part) {
         max_fractional_part = fractional_part;
