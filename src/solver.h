@@ -50,8 +50,6 @@ class Solver : public SolverContextInterface {
     CutRegistry cut_registry;
 
     MiniMipResult result;
-    result.best_solution.objective_value *=
-        mip_data.is_maximization() ? -1.0 : 1.0;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
                      CreateLpSolver(params.lp_parameters()));

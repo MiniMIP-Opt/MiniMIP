@@ -21,6 +21,7 @@ namespace minimip {
 
 absl::Status Solver::Solve() {
   std::deque<NodeIndex> node_queue = {kRootNode};
+  LpInterface* lp = lpi_.get();
 
   bool backjump = true;
   int num_consecutive_infeasible_nodes = 0;
@@ -58,14 +59,14 @@ absl::Status Solver::Solve() {
         mip_tree_.RetrieveUpperBounds(current_node, mip_data_.upper_bounds());
 
     for (ColIndex col : mip_data_.integer_variables()) {
-      CHECK_OK(lpi_->SetColumnBounds(col, current_lower_bounds[col],
+      CHECK_OK(lp->SetColumnBounds(col, current_lower_bounds[col],
                                      current_upper_bounds[col]));
     }
 
     // TODO(CG): First run the cutting loop to add cuts to the LP before setting the node data
-    CHECK_OK(lpi_->SolveLpWithDualSimplex());
+    CHECK_OK(lp->SolveLpWithDualSimplex());
 
-    if (!lpi_->IsOptimal()) {
+    if (!lp->IsOptimal()) {
       if (current_node == kRootNode) {
         // If the root node's lpi_ solution is not optimal, return the problem
         // status TODO: set result.solve_status etc.
@@ -88,14 +89,10 @@ absl::Status Solver::Solve() {
     // Set lp relaxation data in the current node and check for integrality.
     // ==========================================================================
 
-    const double objective_value =
-        mip_data_.is_maximization()
-            ? lpi_->GetObjectiveValue()
-            : -lpi_->GetObjectiveValue();  // TODO: make general
+    const double objective_value = lp->GetObjectiveValue();
     mip_tree_.SetLpRelaxationDataInNode(current_node, objective_value);
 
-    const absl::StrongVector<ColIndex, double> primal_values =
-        lpi_->GetPrimalValues().value();
+    absl::StrongVector<ColIndex, double> primal_values = lp->GetPrimalValues().value();
     const bool solution_is_incumbent = mip_data_.SolutionIsIntegral(
         primal_values, params_.integrality_tolerance());
 
@@ -105,10 +102,10 @@ absl::Status Solver::Solve() {
           std::vector<double>(primal_values.begin(), primal_values.end()),
           objective_value};
 
-      if ((mip_data_.is_maximization() and
-           result_.best_solution.objective_value < objective_value) or
-          (!mip_data_.is_maximization() and
-           result_.best_solution.objective_value > objective_value)) {
+      if (objective_value < result_.best_solution.objective_value) {
+        if (result_.best_solution.objective_value != kInf) {
+          result_.additional_solutions.push_back(result_.best_solution);
+        }
         result_.best_solution = solution;
       } else {
         // Store all primal solutions found
@@ -133,27 +130,26 @@ absl::Status Solver::Solve() {
 
     for (ColIndex col : mip_data_.integer_variables()) {
       double value = primal_values[col];
-      if (IsIntegerWithinTolerance(value)) {
-        continue;
-      }
-      double fractional_part = value - std::floor(value);
-      if (fractional_part > max_fractional_part) {
-        max_fractional_part = fractional_part;
-        branching_variable = col;
+      if (!IsIntegerWithinTolerance(value)) {
+        double fractional_part = abs(value - std::floor(value));
+        if (fractional_part > max_fractional_part) {
+          max_fractional_part = fractional_part;
+          branching_variable = col;
+        }
       }
     }
 
     // Create binary child nodes for chosen branching variable
-    const NodeIndex left_child = mip_tree_.AddNodeByBranchingFromParent(
+    const NodeIndex down_child = mip_tree_.AddNodeByBranchingFromParent(
         current_node, branching_variable, true,
         primal_values[branching_variable]);
-    const NodeIndex right_child = mip_tree_.AddNodeByBranchingFromParent(
+    const NodeIndex up_child = mip_tree_.AddNodeByBranchingFromParent(
         current_node, branching_variable, false,
         primal_values[branching_variable]);
 
     // Add logic to process child nodes...
-    node_queue.push_front(left_child);
-    node_queue.push_back(right_child);
+    node_queue.push_front(down_child);
+    node_queue.push_back(up_child);
   }
   result_.solve_status = MiniMipSolveStatus::kOptimal;
   return absl::OkStatus();

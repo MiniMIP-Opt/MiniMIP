@@ -169,7 +169,7 @@ absl::Status LpGlopInterface::PopulateFromMipData(const MipData& mip_data) {
                   mip_data.upper_bounds()[col], mip_data.objective().value(col),
                   mip_data.variable_names()[col]));
   }
-  RETURN_IF_ERROR(SetObjectiveSense(mip_data.is_maximization()));
+  RETURN_IF_ERROR(SetObjectiveSense(false));
   return absl::OkStatus();
 }
 

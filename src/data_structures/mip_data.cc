@@ -63,8 +63,15 @@ MipData::MipData(const MiniMipProblem& problem)
       variable_types_[col_idx] = VariableType::kFractional;
     }
     variable_names_[col_idx] = variable.name;
+
+    // Add the objective coefficients to the objective function such that
+    // the objective function is in the form of a minimization problem.
     if (variable.objective_coefficient != 0) {
-      objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
+      if (is_maximization_) {
+        objective_.AddEntry(ColIndex(col_idx), -variable.objective_coefficient);
+      } else {
+        objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
+      }
     }
   }
   objective_.CleanUpIfNeeded();
