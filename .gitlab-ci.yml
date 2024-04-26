@@ -1,17 +1,11 @@
-before_script:
-  - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
-
 stages:
-  - setup
-  - format
   - build
-  - test
 
 variables:
   BAZEL_VERSION: "7.1.1"
 
 setup:
-  stage: setup
+  stage: build
   image: debian:12-slim
   cache:
     key: "$CI_COMMIT_REF_SLUG"
@@ -19,25 +13,11 @@ setup:
       - /usr/local/bin/bazel
       - .bazel_cache/
   script:
+    - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
-
-format:
-  stage: format
-  image: debian:12-slim
-  script:
     - clang-format-14 -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
     - git diff --exit-code
-
-build:
-  stage: build
-  image: debian:12-slim
-  script:
     - bazel build //src/...
-
-test:
-  stage: test
-  image: debian:12-slim
-  script:
     - bazel test //unit_tests/...
