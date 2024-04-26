@@ -590,8 +590,8 @@ absl::Status LpGlopInterface::SolveInternal(bool recursive,
 // ==========================================================================
 
 absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
-  VLOG(3) << "Solving with primal simplex: "
-          << "num_cols=" << lp_.num_variables().value()
+  VLOG(3) << "Solving with primal simplex: " << "num_cols="
+          << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
 
   GlopParameters glop_params = solver_.GetParameters();
@@ -603,8 +603,8 @@ absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
 }
 
 absl::Status LpGlopInterface::SolveLpWithDualSimplex() {
-  VLOG(3) << "Solving with dual simplex: "
-          << "num_cols=" << lp_.num_variables().value()
+  VLOG(3) << "Solving with dual simplex: " << "num_cols="
+          << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
   GlopParameters glop_params = solver_.GetParameters();
   std::unique_ptr<TimeLimit> time_limit =

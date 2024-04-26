@@ -1,23 +1,41 @@
 stages:
+  - setup
+  - format
   - build
+  - test
+
+variables:
+  BAZEL_VERSION: "7.1.1"
+
+setup:
+  stage: setup
+  image: debian:12-slim
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - /usr/local/bin/bazel
+      - .bazel_cache/
+  script:
+    - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
+    - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
+    - chmod +x /usr/local/bin/bazel
+    - echo "Bazel setup done."
+
+format:
+  stage: format
+  image: debian:12-slim
+  script:
+    - clang-format-14 -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
+    - git diff --exit-code
 
 build:
   stage: build
-  image:
-    name: debian:12-slim
-    entrypoint: [""]
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  image: debian:12-slim
   script:
-    - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
-    - wget https://github.com/bazelbuild/bazel/releases/download/7.1.1/bazel-7.1.1-linux-x86_64 -O /usr/local/bin/bazel
-    - chmod +x /usr/local/bin/bazel
-    - bazel --version
     - bazel build //src/...
+
+test:
+  stage: test
+  image: debian:12-slim
+  script:
     - bazel test //unit_tests/...
-    - clang-format-14 -i src/*/*.h src/*/*.cc
-    - clang-format-14 -i unit_tests/*/*.cc unit_tests/*/*.h
-    - set +e
-    - FAILED_FORMAT=$(git status --porcelain | grep -F "M")
-    - set -e
-    - if [[ "${FAILED_FORMAT}" != "" ]] ; then echo "Formatting not conform"; exit 1; fi
