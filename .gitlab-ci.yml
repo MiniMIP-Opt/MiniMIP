@@ -1,7 +1,5 @@
 before_script:
-  - apt-get update && apt-get install -y wget lsb-release software-properties-common
-  - bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-  - apt-get install -y clang-format-14
+  - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
 
 stages:
   - setup
@@ -21,7 +19,6 @@ setup:
       - /usr/local/bin/bazel
       - .bazel_cache/
   script:
-    - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
