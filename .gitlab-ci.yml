@@ -10,14 +10,13 @@ build:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   script:
     - apt-get update && apt-get install -y wget clang clang-format-14 libboost-all-dev git
-    - wget https://github.com/bazelbuild/bazel/releases/download/6.5.0/bazel-6.5.0-linux-x86_64 -O /usr/local/bin/bazel
+    - wget https://github.com/bazelbuild/bazel/releases/download/7.1.1/bazel-7.1.1-linux-x86_64 -O /usr/local/bin/bazel
     - chmod +x /usr/local/bin/bazel
     - bazel --version
     - bazel build //src/...
     - bazel test //unit_tests/...
-    - clang-format-14 -i src/data_structures/*.h src/data_structures/*.cc
-    - clang-format-14 -i src/lp_interface/*.cc src/lp_interface/*.h
-    - clang-format-14 -i unit_tests/*/*.cc
+    - clang-format-14 -i src/*/*.h src/*/*.cc
+    - clang-format-14 -i unit_tests/*/*.cc unit_tests/*/*.h
     - set +e
     - FAILED_FORMAT=$(git status --porcelain | grep -F "M")
     - set -e
