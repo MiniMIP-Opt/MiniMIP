@@ -4,7 +4,7 @@ stages:
 variables:
   BAZEL_VERSION: "7.1.1"
 
-setup:
+build:
   stage: build
   image: debian:12-slim
   cache:
@@ -17,7 +17,7 @@ setup:
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
-    - clang-format-14 -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
+    - clang-format -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
     - git diff --exit-code
     - bazel build //src/...
     - bazel test //unit_tests/...
