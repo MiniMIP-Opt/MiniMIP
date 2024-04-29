@@ -31,6 +31,11 @@ cc_library(
 cc_test(
     name = "solve_loop_test",
     srcs = ["solve_loop_test.cc"],
+#    copts = [
+#        "-fsanitize=address",
+#        "-fno-omit-frame-pointer",
+#    ],
+#    linkopts = ["-fsanitize=address"],
     deps = [
         "//src:solver",
         "//unit_tests:gtest_main",

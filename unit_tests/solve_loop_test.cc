@@ -78,4 +78,48 @@ TEST(SolveLoopTest, RootNode) {
   ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[1], 1.0);
 
 }
+
+TEST(SolveLoopTest, InitSolver) {
+  MiniMipProblem problem;
+
+  problem.variables.push_back(
+      MiniMipVariable{.name = "x1",
+                      .objective_coefficient = 0.0,
+                      .lower_bound = 0,
+                      .upper_bound = kInf,
+                      .is_integer = true});
+  problem.variables.push_back(
+      MiniMipVariable{.name = "x2",
+                      .objective_coefficient = 1.0,
+                      .lower_bound = 0,
+                      .upper_bound = kInf,
+                      .is_integer = true});
+  problem.is_maximization = true;
+
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+                       Solver::Create(problem));
+
+  MipData& mip_data = solver->mutable_mip_data();
+  MipData mip_data_compare = MipData(problem);
+
+  ASSERT_TRUE(AreEqual(mip_data.objective(), mip_data_compare.objective()));
+
+  LpInterface* lp = solver->mutable_lpi();
+  LpInterface* lp_compare = CreateLpSolver(lp->GetLpParameters())->get();
+  ASSERT_OK(lp_compare->PopulateFromMipData(mip_data));
+
+  for (ColIndex col : mip_data.objective().indices()) {
+    ASSERT_EQ(lp->GetObjectiveCoefficient(col), lp_compare->GetObjectiveCoefficient(col));
+  }
+
+  CHECK_OK(lp->SolveLpWithDualSimplex());
+  CHECK_OK(lp_compare->SolveLpWithDualSimplex());
+
+  ASSERT_EQ(lp->IsOptimal(), lp_compare->IsOptimal());
+  double test1 = lp_compare->GetObjectiveValue();
+  double test2 = lp->GetObjectiveValue();
+  ASSERT_FLOAT_EQ(lp->GetObjectiveValue(), lp_compare->GetObjectiveValue());
+  ASSERT_EQ(lp->GetPrimalValues().value(), lp_compare->GetPrimalValues().value());
+
+}
 }  // namespace minimip
