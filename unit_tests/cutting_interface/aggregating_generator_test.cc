@@ -301,10 +301,12 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
     double tolerance = 1e-12;
     for (const CutData& cut : cuts) {
       // All cuts should remove the LP optimum.
-      ASSERT_THAT(cut.row(), Activation(lp_optimum, Gt(cut.right_hand_side() - tolerance)));
+      ASSERT_THAT(cut.row(), Activation(lp_optimum,
+                                        Gt(cut.right_hand_side() - tolerance)));
 
       // No cuts should remove the MIP optimum.
-      ASSERT_THAT(cut.row(), Activation(optimum_, Le(cut.right_hand_side() + tolerance)));
+      ASSERT_THAT(cut.row(),
+                  Activation(optimum_, Le(cut.right_hand_side() + tolerance)));
     }
 
     ASSERT_OK(AddCutsAndResolveLp(cuts));
