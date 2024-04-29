@@ -20,7 +20,7 @@ build:
     - echo "deb-src http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-18 main" | tee -a /etc/apt/sources.list.d/llvm.list
     - apt-get update
     # Install Clang 18 and Clang-Format 18
-    - apt-get install -y clang-18 clang-format-18 libboost-all-dev git
+    - apt-get install -y clang clang-format-18 libboost-all-dev git
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
