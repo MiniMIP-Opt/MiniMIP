@@ -21,12 +21,10 @@ build:
     - apt-get update
     # Install Clang 18 and Clang-Format 18
     - apt-get install -y clang-18 clang-format-18 libboost-all-dev git
-    - clang --version
-    - clang-format --version
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
-    - clang-format -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
+    - clang-format-18 -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
     - git diff --exit-code
     - bazel build //src/...
     - bazel test //unit_tests/...
