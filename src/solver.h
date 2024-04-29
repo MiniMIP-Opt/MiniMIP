@@ -22,6 +22,7 @@
 #include "absl/status/status.h"
 #include "solver_context_interface.h"
 #include "src/cutting_interface/runner_factory.h"
+#include "src/branching_interface/branching_factory.h"
 #include "src/lp_interface/lpi_factory.h"
 #include "src/parameters.pb.h"
 #include "src/parameters_factory.h"
@@ -57,9 +58,13 @@ class Solver : public SolverContextInterface {
     ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
                      CreateCutRunner(params.cut_runner()));
 
+    ASSIGN_OR_RETURN(std::unique_ptr<BranchingInterface> branching_interface,
+                     CreateBranching(params.branching_parameters()));
+
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(result), std::move(mip_tree),
-        std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
+        std::move(cut_registry), std::move(cut_runner), std::move(branching_interface),
+        std::move(lpi)));
 
     // Populate LP with initial problem data
     CHECK_OK(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data_));
@@ -83,6 +88,10 @@ class Solver : public SolverContextInterface {
 
   CutRunnerInterface* mutable_cut_runner() const override {
     return cut_runner_.get();
+  }
+
+  const BranchingInterface* branching_interface() const override {
+    return branching_interface_.get();
   }
 
   const LpInterface* lpi() const override { return lpi_.get(); }
@@ -123,13 +132,18 @@ class Solver : public SolverContextInterface {
   // cut-and-price loop (not yet implemented).
   std::unique_ptr<CutRunnerInterface> cut_runner_;
 
+  // Handle Branching Candidate selection.
+  std::unique_ptr<BranchingInterface> branching_interface_;
+
   // Handle to an LP solver.
   std::unique_ptr<LpInterface> lpi_;
+
 
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MiniMipResult result,
          MipTree mip_tree, CutRegistry cut_registry,
          std::unique_ptr<CutRunnerInterface> cut_runner,
+         std::unique_ptr<BranchingInterface> branching_interface,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
@@ -137,6 +151,7 @@ class Solver : public SolverContextInterface {
         mip_tree_{std::move(mip_tree)},
         cut_registry_{std::move(cut_registry)},
         cut_runner_{std::move(cut_runner)},
+        branching_interface_{std::move(branching_interface)},
         lpi_{std::move(lpi)} {}
 };
 

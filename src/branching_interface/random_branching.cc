@@ -1,4 +1,4 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright (2024) the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,3 +13,24 @@
 // limitations under the License.
 
 #include "random_branching.h"
+
+#include <random>
+
+namespace minimip {
+
+const absl::StatusOr<ColIndex> RandomBranching::NextBranchingVariable(
+    const SolverContextInterface& context) const {
+  // Return a random variable.
+  int integer_variables = context.mip_data().integer_variables().size();
+
+  if (integer_variables > 0) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dis(0, integer_variables - 1);
+    return ColIndex(dis(gen));
+  }
+
+  return absl::InvalidArgumentError("No integer variables to branch on.");
+}
+
+}  // namespace minimip

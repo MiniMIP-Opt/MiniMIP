@@ -1,4 +1,4 @@
-// Copyright 2022 the MiniMIP Project
+// Copyright (2024) the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_BRANCHING_INTERFACE_RANDOM_SCORING_H_
-#define SRC_BRANCHING_INTERFACE_RANDOM_SCORING_H_
-
-#include "vscoring_interface.h"
-
-namespace minimip {
-
-class RandomScoring : public VariableScoringInterface {};
-
-}  // namespace minimip
-#endif  // SRC_BRANCHING_INTERFACE_RANDOM_SCORING_H_
+#include "maxfractional_branching.h"

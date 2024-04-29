@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_BRANCHING_INTERFACE_RANDOM_BRANCHING_H_
-#define SRC_BRANCHING_INTERFACE_RANDOM_BRANCHING_H_
+#ifndef MINIMIP_SRC_BRANCHING_INTERFACE_BRANCHING_FACTORY_H_
+#define MINIMIP_SRC_BRANCHING_INTERFACE_BRANCHING_FACTORY_H_
 
+#include "src/branching_interface/random_branching.h"
 #include "src/branching_interface/branching_interface.h"
-#include "src/solver_context_interface.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {
 
-class RandomBranching : public BranchingInterface {
- public:
-  explicit RandomBranching(const BranchingParameters& params)
-      : params_(std::move(params)) {}
-
-  const absl::StatusOr<ColIndex> NextBranchingVariable(
-      const SolverContextInterface& context) const final;
-
- private:
-  BranchingParameters params_;
-};
+inline absl::StatusOr<std::unique_ptr<BranchingInterface>> CreateBranching(
+    const BranchingParameters& branching_parameters) {
+  if (branching_parameters.has_random_branching_parameters()) {
+    return std::make_unique<RandomBranching>(branching_parameters);
+  }
+  return absl::InvalidArgumentError("No branching-specific parameters set.");
+}
 
 }  // namespace minimip
-#endif  // SRC_BRANCHING_INTERFACE_RANDOM_BRANCHING_H_
+#endif  // MINIMIP_SRC_BRANCHING_INTERFACE_BRANCHING_FACTORY_H_

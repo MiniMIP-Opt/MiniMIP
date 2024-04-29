@@ -92,6 +92,20 @@ message CutRunnerParameters {
   }
 
 }
+message RandomBranchingParameters {
+  // The seed to use for the random number generator. Set to 0 to use a random seed.
+  optional int32 random_seed = 1 [default = 0];
+}
+
+message BranchingParameters {
+  // The maximum number of variables to branch on per node. Set to 0 to disable.
+  optional int32 max_num_branches = 1 [default = 1];
+
+  oneof branching_specific {
+    RandomBranchingParameters random_branching_parameters = 2;
+  }
+
+}
 
 message LpParameters {
   // The underlying solver to use. Note that some parameters behave differently
@@ -205,6 +219,8 @@ message MiniMipParameters {
   repeated CutGeneratorParameters cut_generators = 5;
 
   repeated CutSelectorParameters cut_selectors = 6;
+
+  optional BranchingParameters branching_parameters = 10;
 
   // The maximum number of nodes explored by the solver. Set to -1 to impose no
   // limit.

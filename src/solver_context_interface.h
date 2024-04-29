@@ -16,6 +16,7 @@
 #define SRC_SOLVER_CONTEXT_INTERFACE_H_
 
 #include "src/cutting_interface/cuts_runner.h"
+#include "src/branching_interface/branching_interface.h"
 #include "src/data_structures/cuts_data.h"
 #include "src/data_structures/mip_data.h"
 #include "src/data_structures/mip_tree.h"
@@ -41,6 +42,8 @@ class SolverContextInterface {
   virtual CutRegistry& mutable_cut_registry() = 0;
 
   virtual CutRunnerInterface* mutable_cut_runner() const = 0;
+
+  virtual const BranchingInterface* branching_interface() const = 0;
 
   virtual const LpInterface* lpi() const = 0;
   virtual LpInterface* mutable_lpi() = 0;

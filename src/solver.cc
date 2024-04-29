@@ -128,6 +128,8 @@ absl::Status Solver::Solve() {
     ColIndex branching_variable;
     double max_fractional_part = 0.0;
 
+    branching_variable = branching_interface_->NextBranchingVariable(*this).value();
+
     for (ColIndex col : mip_data_.integer_variables()) {
       double value = primal_values[col];
       if (!IsIntegerWithinTolerance(value)) {
