@@ -13,6 +13,8 @@ build:
       - /usr/local/bin/bazel
   script:
     - apt-get update && apt-get install -y wget clang clang-format libboost-all-dev git
+    - clang --version
+    - clang-format --version
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
