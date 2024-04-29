@@ -3,6 +3,8 @@ stages:
 
 variables:
   BAZEL_VERSION: "7.1.1"
+  CLANG_FORMAT: "clang-format-18"
+  CLANG: "clang-18"
 
 build:
   stage: build
@@ -12,7 +14,7 @@ build:
     paths:
       - /usr/local/bin/bazel
   script:
-    - apt-get update && apt-get install -y wget clang clang-format libboost-all-dev git
+    - apt-get update && apt-get install -y wget ${CLANG} ${CLANG_FORMAT} libboost-all-dev git
     - clang --version
     - clang-format --version
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
