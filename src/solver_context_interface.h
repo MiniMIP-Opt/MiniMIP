@@ -31,6 +31,9 @@ class SolverContextInterface {
   virtual const MipData& mip_data() const = 0;
   virtual MipData& mutable_mip_data() = 0;
 
+  virtual const MiniMipResult& result() const = 0;
+  virtual MiniMipResult& mutable_result() = 0;
+
   virtual const MipTree& mip_tree() const = 0;
   virtual MipTree& mutable_mip_tree() = 0;
 

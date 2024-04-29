@@ -205,4 +205,8 @@ message MiniMipParameters {
   repeated CutGeneratorParameters cut_generators = 5;
 
   repeated CutSelectorParameters cut_selectors = 6;
+
+  // The maximum number of nodes explored by the solver. Set to -1 to impose no
+  // limit.
+  optional int32 max_plunge_length = 7 [default = 10];
 }

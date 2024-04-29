@@ -14,6 +14,8 @@
 
 #include "src/data_structures/mip_tree.h"
 
+#include <fstream>
+
 namespace minimip {
 
 MipTree::MipTree() {
@@ -47,6 +49,16 @@ NodeIndex MipTree::AddNodeByBranchingFromParent(
   nodes_[n].branch_down = branch_down;
   nodes_[n].branch_primal_value_in_parent_lp = branch_primal_value_in_parent_lp;
   nodes_[n].depth = nodes_[nodes_[n].parent].depth + 1;
+
+  if (branch_down) {
+    ColAndValue col_and_value = {branch_variable,
+                                 std::floor(branch_primal_value_in_parent_lp)};
+    SetImpliedVariableBoundsInNode(n, {col_and_value}, {});
+  } else {
+    ColAndValue col_and_value = {branch_variable,
+                                 std::ceil(branch_primal_value_in_parent_lp)};
+    SetImpliedVariableBoundsInNode(n, {}, {col_and_value});
+  }
 
   // As of 2022/08/29, we assume a binary search tree.
   CHECK_GE(number_of_open_child_nodes_[nodes_[n].parent], 0);

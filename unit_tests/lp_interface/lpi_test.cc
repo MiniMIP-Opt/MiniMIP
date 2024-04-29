@@ -856,7 +856,9 @@ TEST_P(ModelConstructionTest, ConstructFromMipData) {
               ElementsAre(-1, -solver_inf_, 0, -solver_inf_, 1));
   EXPECT_THAT(ExtractUpperBounds(),
               ElementsAre(10, solver_inf_, solver_inf_, 29, 1));
-  EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(1, 2, -4, 1e-3, 0));
+
+  // Expecting negated objective coefficients because of maximization problem
+  EXPECT_THAT(ExtractObjectiveCoefficients(), ElementsAre(-1, -2, 4, -1e-3, 0));
 
   // Check row properties
   EXPECT_EQ(lpi_->GetNumberOfRows(), 6);

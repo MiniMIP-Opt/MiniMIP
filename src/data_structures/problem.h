@@ -15,6 +15,7 @@
 #ifndef SRC_DATA_STRUCTURES_PROBLEM_H_
 #define SRC_DATA_STRUCTURES_PROBLEM_H_
 
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <string>
@@ -71,13 +72,13 @@ struct MiniMipSolutionHint {
 // API Output Datastructures
 // ==========================================================================
 
-enum class MiniMipSolveStatus;
-enum class MiniMipStoppingReason;
+enum class MiniMipSolveStatus : std::uint8_t;
+enum class MiniMipStoppingReason : std::uint8_t;
 
 struct MiniMipSolution {
   // Dense vector with the solution.
   std::vector<double> variable_values;
-  double objective_value;
+  double objective_value = kInf;
 
   // TODO(lpawel):
   // Some extra stuff like max constraints/integrality violations wrt the
@@ -100,7 +101,7 @@ struct MiniMipResult {
   // nodes, etc.
 };
 
-enum class MiniMipSolveStatus {
+enum class MiniMipSolveStatus : std::uint8_t {
   // The provided input problem was invalid.
   kProblemInvalid = 0,
 
@@ -137,7 +138,7 @@ enum class MiniMipSolveStatus {
   kInfeasibleOrUnbounded = 6,
 };
 
-enum class MiniMipStoppingReason {
+enum class MiniMipStoppingReason : std::uint8_t {
   kError = 0,
   kWallclockTimeLimitReached = 1,
   kDeterministicTimeLimitReached = 2,

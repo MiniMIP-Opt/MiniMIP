@@ -47,7 +47,7 @@ CutData CutRegistry::CreateCut(const MipData& mip_data,
   }
 
   const double objective_parallelism =
-      row.DotProduct(objective) /
+      abs(row.DotProduct(objective)) /
       std::sqrt(row.DotProduct(row) * objective.DotProduct(objective));
 
   double efficacy = ComputeEfficacy(row, right_hand_side, lp_optimum);
