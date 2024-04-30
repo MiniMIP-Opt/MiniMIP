@@ -92,8 +92,9 @@ message CutRunnerParameters {
   }
 
 }
+
 message RandomBranchingParameters {
-  // The seed to use for the random number generator. Set to 0 to use a random seed.
+  // This parameter has no effect and is pruely demonstrative.
   optional int32 random_seed = 1 [default = 0];
 }
 
