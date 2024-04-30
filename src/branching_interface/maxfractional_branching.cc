@@ -13,3 +13,33 @@
 // limitations under the License.
 
 #include "maxfractional_branching.h"
+
+namespace minimip {
+
+const absl::StatusOr<ColIndex> MaxFractionalBranching::NextBranchingVariable(
+    const SolverContextInterface& context) const {
+  // Return a random variable.
+  auto integer_variables = context.mip_data().integer_variables();
+
+  if (!integer_variables.empty()) {
+    ColIndex branching_variable;
+    double max_fractional_part = 0.0;
+    absl::StrongVector<ColIndex, double> primal_values = context.lpi()->GetPrimalValues().value();
+
+    for (ColIndex col : integer_variables) {
+      double value = primal_values[col];
+      if (!context.IsIntegerWithinTolerance(value)) {
+        double fractional_part = abs(value - std::floor(value));
+        if (fractional_part > max_fractional_part) {
+          max_fractional_part = fractional_part;
+          branching_variable = col;
+        }
+      }
+    }
+    return branching_variable;
+  }
+
+  return absl::InvalidArgumentError("No integer variables to branch on.");
+}
+
+}  // namespace minimip

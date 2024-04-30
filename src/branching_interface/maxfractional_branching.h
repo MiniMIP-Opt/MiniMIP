@@ -15,6 +15,24 @@
 #ifndef MINIMIP_SRC_BRANCHING_INTERFACE_MAXFRACTIONAL_BRANCHING_H_
 #define MINIMIP_SRC_BRANCHING_INTERFACE_MAXFRACTIONAL_BRANCHING_H_
 
-class maxfractional_branching {};
+#include "src/branching_interface/branching_interface.h"
+#include "src/parameters.pb.h"
+#include "src/solver_context_interface.h"
+
+namespace minimip {
+
+class MaxFractionalBranching : public BranchingInterface {
+   public:
+    explicit MaxFractionalBranching(const BranchingParameters& params)
+        : params_(std::move(params)) {}
+
+    const absl::StatusOr<ColIndex> NextBranchingVariable(
+        const SolverContextInterface& context) const final;
+
+   private:
+    BranchingParameters params_;
+  };
+
+};
 
 #endif  // MINIMIP_SRC_BRANCHING_INTERFACE_MAXFRACTIONAL_BRANCHING_H_

@@ -49,9 +49,11 @@ inline CutRunnerParameters DefaultCutRunnerParameters() {
   return runner_params;
 }
 
+// Create the default BranchingParameters
+// As of 30.04.24: The MaxFractionalBranching is the default.
 inline BranchingParameters DefaultBranchingParameters() {
-  BranchingParameters params;
-  params.mutable_random_branching_parameters();
+  BranchingParameters params = BranchingParameters();
+  params.mutable_max_fractional_branching_parameters();
   return params;
 }
 

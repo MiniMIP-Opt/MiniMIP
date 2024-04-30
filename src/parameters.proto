@@ -98,12 +98,17 @@ message RandomBranchingParameters {
   optional int32 random_seed = 1 [default = 0];
 }
 
+message MaxFractionalBranchingParameters {
+  // Add relevant Parameters here.
+}
+
 message BranchingParameters {
   // The maximum number of variables to branch on per node. Set to 0 to disable.
   optional int32 max_num_branches = 1 [default = 1];
 
   oneof branching_specific {
     RandomBranchingParameters random_branching_parameters = 2;
+    MaxFractionalBranchingParameters max_fractional_branching_parameters = 3;
   }
 
 }

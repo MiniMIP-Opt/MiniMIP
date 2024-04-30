@@ -123,23 +123,8 @@ absl::Status Solver::Solve() {
     // Branching
     // ==========================================================================
 
-    // TODO (CG): Add branching interface for policy selection
     // Find the variable with the maximum fractional part to branch on
-    ColIndex branching_variable;
-    double max_fractional_part = 0.0;
-
-    branching_variable = branching_interface_->NextBranchingVariable(*this).value();
-
-    for (ColIndex col : mip_data_.integer_variables()) {
-      double value = primal_values[col];
-      if (!IsIntegerWithinTolerance(value)) {
-        double fractional_part = abs(value - std::floor(value));
-        if (fractional_part > max_fractional_part) {
-          max_fractional_part = fractional_part;
-          branching_variable = col;
-        }
-      }
-    }
+    ColIndex branching_variable = branching_interface_->NextBranchingVariable(*this).value();
 
     // Create binary child nodes for chosen branching variable
     const NodeIndex down_child = mip_tree_.AddNodeByBranchingFromParent(

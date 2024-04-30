@@ -17,6 +17,7 @@
 
 #include "src/branching_interface/branching_interface.h"
 #include "src/branching_interface/random_branching.h"
+#include "src/branching_interface/maxfractional_branching.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {
@@ -25,6 +26,9 @@ inline absl::StatusOr<std::unique_ptr<BranchingInterface>> CreateBranching(
     const BranchingParameters& branching_parameters) {
   if (branching_parameters.has_random_branching_parameters()) {
     return std::make_unique<RandomBranching>(branching_parameters);
+  }
+  if (branching_parameters.has_max_fractional_branching_parameters()) {
+    return std::make_unique<MaxFractionalBranching>(branching_parameters);
   }
   return absl::InvalidArgumentError("No branching-specific parameters set.");
 }
