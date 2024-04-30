@@ -15,9 +15,9 @@
 #ifndef SRC_BRANCHING_INTERFACE_BRANCHING_INTERFACE_H_
 #define SRC_BRANCHING_INTERFACE_BRANCHING_INTERFACE_H_
 
+#include "absl/status/statusor.h"
 #include "src/data_structures/mip_types.h"
 #include "src/parameters.pb.h"
-#include "absl/status/statusor.h"
 
 namespace minimip {
 
@@ -25,13 +25,12 @@ namespace minimip {
 // dependency between the solver and the cutting interface.
 class SolverContextInterface;
 
-
 class BranchingInterface {
  public:
   virtual ~BranchingInterface() = default;
 
-  virtual const absl::StatusOr<ColIndex> NextBranchingVariable(const
-      SolverContextInterface& context) const = 0;
+  virtual const absl::StatusOr<ColIndex> NextBranchingVariable(
+      const SolverContextInterface& context) const = 0;
 };
 
 }  // namespace minimip

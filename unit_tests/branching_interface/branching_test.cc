@@ -29,19 +29,23 @@ namespace minimip {
 
 TEST(BranchingFactoryTest, CreatesRandomBranchingWithValidParams) {
   BranchingParameters params;
-  RandomBranchingParameters* random_params = params.mutable_random_branching_parameters();
+  RandomBranchingParameters* random_params =
+      params.mutable_random_branching_parameters();
   random_params->set_random_seed(42);
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching = CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
+      CreateBranching(params);
   EXPECT_TRUE(branching.ok());
-  EXPECT_TRUE(dynamic_cast<RandomBranching*>(branching.value().get()) != nullptr);
+  EXPECT_TRUE(dynamic_cast<RandomBranching*>(branching.value().get()) !=
+              nullptr);
 }
 
 TEST(BranchingFactoryTest, FailsToCreateBranchingWithInvalidParams) {
-  BranchingParameters params; // Do not set random_branching_parameters
+  BranchingParameters params;  // Do not set random_branching_parameters
   auto branching = minimip::CreateBranching(params);
   EXPECT_FALSE(branching.ok());
-  EXPECT_EQ(branching.status().message(), "No branching-specific parameters set.");
+  EXPECT_EQ(branching.status().message(),
+            "No branching-specific parameters set.");
 }
 
 // ==========================================================================
@@ -50,50 +54,56 @@ TEST(BranchingFactoryTest, FailsToCreateBranchingWithInvalidParams) {
 
 TEST(RandomBranchingTest, NextBranchingVariableWithoutIntegerVariables) {
   BranchingParameters params;
-  RandomBranchingParameters* random_params = params.mutable_random_branching_parameters();
+  RandomBranchingParameters* random_params =
+      params.mutable_random_branching_parameters();
   random_params->set_random_seed(42);
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching = CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
+      CreateBranching(params);
 
-  auto* random_branching = dynamic_cast<RandomBranching*>(branching.value().get());
+  auto* random_branching =
+      dynamic_cast<RandomBranching*>(branching.value().get());
 
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
+                       Solver::Create(MiniMipProblem()));
 
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(MiniMipProblem()));
-
-  absl::StatusOr<ColIndex> branching_variable = random_branching->NextBranchingVariable(*solver);
+  absl::StatusOr<ColIndex> branching_variable =
+      random_branching->NextBranchingVariable(*solver);
   EXPECT_FALSE(branching_variable.ok());
-  EXPECT_EQ(branching_variable.status().message(), "No integer variables to branch on.");
-
+  EXPECT_EQ(branching_variable.status().message(),
+            "No integer variables to branch on.");
 }
 
 TEST(RandomBranchingTest, NextBranchingVariableReturnsValidVariable) {
   BranchingParameters params;
-  RandomBranchingParameters* random_params = params.mutable_random_branching_parameters();
+  RandomBranchingParameters* random_params =
+      params.mutable_random_branching_parameters();
   random_params->set_random_seed(42);
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching = CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
+      CreateBranching(params);
 
-  auto* random_branching = dynamic_cast<RandomBranching*>(branching.value().get());
+  auto* random_branching =
+      dynamic_cast<RandomBranching*>(branching.value().get());
 
   MiniMipProblem problem;
-  problem.variables = std::vector<MiniMipVariable> {
-      MiniMipVariable{name: "1", is_integer: true},
-      MiniMipVariable{name: "2", is_integer: true},
-      MiniMipVariable{name: "3", is_integer: true},
-      MiniMipVariable{name: "4", is_integer: false},
+  problem.variables = std::vector<MiniMipVariable>{
+      MiniMipVariable{name : "1", is_integer : true},
+      MiniMipVariable{name : "2", is_integer : true},
+      MiniMipVariable{name : "3", is_integer : true},
+      MiniMipVariable{name : "4", is_integer : false},
   };
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
-  absl::StatusOr<ColIndex> branching_variable = random_branching->NextBranchingVariable(*solver);
+  absl::StatusOr<ColIndex> branching_variable =
+      random_branching->NextBranchingVariable(*solver);
   EXPECT_TRUE(branching_variable.ok());
   EXPECT_LT(branching_variable.value(), ColIndex(4));
   EXPECT_GE(branching_variable.value(), ColIndex(0));
-
 }
 // ==========================================================================
 // MaxFractional Branching Tests
 // ==========================================================================
 
-
-}
+}  // namespace minimip

@@ -16,8 +16,8 @@
 #define SRC_BRANCHING_INTERFACE_RANDOM_BRANCHING_H_
 
 #include "src/branching_interface/branching_interface.h"
-#include "src/solver_context_interface.h"
 #include "src/parameters.pb.h"
+#include "src/solver_context_interface.h"
 
 namespace minimip {
 
