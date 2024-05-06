@@ -36,6 +36,19 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+cc_test(
+    name = "mip_tree_test",
+    size = "small",
+    srcs = ["mip_tree_test.cc"],
+    deps = [
+        "//src/data_structures:mip_tree",
+        "//src/data_structures:strong_sparse_vector",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
+    ],
+)
 
 cc_test(
     name = "cuts_data_test",

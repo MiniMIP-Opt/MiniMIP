@@ -102,15 +102,8 @@ absl::Status Solver::Solve() {
           std::vector<double>(primal_values.begin(), primal_values.end()),
           objective_value};
 
-      if (objective_value < result_.best_solution.objective_value) {
-        if (result_.best_solution.objective_value != kInf) {
-          result_.additional_solutions.push_back(result_.best_solution);
-        }
-        result_.best_solution = solution;
-      } else {
-        // Store all primal solutions found
-        result_.additional_solutions.push_back(solution);
-      }
+      CHECK_OK(result_.AddSolution(solution));
+
       // If the root node is MIP optimal, return this solution
       if (current_node == kRootNode) {
         break;

@@ -48,7 +48,6 @@ class Solver : public SolverContextInterface {
     MipData mip_data(problem);
     MipTree mip_tree;
     CutRegistry cut_registry;
-
     MiniMipResult result;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
@@ -57,12 +56,12 @@ class Solver : public SolverContextInterface {
     ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
                      CreateCutRunner(params.cut_runner()));
 
-    auto solver = std::unique_ptr<Solver>(new Solver(
+    std::unique_ptr<Solver> solver(new Solver(
         params, std::move(mip_data), std::move(result), std::move(mip_tree),
         std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
 
     // Populate LP with initial problem data
-    CHECK_OK(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data_));
+    RETURN_IF_ERROR(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data_));
 
     return solver;
   }

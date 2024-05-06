@@ -35,3 +35,6 @@ test --test_output=errors
 
 # Put user-specific options in .bazelrc.user
 try-import %workspace%/.bazelrc.user
+
+build --copt=-w
+test --copt=-w

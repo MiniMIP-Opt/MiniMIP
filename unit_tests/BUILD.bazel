@@ -44,3 +44,20 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_test(
+    name = "solver_test",
+    srcs = ["solver_test.cc"],
+#    copts = [
+#        "-fsanitize=address",
+#        "-fno-omit-frame-pointer",
+#    ],
+#    linkopts = ["-fsanitize=address"],
+    deps = [
+        "//src:solver",
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
+    ],
+)
