@@ -175,6 +175,19 @@ class MipTree {
   // dedicated "stat"class for this (and for other components)?
   int num_closed_nodes() const { return num_closed_nodes_; }
 
+  // Number of added nodes, excluding the root node.
+  int num_added_nodes() const { return nodes_.size() - 1; }
+
+  // Get the number of open child nodes for a given node.
+  int num_open_children(NodeIndex n) const {
+    return number_of_open_child_nodes_[n];
+  }
+
+  // Get the next free node index.
+  NodeIndex get_next_free_node() const {
+    return next_free_node_;
+  }
+
  private:
   // A helper function used in checks.
   bool NodeIsActive(NodeIndex n) const {

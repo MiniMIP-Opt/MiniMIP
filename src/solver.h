@@ -138,7 +138,6 @@ class Solver : public SolverContextInterface {
   // Handle to an LP solver.
   std::unique_ptr<LpInterface> lpi_;
 
-
   // Protected constructor, use Create() instead.
   Solver(MiniMipParameters params, MipData mip_data, MiniMipResult result,
          MipTree mip_tree, CutRegistry cut_registry,
