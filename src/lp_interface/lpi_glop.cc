@@ -141,7 +141,9 @@ LpGlopInterface::LpGlopInterface()
   // `SetLpParameters` decides some default values (e.g., default tolerances).
   // This way all parameter values are consistent from the start and do not
   // depend on Glop implementation.
-  CHECK_OK(SetLpParameters(LpParameters()));
+  LpParameters params;
+  params.set_lp_solver_type(LpParameters::LP_GLOP);
+  CHECK_OK(SetLpParameters(params));
 }
 
 // ==========================================================================

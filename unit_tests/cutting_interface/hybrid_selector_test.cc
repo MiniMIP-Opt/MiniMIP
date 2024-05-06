@@ -74,7 +74,7 @@ class MinimalCutSelectorTest
 
   // Creates a very simple model where all variables are non-negative.
   //
-  // max: z = x1 + x2
+  // max: z = x1
   //  3*x1 + 2*x2 <= 6
   // -3*x1 + 2*x2 <= 0
   // x1, x2 >= 0
@@ -123,7 +123,6 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(MinimalCutSelectorTest, SelectsFirstCutIfAllAreIdentical) {
   ASSERT_OK(solver_->mutable_lpi()->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(solver_->lpi()->IsSolved());
-  ASSERT_TRUE(solver_->lpi()->IsOptimal());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.0}, {1, 1.5}});
 

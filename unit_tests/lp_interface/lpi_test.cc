@@ -1821,5 +1821,80 @@ TEST_P(SolveTest, DualIncrementality) {
   }
 }
 
+TEST(CompareTestSolve, comparePrimalSolves) {
+  //
+  // max: z = x1
+  //  3*x1 + 2*x2 <= 6
+  // -3*x1 + 2*x2 <= 0
+  // x1, x2 >= 0
+  // x1 integer
+
+  LpParameters lp_params;
+  lp_params.set_lp_solver_type(LpParameters::LP_GLOP);
+  auto lpi_glop = CreateLpSolver(lp_params).value();
+
+  lp_params.set_lp_solver_type(LpParameters::LP_SOPLEX);
+  auto lpi_soplex = CreateLpSolver(lp_params).value();
+
+  for (auto lpi_ : {lpi_glop.get(), lpi_soplex.get()}) {
+
+    bool is_maximization = true;
+    const absl::StrongVector<ColIndex, double> lower_bounds = {0, 0};
+    const absl::StrongVector<ColIndex, double> upper_bounds = {
+        kInf,kInf};
+    const absl::StrongVector<ColIndex, double> objective_coefficients = {1, 0};
+    const absl::StrongVector<RowIndex, double> left_hand_sides = {
+        -kInf, -kInf};
+    const absl::StrongVector<RowIndex, double> right_hand_sides = {6, 0};
+    const absl::StrongVector<ColIndex, absl::StrongVector<RowIndex, double>>
+        matrix = {{3, -3}, {2, 2}};
+
+    // We use CHECK rather than ASSERT since they check if the test is written
+    // properly, not that the lpi behaves correctly.
+    CHECK_EQ(lower_bounds.size(), upper_bounds.size());
+    CHECK_EQ(lower_bounds.size(), objective_coefficients.size());
+    CHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
+    CHECK_EQ(lower_bounds.size(), matrix.size());
+    for (const auto& row : matrix) CHECK_EQ(row.size(), left_hand_sides.size());
+
+    CHECK_OK(lpi_->Clear());
+    CHECK_OK(lpi_->SetObjectiveSense(is_maximization));
+    for (ColIndex col(0); col < lower_bounds.size(); ++col) {
+      CHECK_OK(lpi_->AddColumn(SparseCol(), lower_bounds[col],
+                               upper_bounds[col], objective_coefficients[col],
+                               ""));
+    }
+    for (RowIndex row(0); row < left_hand_sides.size(); ++row) {
+      SparseRow row_coefficients;
+      for (ColIndex col(0); col < lower_bounds.size(); ++col) {
+        if (matrix[col][row] != 0) {
+          row_coefficients.AddEntry(col, matrix[col][row]);
+        }
+      }
+      CHECK_OK(lpi_->AddRow(row_coefficients, left_hand_sides[row],
+                            right_hand_sides[row], ""));
+    }
+  }
+
+  lpi_soplex->SolveLpWithPrimalSimplex();
+  lpi_glop->SolveLpWithPrimalSimplex();
+
+  EXPECT_EQ(lpi_soplex->IsSolved(), lpi_glop->IsSolved());
+  EXPECT_EQ(lpi_soplex->IsOptimal(), lpi_glop->IsOptimal());
+  EXPECT_EQ(lpi_soplex->IsPrimalFeasible(), lpi_glop->IsPrimalFeasible());
+  EXPECT_EQ(lpi_soplex->IsPrimalInfeasible(),
+              lpi_glop->IsPrimalInfeasible());
+  EXPECT_EQ(lpi_soplex->IsPrimalUnbounded(), lpi_glop->IsPrimalUnbounded());
+  EXPECT_EQ(lpi_soplex->IsDualFeasible(), lpi_glop->IsDualFeasible());
+  EXPECT_EQ(lpi_soplex->IsDualInfeasible(), lpi_glop->IsDualInfeasible());
+  EXPECT_EQ(lpi_soplex->IsDualUnbounded(), lpi_glop->IsDualUnbounded());
+  EXPECT_EQ(lpi_soplex->GetObjectiveValue(), lpi_glop->GetObjectiveValue());
+
+  EXPECT_EQ(lpi_soplex->ExistsPrimalRay(), lpi_glop->ExistsPrimalRay());
+  EXPECT_EQ(lpi_soplex->HasPrimalRay(), lpi_glop->HasPrimalRay());
+  EXPECT_EQ(lpi_soplex->ExistsDualRay(), lpi_glop->ExistsDualRay());
+  EXPECT_EQ(lpi_soplex->HasDualRay(), lpi_glop->HasDualRay());
+}
+
 }  // namespace
 }  // namespace minimip

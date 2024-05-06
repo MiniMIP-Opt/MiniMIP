@@ -103,7 +103,8 @@ TEST(SolverTest, InitializeSolver) {
 
 
   LpInterface* lp = solver->mutable_lpi();
-  LpInterface* lp_compare = CreateLpSolver(lp->GetLpParameters())->get();
+  absl::StatusOr<std::unique_ptr<LpInterface>> lpi_check = CreateLpSolver(LpParameters());
+  LpInterface* lp_compare = lpi_check.value().get();
   ASSERT_OK(lp_compare->PopulateFromMipData(mip_data));
 
   for (ColIndex col : mip_data.objective().indices()) {

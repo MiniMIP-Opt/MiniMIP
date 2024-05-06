@@ -100,7 +100,7 @@ message LpParameters {
     LP_GLOP = 0;
     LP_SOPLEX = 1;
   }
-  optional SolverType lp_solver_type = 1 [default = LP_GLOP];
+  optional SolverType lp_solver_type = 1 [default = LP_SOPLEX];
 
   // Whether to start solving` from scratch. If false, the underlying LP solver
   // will attempt to leverage incrementalism (if possible).
