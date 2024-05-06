@@ -21,7 +21,7 @@ namespace minimip {
 
 absl::Status Solver::Solve() {
   std::deque<NodeIndex> node_queue = {kRootNode};
-  LpInterface* lp = lpi_.get();
+  LpInterface* lp = mutable_lpi();
 
   bool backjump = true;
   int num_consecutive_infeasible_nodes = 0;

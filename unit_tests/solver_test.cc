@@ -62,14 +62,6 @@ TEST(SolverTest, CreateWithValidInput) {
   EXPECT_NE(solver_result.value(), nullptr);
 }
 
-//TEST(SolverTest, CreateWithEmptyInput) {
-//  MiniMipProblem problem;
-
-//  auto solver_result = Solver::Create(problem);
-//  EXPECT_EQ(solver_result.status().message(),
-//            "Error found in problem: No variables given.");
-//}
-
 TEST(SolverTest, InitializeSolver) {
   MiniMipProblem problem;
 
