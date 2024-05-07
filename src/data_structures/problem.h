@@ -101,7 +101,6 @@ struct MiniMipResult {
   // nodes, etc.
 
   absl::Status AddSolution(const MiniMipSolution& solution) {
-
     if (solution.objective_value < best_solution.objective_value) {
       if (best_solution.objective_value != kInf) {
         additional_solutions.push_back(best_solution);

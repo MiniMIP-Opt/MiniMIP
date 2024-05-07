@@ -80,7 +80,8 @@ MATCHER_P2(Activation, linear_expression, matcher,
 }
 
 template <typename SparseIndex>
-bool AreEqual(const StrongSparseVectorOfDoubles<SparseIndex>& v1, const StrongSparseVectorOfDoubles<SparseIndex>& v2) {
+bool AreEqual(const StrongSparseVectorOfDoubles<SparseIndex>& v1,
+              const StrongSparseVectorOfDoubles<SparseIndex>& v2) {
   if (v1.entries().size() != v2.entries().size()) return false;
   for (auto entry : v1.entries()) {
     if (entry.value != v2.value(entry.index)) return false;
