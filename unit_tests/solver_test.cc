@@ -25,22 +25,24 @@
 #include "unit_tests/utils.h"
 
 namespace minimip {
-
-TEST(SolverTest, CreateWithValidInput) {
+namespace {
+// max: z = x2
+//  3*x1 + 2*x2 <= 6
+// -3*x1 + 2*x2 <= 0
+// x1, x2 >= 0
+// x1, x2 integer
+MiniMipProblem CreateUnboundedProblem() {
   MiniMipProblem problem;
-  // Define variables and constraints
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x1",
-                      .objective_coefficient = 0.0,
-                      .lower_bound = 0,
-                      .upper_bound = kInf,
-                      .is_integer = true});
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x2",
-                      .objective_coefficient = 1.0,
-                      .lower_bound = 0,
-                      .upper_bound = kInf,
-                      .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                              .objective_coefficient = 0.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                              .objective_coefficient = 1.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
   problem.constraints.push_back(MiniMipConstraint{
       .name = "ct1",
       .var_indices = {0, 1},
@@ -56,6 +58,12 @@ TEST(SolverTest, CreateWithValidInput) {
       .right_hand_side = 0.0,
   });
   problem.is_maximization = true;
+
+  return problem;
+}
+
+TEST(SolverTest, CreateWithValidInput) {
+  MiniMipProblem problem = CreateUnboundedProblem();
 
   auto solver_result = Solver::Create(problem);
   ASSERT_TRUE(solver_result.ok());
@@ -63,51 +71,23 @@ TEST(SolverTest, CreateWithValidInput) {
 }
 
 TEST(SolverTest, InitializeSolver) {
-  MiniMipProblem problem;
+  MiniMipProblem problem = CreateUnboundedProblem();
 
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x1",
-                      .objective_coefficient = 0.0,
-                      .lower_bound = 0,
-                      .upper_bound = kInf,
-                      .is_integer = true});
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x2",
-                      .objective_coefficient = 1.0,
-                      .lower_bound = 0,
-                      .upper_bound = kInf,
-                      .is_integer = true});
-  problem.constraints.push_back(MiniMipConstraint{
-      .name = "ct1",
-      .var_indices = {0, 1},
-      .coefficients = {3.0, 2.0},
-      .left_hand_side = -kInf,
-      .right_hand_side = 6.0,
-  });
-  problem.constraints.push_back(MiniMipConstraint{
-      .name = "ct2",
-      .var_indices = {0, 1},
-      .coefficients = {-3.0, 2.0},
-      .left_hand_side = -kInf,
-      .right_hand_side = 0.0,
-  });
-  problem.is_maximization = true;
-
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(problem));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
   MipData& mip_data = solver->mutable_mip_data();
   MipData mip_data_compare = MipData(problem);
 
   ASSERT_TRUE(AreEqual(mip_data.objective(), mip_data_compare.objective()));
 
-
   LpInterface* lp = solver->mutable_lpi();
-  LpInterface* lp_compare = CreateLpSolver(lp->GetLpParameters())->get();
+
+  std::unique_ptr<LpInterface> lp_compare = CreateLpSolver(lp->GetLpParameters()).value();
   ASSERT_OK(lp_compare->PopulateFromMipData(mip_data));
 
   for (ColIndex col : mip_data.objective().indices()) {
-    ASSERT_EQ(lp->GetObjectiveCoefficient(col), lp_compare->GetObjectiveCoefficient(col));
+    ASSERT_EQ(lp->GetObjectiveCoefficient(col),
+              lp_compare->GetObjectiveCoefficient(col));
   }
 
   CHECK_OK(lp->SolveLpWithDualSimplex());
@@ -117,16 +97,15 @@ TEST(SolverTest, InitializeSolver) {
   ASSERT_EQ(lp->GetObjectiveValue(), lp_compare->GetObjectiveValue());
 
   for (ColIndex col : mip_data.objective().indices()) {
-    ASSERT_EQ(lp->GetObjectiveCoefficient(col), lp_compare->GetObjectiveCoefficient(col));
-    }
+    ASSERT_EQ(lp->GetObjectiveCoefficient(col),
+              lp_compare->GetObjectiveCoefficient(col));
+  }
 
   for (ColIndex col : mip_data.integer_variables()) {
     ASSERT_EQ(lp->GetLowerBound(col), lp_compare->GetLowerBound(col));
     ASSERT_EQ(lp->GetUpperBound(col), lp_compare->GetUpperBound(col));
-    }
-
-
+  }
 }
-
+}
 
 }  // namespace minimip

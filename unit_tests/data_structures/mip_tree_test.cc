@@ -97,7 +97,9 @@ TEST(MipTreeTest, CloseAndReclaimNodeAtRoot) {
 
   // Close the child node and reclaim the root node.
   tree.CloseNodeAndReclaimNodesUpToRootIfPossible(child_node1);
-  EXPECT_TRUE(tree.TreeIsEmpty());  // Tree should be empty if all nodes are closed and reclaimed
+  EXPECT_TRUE(tree.TreeIsEmpty());
+
+
 }
 
 // This Tests makes sure that the tree is able to close and
