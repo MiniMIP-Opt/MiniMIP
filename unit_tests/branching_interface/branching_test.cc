@@ -16,8 +16,8 @@
 #include "gtest/gtest.h"
 #include "src/branching_interface/branching_factory.h"
 #include "src/branching_interface/branching_interface.h"
-#include "src/branching_interface/random_branching.h"
 #include "src/branching_interface/maxfractional_branching.h"
+#include "src/branching_interface/random_branching.h"
 #include "src/parameters.pb.h"
 #include "src/solver.h"
 #include "unit_tests/utils.h"
@@ -108,7 +108,8 @@ TEST(RandomBranchingTest, NextBranchingVariableReturnsValidVariable) {
 // MaxFractional Branching Tests
 // ==========================================================================
 
-//TODO (CG): Use Mockup to set specific primal value arrays to test the branching
+// TODO (CG): Use Mockup to set specific primal value arrays to test the
+// branching
 TEST(MaxFractionalBranchingTest, NextBranchingVariableReturnsValidVariable) {
   // Creates a very simple model where all variables are non-negative.
   //
@@ -118,18 +119,16 @@ TEST(MaxFractionalBranchingTest, NextBranchingVariableReturnsValidVariable) {
   // x1, x2 >= 0
   // x1, x2 integer
   MiniMipProblem problem;
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x1",
-                      .objective_coefficient = 0.0,
-                      .lower_bound = 0,
-                      .upper_bound = kInf,
-                      .is_integer = true});
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x2",
-                      .objective_coefficient = 1.0,
-                      .lower_bound = 0,
-                      .upper_bound = kInf,
-                      .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                              .objective_coefficient = 0.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                              .objective_coefficient = 1.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
   problem.constraints.push_back(MiniMipConstraint{
       .name = "ct1",
       .var_indices = {0, 1},
@@ -152,7 +151,8 @@ TEST(MaxFractionalBranchingTest, NextBranchingVariableReturnsValidVariable) {
   ASSERT_TRUE(solver->lpi()->IsSolved());
 
   BranchingParameters params;
-  MaxFractionalBranchingParameters* fractional_branching_parameters = params.mutable_max_fractional_branching_parameters();
+  MaxFractionalBranchingParameters* fractional_branching_parameters =
+      params.mutable_max_fractional_branching_parameters();
 
   absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
       CreateBranching(params);

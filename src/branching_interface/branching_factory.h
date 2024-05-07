@@ -16,8 +16,8 @@
 #define MINIMIP_SRC_BRANCHING_INTERFACE_BRANCHING_FACTORY_H_
 
 #include "src/branching_interface/branching_interface.h"
-#include "src/branching_interface/random_branching.h"
 #include "src/branching_interface/maxfractional_branching.h"
+#include "src/branching_interface/random_branching.h"
 #include "src/parameters.pb.h"
 
 namespace minimip {

@@ -24,7 +24,8 @@ const absl::StatusOr<ColIndex> MaxFractionalBranching::NextBranchingVariable(
   if (!integer_variables.empty()) {
     ColIndex branching_variable;
     double max_fractional_part = 0.0;
-    absl::StrongVector<ColIndex, double> primal_values = context.lpi()->GetPrimalValues().value();
+    absl::StrongVector<ColIndex, double> primal_values =
+        context.lpi()->GetPrimalValues().value();
 
     for (ColIndex col : integer_variables) {
       double value = primal_values[col];
