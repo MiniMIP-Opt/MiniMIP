@@ -1837,14 +1837,11 @@ TEST(CompareTestSolve, comparePrimalSolves) {
   auto lpi_soplex = CreateLpSolver(lp_params).value();
 
   for (auto lpi_ : {lpi_glop.get(), lpi_soplex.get()}) {
-
     bool is_maximization = true;
     const absl::StrongVector<ColIndex, double> lower_bounds = {0, 0};
-    const absl::StrongVector<ColIndex, double> upper_bounds = {
-        kInf,kInf};
+    const absl::StrongVector<ColIndex, double> upper_bounds = {kInf, kInf};
     const absl::StrongVector<ColIndex, double> objective_coefficients = {1, 0};
-    const absl::StrongVector<RowIndex, double> left_hand_sides = {
-        -kInf, -kInf};
+    const absl::StrongVector<RowIndex, double> left_hand_sides = {-kInf, -kInf};
     const absl::StrongVector<RowIndex, double> right_hand_sides = {6, 0};
     const absl::StrongVector<ColIndex, absl::StrongVector<RowIndex, double>>
         matrix = {{3, -3}, {2, 2}};
@@ -1882,8 +1879,7 @@ TEST(CompareTestSolve, comparePrimalSolves) {
   EXPECT_EQ(lpi_soplex->IsSolved(), lpi_glop->IsSolved());
   EXPECT_EQ(lpi_soplex->IsOptimal(), lpi_glop->IsOptimal());
   EXPECT_EQ(lpi_soplex->IsPrimalFeasible(), lpi_glop->IsPrimalFeasible());
-  EXPECT_EQ(lpi_soplex->IsPrimalInfeasible(),
-              lpi_glop->IsPrimalInfeasible());
+  EXPECT_EQ(lpi_soplex->IsPrimalInfeasible(), lpi_glop->IsPrimalInfeasible());
   EXPECT_EQ(lpi_soplex->IsPrimalUnbounded(), lpi_glop->IsPrimalUnbounded());
   EXPECT_EQ(lpi_soplex->IsDualFeasible(), lpi_glop->IsDualFeasible());
   EXPECT_EQ(lpi_soplex->IsDualInfeasible(), lpi_glop->IsDualInfeasible());
@@ -1912,14 +1908,11 @@ TEST(CompareTestSolve, compareDualSolves) {
   auto lpi_soplex = CreateLpSolver(lp_params).value();
 
   for (auto lpi_ : {lpi_glop.get(), lpi_soplex.get()}) {
-
     bool is_maximization = true;
     const absl::StrongVector<ColIndex, double> lower_bounds = {0, 0};
-    const absl::StrongVector<ColIndex, double> upper_bounds = {
-        kInf,kInf};
+    const absl::StrongVector<ColIndex, double> upper_bounds = {kInf, kInf};
     const absl::StrongVector<ColIndex, double> objective_coefficients = {1, 0};
-    const absl::StrongVector<RowIndex, double> left_hand_sides = {
-        -kInf, -kInf};
+    const absl::StrongVector<RowIndex, double> left_hand_sides = {-kInf, -kInf};
     const absl::StrongVector<RowIndex, double> right_hand_sides = {6, 0};
     const absl::StrongVector<ColIndex, absl::StrongVector<RowIndex, double>>
         matrix = {{3, -3}, {2, 2}};
@@ -1957,8 +1950,7 @@ TEST(CompareTestSolve, compareDualSolves) {
   EXPECT_EQ(lpi_soplex->IsSolved(), lpi_glop->IsSolved());
   EXPECT_EQ(lpi_soplex->IsOptimal(), lpi_glop->IsOptimal());
   EXPECT_EQ(lpi_soplex->IsPrimalFeasible(), lpi_glop->IsPrimalFeasible());
-  EXPECT_EQ(lpi_soplex->IsPrimalInfeasible(),
-            lpi_glop->IsPrimalInfeasible());
+  EXPECT_EQ(lpi_soplex->IsPrimalInfeasible(), lpi_glop->IsPrimalInfeasible());
   EXPECT_EQ(lpi_soplex->IsPrimalUnbounded(), lpi_glop->IsPrimalUnbounded());
   EXPECT_EQ(lpi_soplex->IsDualFeasible(), lpi_glop->IsDualFeasible());
   EXPECT_EQ(lpi_soplex->IsDualInfeasible(), lpi_glop->IsDualInfeasible());
