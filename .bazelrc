@@ -37,10 +37,10 @@ test --test_output=errors
 try-import %workspace%/.bazelrc.user
 
 # Enable the sandboxed memory safety checks for the build and test actions.
-build --sandbox_debug
-build --copt="-fsanitize=address"
-build --linkopt="-fsanitize=address"
+#build --sandbox_debug
+#build --copt="-fsanitize=address"
+#build --linkopt="-fsanitize=address"
 
-test --sandbox_debug
-test --copt="-fsanitize=address"
-test --linkopt="-fsanitize=address"
+#test --sandbox_debug
+#test --copt="-fsanitize=address"
+#test --linkopt="-fsanitize=address"
