@@ -18,6 +18,11 @@
 #include <vector>
 
 namespace minimip {
+namespace {
+absl::Status SolveCurrentNode() {
+  return absl::OkStatus();
+}
+}  // namespace
 
 absl::Status Solver::Solve() {
   std::deque<NodeIndex> node_queue = {kRootNode};
