@@ -37,8 +37,8 @@ TEST(MipTreeTest, BasicBranchingFromRoot) {
 
   // Add a node by branching from the root
   NodeIndex root_node = kRootNode;
-  NodeIndex child_node = tree.AddNodeByBranchingFromParent(
-      root_node, ColIndex(1), true, 1.5);
+  NodeIndex child_node =
+      tree.AddNodeByBranchingFromParent(root_node, ColIndex(1), true, 1.5);
 
   // Verify that the new node has the correct parent
   EXPECT_EQ(tree.node(child_node).parent, root_node);
@@ -60,12 +60,13 @@ TEST(MipTreeTest, EnforceBinarySearchTree) {
   NodeIndex root_node = kRootNode;
 
   // Create the initial free node
-  NodeIndex initial_free_node = tree.AddNodeByBranchingFromParent(
-      root_node, ColIndex(2), false, 3.0);
-  NodeIndex initial_free_node2 = tree.AddNodeByBranchingFromParent(
-      root_node, ColIndex(2), true, 3.0);
-  EXPECT_DEATH(tree.AddNodeByBranchingFromParent(
-                   root_node, ColIndex(2), true, 2.0), "Check failed: *");
+  NodeIndex initial_free_node =
+      tree.AddNodeByBranchingFromParent(root_node, ColIndex(2), false, 3.0);
+  NodeIndex initial_free_node2 =
+      tree.AddNodeByBranchingFromParent(root_node, ColIndex(2), true, 3.0);
+  EXPECT_DEATH(
+      tree.AddNodeByBranchingFromParent(root_node, ColIndex(2), true, 2.0),
+      "Check failed: *");
 }
 
 TEST(MipTreeTest, BranchingWithInvalidParent) {
@@ -78,14 +79,13 @@ TEST(MipTreeTest, BranchingWithInvalidParent) {
       "Check failed: *");
 }
 
-
 TEST(MipTreeTest, CloseAndReclaimNodeAtRoot) {
   MipTree tree;
-  NodeIndex child_node1 = tree.AddNodeByBranchingFromParent(
-      kRootNode, ColIndex(1), true, 1.5);
+  NodeIndex child_node1 =
+      tree.AddNodeByBranchingFromParent(kRootNode, ColIndex(1), true, 1.5);
 
-    NodeIndex child_node2 = tree.AddNodeByBranchingFromParent(
-        kRootNode, ColIndex(1), false, 1.5);
+  NodeIndex child_node2 =
+      tree.AddNodeByBranchingFromParent(kRootNode, ColIndex(1), false, 1.5);
 
   // Initially, ensure the tree is not empty
   ASSERT_FALSE(tree.TreeIsEmpty());
@@ -98,8 +98,6 @@ TEST(MipTreeTest, CloseAndReclaimNodeAtRoot) {
   // Close the child node and reclaim the root node.
   tree.CloseNodeAndReclaimNodesUpToRootIfPossible(child_node1);
   EXPECT_TRUE(tree.TreeIsEmpty());
-
-
 }
 
 // This Tests makes sure that the tree is able to close and
@@ -111,16 +109,16 @@ TEST(MipTreeTest, CloseAndReclaimMultipleNodesUpToRoot) {
   MipTree tree;
 
   // Add a single child node branching from the root node
-  NodeIndex child_node = tree.AddNodeByBranchingFromParent(
-      kRootNode, ColIndex(1), true, 1.5);
+  NodeIndex child_node =
+      tree.AddNodeByBranchingFromParent(kRootNode, ColIndex(1), true, 1.5);
 
   // Add a grandchild node branching from the child node
-  NodeIndex grandchild_node1 = tree.AddNodeByBranchingFromParent(
-      child_node, ColIndex(2), true, 2.5);
+  NodeIndex grandchild_node1 =
+      tree.AddNodeByBranchingFromParent(child_node, ColIndex(2), true, 2.5);
 
   // Add a grandchild node branching from the child node
-  NodeIndex grandchild_node2 = tree.AddNodeByBranchingFromParent(
-      child_node, ColIndex(2), false, 2.5);
+  NodeIndex grandchild_node2 =
+      tree.AddNodeByBranchingFromParent(child_node, ColIndex(2), false, 2.5);
 
   // Add a grand-grandchild node branching from the child node
   NodeIndex grand_grandchild_node = tree.AddNodeByBranchingFromParent(
@@ -154,8 +152,8 @@ TEST(MipTreeTest, CloseAndReclaimMultipleNodesUpToRoot) {
 
 TEST(MipTreeTest, SetLpRelaxationData) {
   MipTree tree;
-  NodeIndex new_node = tree.AddNodeByBranchingFromParent(
-     kRootNode, ColIndex(1), true, 1.5);
+  NodeIndex new_node =
+      tree.AddNodeByBranchingFromParent(kRootNode, ColIndex(1), true, 1.5);
 
   double lp_value = -123.45;
   tree.SetLpRelaxationDataInNode(new_node, lp_value);
@@ -164,8 +162,8 @@ TEST(MipTreeTest, SetLpRelaxationData) {
 
 TEST(MipTreeTest, ImpliedBoundsHandling) {
   MipTree tree;
-  NodeIndex new_node = tree.AddNodeByBranchingFromParent(
-      kRootNode, ColIndex(0), true, 1.5);
+  NodeIndex new_node =
+      tree.AddNodeByBranchingFromParent(kRootNode, ColIndex(0), true, 1.5);
 
   DenseRow root_lbs;
   root_lbs.push_back((ColIndex(0), -kInf));
@@ -188,8 +186,5 @@ TEST(MipTreeTest, ImpliedBoundsHandling) {
   EXPECT_EQ(retrieved_lbs2.at(ColIndex(0)), 4.0);
   EXPECT_EQ(retrieved_ubs2.at(ColIndex(0)), 1.0);
 }
-
-
-
 
 }  // namespace minimip
