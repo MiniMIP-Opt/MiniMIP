@@ -43,10 +43,13 @@ class MipData {
   // Constructors
   // ==========================================================================
 
-  MipData() : MipData(MiniMipProblem{}){};
+  MipData() : MipData(MiniMipProblem{}) {};
 
   explicit MipData(const MiniMipProblem& problem);
 
+  bool SolutionIsIntegral(
+      const absl::StrongVector<ColIndex, double> primal_values,
+      double tolerance) const;
   // ==========================================================================
   // Problem getters.
   // ==========================================================================

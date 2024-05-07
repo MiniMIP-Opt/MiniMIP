@@ -33,7 +33,6 @@ MipData::MipData(const MiniMipProblem& problem)
       variable_names_(problem.variables.size()),
       lower_bounds_(problem.variables.size()),
       upper_bounds_(problem.variables.size()),
-      integer_variables_(),
       variable_types_(problem.variables.size()),
       constraint_names_(problem.constraints.size()),
       left_hand_sides_(problem.constraints.size()),
@@ -64,8 +63,15 @@ MipData::MipData(const MiniMipProblem& problem)
       variable_types_[col_idx] = VariableType::kFractional;
     }
     variable_names_[col_idx] = variable.name;
+
+    // Add the objective coefficients to the objective function such that
+    // the objective function is in the form of a minimization problem.
     if (variable.objective_coefficient != 0) {
-      objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
+      if (is_maximization_) {
+        objective_.AddEntry(ColIndex(col_idx), -variable.objective_coefficient);
+      } else {
+        objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
+      }
     }
   }
   objective_.CleanUpIfNeeded();
@@ -101,6 +107,17 @@ MipData::MipData(const MiniMipProblem& problem)
       integer_variables_.insert(col_idx);
     }
   }
+}
+
+bool MipData::SolutionIsIntegral(
+    const absl::StrongVector<ColIndex, double> solution_values,
+    double tolerance) const {
+  return std::all_of(integer_variables_.begin(), integer_variables_.end(),
+                     [&solution_values, tolerance](ColIndex col) {
+                       return std::abs(solution_values[col] -
+                                       std::round(solution_values[col])) <=
+                              tolerance;
+                     });
 }
 
 }  // namespace minimip

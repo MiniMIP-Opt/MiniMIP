@@ -1,7 +1,13 @@
+common --noenable_bzlmod
+
+# Sets the default Apple platform to macOS.
+build --apple_platform_type=macos
+
 # MiniMIP default bazel build setup.
 build --show_timestamps
 build --color=yes
 build --keep_going
+
 # TODO(lpawel): With c++20 or c++2a there was an error on 2023/10/03:
 #
 # /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/chrono:2320:48:
@@ -12,8 +18,29 @@ build --keep_going
 # are compatible with C++17 (and do not support C++20 yet). Hence, it's actually
 # safer to stay with C++17 for a while (it shouldn't matter in practice that much
 # anyway).
-build --repo_env="CC=clang" --cxxopt="--std=c++17"
+build --enable_platform_specific_config
+
+build:linux --repo_env="CC=clang" --cxxopt="--std=c++17" --cxxopt=-Wno-sign-compare --host_cxxopt="-std=c++17" --host_cxxopt=-Wno-sign-compare
+build:macos --cxxopt="-std=c++17" --cxxopt=-Wno-sign-compare --cxxopt=-mmacos-version-min=10.15  --cxxopt=-Wno-dangling-field --features=-supports_dynamic_linker
 
 build:debug -c dbg
 build:debug --copt="-g"
 build:debug --strip="never"
+
+# Print command lines for build commands.
+# build --subcommands=pretty_print
+
+# Print test logs for failed tests.
+test --test_output=errors
+
+# Put user-specific options in .bazelrc.user
+try-import %workspace%/.bazelrc.user
+
+# Enable the sandboxed memory safety checks for the build and test actions.
+#build --sandbox_debug
+#build --copt="-fsanitize=address"
+#build --linkopt="-fsanitize=address"
+
+#test --sandbox_debug
+#test --copt="-fsanitize=address"
+#test --linkopt="-fsanitize=address"

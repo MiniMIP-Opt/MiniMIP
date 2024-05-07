@@ -405,10 +405,8 @@ absl::Status LpSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
 
     spx_->clearLPReal();
 
-    static_cast<void>(spx_->setIntParam(
-        soplex::SoPlex::OBJSENSE,
-        (mip_data.is_maximization() ? soplex::SoPlex::OBJSENSE_MINIMIZE
-                                    : soplex::SoPlex::OBJSENSE_MAXIMIZE)));
+    static_cast<void>(spx_->setIntParam(soplex::SoPlex::OBJSENSE,
+                                        soplex::SoPlex::OBJSENSE_MINIMIZE));
 
     // Create empty rows with the given sides.
     for (RowIndex row(0); row < num_rows; ++row) {

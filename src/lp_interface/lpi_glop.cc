@@ -169,7 +169,7 @@ absl::Status LpGlopInterface::PopulateFromMipData(const MipData& mip_data) {
                   mip_data.upper_bounds()[col], mip_data.objective().value(col),
                   mip_data.variable_names()[col]));
   }
-  RETURN_IF_ERROR(SetObjectiveSense(mip_data.is_maximization()));
+  RETURN_IF_ERROR(SetObjectiveSense(false));
   return absl::OkStatus();
 }
 
@@ -590,8 +590,8 @@ absl::Status LpGlopInterface::SolveInternal(bool recursive,
 // ==========================================================================
 
 absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
-  VLOG(3) << "Solving with primal simplex: "
-          << "num_cols=" << lp_.num_variables().value()
+  VLOG(3) << "Solving with primal simplex: " << "num_cols="
+          << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
 
   GlopParameters glop_params = solver_.GetParameters();
@@ -603,8 +603,8 @@ absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
 }
 
 absl::Status LpGlopInterface::SolveLpWithDualSimplex() {
-  VLOG(3) << "Solving with dual simplex: "
-          << "num_cols=" << lp_.num_variables().value()
+  VLOG(3) << "Solving with dual simplex: " << "num_cols="
+          << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
   GlopParameters glop_params = solver_.GetParameters();
   std::unique_ptr<TimeLimit> time_limit =

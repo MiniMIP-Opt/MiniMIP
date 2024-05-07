@@ -14,6 +14,8 @@
 
 #include "src/data_structures/mip_tree.h"
 
+#include <fstream>
+
 namespace minimip {
 
 MipTree::MipTree() {
@@ -47,7 +49,6 @@ NodeIndex MipTree::AddNodeByBranchingFromParent(
   nodes_[n].branch_down = branch_down;
   nodes_[n].branch_primal_value_in_parent_lp = branch_primal_value_in_parent_lp;
   nodes_[n].depth = nodes_[nodes_[n].parent].depth + 1;
-
   // As of 2022/08/29, we assume a binary search tree.
   CHECK_GE(number_of_open_child_nodes_[nodes_[n].parent], 0);
   CHECK_LE(number_of_open_child_nodes_[nodes_[n].parent], 1);
@@ -68,15 +69,26 @@ void MipTree::CloseNodeAndReclaimNodesUpToRootIfPossible(NodeIndex n) {
         number_of_open_child_nodes_[n] == 2);
   CHECK_GE(number_of_open_child_nodes_[nodes_[n].parent], 0);
   CHECK_LE(number_of_open_child_nodes_[nodes_[n].parent], 2);
-  --number_of_open_child_nodes_[nodes_[n].parent];
-  ++num_closed_nodes_;
 
   while (true) {
     if (number_of_open_child_nodes_[n] > 0) return;
+
+    // Retrieve the parent node index
     const NodeIndex parent = nodes_[n].parent;
+
+    // Reset the current node's data to prevent further access
     nodes_[n] = NodeData();
     nodes_[n].parent = next_free_node_;
+
+    // Ensure `parent` is not invalid before accessing its children count
+    if (parent != kInvalidNode) {
+      --number_of_open_child_nodes_[parent];
+    }
+
+    ++num_closed_nodes_;
     next_free_node_ = n;
+
+    // Move up to the parent node
     n = parent;
     if (parent == kInvalidNode) return;
   }
@@ -116,7 +128,7 @@ DenseRow MipTree::RetrieveLowerBounds(NodeIndex n,
     for (const ColAndValue& lb : nodes_[n].implied_lower_bounds) {
       lower_bounds[lb.col] = std::max(lower_bounds[lb.col], lb.value);
     }
-    if (!nodes_[n].branch_down) {
+    if (!nodes_[n].branch_down and nodes_[n].branch_variable >= 0) {
       lower_bounds[nodes_[n].branch_variable] =
           std::max(lower_bounds[nodes_[n].branch_variable],
                    std::ceil(nodes_[n].branch_primal_value_in_parent_lp));

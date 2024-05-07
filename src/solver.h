@@ -48,6 +48,7 @@ class Solver : public SolverContextInterface {
     MipData mip_data(problem);
     MipTree mip_tree;
     CutRegistry cut_registry;
+    MiniMipResult result;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
                      CreateLpSolver(params.lp_parameters()));
@@ -55,16 +56,23 @@ class Solver : public SolverContextInterface {
     ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
                      CreateCutRunner(params.cut_runner()));
 
-    auto solver = std::unique_ptr<Solver>(new Solver(
-        params, std::move(mip_data), std::move(mip_tree),
+    std::unique_ptr<Solver> solver(new Solver(
+        params, std::move(mip_data), std::move(result), std::move(mip_tree),
         std::move(cut_registry), std::move(cut_runner), std::move(lpi)));
+
+    // Populate LP with initial problem data
+    RETURN_IF_ERROR(solver->mutable_lpi()->PopulateFromMipData(solver->mip_data_));
+
     return solver;
   }
 
-  absl::StatusOr<MiniMipResult> Solve();
+  absl::Status Solve();
 
   const MipData& mip_data() const override { return mip_data_; }
   MipData& mutable_mip_data() override { return mip_data_; }
+
+  const MiniMipResult& result() const override { return result_; }
+  MiniMipResult& mutable_result() override { return result_; }
 
   const MipTree& mip_tree() const override { return mip_tree_; }
   MipTree& mutable_mip_tree() override { return mip_tree_; }
@@ -100,6 +108,10 @@ class Solver : public SolverContextInterface {
   // (including cuts), see the LPI.
   MipData mip_data_;
 
+  // The result struct of the optimization process. This is updated as the
+  // solver progresses and stores incumbents, bounds, etc.
+  MiniMipResult result_;
+
   // Contains all open nodes and bound changes.
   MipTree mip_tree_;
 
@@ -114,12 +126,13 @@ class Solver : public SolverContextInterface {
   std::unique_ptr<LpInterface> lpi_;
 
   // Protected constructor, use Create() instead.
-  Solver(MiniMipParameters params, MipData mip_data, MipTree mip_tree,
-         CutRegistry cut_registry,
+  Solver(MiniMipParameters params, MipData mip_data, MiniMipResult result,
+         MipTree mip_tree, CutRegistry cut_registry,
          std::unique_ptr<CutRunnerInterface> cut_runner,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},
+        result_{std::move(result)},
         mip_tree_{std::move(mip_tree)},
         cut_registry_{std::move(cut_registry)},
         cut_runner_{std::move(cut_runner)},
