@@ -49,7 +49,6 @@ class Solver : public SolverContextInterface {
     MipData mip_data(problem);
     MipTree mip_tree;
     CutRegistry cut_registry;
-
     MiniMipResult result;
 
     ASSIGN_OR_RETURN(std::unique_ptr<LpInterface> lpi,
