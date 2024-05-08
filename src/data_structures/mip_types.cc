@@ -17,7 +17,7 @@
 namespace minimip {
 
 bool operator==(const ColOrRowIndex& lhs, const ColOrRowIndex& rhs) {
-  return lhs.col() == rhs.col() && lhs.row() == rhs.row();
+  return lhs.col() == rhs.col() and lhs.row() == rhs.row();
 }
 
 std::ostream& operator<<(std::ostream& out, const ColOrRowIndex& i) {
