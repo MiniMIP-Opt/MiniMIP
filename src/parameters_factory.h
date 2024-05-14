@@ -22,6 +22,7 @@ namespace minimip {
 // Create the default CutGenerator parameters.
 // As of 26.10.23: The TableauRoundingGenerator as the default.
 inline CutGeneratorParameters DefaultCutGeneratorParameters() {
+  VLOG(2) << "calling DefaultCutGeneratorParameters().";
   CutGeneratorParameters params;
   params.mutable_tableau_rounding_generator_parameters();
   return params;
@@ -30,6 +31,7 @@ inline CutGeneratorParameters DefaultCutGeneratorParameters() {
 // Create the default CutSelector parameters.
 // As of 26.10.23: The HybridSelector as the default.
 inline CutSelectorParameters DefaultCutSelectorParameters() {
+  VLOG(2) << "calling DefaultCutSelectorParameters().";
   CutSelectorParameters params;
   params.mutable_hybrid_selector_parameters();
   return params;
@@ -38,6 +40,7 @@ inline CutSelectorParameters DefaultCutSelectorParameters() {
 // Create the default CutRunnerParameters
 // As of 26.10.23: The DefaultRunner is the default.
 inline CutRunnerParameters DefaultCutRunnerParameters() {
+  VLOG(2) << "calling DefaultCutRunnerParameters().";
   CutRunnerParameters runner_params;
   // Set the default runner parameters.
   runner_params.mutable_default_runner_parameters();
@@ -51,6 +54,7 @@ inline CutRunnerParameters DefaultCutRunnerParameters() {
 
 // Unified factory method to create default parameters
 inline MiniMipParameters DefaultMiniMipParameters() {
+  VLOG(2) << "calling DefaultMiniMipParameters().";
   MiniMipParameters default_params;
 
   // initialize LP parameters.
@@ -67,6 +71,7 @@ inline MiniMipParameters DefaultMiniMipParameters() {
 // parameters.
 inline MiniMipParameters UserCustomizedParameters(
     const MiniMipParameters& user_params) {
+  VLOG(2) << "calling UserCustomizedParameters().";
   MiniMipParameters params = DefaultMiniMipParameters();
 
   // The user's settings will overwrite the defaults where they're provided.
