@@ -763,7 +763,7 @@ absl::Status LpSoplexInterface::SetRowSides(RowIndex row, double left_hand_side,
   return absl::OkStatus();
 }
 
-absl::Status LpSoplexInterface::SetObjectiveSense( bool is_maximization ) {
+absl::Status LpSoplexInterface::SetObjectiveSense(bool is_maximization) {
   VLOG(2) << "calling SetObjectiveSense().";
 
   InvalidateSolution();
