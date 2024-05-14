@@ -24,6 +24,7 @@ namespace minimip {
 namespace {
 
 double ComputeCutScore(const HybridSelectorParameters& params, CutData& cut) {
+  VLOG(2) << "calling ComputeCutScore().";
   double efficacy = (params.efficacy_weight() > 0)
                         ? params.efficacy_weight() * cut.efficacy()
                         : 0.0;
@@ -46,6 +47,7 @@ bool TwoCutsAreOrthogonal(const CutData& cut_reference, const CutData& cut,
                           const double minimum_orthogonality,
                           const bool signed_orthogonality = false) {
   if (cut.is_forced()) {
+    VLOG(2) << "calling TwoCutsAreOrthogonal().";
     return false;
   }
   std::vector<double> reference_row_values = cut_reference.row().values();
@@ -71,6 +73,7 @@ bool TwoCutsAreOrthogonal(const CutData& cut_reference, const CutData& cut,
 
 absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     const SolverContextInterface& context, std::vector<CutData>& cuts) {
+  VLOG(2) << "calling SelectCuttingPlanes().";
   // 1. Compute the score for each cut
   for (CutData& cut : cuts) {
     cut.SetScore(ComputeCutScore(params_, cut));

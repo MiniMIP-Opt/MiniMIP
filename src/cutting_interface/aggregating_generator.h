@@ -123,6 +123,7 @@ class TableauRoundingGenerator : public CutGeneratorInterface {
  public:
   explicit TableauRoundingGenerator(CutGeneratorParameters params)
       : params_(std::move(params)) {
+    VLOG(2) << "calling TableauRoundingGenerator().";
     DCHECK(params_.has_tableau_rounding_generator_parameters());
     if (params_.tableau_rounding_generator_parameters()
             .use_mixed_integer_rounding()) {
