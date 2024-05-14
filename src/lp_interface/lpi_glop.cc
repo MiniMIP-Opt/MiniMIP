@@ -454,7 +454,7 @@ int64_t LpGlopInterface::GetNumberOfNonZeros() const {
 }
 
 SparseCol LpGlopInterface::GetSparseColumnCoefficients(ColIndex col) const {
-  VLOG(2) << "calling GetSparseColumnCoefficients("<< col <<").";
+  VLOG(2) << "calling GetSparseColumnCoefficients().";
   DCHECK_GE(col, ColIndex(0));
   DCHECK_LT(col, GetNumberOfColumns());
   const SparseColumn& column_in_glop =
@@ -472,7 +472,7 @@ SparseCol LpGlopInterface::GetSparseColumnCoefficients(ColIndex col) const {
 }
 
 SparseRow LpGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
-  VLOG(2) << "calling GetSparseRowCoefficients("<< row <<").";
+  VLOG(2) << "calling GetSparseRowCoefficients().";
   DCHECK_GE(row, RowIndex(0));
   DCHECK_LT(row, GetNumberOfRows());
   // Note, there is no casting from col to row in Glop, hence we keep the row
@@ -492,42 +492,42 @@ SparseRow LpGlopInterface::GetSparseRowCoefficients(RowIndex row) const {
 }
 
 double LpGlopInterface::GetObjectiveCoefficient(ColIndex col) const {
-  VLOG(2) << "calling GetObjectiveCoefficient("<< col <<").";
+  VLOG(2) << "calling GetObjectiveCoefficient().";
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   return lp_.objective_coefficients()[GlopColIndex(col.value())];
 }
 
 double LpGlopInterface::GetLowerBound(ColIndex col) const {
-  VLOG(2) << "calling GetLowerBound("<< col <<").";
+  VLOG(2) << "calling GetLowerBound().";
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   return lp_.variable_lower_bounds()[GlopColIndex(col.value())];
 }
 
 double LpGlopInterface::GetUpperBound(ColIndex col) const {
-  VLOG(2) << "calling GetUpperBound("<< col <<").";
+  VLOG(2) << "calling GetUpperBound().";
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   return lp_.variable_upper_bounds()[GlopColIndex(col.value())];
 }
 
 double LpGlopInterface::GetLeftHandSide(RowIndex row) const {
-  VLOG(2) << "calling GetLeftHandSide("<< row <<").";
+  VLOG(2) << "calling GetLeftHandSide().";
   CHECK_GE(row, 0);
   CHECK_LT(row, GetNumberOfRows());
   return lp_.constraint_lower_bounds()[GlopRowIndex(row.value())];
 }
 
 double LpGlopInterface::GetRightHandSide(RowIndex row) const {
-  VLOG(2) << "calling GetRightHandSide("<< row <<").";
+  VLOG(2) << "calling GetRightHandSide().";
   CHECK_GE(row, 0);
   CHECK_LT(row, GetNumberOfRows());
   return lp_.constraint_upper_bounds()[GlopRowIndex(row.value())];
 }
 
 double LpGlopInterface::GetMatrixCoefficient(ColIndex col, RowIndex row) const {
-  VLOG(2) << "calling GetMatrixCoefficient("<< col <<","< row <<").";
+  VLOG(2) << "calling GetMatrixCoefficient().";
   CHECK_GE(col, 0);
   CHECK_LT(col, GetNumberOfColumns());
   CHECK_GE(row, 0);
