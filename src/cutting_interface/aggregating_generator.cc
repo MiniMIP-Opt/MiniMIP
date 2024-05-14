@@ -372,7 +372,7 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
   std::vector<CutData> cutting_planes;
   cutting_planes.reserve(max_num_cuts);
   for (RowIndex tableau_row(0);
-       tableau_row < num_rows && cutting_planes.size() < max_num_cuts;
+       tableau_row < num_rows and cutting_planes.size() < max_num_cuts;
        ++tableau_row) {
     // Gomory cuts are generated from rows of the simplex tableau where the
     // corresponding basic variable is integer but has a fractional value in

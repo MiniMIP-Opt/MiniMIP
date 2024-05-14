@@ -51,11 +51,11 @@ double StrongSparseMatrix::GetCoefficient(ColIndex col, RowIndex row) const {
   DCHECK_GE(row, RowIndex(0));
   DCHECK_LT(row, num_rows());
 
-  if (!rows_need_recomputation() && !rows_[row].MayNeedCleaning()) {
+  if (!rows_need_recomputation() and !rows_[row].MayNeedCleaning()) {
     return rows_[row].value(col);
   }
 
-  if (!cols_need_recomputation() && !cols_[col].MayNeedCleaning()) {
+  if (!cols_need_recomputation() and !cols_[col].MayNeedCleaning()) {
     return cols_[col].value(row);
   }
 
@@ -112,7 +112,7 @@ void StrongSparseMatrix::PopulateRow(RowIndex row, SparseRow row_data) {
 void StrongSparseMatrix::Resize(ColIndex new_num_cols, RowIndex new_num_rows) {
   VLOG(4) << "calling Resize().";
   // Both row and col dimensions drop to 0.
-  if (new_num_cols == ColIndex(0) && new_num_rows == RowIndex(0)) {
+  if (new_num_cols == ColIndex(0) and new_num_rows == RowIndex(0)) {
     Clear();
     return;
   }
@@ -150,12 +150,12 @@ void StrongSparseMatrix::Resize(ColIndex new_num_cols, RowIndex new_num_rows) {
   }
 
   // Nothing else to do.
-  if (new_num_rows == num_rows() && new_num_cols == num_cols()) {
+  if (new_num_rows == num_rows() and new_num_cols == num_cols()) {
     return;
   }
 
   // We are left only with deleting rows.
-  if (new_num_rows < num_rows() && new_num_cols == num_cols()) {
+  if (new_num_rows < num_rows() and new_num_cols == num_cols()) {
     RecomputeRowsFromColsIfNeeded();
     rows_.resize(new_num_rows.value());
     consistency_ = MatrixConsistency::kColsNeedRecomputation;
@@ -163,7 +163,7 @@ void StrongSparseMatrix::Resize(ColIndex new_num_cols, RowIndex new_num_rows) {
   }
 
   // We are left only with deleting cols.
-  if (new_num_cols < num_cols() && new_num_rows == num_rows()) {
+  if (new_num_cols < num_cols() and new_num_rows == num_rows()) {
     RecomputeColsFromRowsIfNeeded();
     cols_.resize(new_num_cols.value());
     consistency_ = MatrixConsistency::kRowsNeedRecomputation;

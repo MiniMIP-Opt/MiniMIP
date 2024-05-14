@@ -190,7 +190,7 @@ absl::Status LpGlopInterface::AddColumn(const SparseCol& col_data,
   DCHECK(!col_data.MayNeedCleaning());
   DCHECK(std::all_of(col_data.entries().begin(), col_data.entries().end(),
                      [num_rows = GetNumberOfRows()](const ColEntry& e) {
-                       return RowIndex(0) <= e.index && e.index < num_rows;
+                       return RowIndex(0) <= e.index and e.index < num_rows;
                      }));
 
   const GlopColIndex col = lp_.CreateNewVariable();
@@ -259,7 +259,7 @@ absl::Status LpGlopInterface::AddRow(const SparseRow& row_data,
   DCHECK(!row_data.MayNeedCleaning());
   DCHECK(std::all_of(row_data.entries().begin(), row_data.entries().end(),
                      [num_cols = GetNumberOfColumns()](const RowEntry& e) {
-                       return ColIndex(0) <= e.index && e.index < num_cols;
+                       return ColIndex(0) <= e.index and e.index < num_cols;
                      }));
 
   const GlopRowIndex row = lp_.CreateNewConstraint();
@@ -818,7 +818,7 @@ bool LpGlopInterface::IsStable() const {
   const ProblemStatus status = solver_.GetProblemStatus();
   if ((status == ProblemStatus::PRIMAL_FEASIBLE ||
        status == ProblemStatus::DUAL_FEASIBLE) &&
-      !ObjectiveLimitIsExceeded() && !IterationLimitIsExceeded() &&
+      !ObjectiveLimitIsExceeded() and !IterationLimitIsExceeded() &&
       !TimeLimitIsExceeded()) {
     VLOG(3) << "OPTIMAL not reached and no limit: unstable";
     return false;
