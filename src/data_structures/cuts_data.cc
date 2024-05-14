@@ -27,6 +27,7 @@ CutRegistry::CutRegistry() : cuts_({}), active_cut_indices_({}) {}
 // Use this to initialize by deep copy from another matrix `m`. Under-the-hood
 // we just use a private copy / move constructor and assignment operator.
 void CutRegistry::PopulateFromCutRegistry(CutRegistry cut_registry) {
+  VLOG(4) << "calling PopulateFromCutRegistry().";
   *this = std::move(cut_registry);
 }
 
@@ -34,6 +35,7 @@ CutData CutRegistry::CreateCut(const MipData& mip_data,
                                const SparseRow& lp_optimum, SparseRow row,
                                double right_hand_side, std::string name,
                                bool is_forced) const {
+  VLOG(4) << "calling CreateCut().";
   // Calculate characteristics of the cut.
   const SparseRow& objective = mip_data.objective();
   const int number_of_non_zeros = row.entries().size();
@@ -63,6 +65,7 @@ CutData CutRegistry::CreateCut(const MipData& mip_data,
 double CutRegistry::ComputeEfficacy(
     const minimip::SparseRow& row, double right_hand_side,
     const minimip::SparseRow& lp_optimum) const {
+  VLOG(4) << "calling ComputeEfficacy().";
   return (row.DotProduct(lp_optimum) - right_hand_side) /
          sqrt(row.DotProduct(row));
 }
@@ -74,6 +77,7 @@ double CutRegistry::ComputeEfficacy(
 // Add a cut to registry.
 // TODO(cgraczy): Add checks to enforce correct initialization on cuts.
 int CutRegistry::AddCut(CutData&& cut_data) {
+  VLOG(4) << "calling AddCut().";
   cut_data.SetIndex(cuts_.size());
   cuts_.push_back(std::move(cut_data));
   return cut_data.index();
@@ -81,12 +85,14 @@ int CutRegistry::AddCut(CutData&& cut_data) {
 
 // Activate stored cut.
 void CutRegistry::ActivateCut(int cut_index) {
+  VLOG(4) << "calling ActivateCut().";
   DCHECK_GE(cut_index, 0);
   DCHECK_LT(cut_index, cuts_.size());
   active_cut_indices_.push_back(cut_index);
 }
 
 void CutRegistry::RemoveCut(const int& cut_index) {
+  VLOG(4) << "calling RemoveCut().";
   DCHECK_GE(cut_index, 0);
   DCHECK_LT(cut_index, cuts_.size());
 
@@ -122,6 +128,7 @@ const CutData& CutRegistry::GetCut(const int& cut_index) const {
 }
 
 void CutRegistry::UpdateCutEfficacy(const minimip::SparseRow& lp_optimum) {
+  VLOG(4) << "calling UpdateCutEfficacy().";
   for (CutData& cut : cuts_) {
     cut.SetEfficacy(
         ComputeEfficacy(cut.row(), cut.right_hand_side(), lp_optimum));

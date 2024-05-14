@@ -25,6 +25,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "ortools/base/logging.h"
 
 namespace minimip {
 
@@ -101,6 +102,7 @@ struct MiniMipResult {
   // nodes, etc.
 
   absl::Status AddSolution(const MiniMipSolution& solution) {
+    VLOG(4) << "calling AddSolution().";
     if (solution.objective_value < best_solution.objective_value) {
       if (best_solution.objective_value != kInf) {
         additional_solutions.push_back(best_solution);
