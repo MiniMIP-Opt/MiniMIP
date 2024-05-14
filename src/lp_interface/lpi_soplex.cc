@@ -239,7 +239,7 @@ void LpSoplexInterface::InvalidateSolution() {
 bool LpSoplexInterface::PreStrongBranchingBasisFreed() const {
   VLOG(2) << "calling PreStrongBranchingBasisFreed().";
   return ((row_basis_status_.size() == 0) and (col_basis_status_.size() == 0));
-  }
+}
 
 void LpSoplexInterface::FreePreStrongBranchingBasis() {
   VLOG(2) << "calling FreePreStrongBranchingBasis().";
@@ -763,7 +763,7 @@ absl::Status LpSoplexInterface::SetRowSides(RowIndex row, double left_hand_side,
   return absl::OkStatus();
 }
 
-absl::Status LpSoplexInterface::SetObjectiveSense( bool is_maximization ) {
+absl::Status LpSoplexInterface::SetObjectiveSense(bool is_maximization) {
   VLOG(2) << "calling SetObjectiveSense().";
 
   InvalidateSolution();
