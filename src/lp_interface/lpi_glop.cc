@@ -129,8 +129,8 @@ VariableStatus ConvertMiniMIPConstraintStatusToSlackStatus(
 
 bool IsDualBoundValid(ProblemStatus status) {
   VLOG(2) << "calling IsDualBoundValid().";
-  return status == ProblemStatus::OPTIMAL ||
-         status == ProblemStatus::DUAL_FEASIBLE ||
+  return status == ProblemStatus::OPTIMAL or
+         status == ProblemStatus::DUAL_FEASIBLE or
          status == ProblemStatus::DUAL_UNBOUNDED;
 }
 
@@ -191,7 +191,7 @@ absl::Status LpGlopInterface::AddColumn(const SparseCol& col_data,
   DCHECK(!col_data.MayNeedCleaning());
   DCHECK(std::all_of(col_data.entries().begin(), col_data.entries().end(),
                      [num_rows = GetNumberOfRows()](const ColEntry& e) {
-                       return RowIndex(0) <= e.index && e.index < num_rows;
+                       return RowIndex(0) <= e.index and e.index < num_rows;
                      }));
 
   const GlopColIndex col = lp_.CreateNewVariable();
@@ -260,7 +260,7 @@ absl::Status LpGlopInterface::AddRow(const SparseRow& row_data,
   DCHECK(!row_data.MayNeedCleaning());
   DCHECK(std::all_of(row_data.entries().begin(), row_data.entries().end(),
                      [num_cols = GetNumberOfColumns()](const RowEntry& e) {
-                       return ColIndex(0) <= e.index && e.index < num_cols;
+                       return ColIndex(0) <= e.index and e.index < num_cols;
                      }));
 
   const GlopRowIndex row = lp_.CreateNewConstraint();
@@ -589,7 +589,7 @@ absl::Status LpGlopInterface::SolveInternal(bool recursive,
 
   // In case the solution is not feasible wrt original problem, we will attempt
   // to solve the unscaled version from scratch.
-  if ((status == ProblemStatus::PRIMAL_FEASIBLE ||
+  if ((status == ProblemStatus::PRIMAL_FEASIBLE or
        status == ProblemStatus::OPTIMAL) &&
       solver_.GetParameters().use_scaling()) {
     const auto primal_values = GetPrimalValues();
@@ -659,7 +659,7 @@ absl::Status LpGlopInterface::StartStrongBranching() {
 }
 
 absl::Status LpGlopInterface::EndStrongBranching() {
-  VLOG(2) << "calling EndStrongBranching().";
+  VLOG(10) << "calling EndStrongBranching().";
   // TODO(lpawel): Restore the saved Glop state.
   return absl::OkStatus();
 }
@@ -667,7 +667,7 @@ absl::Status LpGlopInterface::EndStrongBranching() {
 absl::StatusOr<LpGlopInterface::StrongBranchResult>
 LpGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
                                             int iteration_limit) {
-  VLOG(2) << "calling SolveDownAndUpStrongBranch().";
+  VLOG(10) << "calling SolveDownAndUpStrongBranch().";
   DCHECK_GE(col, ColIndex(0));
   DCHECK_LT(col, GetNumberOfColumns());
 
@@ -742,91 +742,91 @@ LpGlopInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 // ==========================================================================
 
 bool LpGlopInterface::IsSolved() const {
-  VLOG(2) << "calling IsSolved().";
+  VLOG(10) << "calling IsSolved().";
   // TODO(lpawel): Track this to avoid unneeded resolving.
   return (!lp_modified_since_last_solve_);
 }
 
 bool LpGlopInterface::ExistsPrimalRay() const {
-  VLOG(2) << "calling ExistsPrimalRay().";
+  VLOG(10) << "calling ExistsPrimalRay().";
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
 bool LpGlopInterface::HasPrimalRay() const {
-  VLOG(2) << "calling HasPrimalRay().";
+  VLOG(10) << "calling HasPrimalRay().";
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
 bool LpGlopInterface::IsPrimalUnbounded() const {
-  VLOG(2) << "calling IsPrimalUnbounded().";
+  VLOG(10) << "calling IsPrimalUnbounded().";
   return solver_.GetProblemStatus() == ProblemStatus::PRIMAL_UNBOUNDED;
 }
 
 bool LpGlopInterface::IsPrimalInfeasible() const {
-  VLOG(2) << "calling IsPrimalInfeasible().";
+  VLOG(10) << "calling IsPrimalInfeasible().";
   const ProblemStatus status = solver_.GetProblemStatus();
-  return status == ProblemStatus::DUAL_UNBOUNDED ||
+  return status == ProblemStatus::DUAL_UNBOUNDED or
          status == ProblemStatus::PRIMAL_INFEASIBLE;
 }
 
 bool LpGlopInterface::IsPrimalFeasible() const {
-  VLOG(2) << "calling IsPrimalFeasible().";
+  VLOG(10) << "calling IsPrimalFeasible().";
   const ProblemStatus status = solver_.GetProblemStatus();
-  return status == ProblemStatus::PRIMAL_FEASIBLE ||
+  return status == ProblemStatus::PRIMAL_FEASIBLE or
          status == ProblemStatus::OPTIMAL;
 }
 
 bool LpGlopInterface::ExistsDualRay() const {
-  VLOG(2) << "calling ExistsDualRay().";
+  VLOG(10) << "calling ExistsDualRay().";
   return solver_.GetProblemStatus() == ProblemStatus::DUAL_UNBOUNDED;
 }
 
 bool LpGlopInterface::HasDualRay() const {
-  VLOG(2) << "calling HasDualRay().";
+  VLOG(10) << "calling HasDualRay().";
   return solver_.GetProblemStatus() == ProblemStatus::DUAL_UNBOUNDED;
 }
 
 bool LpGlopInterface::IsDualUnbounded() const {
-  VLOG(2) << "calling IsDualUnbounded().";
+  VLOG(10) << "calling IsDualUnbounded().";
   return solver_.GetProblemStatus() == ProblemStatus::DUAL_UNBOUNDED;
 }
 
 bool LpGlopInterface::IsDualInfeasible() const {
-  VLOG(2) << "calling IsDualInfeasible().";
+  VLOG(10) << "calling IsDualInfeasible().";
   const ProblemStatus status = solver_.GetProblemStatus();
-  return status == ProblemStatus::PRIMAL_UNBOUNDED ||
+  return status == ProblemStatus::PRIMAL_UNBOUNDED or
          status == ProblemStatus::DUAL_INFEASIBLE;
 }
 
 bool LpGlopInterface::IsDualFeasible() const {
-  VLOG(2) << "calling IsDualFeasible().";
+  VLOG(10) << "calling IsDualFeasible().";
   const ProblemStatus status = solver_.GetProblemStatus();
-  return status == ProblemStatus::DUAL_FEASIBLE ||
+  return status == ProblemStatus::DUAL_FEASIBLE or
          status == ProblemStatus::OPTIMAL;
 }
 
 bool LpGlopInterface::IsOptimal() const {
-  VLOG(2) << "calling IsOptimal().";
+  VLOG(10) << "calling IsOptimal().";
   return solver_.GetProblemStatus() == ProblemStatus::OPTIMAL;
 }
 
 bool LpGlopInterface::IsStable() const {
-  VLOG(2) << "calling IsStable().";
+  VLOG(10) << "calling IsStable().";
   // For correctness, we need to report "unstable" if Glop was not able to
   // prove optimality because of numerical issues. Currently, Glop still
   // reports primal/dual feasible if at the end, one status is within the
   // tolerance but not the other.
   const ProblemStatus status = solver_.GetProblemStatus();
-  if ((status == ProblemStatus::PRIMAL_FEASIBLE ||
+  if ((status == ProblemStatus::PRIMAL_FEASIBLE or
        status == ProblemStatus::DUAL_FEASIBLE) &&
-      !ObjectiveLimitIsExceeded() && !IterationLimitIsExceeded() &&
+      !ObjectiveLimitIsExceeded() and !IterationLimitIsExceeded() &&
       !TimeLimitIsExceeded()) {
     VLOG(3) << "OPTIMAL not reached and no limit: unstable";
     return false;
   }
 
-  if (status == ProblemStatus::ABNORMAL ||
-      status == ProblemStatus::INVALID_PROBLEM ||
+  if (status == ProblemStatus::ABNORMAL or
+      status == ProblemStatus::INVALID_PROBLEM or
       status == ProblemStatus::IMPRECISE) {
     VLOG(3) << "Errors while solving: unstable";
     return false;
@@ -835,17 +835,17 @@ bool LpGlopInterface::IsStable() const {
 }
 
 bool LpGlopInterface::ObjectiveLimitIsExceeded() const {
-  VLOG(2) << "calling ObjectiveLimitIsExceeded().";
+  VLOG(10) << "calling ObjectiveLimitIsExceeded().";
   return solver_.objective_limit_reached();
 }
 
 bool LpGlopInterface::TimeLimitIsExceeded() const {
-  VLOG(2) << "calling TimeLimitIsExceeded().";
+  VLOG(10) << "calling TimeLimitIsExceeded().";
   return lp_time_limit_was_reached_;
 }
 
 bool LpGlopInterface::IterationLimitIsExceeded() const {
-  VLOG(2) << "calling IterationLimitIsExceeded().";
+  VLOG(10) << "calling IterationLimitIsExceeded().";
   // We might have accumulated iterations across 2 recursive solves,
   // hence _GE, and not _EQ.
   DCHECK_GE(num_iterations_of_last_solve_, solver_.GetNumberOfIterations());
@@ -855,19 +855,19 @@ bool LpGlopInterface::IterationLimitIsExceeded() const {
 }
 
 int64_t LpGlopInterface::GetNumIterations() const {
-  VLOG(2) << "calling GetNumIterations().";
+  VLOG(10) << "calling GetNumIterations().";
   return num_iterations_of_last_solve_;
 }
 
 double LpGlopInterface::GetObjectiveValue() const {
-  VLOG(2) << "calling GetObjectiveValue().";
+  VLOG(10) << "calling GetObjectiveValue().";
   DCHECK(IsOptimal());
   return solver_.GetObjectiveValue();
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpGlopInterface::GetPrimalValues() const {
-  VLOG(2) << "calling GetPrimalValues().";
+  VLOG(10) << "calling GetPrimalValues().";
   DCHECK(IsOptimal());
   absl::StrongVector<ColIndex, double> primal_values;
   primal_values.reserve(lp_.num_variables().value());
@@ -880,7 +880,7 @@ LpGlopInterface::GetPrimalValues() const {
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpGlopInterface::GetDualValues() const {
-  VLOG(2) << "calling GetDualValues().";
+  VLOG(10) << "calling GetDualValues().";
   DCHECK(IsOptimal());
   absl::StrongVector<RowIndex, double> dual_values;
   dual_values.reserve(lp_.num_constraints().value());
@@ -893,7 +893,7 @@ LpGlopInterface::GetDualValues() const {
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpGlopInterface::GetReducedCosts() const {
-  VLOG(2) << "calling GetReducedCosts().";
+  VLOG(10) << "calling GetReducedCosts().";
   DCHECK(IsOptimal());
   absl::StrongVector<ColIndex, double> reduced_costs;
   reduced_costs.reserve(lp_.num_variables().value());
@@ -906,7 +906,7 @@ LpGlopInterface::GetReducedCosts() const {
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpGlopInterface::GetRowActivities() const {
-  VLOG(2) << "calling GetRowActivities().";
+  VLOG(10) << "calling GetRowActivities().";
   DCHECK(IsOptimal());
   absl::StrongVector<RowIndex, double> row_activities;
   row_activities.reserve(lp_.num_constraints().value());
@@ -919,7 +919,7 @@ LpGlopInterface::GetRowActivities() const {
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpGlopInterface::GetPrimalRay() const {
-  VLOG(2) << "calling GetPrimalRay().";
+  VLOG(10) << "calling GetPrimalRay().";
   DCHECK(HasPrimalRay());
   absl::StrongVector<ColIndex, double> primal_ray;
   primal_ray.reserve(lp_.num_variables().value());
@@ -934,7 +934,7 @@ LpGlopInterface::GetPrimalRay() const {
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpGlopInterface::GetDualRay() const {
-  VLOG(2) << "calling GetDualRay().";
+  VLOG(10) << "calling GetDualRay().";
   DCHECK(HasDualRay());
   absl::StrongVector<RowIndex, double> dual_ray;
   dual_ray.reserve(lp_.num_constraints().value());
@@ -953,7 +953,7 @@ LpGlopInterface::GetDualRay() const {
 
 absl::StatusOr<absl::StrongVector<ColIndex, LpBasisStatus>>
 LpGlopInterface::GetBasisStatusForColumns() const {
-  VLOG(2) << "calling GetBasisStatusForColumns().";
+  VLOG(10) << "calling GetBasisStatusForColumns().";
   DCHECK(IsOptimal());
   absl::StrongVector<ColIndex, LpBasisStatus> statuses;
   statuses.reserve(lp_.num_variables().value());
@@ -966,7 +966,7 @@ LpGlopInterface::GetBasisStatusForColumns() const {
 
 absl::StatusOr<absl::StrongVector<RowIndex, LpBasisStatus>>
 LpGlopInterface::GetBasisStatusForRows() const {
-  VLOG(2) << "calling GetBasisStatusForRows().";
+  VLOG(10) << "calling GetBasisStatusForRows().";
   DCHECK(IsOptimal());
   absl::StrongVector<RowIndex, LpBasisStatus> statuses;
   statuses.reserve(lp_.num_constraints().value());
@@ -980,7 +980,7 @@ LpGlopInterface::GetBasisStatusForRows() const {
 absl::Status LpGlopInterface::SetBasisStatusForColumnsAndRows(
     const absl::StrongVector<ColIndex, LpBasisStatus>& column_basis_statuses,
     const absl::StrongVector<RowIndex, LpBasisStatus>& row_basis_statuses) {
-  VLOG(2) << "calling SetBasisStatusForColumnsAndRows().";
+  VLOG(10) << "calling SetBasisStatusForColumnsAndRows().";
   BasisState state;
   state.statuses.reserve(lp_.num_variables() +
                          RowToColIndex(lp_.num_constraints()));
@@ -999,15 +999,18 @@ absl::Status LpGlopInterface::SetBasisStatusForColumnsAndRows(
 }
 
 std::vector<ColOrRowIndex> LpGlopInterface::GetColumnsAndRowsInBasis() const {
-  VLOG(2) << "calling GetColumnsAndRowsInBasis().";
+  VLOG(10) << "calling GetColumnsAndRowsInBasis().";
   std::vector<ColOrRowIndex> basis;
   basis.reserve(GetNumberOfRows().value());
   // The order in which we populate the `basis` is important!
   for (GlopRowIndex row(0); row < lp_.num_constraints(); ++row) {
     const GlopColIndex col = solver_.GetBasis(row);
+    VLOG(3) << "solver basis index: " << col;
     basis.push_back(col < lp_.num_variables()
                         ? ColOrRowIndex(ColIndex(col.value()))
-                        : ColOrRowIndex(RowIndex(col.value())));
+                        : ColOrRowIndex(RowIndex(col.value() -
+                                                 lp_.num_variables().value())));
+    VLOG(3) << "Basis index: " << basis.back() << " from GlopRowIndex: " << row;
   }
   return basis;
 }
@@ -1018,7 +1021,7 @@ std::vector<ColOrRowIndex> LpGlopInterface::GetColumnsAndRowsInBasis() const {
 
 absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
     RowIndex row_in_basis) const {
-  VLOG(2) << "calling GetSparseRowOfBInverted().";
+  VLOG(10) << "calling GetSparseRowOfBInverted().";
   SparseRow sparse_row;
 
   solver_.GetBasisFactorization().LeftSolveForUnitRow(
@@ -1027,7 +1030,11 @@ absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
       solver_.GetBasis(GlopRowIndex(row_in_basis.value())), tmp_row_.get());
 
   // DCHECK_EQ(tmp_row_->values.size(), lp_.num_constraints().value());
-
+  absl::StrongVector<RowIndex, double> row_activities = GetRowActivities().value();
+  LOG(INFO) << "Row activities: ";
+  for (RowIndex row_index(0); row_index < row_activities.size(); ++row_index) {
+    LOG(INFO) << "Row " << row_index << ": " << row_activities[row_index];
+  }
   // Vectors in Glop might be stored in dense or sparse format depending on
   // the values. If non_zeros are given, we can directly loop over the
   // non_zeros, otherwise we have to collect the nonzeros.
@@ -1050,12 +1057,14 @@ absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
       }
     }
   }
+  VLOG(3) << "Sparse row: " << sparse_row;
+  WriteLpToFile("lp_g.txt");
   return sparse_row;
 }
 
 absl::StatusOr<SparseCol> LpGlopInterface::GetSparseColumnOfBInverted(
     ColIndex col_in_basis) const {
-  VLOG(2) << "calling GetSparseColumnOfBInverted().";
+  VLOG(10) << "calling GetSparseColumnOfBInverted().";
   SparseCol sparse_column;
   // We need to loop through the rows to extract the values for `col_in_basis`.
   for (GlopRowIndex row(0); row < lp_.num_constraints(); ++row) {
@@ -1074,7 +1083,7 @@ absl::StatusOr<SparseCol> LpGlopInterface::GetSparseColumnOfBInverted(
 
 absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInvertedTimesA(
     RowIndex row_in_basis) const {
-  VLOG(2) << "calling GetSparseRowOfBInvertedTimesA().";
+  VLOG(10) << "calling GetSparseRowOfBInvertedTimesA().";
   SparseRow sparse_row;
   solver_.GetBasisFactorization().LeftSolveForUnitRow(
       GlopColIndex(row_in_basis.value()), tmp_row_.get());
@@ -1093,7 +1102,7 @@ absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInvertedTimesA(
 
 absl::StatusOr<SparseCol> LpGlopInterface::GetSparseColumnOfBInvertedTimesA(
     ColIndex col_in_basis) const {
-  VLOG(2) << "calling GetSparseColumnOfBInvertedTimesA().";
+  VLOG(10) << "calling GetSparseColumnOfBInvertedTimesA().";
   SparseCol sparse_column;
   solver_.GetBasisFactorization().RightSolveForProblemColumn(
       GlopColIndex(col_in_basis.value()), tmp_column_.get());
@@ -1133,7 +1142,7 @@ absl::StatusOr<SparseCol> LpGlopInterface::GetSparseColumnOfBInvertedTimesA(
 // ==========================================================================
 
 LpParameters LpGlopInterface::GetLpParameters() const {
-  VLOG(2) << "calling GetLpParameters().";
+  VLOG(10) << "calling GetLpParameters().";
   LpParameters params;
   params.set_lp_solver_type(LpParameters::LP_GLOP);
 
@@ -1217,7 +1226,7 @@ LpParameters LpGlopInterface::GetLpParameters() const {
 namespace {
 
 absl::Status LpParametersAreSupportedByGlop(const LpParameters& params) {
-  VLOG(2) << "calling LpParametersAreSupportedByGlop().";
+  VLOG(10) << "calling LpParametersAreSupportedByGlop().";
   RETURN_IF_ERROR(LpParametersAreValid(params));
 
   if (params.lp_solver_type() != LpParameters::LP_GLOP) {
@@ -1227,7 +1236,7 @@ absl::Status LpParametersAreSupportedByGlop(const LpParameters& params) {
     return absl::InvalidArgumentError("Unsupported scaling strategy.");
   }
   if (params.pricing_strategy() ==
-          LpParameters::PRICING_STEEPEST_EDGE_QUICK_START ||
+          LpParameters::PRICING_STEEPEST_EDGE_QUICK_START or
       params.pricing_strategy() == LpParameters::PRICING_PARTIAL_DANTZIG) {
     return absl::InvalidArgumentError("Unsupported pricing strategy.");
   }
@@ -1245,7 +1254,7 @@ absl::Status LpParametersAreSupportedByGlop(const LpParameters& params) {
 }  // namespace
 
 absl::Status LpGlopInterface::SetLpParameters(const LpParameters& params) {
-  VLOG(2) << "calling SetLpParameters().";
+  VLOG(10) << "calling SetLpParameters().";
   RETURN_IF_ERROR(LpParametersAreSupportedByGlop(params));
 
   solve_from_scratch_ = params.solve_from_scratch();
@@ -1360,12 +1369,12 @@ absl::Status LpGlopInterface::SetLpParameters(const LpParameters& params) {
 // ==========================================================================
 
 double LpGlopInterface::Infinity() const {
-  VLOG(2) << "calling Infinity().";
+  VLOG(10) << "calling Infinity().";
   return std::numeric_limits<double>::infinity();
 }
 
 bool LpGlopInterface::IsInfinity(double value) const {
-  VLOG(2) << "calling IsInfinity().";
+  VLOG(10) << "calling IsInfinity().";
   return value == Infinity();
 }
 
@@ -1374,7 +1383,7 @@ bool LpGlopInterface::IsInfinity(double value) const {
 // ==========================================================================
 
 absl::Status LpGlopInterface::ReadLpFromFile(const std::string& file_path) {
-  VLOG(2) << "calling ReadLpFromFile().";
+  VLOG(10) << "calling ReadLpFromFile().";
   MPModelProto proto;
   if (!ReadFileToProto(file_path, &proto)) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -1387,16 +1396,16 @@ absl::Status LpGlopInterface::ReadLpFromFile(const std::string& file_path) {
 
 absl::StatusOr<std::string> LpGlopInterface::WriteLpToFile(
     const std::string& file_path) const {
-  VLOG(2) << "calling WriteLpToFile().";
+  VLOG(10) << "calling WriteLpToFile().";
   MPModelProto proto;
   LinearProgramToMPModelProto(lp_, &proto);
   if (!WriteProtoToFile(file_path, proto,
                         operations_research::ProtoWriteFormat::kProtoText,
-                        /*gzipped=*/true)) {
+                        /*gzipped=*/false)) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrFormat("Could not write: %s", file_path));
   }
-  return absl::StrCat(file_path, ".gz");
+  return absl::StrCat(file_path);
 }
 
 }  // namespace minimip
