@@ -1863,7 +1863,8 @@ TEST(CompareTestSolve, comparePrimalSolves) {
       VLOG(3) << "col: " << col;
       VLOG(3) << "lower_bounds[col]: " << lower_bounds[col];
       VLOG(3) << "upper_bounds[col]: " << upper_bounds[col];
-      CHECK_OK(lpi_->SetColumnBounds(col, lower_bounds[col], upper_bounds[col]));
+      CHECK_OK(
+          lpi_->SetColumnBounds(col, lower_bounds[col], upper_bounds[col]));
     }
     for (RowIndex row(0); row < left_hand_sides.size(); ++row) {
       SparseRow row_coefficients;

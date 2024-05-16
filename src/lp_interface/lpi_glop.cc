@@ -1030,7 +1030,8 @@ absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
       solver_.GetBasis(GlopRowIndex(row_in_basis.value())), tmp_row_.get());
 
   // DCHECK_EQ(tmp_row_->values.size(), lp_.num_constraints().value());
-  absl::StrongVector<RowIndex, double> row_activities = GetRowActivities().value();
+  absl::StrongVector<RowIndex, double> row_activities =
+      GetRowActivities().value();
   LOG(INFO) << "Row activities: ";
   for (RowIndex row_index(0); row_index < row_activities.size(); ++row_index) {
     LOG(INFO) << "Row " << row_index << ": " << row_activities[row_index];

@@ -163,7 +163,8 @@ DenseRow MipTree::RetrieveUpperBounds(NodeIndex n,
   return upper_bounds;
 }
 
-// mip_tree_.GenerateDotFile(current_node, "/Users/cgraczy/Desktop/git/MiniMIP/unit_tests/mip_tree");
+// mip_tree_.GenerateDotFile(current_node,
+// "/Users/cgraczy/Desktop/git/MiniMIP/unit_tests/mip_tree");
 void MipTree::GenerateDotFile(const NodeIndex& current_node,
                               const std::string& filepath) {
   std::ofstream file(filepath + ".dot");
@@ -212,7 +213,8 @@ void MipTree::GenerateDotFile(const NodeIndex& current_node,
     // application.
     std::cerr << "Failed to execute command: " << command << "\n";
   } else {
-    std::cout << "Graph visualization generated: " << filepath + ".png" << "\n";
+    std::cout << "Graph visualization generated: " << filepath + ".png"
+              << "\n";
   }
 }
 

@@ -1445,14 +1445,15 @@ absl::StatusOr<SparseRow> LpSoplexInterface::GetSparseRowOfBInverted(
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
 
-  absl::StrongVector<RowIndex, double> row_activities = GetRowActivities().value();
+  absl::StrongVector<RowIndex, double> row_activities =
+      GetRowActivities().value();
 
   LOG(INFO) << "Row activities: ";
   for (RowIndex row_index(0); row_index < row_activities.size(); ++row_index) {
     LOG(INFO) << "Row " << row_index << ": " << row_activities[row_index];
   }
 
-  //TODO (CG): Check if this should be applied automatically.
+  // TODO (CG): Check if this should be applied automatically.
   int slack = row_activities.at(row_in_basis) < 0 ? -1 : 1;
   if (slack == -1) {
     LOG(INFO) << "SLACK IS NEGATIVE";

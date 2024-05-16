@@ -70,16 +70,18 @@ double CGRoundInteger(const SolverContextInterface& context, double coefficient,
   } else {
     // Ensure the conditions involving `k` are correctly met.
     DCHECK_LT(f0 + (1.0 / k) * (p - 1) * (1 - f0), fj)
-        << "Lower bound violated: " << (f0 + (1.0 / k) * (p - 1) * (1 - f0)) << " >= " << fj;
+        << "Lower bound violated: " << (f0 + (1.0 / k) * (p - 1) * (1 - f0))
+        << " >= " << fj;
     DCHECK_LE(fj, f0 + (1.0 / k) * p * (1 - f0))
-        << "Upper bound violated: " << fj << " > " << (f0 + (1.0 / k) * p * (1 - f0));
+        << "Upper bound violated: " << fj << " > "
+        << (f0 + (1.0 / k) * p * (1 - f0));
   }
 
   double result = context.FloorWithTolerance(coefficient) + p / (k + 1);
 
   LOG(INFO) << "Result of CG rounding! Coefficient: " << coefficient
-             << ", k: " << k << ", f0: " << f0 << ", fj: " << fj << ", p: " << p
-             << ", result: " << result;
+            << ", k: " << k << ", f0: " << f0 << ", fj: " << fj << ", p: " << p
+            << ", result: " << result;
 
   // Check the final result is non-negative as required.
   DCHECK_GE(result, 0.0) << "Negative result found in CG rounding!";
@@ -105,7 +107,8 @@ AggregatedRow AggregateByWeight(
 
     LOG(INFO) << "slack_sign: " << slack_sign;
 
-    LOG(INFO) << "Variable Coefficients: " << context.lpi()->GetSparseRowCoefficients(row);
+    LOG(INFO) << "Variable Coefficients: "
+              << context.lpi()->GetSparseRowCoefficients(row);
 
     aggregated_row.variable_coefficients.AddMultipleOfVector(
         weight, context.lpi()->GetSparseRowCoefficients(row));
@@ -147,13 +150,15 @@ AggregatedRow AggregateByWeight(
     LOG(INFO) << "Upper Bound: " << ub;
 
     // Variable is already positive, no transformation needed.
-    if (lb >= 0.0){
-      LOG(INFO) << "No transformation needed. Variable is already non-negative.";
+    if (lb >= 0.0) {
+      LOG(INFO)
+          << "No transformation needed. Variable is already non-negative.";
       return coefficient;
     }
 
     if (!context.lpi()->IsInfinity(-lb)) {
-      LOG(INFO) << "Transforming variable to non-negative form using lower bound.";
+      LOG(INFO)
+          << "Transforming variable to non-negative form using lower bound.";
 
       // We have x[j] >= lb <-> x[j] - lb >= 0 and can define the new
       // variable
@@ -172,7 +177,8 @@ AggregatedRow AggregateByWeight(
     }
 
     if (!context.lpi()->IsInfinity(ub)) {
-      LOG(INFO) << "Transforming variable to non-negative form using upper bound.";
+      LOG(INFO)
+          << "Transforming variable to non-negative form using upper bound.";
 
       // We have x[j] <= ub <-> ub - x[j] >= 0 and can define the new
       // variable
@@ -253,16 +259,19 @@ void SubstituteSlackVariables(const SolverContextInterface& context,
     LOG(INFO) << "Substituting slack variable. Row: " << row;
     LOG(INFO) << "Slack Coefficient: " << slack_coefficient;
     LOG(INFO) << "Slack Sign: " << slack_sign;
-    LOG(INFO) << "aggregated_row.right_hand_side before: " << aggregated_row.right_hand_side;
+    LOG(INFO) << "aggregated_row.right_hand_side before: "
+              << aggregated_row.right_hand_side;
 
     aggregated_row.variable_coefficients -=
         slack_sign * slack_coefficient *
         context.lpi()->GetSparseRowCoefficients(row);
-    LOG(INFO) << "Updated aggregated_row.variable_coefficients: " << aggregated_row.variable_coefficients;
+    LOG(INFO) << "Updated aggregated_row.variable_coefficients: "
+              << aggregated_row.variable_coefficients;
 
     aggregated_row.right_hand_side -=
         slack_sign * slack_coefficient * side_value;
-    LOG(INFO) << "aggregated_row.right_hand_side after: " << aggregated_row.right_hand_side;
+    LOG(INFO) << "aggregated_row.right_hand_side after: "
+              << aggregated_row.right_hand_side;
   }
   aggregated_row.slack_coefficients.Clear();
   aggregated_row.slack_signs.Clear();
@@ -375,25 +384,28 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
   DCHECK_LE(1 / (k + 1), f0);
   DCHECK_LT(f0, 1 / k);
 
-  LOG(INFO) << "1 / (k + 1) (=" << 1 / (k + 1) <<") <= f0 (=" << f0 << ") < 1/k (=" << 1/k <<")";
+  LOG(INFO) << "1 / (k + 1) (=" << 1 / (k + 1) << ") <= f0 (=" << f0
+            << ") < 1/k (=" << 1 / k << ")";
   aggregated_row.slack_coefficients.Transform(
       [&context, k, f0](RowIndex row, double val) {
-
         double original_val = val;
         double transformed_val = HasIntegralSlackVariable(context, row)
                                      ? CGRoundInteger(context, val, k, f0)
                                      : 0.0;
-        LOG(INFO) << "Row: " << row << ", Original: " << original_val << ", Transformed: " << transformed_val;
+        LOG(INFO) << "Row: " << row << ", Original: " << original_val
+                  << ", Transformed: " << transformed_val;
         DCHECK(transformed_val >= 0.0);
         return transformed_val;
       });
   aggregated_row.variable_coefficients.Transform(
       [&context, k, f0](ColIndex col, double val) {
         double original_val = val;
-        double transformed_val = context.mip_data().integer_variables().contains(col)
-                                     ? CGRoundInteger(context, val, k, f0)
-                                     : 0.0;
-        LOG(INFO) << "Column: " << col << ", Original: " << original_val << ", Transformed: " << transformed_val;
+        double transformed_val =
+            context.mip_data().integer_variables().contains(col)
+                ? CGRoundInteger(context, val, k, f0)
+                : 0.0;
+        LOG(INFO) << "Column: " << col << ", Original: " << original_val
+                  << ", Transformed: " << transformed_val;
         DCHECK(transformed_val >= 0.0);
         return transformed_val;
       });

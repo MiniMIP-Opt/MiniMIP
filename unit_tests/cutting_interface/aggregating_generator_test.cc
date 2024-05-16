@@ -292,8 +292,8 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
   for (int i = 0; i < 10; ++i) {
     ASSERT_OK_AND_ASSIGN(const std::vector<CutData> cuts,
                          generator_->GenerateCuttingPlanes(*solver_));
-    if (cuts.empty()){
-      LOG(INFO)<< "No cuts generated in iteration " << i << ".\n";
+    if (cuts.empty()) {
+      LOG(INFO) << "No cuts generated in iteration " << i << ".\n";
     }
 
     ASSERT_OK_AND_ASSIGN(
@@ -323,7 +323,8 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
   // expect that the MIP is solved. Note that this is not guaranteed for all
   // generator families.
   ASSERT_OK_AND_ASSIGN(bool is_mip_feasible, SolutionIsMipFeasible());
-  LOG(INFO) << is_mip_feasible ? "Mip feasible solution." : "Mip infeasible solution.";
+  LOG(INFO) << is_mip_feasible ? "Mip feasible solution."
+                               : "Mip infeasible solution.";
 }
 }  // namespace
 }  // namespace minimip
