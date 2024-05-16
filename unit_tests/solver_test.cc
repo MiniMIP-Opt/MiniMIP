@@ -31,7 +31,7 @@ namespace {
 // -3*x1 + 2*x2 <= 0
 // x1, x2 >= 0
 // x1, x2 integer
-MiniMipProblem CreateUnboundedProblem() {
+MiniMipProblem CreateProblem() {
   MiniMipProblem problem;
   problem.variables.push_back(MiniMipVariable{.name = "x1",
                                               .objective_coefficient = 0.0,
@@ -63,7 +63,7 @@ MiniMipProblem CreateUnboundedProblem() {
 }
 
 TEST(SolverTest, CreateWithValidInput) {
-  MiniMipProblem problem = CreateUnboundedProblem();
+  MiniMipProblem problem = CreateProblem();
 
   auto solver_result = Solver::Create(problem);
   ASSERT_TRUE(solver_result.ok());
@@ -71,7 +71,7 @@ TEST(SolverTest, CreateWithValidInput) {
 }
 
 TEST(SolverTest, InitializeSolver) {
-  MiniMipProblem problem = CreateUnboundedProblem();
+  MiniMipProblem problem = CreateProblem();
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 

@@ -158,6 +158,7 @@ LpGlopInterface::LpGlopInterface()
 
 absl::Status LpGlopInterface::PopulateFromMipData(const MipData& mip_data) {
   VLOG(2) << "calling PopulateFromMipData().";
+
   RETURN_IF_ERROR(Clear());
   DCHECK_EQ(mip_data.constraint_names().size(),
             mip_data.left_hand_sides().size());

@@ -1,3 +1,4 @@
+# Disable Bazel module support.
 common --noenable_bzlmod
 
 # Sets the default Apple platform to macOS.
@@ -20,27 +21,27 @@ build --keep_going
 # anyway).
 build --enable_platform_specific_config
 
+# Configure C++ compilation options.
 build:linux --repo_env="CC=clang" --cxxopt="--std=c++17" --cxxopt=-Wno-sign-compare --host_cxxopt="-std=c++17" --host_cxxopt=-Wno-sign-compare
 build:macos --cxxopt="-std=c++17" --cxxopt=-Wno-sign-compare --cxxopt=-mmacos-version-min=10.15  --cxxopt=-Wno-dangling-field --features=-supports_dynamic_linker
 
+# Debug build settings.
 build:debug -c dbg
 build:debug --copt="-g"
 build:debug --strip="never"
 
-# Print command lines for build commands.
-# build --subcommands=pretty_print
+# Enable verbose failures for build and test commands.
+build --verbose_failures
+build --subcommands=pretty_print
+#test --verbose_failures
 
-# Print test logs for failed tests.
-test --test_output=errors
+# Increase verbosity level for test logs.
+test --test_output=all --test_arg=--v=3
 
-# Put user-specific options in .bazelrc.user
+# Import user-specific options from .bazelrc.user if it exists.
 try-import %workspace%/.bazelrc.user
 
-# Enable the sandboxed memory safety checks for the build and test actions.
-#build --sandbox_debug
-#build --copt="-fsanitize=address"
-#build --linkopt="-fsanitize=address"
-
+# Enable sandboxed memory safety checks for test actions.
 #test --sandbox_debug
 #test --copt="-fsanitize=address"
 #test --linkopt="-fsanitize=address"

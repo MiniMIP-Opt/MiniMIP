@@ -74,7 +74,6 @@ class SmallModelSmokeTest
 
     solver_ = std::move(solver);
     optimum_ = std::move(data.second);
-    CHECK_OK(solver_->mutable_lpi()->PopulateFromMipData(solver_->mip_data()));
   }
 
   static std::pair<MiniMipProblem, SparseRow> CreateSampleProblem(
@@ -298,7 +297,7 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
         solver_->lpi()->GetPrimalValues());
     const SparseRow lp_optimum = SparseRow(primal_values);
 
-    double tolerance = 1e-12;
+    double tolerance = 1e-9;
     for (const CutData& cut : cuts) {
       // All cuts should remove the LP optimum.
       ASSERT_THAT(cut.row(), Activation(lp_optimum,

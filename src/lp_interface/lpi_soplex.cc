@@ -401,7 +401,7 @@ LpSoplexInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 // ==========================================================================
 
 absl::Status LpSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
-  VLOG(2) << "calling LoadColumnLP().";
+  VLOG(2) << "calling PopulateFromMipData().";
 
   DCHECK_EQ(mip_data.constraint_names().size(),
             mip_data.left_hand_sides().size());
@@ -415,7 +415,7 @@ absl::Status LpSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
   CHECK(PreStrongBranchingBasisFreed());
 
   try {
-    int num_rows = mip_data.matrix().num_rows().value();
+    int num_rows = mip_data.left_hand_sides().size();
     soplex::LPRowSet rowset(num_rows);
     soplex::DSVector empty_vector(0);
 
@@ -499,11 +499,11 @@ absl::Status LpSoplexInterface::AddColumns(
     if (!(matrix.num_cols() == 0) && matrix.AllColsAreClean()) {
       // Perform a check to ensure that no new rows have been added.
       int num_rows = spx_->numRowsReal();
-      for (ColIndex i(0); i < matrix.num_cols(); ++i) {
-        for (int j = 0; j < matrix.col(i).entries().size(); ++j) {
-          DCHECK_LE(0, matrix.col(i).indices()[j]);
-          DCHECK_LT(matrix.col(i).indices()[j], num_rows);
-          DCHECK_NE(matrix.col(i).values()[j], 0.0);
+      for (ColIndex col(0); col < matrix.num_cols(); ++col) {
+        for (int row = 0; row < matrix.col(col).entries().size(); ++row) {
+          DCHECK_LE(0, matrix.col(col).indices()[row]);
+          DCHECK_LT(matrix.col(col).indices()[row], num_rows);
+          DCHECK_NE(matrix.col(col).values()[row], 0.0);
         }
       }
     }
@@ -1435,6 +1435,19 @@ absl::StatusOr<SparseRow> LpSoplexInterface::GetSparseRowOfBInverted(
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
 
+  absl::StrongVector<RowIndex, double> row_activities = GetRowActivities().value();
+
+  LOG(INFO) << "Row activities: ";
+  for (RowIndex row_index(0); row_index < row_activities.size(); ++row_index) {
+    LOG(INFO) << "Row " << row_index << ": " << row_activities[row_index];
+  }
+
+  int slack = row_activities.at(row_in_basis) < 0 ? -1 : 1;
+
+  if (slack == -1) {
+    LOG(INFO) << "SLACK IS NEGATIVE";
+  }
+
   SparseRow sparse_row;
   if (num_indices == -1) {
     // This means that Soplex used a dense representation. If so, the result
@@ -1448,6 +1461,7 @@ absl::StatusOr<SparseRow> LpSoplexInterface::GetSparseRowOfBInverted(
     }
   }
   sparse_row.CleanUpIfNeeded();
+  LOG(INFO) << "Sparse row: " << sparse_row;
   return sparse_row;
 }
 
