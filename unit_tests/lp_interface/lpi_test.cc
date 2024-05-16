@@ -1136,7 +1136,7 @@ TEST_P(SolveTest, PrimalDualFeasible1) {
     EXPECT_THAT(row_basis_status, ElementsAre(LpBasisStatus::kAtUpperBound,
                                               LpBasisStatus::kBasic));
     ASSERT_THAT(lpi_->GetColumnsAndRowsInBasis(),
-                UnorderedElementsAre(ColOrRowIndex(RowIndex(3)),
+                UnorderedElementsAre(ColOrRowIndex(RowIndex(1)),
                                      ColOrRowIndex(ColIndex(0))));
 
     // Check B inverse
@@ -1258,7 +1258,7 @@ TEST_P(SolveTest, PrimalDualFeasible2) {
                 ElementsAre(LpBasisStatus::kBasic, LpBasisStatus::kAtUpperBound,
                             LpBasisStatus::kAtUpperBound));
     ASSERT_THAT(lpi_->GetColumnsAndRowsInBasis(),
-                UnorderedElementsAre(ColOrRowIndex(RowIndex(2)),
+                UnorderedElementsAre(ColOrRowIndex(RowIndex(0)),
                                      ColOrRowIndex(ColIndex(0)),
                                      ColOrRowIndex(ColIndex(1))));
 
@@ -1860,6 +1860,10 @@ TEST(CompareTestSolve, comparePrimalSolves) {
       CHECK_OK(lpi_->AddColumn(SparseCol(), lower_bounds[col],
                                upper_bounds[col], objective_coefficients[col],
                                ""));
+      VLOG(3) << "col: " << col;
+      VLOG(3) << "lower_bounds[col]: " << lower_bounds[col];
+      VLOG(3) << "upper_bounds[col]: " << upper_bounds[col];
+      CHECK_OK(lpi_->SetColumnBounds(col, lower_bounds[col], upper_bounds[col]));
     }
     for (RowIndex row(0); row < left_hand_sides.size(); ++row) {
       SparseRow row_coefficients;
@@ -1870,6 +1874,11 @@ TEST(CompareTestSolve, comparePrimalSolves) {
       }
       CHECK_OK(lpi_->AddRow(row_coefficients, left_hand_sides[row],
                             right_hand_sides[row], ""));
+    }
+    if (lpi_ == lpi_soplex.get()) {
+      lpi_->WriteLpToFile("lp_sp.txt");
+    } else {
+      lpi_->WriteLpToFile("lp_gp.txt");
     }
   }
 
@@ -1908,39 +1917,38 @@ TEST(CompareTestSolve, compareDualSolves) {
   auto lpi_soplex = CreateLpSolver(lp_params).value();
 
   for (auto lpi_ : {lpi_glop.get(), lpi_soplex.get()}) {
-    bool is_maximization = true;
-    const absl::StrongVector<ColIndex, double> lower_bounds = {0, 0};
-    const absl::StrongVector<ColIndex, double> upper_bounds = {kInf, kInf};
-    const absl::StrongVector<ColIndex, double> objective_coefficients = {1, 0};
-    const absl::StrongVector<RowIndex, double> left_hand_sides = {-kInf, -kInf};
-    const absl::StrongVector<RowIndex, double> right_hand_sides = {6, 0};
-    const absl::StrongVector<ColIndex, absl::StrongVector<RowIndex, double>>
-        matrix = {{3, -3}, {2, 2}};
+    MipData mip_data =
+        MipData({.variables = {MiniMipVariable{.name = "x1",
+                                               .objective_coefficient = 1.0,
+                                               .lower_bound = 1,
+                                               .upper_bound = kInf,
+                                               .is_integer = true},
+                               MiniMipVariable{.name = "x2",
+                                               .objective_coefficient = 0.0,
+                                               .lower_bound = 0,
+                                               .upper_bound = kInf,
+                                               .is_integer = true}},
+                 .constraints = {MiniMipConstraint{
+                                     .name = "ct1",
+                                     .var_indices = {0, 1},
+                                     .coefficients = {3.0, 2.0},
+                                     .left_hand_side = -kInf,
+                                     .right_hand_side = 6.0,
+                                 },
+                                 MiniMipConstraint{
+                                     .name = "ct2",
+                                     .var_indices = {0, 1},
+                                     .coefficients = {-3.0, 2.0},
+                                     .left_hand_side = -kInf,
+                                     .right_hand_side = 0.0,
+                                 }},
+                 .is_maximization = true});
+    ASSERT_OK(lpi_->PopulateFromMipData(mip_data));
 
-    // We use CHECK rather than ASSERT since they check if the test is written
-    // properly, not that the lpi behaves correctly.
-    CHECK_EQ(lower_bounds.size(), upper_bounds.size());
-    CHECK_EQ(lower_bounds.size(), objective_coefficients.size());
-    CHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
-    CHECK_EQ(lower_bounds.size(), matrix.size());
-    for (const auto& row : matrix) CHECK_EQ(row.size(), left_hand_sides.size());
-
-    CHECK_OK(lpi_->Clear());
-    CHECK_OK(lpi_->SetObjectiveSense(is_maximization));
-    for (ColIndex col(0); col < lower_bounds.size(); ++col) {
-      CHECK_OK(lpi_->AddColumn(SparseCol(), lower_bounds[col],
-                               upper_bounds[col], objective_coefficients[col],
-                               ""));
-    }
-    for (RowIndex row(0); row < left_hand_sides.size(); ++row) {
-      SparseRow row_coefficients;
-      for (ColIndex col(0); col < lower_bounds.size(); ++col) {
-        if (matrix[col][row] != 0) {
-          row_coefficients.AddEntry(col, matrix[col][row]);
-        }
-      }
-      CHECK_OK(lpi_->AddRow(row_coefficients, left_hand_sides[row],
-                            right_hand_sides[row], ""));
+    if (lpi_ == lpi_soplex.get()) {
+      lpi_->WriteLpToFile("lp_s.txt");
+    } else {
+      lpi_->WriteLpToFile("lp_g.txt");
     }
   }
 
