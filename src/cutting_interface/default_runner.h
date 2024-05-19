@@ -33,7 +33,7 @@ class DefaultRunner : public CutRunnerInterface {
  public:
   explicit DefaultRunner(const CutRunnerParameters& params)
       : params_(params.default_runner_parameters()) {
-    VLOG(2) << "calling DefaultRunner().";
+    VLOG(10) << "calling DefaultRunner().";
     // Check and initialize the cut generators.
     for (const auto& generator_params : params.generator_parameters()) {
       auto generator_or_status = CreateCutGenerator(generator_params);

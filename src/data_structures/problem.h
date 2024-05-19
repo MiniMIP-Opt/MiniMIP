@@ -73,8 +73,8 @@ struct MiniMipSolutionHint {
 // API Output Datastructures
 // ==========================================================================
 
-enum class MiniMipSolveStatus : std::uint8_t;
-enum class MiniMipStoppingReason : std::uint8_t;
+enum class MiniMipSolveStatus;
+enum class MiniMipStoppingReason;
 
 struct MiniMipSolution {
   // Dense vector with the solution.
@@ -116,7 +116,7 @@ struct MiniMipResult {
   }
 };
 
-enum class MiniMipSolveStatus : std::uint8_t {
+enum class MiniMipSolveStatus {
   // The provided input problem was invalid.
   kProblemInvalid = 0,
 
@@ -153,7 +153,7 @@ enum class MiniMipSolveStatus : std::uint8_t {
   kInfeasibleOrUnbounded = 6,
 };
 
-enum class MiniMipStoppingReason : std::uint8_t {
+enum class MiniMipStoppingReason {
   kError = 0,
   kWallclockTimeLimitReached = 1,
   kDeterministicTimeLimitReached = 2,
