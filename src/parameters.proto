@@ -226,9 +226,16 @@ message MiniMipParameters {
 
   repeated CutSelectorParameters cut_selectors = 6;
 
-  optional BranchingParameters branching_parameters = 10;
+  // Maximal number of consecutive infeasible nodes in a single "plunge".
+  // A plunge is a path of exploring the search tree somewhere from the "top" (the root or close to root)
+  // in depth-search manner (which preserves LP simplex incrementality).
+  // If set to 0, the solver will back-jump somewhere to the top of the tree immediately after
+  // encountering an infeasible node. If set to 1, on encountering an infeasible node,
+  // the solver will explore its sibling node (and only if this one is also infeasible, it will back-jump).
+  // With values >1, the solver will back-track level-by-level (until a feasible node is found, or the limit is hit).
+  // Set to -1 to always back-track (and don't back-jump at all).
 
-  // The maximum number of nodes explored by the solver. Set to -1 to impose no
-  // limit.
-  optional int32 max_plunge_length = 7 [default = 10];
+  optional int32 backtrack_limit = 7 [default = 2];
+
+  optional BranchingParameters branching_parameters = 10;
 }

@@ -76,7 +76,7 @@ using SparseCol = StrongSparseVectorOfDoubles<RowIndex>;
 template <typename SparseIndex>
 bool operator==(const SparseEntry<SparseIndex>& lhs,
                 const SparseEntry<SparseIndex>& rhs) {
-  return lhs.index == rhs.index && lhs.value == rhs.value;
+  return lhs.index == rhs.index and lhs.value == rhs.value;
 }
 
 // This is needed for nice printing in unit tests and via LOG().
@@ -204,7 +204,7 @@ class StrongSparseVectorOfDoubles {
         [](const SparseEntry<SparseIndex>& a, const SparseIndex i) -> bool {
           return a.index < i;
         });
-    return (ge_entry == entries_.end() || ge_entry->index != index)
+    return (ge_entry == entries_.end() or ge_entry->index != index)
                ? 0.0
                : ge_entry->value;
   }
@@ -248,7 +248,7 @@ class StrongSparseVectorOfDoubles {
     // `may_need_cleaning_` may be true even if `IsClean()` is false (because
     // we unconditionally mark the entries for cleaning when returning
     // `mutable_entries()`).
-    DCHECK(IsClean() || may_need_cleaning_);
+    DCHECK(IsClean() or may_need_cleaning_);
     return may_need_cleaning_;
   }
 
@@ -278,7 +278,7 @@ class StrongSparseVectorOfDoubles {
 
     // All entries must be non-zeros and the indices must be non-negative.
     return std::all_of(entries_.begin(), entries_.end(), [](const auto& e) {
-      return e.value != 0.0 && e.index >= SparseIndex(0);
+      return e.value != 0.0 and e.index >= SparseIndex(0);
     });
   }
 
@@ -411,7 +411,7 @@ class StrongSparseVectorOfDoubles {
     double product = 0.0;
     auto it1 = entries_.begin();
     auto it2 = other.entries_.begin();
-    while (it1 != entries_.end() && it2 != other.entries_.end()) {
+    while (it1 != entries_.end() and it2 != other.entries_.end()) {
       if (it1->index.value() == it2->index.value()) {
         product += it1->value * it2->value;
         ++it1;

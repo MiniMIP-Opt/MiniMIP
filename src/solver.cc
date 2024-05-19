@@ -80,7 +80,7 @@ absl::Status Solver::Solve() {
       mip_tree_.CloseNodeAndReclaimNodesUpToRootIfPossible(current_node);
 
       ++num_consecutive_infeasible_nodes;
-      if (num_consecutive_infeasible_nodes > params_.max_plunge_length()) {
+      if (num_consecutive_infeasible_nodes > params_.backtrack_limit()) {
         num_consecutive_infeasible_nodes = 0;
         backjump = true;
       }
