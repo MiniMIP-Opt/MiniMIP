@@ -67,10 +67,9 @@ MipData::MipData(const MiniMipProblem& problem)
     // Add the objective coefficients to the objective function such that
     // the objective function is in the form of a minimization problem.
     if (variable.objective_coefficient != 0) {
-        objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
-      }
+      objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
     }
-
+  }
 
   objective_.CleanUpIfNeeded();
 
@@ -109,7 +108,6 @@ MipData::MipData(const MiniMipProblem& problem)
     objective_offset_ *= -1.0;
     objective_.Transform([](ColIndex i, double value) { return -value; });
   }
-
 }
 
 bool MipData::SolutionIsIntegral(
