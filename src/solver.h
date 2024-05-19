@@ -37,7 +37,7 @@ class Solver : public SolverContextInterface {
   static absl::StatusOr<std::unique_ptr<Solver>> Create(
       const MiniMipProblem& problem = MiniMipProblem(),
       const MiniMipParameters& user_params = MiniMipParameters()) {
-    VLOG(2) << "calling Create().";
+    VLOG(10) << "calling Create().";
     const std::string problem_error = FindErrorInMiniMipProblem(problem);
     if (!problem_error.empty()) {
       return util::InvalidArgumentErrorBuilder()

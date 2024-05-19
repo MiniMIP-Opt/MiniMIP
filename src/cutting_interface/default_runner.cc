@@ -17,7 +17,7 @@
 namespace minimip {
 
 bool DefaultRunner::CutCondition(const SolverContextInterface& context) {
-  VLOG(2) << "calling CutCondition().";
+  VLOG(10) << "calling CutCondition().";
   // max cutrounds per node
 
   // max cuts
@@ -32,7 +32,7 @@ bool DefaultRunner::CutCondition(const SolverContextInterface& context) {
 
 absl::Status DefaultRunner::SeparateCurrentLPSolution(
     SolverContextInterface& context) {
-  VLOG(2) << "calling SeparateCurrentLPSolution().";
+  VLOG(10) << "calling SeparateCurrentLPSolution().";
   int i = 0;
   LpInterface* mutable_lpi = context.mutable_lpi();
 

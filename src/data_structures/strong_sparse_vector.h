@@ -76,7 +76,7 @@ using SparseCol = StrongSparseVectorOfDoubles<RowIndex>;
 template <typename SparseIndex>
 bool operator==(const SparseEntry<SparseIndex>& lhs,
                 const SparseEntry<SparseIndex>& rhs) {
-  return lhs.index == rhs.index && lhs.value == rhs.value;
+  return lhs.index == rhs.index and lhs.value == rhs.value;
 }
 
 // This is needed for nice printing in unit tests and via LOG().
@@ -145,7 +145,7 @@ class StrongSparseVectorOfDoubles {
   // introduced, the vector will be marked for cleaning. For order-preserving
   // changes, consider using Transform().
   absl::StrongVector<EntryIndex, SparseEntry<SparseIndex>>& mutable_entries() {
-    VLOG(4) << "calling mutable_entries().";
+    VLOG(10) << "calling mutable_entries().";
     DCHECK(!MayNeedCleaning())
         << "The vector is not clean! Call `CleanUpIfNeeded()`.";
     // To be on the safe side, we unconditionally mark the entries for clean up.
@@ -178,7 +178,7 @@ class StrongSparseVectorOfDoubles {
 
   // Adds new entry and marks the vector for cleaning (if needed).
   void AddEntry(SparseIndex index, double value) {
-    VLOG(4) << "calling AddEntry().";
+    VLOG(10) << "calling AddEntry().";
     if (!may_need_cleaning_) {
       const SparseIndex last_index = entries_.empty()
                                          ? kInvalidSparseIndex<SparseIndex>
@@ -206,7 +206,7 @@ class StrongSparseVectorOfDoubles {
         [](const SparseEntry<SparseIndex>& a, const SparseIndex i) -> bool {
           return a.index < i;
         });
-    return (ge_entry == entries_.end() || ge_entry->index != index)
+    return (ge_entry == entries_.end() or ge_entry->index != index)
                ? 0.0
                : ge_entry->value;
   }
@@ -216,7 +216,7 @@ class StrongSparseVectorOfDoubles {
   // Removes all entries, but does not release memory of the underlying
   // registry.
   void Clear() {
-    VLOG(4) << "calling Clear().";
+    VLOG(10) << "calling Clear().";
     entries_.clear();
     may_need_cleaning_ = false;
   }
@@ -224,7 +224,7 @@ class StrongSparseVectorOfDoubles {
   // Removes duplicates (the last entry takes precedence), removes zero entries,
   // and sorts entries. Runs in O(n log(n)), where n = entries().size()).
   void CleanUpIfNeeded() {
-    VLOG(4) << "calling CleanUpIfNeeded().";
+    VLOG(10) << "calling CleanUpIfNeeded().";
     if (!MayNeedCleaning()) return;
     std::stable_sort(entries_.begin(), entries_.end(),
                      [](const SparseEntry<SparseIndex>& lhs,
@@ -248,12 +248,12 @@ class StrongSparseVectorOfDoubles {
   }
 
   bool MayNeedCleaning() const {
-    VLOG(4) << "calling MayNeedCleaning().";
+    VLOG(10) << "calling MayNeedCleaning().";
     // Note, `!IsClean() => may_need_cleaning_`. In particular,
     // `may_need_cleaning_` may be true even if `IsClean()` is false (because
     // we unconditionally mark the entries for cleaning when returning
     // `mutable_entries()`).
-    DCHECK(IsClean() || may_need_cleaning_);
+    DCHECK(IsClean() or may_need_cleaning_);
     return may_need_cleaning_;
   }
 
@@ -272,7 +272,7 @@ class StrongSparseVectorOfDoubles {
   // Verifies whether `entries()` are clean (i.e., sorted, no duplicates, no
   // zeros).
   bool IsClean() const {
-    VLOG(4) << "calling IsClean().";
+    VLOG(10) << "calling IsClean().";
     // The indices must be in strictly increasing order, i.e., no duplicates
     // (hence "<=" in the comparison).
     if (!std::is_sorted(entries_.begin(), entries_.end(),
@@ -284,14 +284,14 @@ class StrongSparseVectorOfDoubles {
 
     // All entries must be non-zeros and the indices must be non-negative.
     return std::all_of(entries_.begin(), entries_.end(), [](const auto& e) {
-      return e.value != 0.0 && e.index >= SparseIndex(0);
+      return e.value != 0.0 and e.index >= SparseIndex(0);
     });
   }
 
   // Set v[i] = func(i, v[i]) for each nonzero value in the vector. Useful to
   // avoid resorting after order-preserving transformations.
   void Transform(std::function<double(SparseIndex, double)> func) {
-    VLOG(4) << "calling Transform().";
+    VLOG(10) << "calling Transform().";
     DCHECK(!may_need_cleaning_);
     for (auto& [index, value] : entries_) value = func(index, value);
     entries_.erase(std::remove_if(entries_.begin(), entries_.end(),
@@ -365,7 +365,7 @@ class StrongSparseVectorOfDoubles {
   // the total number of entries in both vectors.
   StrongSparseVectorOfDoubles& AddMultipleOfVector(
       double factor, const StrongSparseVectorOfDoubles& other) {
-    VLOG(4) << "calling AddMultipleOfVector().";
+    VLOG(10) << "calling AddMultipleOfVector().";
     DCHECK(!may_need_cleaning_);
     DCHECK(!other.may_need_cleaning_);
 
@@ -414,13 +414,13 @@ class StrongSparseVectorOfDoubles {
   template <typename OtherSparseIndex>
   double DotProduct(
       const StrongSparseVectorOfDoubles<OtherSparseIndex>& other) const {
-    VLOG(4) << "calling DotProduct().";
+    VLOG(10) << "calling DotProduct().";
     DCHECK(!may_need_cleaning_);
     DCHECK(!other.may_need_cleaning_);
     double product = 0.0;
     auto it1 = entries_.begin();
     auto it2 = other.entries_.begin();
-    while (it1 != entries_.end() && it2 != other.entries_.end()) {
+    while (it1 != entries_.end() and it2 != other.entries_.end()) {
       if (it1->index.value() == it2->index.value()) {
         product += it1->value * it2->value;
         ++it1;

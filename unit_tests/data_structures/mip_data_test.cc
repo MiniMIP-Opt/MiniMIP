@@ -32,7 +32,7 @@ using ::testing::UnorderedElementsAreArray;
 TEST(MipDataTests, CreateEmptyProblem) {
   MipData mip_data;
   EXPECT_EQ(mip_data.problem_name(), "");
-  EXPECT_EQ(mip_data.is_maximization(), false);
+  EXPECT_EQ(mip_data.was_maximization(), false);
   EXPECT_EQ(mip_data.objective_offset(), 0);
 
   EXPECT_TRUE(mip_data.objective().entries().empty());
@@ -188,7 +188,7 @@ TEST(MipDataTests, PopulatesMipDataDirection) {
   const MiniMipProblem problem = {.is_maximization = true};
   const MipData mip_data = MipData(problem);
 
-  EXPECT_EQ(mip_data.is_maximization(), true);
+  EXPECT_EQ(mip_data.was_maximization(), true);
 }
 
 TEST(MipDataTests, PopulatesMipDataOffset) {
@@ -246,7 +246,7 @@ TEST(MipDataTests, PopulatesMipDataFromMiniMipProblemWithVarBoundConstraint) {
   const MipData mip_data = MipData(problem);
 
   EXPECT_EQ(mip_data.problem_name(), "Test");
-  EXPECT_EQ(mip_data.is_maximization(), false);
+  EXPECT_EQ(mip_data.was_maximization(), false);
   EXPECT_EQ(mip_data.objective_offset(), 1.0);
 
   const SparseRow& objective = mip_data.objective();
@@ -361,7 +361,7 @@ TEST(MipDataTests, PopulatesMipDataFrom3x3MiniMipProblem) {
   MipData mip_data = MipData(problem);
 
   EXPECT_EQ(mip_data.problem_name(), "Test");
-  EXPECT_EQ(mip_data.is_maximization(), false);
+  EXPECT_EQ(mip_data.was_maximization(), false);
   EXPECT_EQ(mip_data.objective_offset(), 1.0);
 
   const SparseRow& objective = mip_data.objective();

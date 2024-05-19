@@ -123,6 +123,7 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(MinimalCutSelectorTest, SelectsFirstCutIfAllAreIdentical) {
   ASSERT_OK(solver_->mutable_lpi()->SolveLpWithPrimalSimplex());
   ASSERT_TRUE(solver_->lpi()->IsSolved());
+  ASSERT_TRUE(solver_->lpi()->IsOptimal());
 
   SparseRow lp_optimum = CreateSparseRow({{0, 1.0}, {1, 1.5}});
 
