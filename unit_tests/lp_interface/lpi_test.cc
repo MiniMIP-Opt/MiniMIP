@@ -1820,5 +1820,6 @@ TEST_P(SolveTest, DualIncrementality) {
                                               LpBasisStatus::kAtUpperBound));
   }
 }
+
 }  // namespace
 }  // namespace minimip
