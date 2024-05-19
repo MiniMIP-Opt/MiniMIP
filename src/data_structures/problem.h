@@ -15,6 +15,7 @@
 #ifndef SRC_DATA_STRUCTURES_PROBLEM_H_
 #define SRC_DATA_STRUCTURES_PROBLEM_H_
 
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <string>
@@ -77,7 +78,7 @@ enum class MiniMipStoppingReason;
 struct MiniMipSolution {
   // Dense vector with the solution.
   std::vector<double> variable_values;
-  double objective_value;
+  double objective_value = kInf;
 
   // TODO(lpawel):
   // Some extra stuff like max constraints/integrality violations wrt the
@@ -92,12 +93,25 @@ struct MiniMipResult {
 
   double best_primal_bound;
   double best_dual_bound;
-  MiniMipSolution best_solution;
+  MiniMipSolution best_solution = MiniMipSolution();
 
   std::vector<MiniMipSolution> additional_solutions;
 
   // TODO(lpawel): Extra stuff like solve stats, wallclock time, number of
   // nodes, etc.
+
+  absl::Status AddSolution(const MiniMipSolution& solution) {
+    if (solution.objective_value < best_solution.objective_value) {
+      if (best_solution.objective_value != kInf) {
+        additional_solutions.push_back(best_solution);
+      }
+      best_solution = solution;
+    } else {
+      // Store all primal solutions found
+      additional_solutions.push_back(solution);
+    }
+    return absl::OkStatus();
+  }
 };
 
 enum class MiniMipSolveStatus {

@@ -118,13 +118,13 @@ TEST(CutRunnerTests, SimpleSolve) {
   ASSERT_TRUE(solver->lpi()->IsOptimal());
 
   ASSERT_TRUE(solver->IsEqualToWithinTolerance(
-      solver->lpi()->GetObjectiveValue(), 28.0 / 3.0));
+      solver->lpi()->GetObjectiveValue(), -28.0 / 3.0));
 
   ASSERT_OK(
       solver->mutable_cut_runner()->SeparateCurrentLPSolution(*solver.get()));
 
   ASSERT_TRUE(solver->IsEqualToWithinTolerance(
-      solver->lpi()->GetObjectiveValue(), 9.0));
+      solver->lpi()->GetObjectiveValue(), -9.0));
 
   ASSERT_TRUE(solver->lpi()->IsSolved());
   ASSERT_TRUE(solver->lpi()->IsOptimal());
