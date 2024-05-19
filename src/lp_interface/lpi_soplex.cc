@@ -224,7 +224,7 @@ void LpSoplexInterface::RestorePreStrongbranchingBasis() {
 void LpSoplexInterface::InvalidateSolution() { is_solved_ = false; }
 
 bool LpSoplexInterface::PreStrongBranchingBasisFreed() const {
-  return ((row_basis_status_.size() == 0) && (col_basis_status_.size() == 0));
+  return ((row_basis_status_.size() == 0) and (col_basis_status_.size() == 0));
 }
 
 void LpSoplexInterface::FreePreStrongBranchingBasis() {
@@ -405,10 +405,8 @@ absl::Status LpSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
 
     spx_->clearLPReal();
 
-    static_cast<void>(spx_->setIntParam(
-        soplex::SoPlex::OBJSENSE,
-        (mip_data.is_maximization() ? soplex::SoPlex::OBJSENSE_MINIMIZE
-                                    : soplex::SoPlex::OBJSENSE_MAXIMIZE)));
+    static_cast<void>(spx_->setIntParam(soplex::SoPlex::OBJSENSE,
+                                        soplex::SoPlex::OBJSENSE_MINIMIZE));
 
     // Create empty rows with the given sides.
     for (RowIndex row(0); row < num_rows; ++row) {
@@ -482,7 +480,7 @@ absl::Status LpSoplexInterface::AddColumns(
   CHECK(PreStrongBranchingBasisFreed());
 
   if (DEBUG_MODE) {
-    if (!(matrix.num_cols() == 0) && matrix.AllColsAreClean()) {
+    if (!(matrix.num_cols() == 0) and matrix.AllColsAreClean()) {
       // Perform a check to ensure that no new rows have been added.
       int num_rows = spx_->numRowsReal();
       for (ColIndex i(0); i < matrix.num_cols(); ++i) {
@@ -1062,7 +1060,7 @@ bool LpSoplexInterface::IsOptimal() const {
   VLOG(2) << "calling IsOptimal().";
 
   CHECK((spx_->basisStatus() == soplex::SPxBasis::OPTIMAL) ==
-        (IsPrimalFeasible() && IsDualFeasible()));
+        (IsPrimalFeasible() and IsDualFeasible()));
 
   return (spx_->status() == soplex::SPxSolver::OPTIMAL);
 }
@@ -1687,7 +1685,7 @@ absl::Status LpParametersAreSupportedBySoPlex(const LpParameters& params) {
     return absl::InvalidArgumentError(
         "SoPlex doesn't support deterministic timing.");
   }
-  if (params.num_threads() != 0 && params.num_threads() != 1) {
+  if (params.num_threads() != 0 and params.num_threads() != 1) {
     return absl::InvalidArgumentError(
         "SoPlex doesn't support using more than one thread.");
   }
@@ -1821,7 +1819,7 @@ absl::Status LpSoplexInterface::SetLpParameters(const LpParameters& params) {
   // SoPlex requires 0 < param_val < DEFAULT_INFINITY (= 1e100). So, if we're
   // out of bounds, we set to Infinity() / 2.0 (still a very large number).
   const double time_limit =
-      params.time_limit() == 0.0 || params.time_limit() >= Infinity()
+      params.time_limit() == 0.0 or params.time_limit() >= Infinity()
           ? Infinity() / 2.0
           : params.time_limit();
   if (!spx_->setRealParam(soplex::SoPlex::TIMELIMIT, time_limit)) {
@@ -1829,7 +1827,7 @@ absl::Status LpSoplexInterface::SetLpParameters(const LpParameters& params) {
   }
 
   const int iteration_limit =
-      (params.iteration_limit() == 0 || params.iteration_limit() >= INT_MAX)
+      (params.iteration_limit() == 0 or params.iteration_limit() >= INT_MAX)
           ? -1
           : params.iteration_limit();
   if (!spx_->setIntParam(soplex::SoPlex::ITERLIMIT, iteration_limit)) {

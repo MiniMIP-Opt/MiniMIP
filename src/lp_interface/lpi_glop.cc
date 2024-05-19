@@ -169,7 +169,7 @@ absl::Status LpGlopInterface::PopulateFromMipData(const MipData& mip_data) {
                   mip_data.upper_bounds()[col], mip_data.objective().value(col),
                   mip_data.variable_names()[col]));
   }
-  RETURN_IF_ERROR(SetObjectiveSense(mip_data.is_maximization()));
+  RETURN_IF_ERROR(SetObjectiveSense(false));
   return absl::OkStatus();
 }
 
@@ -180,7 +180,7 @@ absl::Status LpGlopInterface::AddColumn(const SparseCol& col_data,
   DCHECK(!col_data.MayNeedCleaning());
   DCHECK(std::all_of(col_data.entries().begin(), col_data.entries().end(),
                      [num_rows = GetNumberOfRows()](const ColEntry& e) {
-                       return RowIndex(0) <= e.index && e.index < num_rows;
+                       return RowIndex(0) <= e.index and e.index < num_rows;
                      }));
 
   const GlopColIndex col = lp_.CreateNewVariable();
@@ -246,7 +246,7 @@ absl::Status LpGlopInterface::AddRow(const SparseRow& row_data,
   DCHECK(!row_data.MayNeedCleaning());
   DCHECK(std::all_of(row_data.entries().begin(), row_data.entries().end(),
                      [num_cols = GetNumberOfColumns()](const RowEntry& e) {
-                       return ColIndex(0) <= e.index && e.index < num_cols;
+                       return ColIndex(0) <= e.index and e.index < num_cols;
                      }));
 
   const GlopRowIndex row = lp_.CreateNewConstraint();
@@ -590,8 +590,8 @@ absl::Status LpGlopInterface::SolveInternal(bool recursive,
 // ==========================================================================
 
 absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
-  VLOG(3) << "Solving with primal simplex: " << "num_cols="
-          << lp_.num_variables().value()
+  VLOG(3) << "Solving with primal simplex: "
+          << "num_cols=" << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
 
   GlopParameters glop_params = solver_.GetParameters();
@@ -603,8 +603,8 @@ absl::Status LpGlopInterface::SolveLpWithPrimalSimplex() {
 }
 
 absl::Status LpGlopInterface::SolveLpWithDualSimplex() {
-  VLOG(3) << "Solving with dual simplex: " << "num_cols="
-          << lp_.num_variables().value()
+  VLOG(3) << "Solving with dual simplex: "
+          << "num_cols=" << lp_.num_variables().value()
           << ", num_rows=" << lp_.num_constraints().value();
   GlopParameters glop_params = solver_.GetParameters();
   std::unique_ptr<TimeLimit> time_limit =
@@ -766,7 +766,7 @@ bool LpGlopInterface::IsStable() const {
   const ProblemStatus status = solver_.GetProblemStatus();
   if ((status == ProblemStatus::PRIMAL_FEASIBLE ||
        status == ProblemStatus::DUAL_FEASIBLE) &&
-      !ObjectiveLimitIsExceeded() && !IterationLimitIsExceeded() &&
+      !ObjectiveLimitIsExceeded() and !IterationLimitIsExceeded() &&
       !TimeLimitIsExceeded()) {
     VLOG(3) << "OPTIMAL not reached and no limit: unstable";
     return false;

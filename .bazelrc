@@ -7,6 +7,7 @@ build --apple_platform_type=macos
 build --show_timestamps
 build --color=yes
 build --keep_going
+
 # TODO(lpawel): With c++20 or c++2a there was an error on 2023/10/03:
 #
 # /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/chrono:2320:48:
@@ -34,3 +35,12 @@ test --test_output=errors
 
 # Put user-specific options in .bazelrc.user
 try-import %workspace%/.bazelrc.user
+
+# Enable the sandboxed memory safety checks for the build and test actions.
+#build --sandbox_debug
+#build --copt="-fsanitize=address"
+#build --linkopt="-fsanitize=address"
+
+#test --sandbox_debug
+#test --copt="-fsanitize=address"
+#test --linkopt="-fsanitize=address"

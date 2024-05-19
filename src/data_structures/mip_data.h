@@ -47,13 +47,16 @@ class MipData {
 
   explicit MipData(const MiniMipProblem& problem);
 
+  bool SolutionIsIntegral(
+      const absl::StrongVector<ColIndex, double> primal_values,
+      double tolerance) const;
   // ==========================================================================
   // Problem getters.
   // ==========================================================================
 
   std::string problem_name() const { return problem_name_; }
 
-  bool is_maximization() const { return is_maximization_; }
+  bool was_maximization() const { return was_maximization_; }
 
   double objective_offset() const { return objective_offset_; }
 
@@ -104,7 +107,7 @@ class MipData {
  private:
   // TODO(lpawel): Clean up and comment all fields.
   std::string problem_name_;
-  bool is_maximization_ = false;
+  bool was_maximization_ = false;
   double objective_offset_ = 0.0;
   SparseRow objective_;
   std::vector<MiniMipSolutionHint> solution_hints_;
