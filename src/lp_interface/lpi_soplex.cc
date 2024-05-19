@@ -390,7 +390,7 @@ LpSoplexInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 
   if (error) {
     VLOG(10) << "StrongBranch() returned SoPlex status "
-            << static_cast<int>(status) << ".";
+             << static_cast<int>(status) << ".";
     return absl::InternalError("Error");
   }
   return result;
