@@ -23,6 +23,7 @@ namespace minimip {
 namespace {
 absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
     const operations_research::MPModelProto& model_proto) {
+  VLOG(10) << "calling MPModelProtoToMiniMipProblem().";
   using operations_research::MPConstraintProto;
   using operations_research::MPVariableProto;
 
@@ -84,6 +85,7 @@ absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
 
 absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromMPSFile(
     const std::string& file_path) {
+  VLOG(10) << "calling ReadMipProblemFromMPSFile().";
   // If the file isn't found, ortools only logs a warning and returns an empty
   // problem. This may lead to silent failures, so we issue a proper error.
   std::fstream fs(file_path, std::ios_base::in);
@@ -103,6 +105,7 @@ absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromMPSFile(
 
 absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromString(
     const std::string& file_data) {
+  VLOG(10) << "calling ReadMipProblemFromString().";
   // Make sure that the data is in MPS format. Otherwise, undefined behaviour is
   // expected.
   ASSIGN_OR_RETURN(const operations_research::MPModelProto model_proto,

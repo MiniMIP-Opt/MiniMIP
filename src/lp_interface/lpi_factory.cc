@@ -25,6 +25,7 @@ namespace minimip {
 
 absl::StatusOr<std::unique_ptr<LpInterface>> CreateLpSolver(
     const LpParameters& params) {
+  VLOG(10) << "calling CreateLpSolver().";
   std::unique_ptr<LpInterface> lpi;
   switch (params.lp_solver_type()) {
     case LpParameters::LP_GLOP:
