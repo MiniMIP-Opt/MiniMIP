@@ -3,6 +3,7 @@
 namespace minimip {
 
 absl::Status LpParametersAreValid(const LpParameters& params) {
+  VLOG(10) << "calling LpParametersAreValid().";
   if (params.feasibility_tolerance() < 0.0 &&
       params.feasibility_tolerance() != -1.0) {
     return absl::InvalidArgumentError(

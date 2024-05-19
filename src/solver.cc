@@ -20,11 +20,13 @@
 namespace minimip {
 namespace {
 absl::Status SolveCurrentNode() {
+  VLOG(10) << "calling SolveCurrentNode().";
   return absl::OkStatus();
 }
 }  // namespace
 
 absl::Status Solver::Solve() {
+  VLOG(10) << "calling Solve().";
   std::deque<NodeIndex> node_queue = {kRootNode};
   LpInterface* lp = mutable_lpi();
 

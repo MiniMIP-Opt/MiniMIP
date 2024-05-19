@@ -19,6 +19,7 @@
 namespace minimip {
 
 MipTree::MipTree() {
+  VLOG(10) << "calling MipTree().";
   // Let's reserve some memory to reduce memory re-allocations (an empty node is
   // rather cheap memory-wise, hence this is OK).
   nodes_.reserve(1024);
@@ -31,6 +32,7 @@ MipTree::MipTree() {
 NodeIndex MipTree::AddNodeByBranchingFromParent(
     NodeIndex parent, ColIndex branch_variable, bool branch_down,
     double branch_primal_value_in_parent_lp) {
+  VLOG(10) << "calling AddNodeByBranchingFromParent().";
   CHECK_GE(parent, kRootNode);
   CHECK_LT(parent.value(), nodes_.size());
   CHECK(NodeIsActive(parent));
@@ -58,6 +60,7 @@ NodeIndex MipTree::AddNodeByBranchingFromParent(
 }
 
 void MipTree::CloseNodeAndReclaimNodesUpToRootIfPossible(NodeIndex n) {
+  VLOG(10) << "calling CloseNodeAndReclaimNodesUpToRootIfPossible().";
   CHECK_GE(n, kRootNode);
   CHECK_LT(n.value(), nodes_.size());
   CHECK(NodeIsActive(n));
@@ -96,6 +99,7 @@ void MipTree::CloseNodeAndReclaimNodesUpToRootIfPossible(NodeIndex n) {
 
 void MipTree::SetLpRelaxationDataInNode(NodeIndex n,
                                         double lp_objective_value) {
+  VLOG(10) << "calling SetLpRelaxationDataInNode().";
   CHECK_GE(n, kRootNode);
   CHECK_LT(n.value(), nodes_.size());
   CHECK(NodeIsActive(n));
@@ -108,6 +112,7 @@ void MipTree::SetLpRelaxationDataInNode(NodeIndex n,
 void MipTree::SetImpliedVariableBoundsInNode(
     NodeIndex n, std::vector<ColAndValue> lower_bounds,
     std::vector<ColAndValue> upper_bounds) {
+  VLOG(10) << "calling SetImpliedVariableBoundsInNode().";
   CHECK_GE(n, kRootNode);
   CHECK_LT(n.value(), nodes_.size());
   CHECK(NodeIsActive(n));
@@ -120,6 +125,7 @@ void MipTree::SetImpliedVariableBoundsInNode(
 
 DenseRow MipTree::RetrieveLowerBounds(NodeIndex n,
                                       DenseRow root_lower_bounds) const {
+  VLOG(10) << "calling RetrieveLowerBounds().";
   CHECK_GE(n, kRootNode);
   CHECK_LT(n.value(), nodes_.size());
   CHECK(NodeIsActive(n));
@@ -139,6 +145,7 @@ DenseRow MipTree::RetrieveLowerBounds(NodeIndex n,
 
 DenseRow MipTree::RetrieveUpperBounds(NodeIndex n,
                                       DenseRow root_upper_bounds) const {
+  VLOG(10) << "calling RetrieveUpperBounds().";
   CHECK_GE(n, kRootNode);
   CHECK_LT(n.value(), nodes_.size());
   CHECK(NodeIsActive(n));

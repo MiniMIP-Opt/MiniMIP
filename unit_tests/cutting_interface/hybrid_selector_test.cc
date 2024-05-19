@@ -74,7 +74,7 @@ class MinimalCutSelectorTest
 
   // Creates a very simple model where all variables are non-negative.
   //
-  // max: z = x1 + x2
+  // max: z = x1
   //  3*x1 + 2*x2 <= 6
   // -3*x1 + 2*x2 <= 0
   // x1, x2 >= 0

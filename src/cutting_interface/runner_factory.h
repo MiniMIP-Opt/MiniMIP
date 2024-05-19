@@ -23,6 +23,7 @@ namespace minimip {
 
 inline absl::StatusOr<std::unique_ptr<CutRunnerInterface>> CreateCutRunner(
     const CutRunnerParameters& runner_parameters) {
+  VLOG(10) << "calling CreateCutRunner().";
   if (runner_parameters.has_default_runner_parameters()) {
     // Here we create and return the specific CutRunnerInterface.
     return std::make_unique<DefaultRunner>(runner_parameters);
