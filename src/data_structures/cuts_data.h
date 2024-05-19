@@ -37,14 +37,14 @@ class CutData {
   // It describes the length of orthogonal projection of the LP solution onto
   // the cutting plane.
   void SetEfficacy(double efficacy) {
-    VLOG(4) << "calling SetEfficacy().";
+    VLOG(10) << "calling SetEfficacy().";
     efficacy_ = efficacy;
   }
   double efficacy() const { return efficacy_; }
 
   // The score is a measure of preference that is set by the cut selector.
   void SetScore(double score) {
-    VLOG(4) << "calling SetScore().";
+    VLOG(10) << "calling SetScore().";
     score_ = score;
   }
   double score() const {
@@ -57,7 +57,7 @@ class CutData {
   // The index is the position of the cut in the cut registry.
   // It is set by the Cut registry, after the cut has been added.
   void SetIndex(int index) {
-    VLOG(4) << "calling SetIndex().";
+    VLOG(10) << "calling SetIndex().";
     cut_index_ = index;
   }
   int index() const {
@@ -71,7 +71,7 @@ class CutData {
   // the cut is active in the LP. This is useful to avoid adding the same or
   // strictly dominated cuts multiple times.
   void SetActive(bool is_active) {
-    VLOG(4) << "calling SetActive().";
+    VLOG(10) << "calling SetActive().";
     is_active_ = is_active;
   }
   bool is_active() const { return is_active_; }
@@ -110,7 +110,7 @@ class CutData {
         name_(std::move(name)),
         is_forced_(is_forced),
         efficacy_(efficacy) {
-    VLOG(4) << "calling CutData().";
+    VLOG(10) << "calling CutData().";
     // Check the validity of the parameters
     DCHECK(row_.IsClean());
     DCHECK_GT(right_hand_side_, -std::numeric_limits<double>::infinity());

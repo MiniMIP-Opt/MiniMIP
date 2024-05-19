@@ -40,7 +40,7 @@ MipData::MipData(const MiniMipProblem& problem)
       is_integral_constraint_(problem.constraints.size()),
       constraint_matrix_(ColIndex(problem.variables.size()),
                          RowIndex(problem.constraints.size())) {
-  VLOG(4) << "calling MipData().";
+  VLOG(10) << "calling MipData().";
   DCHECK(FindErrorInMiniMipProblem(problem).empty());
 
   problem_name_ = problem.name;
@@ -114,7 +114,7 @@ MipData::MipData(const MiniMipProblem& problem)
 bool MipData::SolutionIsIntegral(
     const absl::StrongVector<ColIndex, double> solution_values,
     double tolerance) const {
-  VLOG(4) << "calling SolutionIsIntegral().";
+  VLOG(10) << "calling SolutionIsIntegral().";
   return std::all_of(integer_variables_.begin(), integer_variables_.end(),
                      [&solution_values, tolerance](ColIndex col) {
                        return std::abs(solution_values[col] -

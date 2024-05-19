@@ -85,24 +85,24 @@ class StrongSparseMatrix {
 
   // Clears both the row and col major view of the matrix.
   void Clear() {
-    VLOG(4) << "calling Clear().";
+    VLOG(10) << "calling Clear().";
     rows_.clear();
     cols_.clear();
     consistency_ = MatrixConsistency::kRowsAndColsAreUpToDate;
   }
 
   bool rows_need_recomputation() const {
-    VLOG(4) << "calling rows_need_recomputation().";
+    VLOG(10) << "calling rows_need_recomputation().";
     return consistency_ == MatrixConsistency::kRowsNeedRecomputation;
   }
 
   bool cols_need_recomputation() const {
-    VLOG(4) << "calling cols_need_recomputation().";
+    VLOG(10) << "calling cols_need_recomputation().";
     return consistency_ == MatrixConsistency::kColsNeedRecomputation;
   }
 
   bool AllRowsAreClean() const {
-    VLOG(4) << "calling AllRowsAreClean().";
+    VLOG(10) << "calling AllRowsAreClean().";
     if (rows_need_recomputation()) return false;
     return std::all_of(rows_.begin(), rows_.end(), [](const SparseRow& row) {
       return !row.MayNeedCleaning();
@@ -110,7 +110,7 @@ class StrongSparseMatrix {
   }
 
   bool AllColsAreClean() const {
-    VLOG(4) << "calling AllColsAreClean().";
+    VLOG(10) << "calling AllColsAreClean().";
     if (cols_need_recomputation()) return false;
     return std::all_of(cols_.begin(), cols_.end(), [](const SparseCol& col) {
       return !col.MayNeedCleaning();
@@ -148,7 +148,7 @@ class StrongSparseMatrix {
       absl::StrongVector<TransposeIndex,
                          StrongSparseVectorOfDoubles<TargetIndex>>& transpose)
       const {
-    VLOG(4) << "calling PopulateFromTranspose().";
+    VLOG(10) << "calling PopulateFromTranspose().";
     for (auto& target_entry : target) {
       target_entry.Clear();
     }
