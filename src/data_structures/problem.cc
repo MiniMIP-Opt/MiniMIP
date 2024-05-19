@@ -24,6 +24,7 @@ namespace {
 
 absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
     const operations_research::MPModelProto& model_proto) {
+  VLOG(10) << "calling MPModelProtoToMiniMipProblem().";
   using operations_research::MPConstraintProto;
   using operations_research::MPVariableProto;
 
@@ -86,6 +87,7 @@ absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
 // Returns the first error encountered while validating MiniMipProblem.
 // Returns empty string if `problem` is valid.
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem) {
+  VLOG(10) << "calling FindErrorInMiniMipProblem().";
   for (const MiniMipVariable& variable : problem.variables) {
     if (variable.name.empty()) {
       return "No variable name given.";
@@ -133,6 +135,7 @@ std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem) {
 
 absl::StatusOr<MiniMipProblem> ReadProblemFromMPSFile(
     const std::string& file_name) {
+  VLOG(10) << "calling ReadProblemFromMPSFile().";
   // If the file isn't found, ortools only logs a warning and returns an empty
   // problem. This may lead to silent failures, so we issue a proper error.
   std::fstream fs(file_name, std::ios_base::in);
@@ -148,6 +151,7 @@ absl::StatusOr<MiniMipProblem> ReadProblemFromMPSFile(
 
 absl::StatusOr<MiniMipProblem> ReadProblemFromMPSData(
     const std::string& mps_data) {
+  VLOG(10) << "calling ReadProblemFromMPSData().";
   ASSIGN_OR_RETURN(const operations_research::MPModelProto model_proto,
                    operations_research::glop::MpsDataToMPModelProto(mps_data));
   return MPModelProtoToMiniMipProblem(model_proto);
