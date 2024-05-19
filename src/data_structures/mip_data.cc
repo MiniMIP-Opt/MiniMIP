@@ -43,7 +43,7 @@ MipData::MipData(const MiniMipProblem& problem)
   DCHECK(FindErrorInMiniMipProblem(problem).empty());
 
   problem_name_ = problem.name;
-  is_maximization_ = problem.is_maximization;
+  was_maximization_ = problem.is_maximization;
   objective_offset_ = problem.objective_offset;
 
   for (ColIndex col_idx(0); col_idx < problem.variables.size(); ++col_idx) {
@@ -67,13 +67,11 @@ MipData::MipData(const MiniMipProblem& problem)
     // Add the objective coefficients to the objective function such that
     // the objective function is in the form of a minimization problem.
     if (variable.objective_coefficient != 0) {
-      if (is_maximization_) {
-        objective_.AddEntry(ColIndex(col_idx), -variable.objective_coefficient);
-      } else {
         objective_.AddEntry(ColIndex(col_idx), variable.objective_coefficient);
       }
     }
-  }
+
+
   objective_.CleanUpIfNeeded();
 
   for (int i = 0; i < problem.hints.size(); ++i) {
@@ -107,6 +105,11 @@ MipData::MipData(const MiniMipProblem& problem)
       integer_variables_.insert(col_idx);
     }
   }
+  if (was_maximization_) {
+    objective_offset_ *= -1.0;
+    objective_.Transform([](ColIndex i, double value) { return -value; });
+  }
+
 }
 
 bool MipData::SolutionIsIntegral(
