@@ -122,6 +122,7 @@ class MipTree {
   // If tree is empty it means all nodes have been closed (note -- the tree is
   // initialized with an empty root node, thus it is *not* empty on creation).
   bool TreeIsEmpty() const {
+    VLOG(10) << "calling TreeIsEmpty().";
     // If the next free node is the root, it means we have reclaimed the root,
     // (i.e., all nodes have been closed).
     return next_free_node_ == kRootNode;
@@ -180,6 +181,7 @@ class MipTree {
 
   // Get the number of open child nodes for a given node.
   int num_open_children(NodeIndex n) const {
+    VLOG(10) << "calling num_open_children().";
     return number_of_open_child_nodes_[n];
   }
 
@@ -189,6 +191,7 @@ class MipTree {
  private:
   // A helper function used in checks.
   bool NodeIsActive(NodeIndex n) const {
+    VLOG(10) << "calling NodeIsActive().";
     DCHECK_GE(n, kRootNode);
     DCHECK_LT(n.value(), nodes_.size());
     return nodes_[n].depth >= 0;

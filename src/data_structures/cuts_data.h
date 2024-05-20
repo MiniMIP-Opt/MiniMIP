@@ -36,11 +36,17 @@ class CutData {
   // The efficacy is a measure of how much the cut improves the LP solution.
   // It describes the length of orthogonal projection of the LP solution onto
   // the cutting plane.
-  void SetEfficacy(double efficacy) { efficacy_ = efficacy; }
+  void SetEfficacy(double efficacy) {
+    VLOG(10) << "calling SetEfficacy().";
+    efficacy_ = efficacy;
+  }
   double efficacy() const { return efficacy_; }
 
   // The score is a measure of preference that is set by the cut selector.
-  void SetScore(double score) { score_ = score; }
+  void SetScore(double score) {
+    VLOG(10) << "calling SetScore().";
+    score_ = score;
+  }
   double score() const {
     if (score_.has_value()) {
       return *score_;
@@ -50,7 +56,10 @@ class CutData {
 
   // The index is the position of the cut in the cut registry.
   // It is set by the Cut registry, after the cut has been added.
-  void SetIndex(int index) { cut_index_ = index; }
+  void SetIndex(int index) {
+    VLOG(10) << "calling SetIndex().";
+    cut_index_ = index;
+  }
   int index() const {
     if (cut_index_.has_value()) {
       return *cut_index_;
@@ -61,7 +70,10 @@ class CutData {
   // The active flag is set by the cut selector. It is used to indicate whether
   // the cut is active in the LP. This is useful to avoid adding the same or
   // strictly dominated cuts multiple times.
-  void SetActive(bool is_active) { is_active_ = is_active; }
+  void SetActive(bool is_active) {
+    VLOG(10) << "calling SetActive().";
+    is_active_ = is_active;
+  }
   bool is_active() const { return is_active_; }
 
   // The row is the coefficient vector a of the cutting plane a^Tx <= b.
@@ -98,6 +110,7 @@ class CutData {
         name_(std::move(name)),
         is_forced_(is_forced),
         efficacy_(efficacy) {
+    VLOG(10) << "calling CutData().";
     // Check the validity of the parameters
     DCHECK(row_.IsClean());
     DCHECK_GT(right_hand_side_, -std::numeric_limits<double>::infinity());
