@@ -1,4 +1,4 @@
-// Copyright 2024 the MiniMIP Project
+// Copyright 2022 the MiniMIP Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef SRC_READER_H_
+#define SRC_READER_H_
+
 #include "src/data_structures/problem.h"
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "unit_tests/utils.h"
-
 namespace minimip {
-// TODO(CGraczyk): add tests for FindErrorInMiniMipProblem.
+
+class Reader {
+ public:
+  Reader() = default;
+
+  static absl::StatusOr<MiniMipProblem> ReadMipProblemFromMPSFile(
+      const std::string& file_path);
+
+  static absl::StatusOr<MiniMipProblem> ReadMipProblemFromString(
+      const std::string& file_data);
+};
+
 }  // namespace minimip
+#endif  // SRC_READER_H_

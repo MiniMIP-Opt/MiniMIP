@@ -1,0 +1,25 @@
+# Testing utilities.
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+filegroup(
+    name = "reader_test_data",
+    srcs = [
+        "test_data/50v-10.mps",
+    ],
+)
+
+cc_test(
+    name = "reader_test",
+    size = "small",
+    srcs = ["reader_test.cc"],
+    data = [
+        ":reader_test_data",
+    ],
+    deps = [
+        "//unit_tests:gtest_main",
+        "//unit_tests:utils",
+        "//src/utils:reader",
+        "@com_google_absl//absl/status",
+        "@com_google_googletest//:gtest",
+    ],
+)

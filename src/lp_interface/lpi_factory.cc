@@ -16,7 +16,6 @@
 
 #include <memory>
 
-#include "lpi_soplex.h"
 #include "ortools/base/logging.h"
 #include "src/lp_interface/lpi_glop.h"
 #include "src/lp_interface/lpi_soplex.h"
