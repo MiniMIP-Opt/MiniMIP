@@ -21,7 +21,7 @@
 
 namespace minimip {
 
-class MaxFractionalBranching : public BranchingInterface {
+class MaxFractionalBranching : public BranchingRuleInterface {
  public:
   explicit MaxFractionalBranching(const BranchingParameters& params)
       : params_(std::move(params)) {}

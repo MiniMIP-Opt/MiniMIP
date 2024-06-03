@@ -21,7 +21,7 @@
 
 namespace minimip {
 
-class RandomBranching : public BranchingInterface {
+class RandomBranching : public BranchingRuleInterface {
  public:
   explicit RandomBranching(const BranchingParameters& params)
       : params_(std::move(params)) {}

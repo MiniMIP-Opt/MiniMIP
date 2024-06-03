@@ -34,16 +34,16 @@ TEST(BranchingFactoryTest, CreatesRandomBranchingWithValidParams) {
       params.mutable_random_branching_parameters();
   random_params->set_random_seed(42);
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
-      CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingRuleInterface>> branching =
+      CreateBranchingRule(params);
   EXPECT_TRUE(branching.ok());
   EXPECT_TRUE(dynamic_cast<RandomBranching*>(branching.value().get()) !=
               nullptr);
 }
 
-TEST(BranchingFactoryTest, FailsToCreateBranchingWithInvalidParams) {
+TEST(BranchingFactoryTest, FailsToCreateBranchingRuleWithInvalidParams) {
   BranchingParameters params;  // Do not set random_branching_parameters
-  auto branching = minimip::CreateBranching(params);
+  auto branching = minimip::CreateBranchingRule(params);
   EXPECT_FALSE(branching.ok());
   EXPECT_EQ(branching.status().message(),
             "No branching-specific parameters set.");
@@ -59,8 +59,8 @@ TEST(RandomBranchingTest, NextBranchingVariableWithoutIntegerVariables) {
       params.mutable_random_branching_parameters();
   random_params->set_random_seed(42);
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
-      CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingRuleInterface>> branching =
+      CreateBranchingRule(params);
 
   auto* random_branching =
       dynamic_cast<RandomBranching*>(branching.value().get());
@@ -81,8 +81,8 @@ TEST(RandomBranchingTest, NextBranchingVariableReturnsValidVariable) {
       params.mutable_random_branching_parameters();
   random_params->set_random_seed(42);
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
-      CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingRuleInterface>> branching =
+      CreateBranchingRule(params);
 
   auto* random_branching =
       dynamic_cast<RandomBranching*>(branching.value().get());
@@ -154,8 +154,8 @@ TEST(MaxFractionalBranchingTest, NextBranchingVariableReturnsValidVariable) {
   MaxFractionalBranchingParameters* fractional_branching_parameters =
       params.mutable_max_fractional_branching_parameters();
 
-  absl::StatusOr<std::unique_ptr<BranchingInterface>> branching =
-      CreateBranching(params);
+  absl::StatusOr<std::unique_ptr<BranchingRuleInterface>> branching =
+      CreateBranchingRule(params);
 
   auto* max_fractional_branching =
       dynamic_cast<MaxFractionalBranching*>(branching.value().get());

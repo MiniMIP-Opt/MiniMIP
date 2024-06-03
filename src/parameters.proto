@@ -94,21 +94,20 @@ message CutRunnerParameters {
 }
 
 message RandomBranchingParameters {
-  // This parameter has no effect and is pruely demonstrative.
+  // This parameter has no effect and is purely demonstrative.
   optional int32 random_seed = 1 [default = 0];
 }
 
 message MaxFractionalBranchingParameters {
-  // Add relevant Parameters here.
+  // Add relevant MaxFractionalBranchingParameters here.
 }
 
 message BranchingParameters {
-  // The maximum number of variables to branch on per node. Set to 0 to disable.
-  optional int32 max_num_branches = 1 [default = 1];
+  // Add general BranchingParameters here, that should be expected for all branching strategies.
 
   oneof branching_specific {
-    RandomBranchingParameters random_branching_parameters = 2;
-    MaxFractionalBranchingParameters max_fractional_branching_parameters = 3;
+    RandomBranchingParameters random_branching_parameters = 1;
+    MaxFractionalBranchingParameters max_fractional_branching_parameters = 2;
   }
 
 }

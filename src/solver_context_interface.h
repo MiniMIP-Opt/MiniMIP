@@ -43,7 +43,7 @@ class SolverContextInterface {
 
   virtual CutRunnerInterface* mutable_cut_runner() const = 0;
 
-  virtual const BranchingInterface* branching_interface() const = 0;
+  virtual const BranchingRuleInterface* branching_interface() const = 0;
 
   virtual const LpInterface* lpi() const = 0;
   virtual LpInterface* mutable_lpi() = 0;
