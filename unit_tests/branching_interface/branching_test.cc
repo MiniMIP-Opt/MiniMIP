@@ -68,7 +68,7 @@ TEST(RandomBranchingTest, NextBranchingVariableWithoutIntegerVariables) {
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
                        Solver::Create(MiniMipProblem()));
 
-  absl::StatusOr<ColIndex> branching_variable =
+  absl::StatusOr<BranchingVariable> branching_variable =
       random_branching->NextBranchingVariable(*solver);
   EXPECT_FALSE(branching_variable.ok());
   EXPECT_EQ(branching_variable.status().message(),
@@ -97,11 +97,11 @@ TEST(RandomBranchingTest, NextBranchingVariableReturnsValidVariable) {
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
-  absl::StatusOr<ColIndex> branching_variable =
+  absl::StatusOr<BranchingVariable> branching_variable =
       random_branching->NextBranchingVariable(*solver);
   EXPECT_TRUE(branching_variable.ok());
-  EXPECT_LT(branching_variable.value(), ColIndex(4));
-  EXPECT_GE(branching_variable.value(), ColIndex(0));
+  EXPECT_LT(branching_variable.value().index, ColIndex(4));
+  EXPECT_GE(branching_variable.value().index, ColIndex(0));
 }
 
 // ==========================================================================
@@ -160,11 +160,11 @@ TEST(MaxFractionalBranchingTest, NextBranchingVariableReturnsValidVariable) {
   auto* max_fractional_branching =
       dynamic_cast<MaxFractionalBranching*>(branching.value().get());
 
-  absl::StatusOr<ColIndex> branching_variable =
+  absl::StatusOr<BranchingVariable> branching_variable =
       max_fractional_branching->NextBranchingVariable(*solver);
 
   EXPECT_TRUE(branching_variable.ok());
-  EXPECT_LT(branching_variable.value(), ColIndex(4));
-  EXPECT_GE(branching_variable.value(), ColIndex(0));
+  EXPECT_LT(branching_variable.value().index, ColIndex(4));
+  EXPECT_GE(branching_variable.value().index, ColIndex(0));
 }
 }  // namespace minimip

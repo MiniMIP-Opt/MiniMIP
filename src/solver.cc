@@ -124,19 +124,25 @@ absl::Status Solver::Solve() {
     // ==========================================================================
 
     // Find the variable with the maximum fractional part to branch on
-    ColIndex branching_variable = branching_interface_->NextBranchingVariable(*this).value();
+    BranchingVariable branching_variable = branching_interface_->NextBranchingVariable(*this).value();
 
     // Create binary child nodes for chosen branching variable
     const NodeIndex down_child = mip_tree_.AddNodeByBranchingFromParent(
-        current_node, branching_variable, true,
-        primal_values[branching_variable]);
+        current_node, branching_variable.index, true,
+        primal_values[branching_variable.index]);
     const NodeIndex up_child = mip_tree_.AddNodeByBranchingFromParent(
-        current_node, branching_variable, false,
-        primal_values[branching_variable]);
+        current_node, branching_variable.index, false,
+        primal_values[branching_variable.index]);
 
     // Add logic to process child nodes...
-    node_queue.push_front(down_child);
-    node_queue.push_back(up_child);
+    if (branching_variable.branching_up_first) {
+      node_queue.push_front(up_child);
+      node_queue.push_back(down_child);
+    }
+    else {
+      node_queue.push_front(down_child);
+      node_queue.push_back(up_child);
+    }
   }
   result_.solve_status = MiniMipSolveStatus::kOptimal;
   return absl::OkStatus();

@@ -110,6 +110,14 @@ message BranchingParameters {
     MaxFractionalBranchingParameters max_fractional_branching_parameters = 2;
   }
 
+  // General BranchingDirection
+  enum BranchingDirection {
+    UNSPECIFIED = 0;
+    DOWN = 1;
+    UP = 2;
+  }
+  optional BranchingDirection branching_direction = 3 [default = UNSPECIFIED];
+
 }
 
 message LpParameters {
