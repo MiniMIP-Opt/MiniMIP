@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SRC_OR_TOOLS_READER_H_
-#define SRC_OR_TOOLS_READER_H_
+#ifndef SRC_READER_H_
+#define SRC_READER_H_
 
 #include "src/data_structures/problem.h"
 
 namespace minimip {
 
-class OrToolsReader {
+class Reader {
  public:
-  OrToolsReader() = default;
+  Reader() = default;
 
   static absl::StatusOr<MiniMipProblem> ReadMipProblemFromMPSFile(
       const std::string& file_path);
@@ -31,4 +31,4 @@ class OrToolsReader {
 };
 
 }  // namespace minimip
-#endif  // SRC_OR_TOOLS_READER_H_
+#endif  // SRC_READER_H_

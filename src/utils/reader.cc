@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/utils/or_tools_reader.h"
+#include "src/utils/reader.h"
 
 #include <fstream>
 
@@ -83,7 +83,7 @@ absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
 }
 }  // namespace
 
-absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromMPSFile(
+absl::StatusOr<MiniMipProblem> Reader::ReadMipProblemFromMPSFile(
     const std::string& file_path) {
   VLOG(10) << "calling ReadMipProblemFromMPSFile().";
   // If the file isn't found, ortools only logs a warning and returns an empty
@@ -103,7 +103,7 @@ absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromMPSFile(
   return MPModelProtoToMiniMipProblem(model_proto);
 }
 
-absl::StatusOr<MiniMipProblem> OrToolsReader::ReadMipProblemFromString(
+absl::StatusOr<MiniMipProblem> Reader::ReadMipProblemFromString(
     const std::string& file_data) {
   VLOG(10) << "calling ReadMipProblemFromString().";
   // Make sure that the data is in MPS format. Otherwise, undefined behaviour is

@@ -9,16 +9,16 @@ filegroup(
 )
 
 cc_test(
-    name = "or_tools_reader_test",
+    name = "reader_test",
     size = "small",
-    srcs = ["or_tools_reader_test.cc"],
+    srcs = ["reader_test.cc"],
     data = [
         ":reader_test_data",
     ],
     deps = [
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
-        "//src/utils:or_tools_reader",
+        "//src/utils:reader",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],

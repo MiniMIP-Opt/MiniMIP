@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/utils/or_tools_reader.h"
+#include "src/utils/reader.h"
 
-#include <algorithm>
 #include <fstream>
 #include <ios>
 #include <limits>
@@ -25,7 +24,6 @@
 #include "gtest/gtest.h"
 #include "ortools/base/status_macros.h"
 #include "src/data_structures/problem.h"
-#include "src/parameters.pb.h"
 #include "unit_tests/utils.h"
 
 // TODO(CGraczyk): add randomized O(1000) init tests for mip data.
@@ -64,7 +62,7 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSFile) {
   // MIPLIB2017, which is a medium-size problem with varying types of variables.
   // https://miplib.zib.de/instance_details_50v-10.html
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
-                       OrToolsReader::ReadMipProblemFromMPSFile(
+                       Reader::ReadMipProblemFromMPSFile(
                            "unit_tests/utils/test_data/50v-10.mps"));
   EXPECT_EQ(problem.name, "50v-10");
   EXPECT_THAT(problem.hints, IsEmpty());
@@ -133,7 +131,7 @@ TEST(MiniMipReaderTest, LoadProblemFromMPSData) {
       const std::string data,
       ReadFileToString("unit_tests/utils/test_data/50v-10.mps"));
   ASSERT_OK_AND_ASSIGN(const MiniMipProblem problem,
-                       OrToolsReader::ReadMipProblemFromString(data));
+                       Reader::ReadMipProblemFromString(data));
 
   EXPECT_EQ(problem.name, "50v-10");
   EXPECT_THAT(problem.hints, IsEmpty());
