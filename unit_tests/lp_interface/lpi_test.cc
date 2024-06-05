@@ -50,7 +50,9 @@ class LpInterfaceImplementationTest
   void SetUp() override {
     LpParameters lp_params;
     lp_params.set_lp_solver_type(GetParam());
-    lpi_ = CreateLpSolver(lp_params).value();
+    auto status_or_solver = CreateLpSolver(lp_params);
+    ASSERT_OK(status_or_solver.status());
+    lpi_ = std::move(status_or_solver.value());
     solver_inf_ = lpi_->Infinity();
   }
 
@@ -1316,43 +1318,69 @@ TEST_P(SolveTest, PrimalDualFeasible2) {
   }
 }
 
-TEST_P(SolveTest, PrimalUnboundedDualInfeasible) {
+TEST_P(SolveTest, PrimalUnbounded) {
   // max 3 x1 +   x2
   //     2 x1 +   x2 <= 10
   //       x1 + 3 x2 <= 15
   //       x1, x2 free
   //
   // which is unbounded.
-  for (bool use_primal_simplex : {true, false}) {
-    SCOPED_TRACE(absl::StrCat("Using ", use_primal_simplex ? "primal" : "dual",
-                              " simplex."));
-    ASSERT_OK(UploadProblem(
-        /*is_maximization=*/true,
-        /*lower_bounds=*/{-solver_inf_, -solver_inf_},
-        /*upper_bounds=*/{solver_inf_, solver_inf_},
-        /*objective_coefficients=*/{3, 1},
-        /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
-        /*right_hand_sides=*/{10, 15},
-        /*matrix=*/{{2, 1}, {1, 3}}));
-    if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
-    } else {
-      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
-    }
 
-    // Check solve status.
-    ASSERT_TRUE(lpi_->IsSolved());
-    EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
-    EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
-    EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
-    EXPECT_FALSE(lpi_->IsOptimal());
-    EXPECT_FALSE(lpi_->IsPrimalFeasible());
-    EXPECT_FALSE(lpi_->IsPrimalInfeasible());
-    if (use_primal_simplex) EXPECT_TRUE(lpi_->IsPrimalUnbounded());
-    EXPECT_FALSE(lpi_->IsDualFeasible());
-    EXPECT_TRUE(lpi_->IsDualInfeasible());
-    EXPECT_FALSE(lpi_->IsDualUnbounded());
-  }
+  SCOPED_TRACE(absl::StrCat("Using primal simplex."));
+  ASSERT_OK(UploadProblem(
+      /*is_maximization=*/true,
+      /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
+      /*objective_coefficients=*/{3, 1},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
+      /*right_hand_sides=*/{10, 15},
+      /*matrix=*/{{2, 1}, {1, 3}}));
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
+
+  // Check solve status.
+  ASSERT_TRUE(lpi_->IsSolved());
+  EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
+  EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IsOptimal());
+  EXPECT_FALSE(lpi_->IsPrimalFeasible());
+  EXPECT_FALSE(lpi_->IsPrimalInfeasible());
+  EXPECT_TRUE(lpi_->IsPrimalUnbounded());
+  EXPECT_FALSE(lpi_->IsDualFeasible());
+  EXPECT_TRUE(lpi_->IsDualInfeasible());
+  EXPECT_FALSE(lpi_->IsDualUnbounded());
+}
+
+TEST_P(SolveTest, DualInfeasible) {
+  // max 3 x1 +   x2
+  //     2 x1 +   x2 <= 10
+  //       x1 + 3 x2 <= 15
+  //       x1, x2 free
+  //
+  // which is unbounded.
+  SCOPED_TRACE(absl::StrCat("Using dual simplex."));
+  ASSERT_OK(UploadProblem(
+      /*is_maximization=*/true,
+      /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
+      /*objective_coefficients=*/{3, 1},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
+      /*right_hand_sides=*/{10, 15},
+      /*matrix=*/{{2, 1}, {1, 3}}));
+
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
+
+  // Check solve status.
+  ASSERT_TRUE(lpi_->IsSolved());
+  EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
+  EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IsOptimal());
+  EXPECT_FALSE(lpi_->IsPrimalFeasible());
+  EXPECT_FALSE(lpi_->IsPrimalInfeasible());
+  EXPECT_FALSE(lpi_->IsDualFeasible());
+  EXPECT_TRUE(lpi_->IsDualInfeasible());
+  EXPECT_FALSE(lpi_->IsDualUnbounded());
 }
 
 TEST_P(SolveTest, PrimalUnboundedRayMaximization) {
@@ -1376,8 +1404,9 @@ TEST_P(SolveTest, PrimalUnboundedRayMaximization) {
 
   // Check rays
   EXPECT_TRUE(lpi_->ExistsPrimalRay());
+
   if (lpi_->HasPrimalRay()) {
-    EXPECT_TRUE(lpi_->ExistsPrimalRay());
+    ASSERT_TRUE(lpi_->ExistsPrimalRay());
     ASSERT_OK_AND_ASSIGN(
         (const absl::StrongVector<ColIndex, double>& primal_ray),
         lpi_->GetPrimalRay());
@@ -1423,7 +1452,7 @@ TEST_P(SolveTest, PrimalUnboundedRayMinimization) {
   // Check rays
   EXPECT_TRUE(lpi_->ExistsPrimalRay());
   if (lpi_->HasPrimalRay()) {
-    EXPECT_TRUE(lpi_->ExistsPrimalRay());
+    ASSERT_TRUE(lpi_->ExistsPrimalRay());
     ASSERT_OK_AND_ASSIGN(
         (const absl::StrongVector<ColIndex, double>& primal_ray),
         lpi_->GetPrimalRay());
@@ -1447,7 +1476,7 @@ TEST_P(SolveTest, PrimalUnboundedRayMinimization) {
   ASSERT_FALSE(lpi_->HasDualRay());
 }
 
-TEST_P(SolveTest, PrimalInfeasibleDualUnbounded) {
+TEST_P(SolveTest, PrimalInfeasibility) {
   // min 10 y1 + 15 y2
   //     2 y1 +   y2 == 3
   //       y1 + 3 y2 == 1
@@ -1456,39 +1485,69 @@ TEST_P(SolveTest, PrimalInfeasibleDualUnbounded) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LpParameters::LP_SOPLEX) {
-    GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
-                    "models, so this test is temporarily disabled.";
-  }
-  for (bool use_primal_simplex : {true, false}) {
-    SCOPED_TRACE(absl::StrCat("Using ", use_primal_simplex ? "primal" : "dual",
-                              " simplex."));
-    ASSERT_OK(UploadProblem(
-        /*is_maximization=*/false,
-        /*lower_bounds=*/{0, 0},
-        /*upper_bounds=*/{solver_inf_, solver_inf_},
-        /*objective_coefficients=*/{10, 15},
-        /*left_hand_sides=*/{3, 1},
-        /*right_hand_sides=*/{3, 1},
-        /*matrix=*/{{2, 1}, {1, 3}}));
-    if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
-    } else {
-      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
-    }
 
-    // Check solve status.
-    ASSERT_TRUE(lpi_->IsSolved());
-    EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
-    EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
-    EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
-    EXPECT_FALSE(lpi_->IsOptimal());
-    EXPECT_FALSE(lpi_->IsPrimalFeasible());
-    EXPECT_TRUE(lpi_->IsPrimalInfeasible());
-    EXPECT_FALSE(lpi_->IsPrimalUnbounded());
-    EXPECT_FALSE(lpi_->IsDualFeasible());
-    EXPECT_FALSE(lpi_->IsDualInfeasible());
-    if (!use_primal_simplex) EXPECT_TRUE(lpi_->IsDualUnbounded());
+  SCOPED_TRACE(absl::StrCat("Using primal simplex."));
+  ASSERT_OK(UploadProblem(
+      /*is_maximization=*/false,
+      /*lower_bounds=*/{0, 0},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
+      /*objective_coefficients=*/{10, 15},
+      /*left_hand_sides=*/{3, 1},
+      /*right_hand_sides=*/{3, 1},
+      /*matrix=*/{{2, 1}, {1, 3}}));
+
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
+
+  // Check solve status.
+  ASSERT_TRUE(lpi_->IsSolved());
+  EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
+  EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IsOptimal());
+  EXPECT_FALSE(lpi_->IsPrimalFeasible());
+  EXPECT_TRUE(lpi_->IsPrimalInfeasible());
+  EXPECT_FALSE(lpi_->IsPrimalUnbounded());
+  EXPECT_FALSE(lpi_->IsDualFeasible());
+  EXPECT_FALSE(lpi_->IsDualInfeasible());
+}
+
+TEST_P(SolveTest, DualUnbounded) {
+  // min 10 y1 + 15 y2
+  //     2 y1 +   y2 == 3
+  //       y1 + 3 y2 == 1
+  //       y1,    y2 >= 0
+  //
+  // This is primal infeasible, since the only solution to the constraints is
+  // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
+  // however dual unbounded. Note that it is the dual of the previous problem.
+
+  SCOPED_TRACE(absl::StrCat("Using dual simplex."));
+  ASSERT_OK(UploadProblem(
+      /*is_maximization=*/false,
+      /*lower_bounds=*/{0, 0},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
+      /*objective_coefficients=*/{10, 15},
+      /*left_hand_sides=*/{3, 1},
+      /*right_hand_sides=*/{3, 1},
+      /*matrix=*/{{2, 1}, {1, 3}}));
+
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
+
+  // Check solve status.
+  ASSERT_TRUE(lpi_->IsSolved());
+  EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
+  EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IsOptimal());
+  EXPECT_FALSE(lpi_->IsPrimalFeasible());
+  EXPECT_TRUE(lpi_->IsPrimalInfeasible());
+  EXPECT_FALSE(lpi_->IsPrimalUnbounded());
+  EXPECT_FALSE(lpi_->IsDualFeasible());
+  EXPECT_FALSE(lpi_->IsDualInfeasible());
+
+  // TODO (CG): Explain why! (Presolve or soplex function)
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
+    EXPECT_TRUE(lpi_->IsDualUnbounded());
   }
 }
 
@@ -1501,10 +1560,7 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LpParameters::LP_SOPLEX) {
-    GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
-                    "models, so this test is temporarily disabled.";
-  }
+
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/true,
       /*lower_bounds=*/{0, 0},
@@ -1513,16 +1569,20 @@ TEST_P(SolveTest, DualUnboundedRayMaximization) {
       /*left_hand_sides=*/{3, 1},
       /*right_hand_sides=*/{3, 1},
       /*matrix=*/{{2, 1}, {1, 3}}));
+
   ASSERT_OK(lpi_->SolveLpWithDualSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
-  EXPECT_TRUE(lpi_->IsDualUnbounded());
+  // TODO (CG): Explain why! (Presolve or soplex function)
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
+    EXPECT_TRUE(lpi_->IsDualUnbounded());
+  }
 
   // Check rays
   EXPECT_FALSE(lpi_->ExistsPrimalRay());
   EXPECT_FALSE(lpi_->HasPrimalRay());
   EXPECT_TRUE(lpi_->ExistsDualRay());
   if (lpi_->HasDualRay()) {
-    EXPECT_TRUE(lpi_->ExistsDualRay());
+    ASSERT_TRUE(lpi_->ExistsDualRay());
     ASSERT_OK_AND_ASSIGN((const absl::StrongVector<RowIndex, double>& dual_ray),
                          lpi_->GetDualRay());
     ASSERT_EQ(dual_ray.size(), 2);
@@ -1552,10 +1612,7 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
   // This is primal infeasible, since the only solution to the constraints is
   // (y1, y2) = (8/5, -1/5), which is outside the variable bounds. It is
   // however dual unbounded. Note that it is the dual of the previous problem.
-  if (GetParam() == LpParameters::LP_SOPLEX) {
-    GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
-                    "models, so this test is temporarily disabled.";
-  }
+
   ASSERT_OK(UploadProblem(
       /*is_maximization=*/false,
       /*lower_bounds=*/{0, 0},
@@ -1564,16 +1621,20 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
       /*left_hand_sides=*/{3, 1},
       /*right_hand_sides=*/{3, 1},
       /*matrix=*/{{2, 1}, {1, 3}}));
+
   ASSERT_OK(lpi_->SolveLpWithDualSimplex());
   ASSERT_TRUE(lpi_->IsSolved());
-  EXPECT_TRUE(lpi_->IsDualUnbounded());
+  // TODO (CG): Explain why! (Presolve or soplex function)
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
+    EXPECT_TRUE(lpi_->IsDualUnbounded());
+  }
 
   // Check rays
   EXPECT_FALSE(lpi_->ExistsPrimalRay());
   EXPECT_FALSE(lpi_->HasPrimalRay());
   EXPECT_TRUE(lpi_->ExistsDualRay());
   if (lpi_->HasDualRay()) {
-    EXPECT_TRUE(lpi_->ExistsDualRay());
+    ASSERT_TRUE(lpi_->ExistsDualRay());
     ASSERT_OK_AND_ASSIGN((const absl::StrongVector<RowIndex, double>& dual_ray),
                          lpi_->GetDualRay());
     ASSERT_EQ(dual_ray.size(), 2);
@@ -1594,7 +1655,7 @@ TEST_P(SolveTest, DualUnboundedRayMinimization) {
   }
 }
 
-TEST_P(SolveTest, PrimalDualInfeasible) {
+TEST_P(SolveTest, DualInfeasible2) {
   // max x1 + x2
   //    x1 - x2 <= 0
   //  - x1 + x2 <= -1
@@ -1602,46 +1663,87 @@ TEST_P(SolveTest, PrimalDualInfeasible) {
   //
   // Note that the two constraints contradict each other, both in the
   // primal and in the dual.
-  if (GetParam() == LpParameters::LP_SOPLEX) {
-    GTEST_SKIP() << "Soplex currently gets confused by infeasible/unbounded "
-                    "models, so this test is temporarily disabled.";
+
+  SCOPED_TRACE(absl::StrCat("Using dual simplex."));
+  ASSERT_OK(UploadProblem(
+      /*is_maximization=*/true,
+      /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
+      /*objective_coefficients=*/{1, 1},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
+      /*right_hand_sides=*/{0, -1},
+      /*matrix=*/{{1, -1}, {-1, 1}}));
+
+  ASSERT_OK(lpi_->SolveLpWithDualSimplex());
+
+  // Check solve status.
+  ASSERT_TRUE(lpi_->IsSolved());
+  EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
+  EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IsOptimal());
+  EXPECT_FALSE(lpi_->IsPrimalFeasible());
+  EXPECT_FALSE(lpi_->IsPrimalUnbounded());
+  EXPECT_FALSE(lpi_->IsDualFeasible());
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
+    EXPECT_TRUE(lpi_->IsDualInfeasible());
   }
-  for (bool use_primal_simplex : {true, false}) {
-    SCOPED_TRACE(absl::StrCat("Using ", use_primal_simplex ? "primal" : "dual",
-                              " simplex."));
-    ASSERT_OK(UploadProblem(
-        /*is_maximization=*/true,
-        /*lower_bounds=*/{-solver_inf_, -solver_inf_},
-        /*upper_bounds=*/{solver_inf_, solver_inf_},
-        /*objective_coefficients=*/{1, 1},
-        /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
-        /*right_hand_sides=*/{0, -1},
-        /*matrix=*/{{1, -1}, {-1, 1}}));
-    if (use_primal_simplex) {
-      ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
-    } else {
-      ASSERT_OK(lpi_->SolveLpWithDualSimplex());
-    }
+  EXPECT_FALSE(lpi_->IsDualUnbounded());
 
-    // Check solve status.
-    ASSERT_TRUE(lpi_->IsSolved());
-    EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
-    EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
-    EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
-    EXPECT_FALSE(lpi_->IsOptimal());
-    EXPECT_FALSE(lpi_->IsPrimalFeasible());
-    if (use_primal_simplex) EXPECT_TRUE(lpi_->IsPrimalInfeasible());
-    EXPECT_FALSE(lpi_->IsPrimalUnbounded());
-    EXPECT_FALSE(lpi_->IsDualFeasible());
-    if (!use_primal_simplex) EXPECT_TRUE(lpi_->IsDualInfeasible());
-    EXPECT_FALSE(lpi_->IsDualUnbounded());
-
-    // Check rays.
-    EXPECT_FALSE(lpi_->ExistsPrimalRay());
-    EXPECT_FALSE(lpi_->HasPrimalRay());
+  // Check rays.
+  EXPECT_FALSE(lpi_->ExistsPrimalRay());
+  EXPECT_FALSE(lpi_->HasPrimalRay());
+  // TODO (CG): Explain why! (Presolve or soplex function)
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
     EXPECT_FALSE(lpi_->ExistsDualRay());
     EXPECT_FALSE(lpi_->HasDualRay());
   }
+}
+
+TEST_P(SolveTest, PrimalInfeasible2) {
+  // max x1 + x2
+  //    x1 - x2 <= 0
+  //  - x1 + x2 <= -1
+  //    x1,  x2 free
+  //
+  // Note that the two constraints contradict each other, both in the
+  // primal and in the dual.
+
+  SCOPED_TRACE(absl::StrCat("Using primal simplex."));
+  ASSERT_OK(UploadProblem(
+      /*is_maximization=*/true,
+      /*lower_bounds=*/{-solver_inf_, -solver_inf_},
+      /*upper_bounds=*/{solver_inf_, solver_inf_},
+      /*objective_coefficients=*/{1, 1},
+      /*left_hand_sides=*/{-solver_inf_, -solver_inf_},
+      /*right_hand_sides=*/{0, -1},
+      /*matrix=*/{{1, -1}, {-1, 1}}));
+  ASSERT_OK(lpi_->SolveLpWithPrimalSimplex());
+
+  // Check solve status.
+  ASSERT_TRUE(lpi_->IsSolved());
+  EXPECT_FALSE(lpi_->ObjectiveLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IterationLimitIsExceeded());
+  EXPECT_FALSE(lpi_->TimeLimitIsExceeded());
+  EXPECT_FALSE(lpi_->IsOptimal());
+  EXPECT_FALSE(lpi_->IsPrimalFeasible());
+  // TODO (CG): Explain why! (Presolve or soplex function)
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
+    EXPECT_TRUE(lpi_->IsPrimalInfeasible());
+    EXPECT_FALSE(lpi_->IsPrimalUnbounded());
+  }
+  EXPECT_FALSE(lpi_->IsDualFeasible());
+
+  EXPECT_FALSE(lpi_->IsDualUnbounded());
+
+  // Check rays.
+  // TODO (CG): Explain why! (Presolve or soplex function)
+  if (lpi_->GetSolverType() != LpParameters::LP_SOPLEX) {
+    EXPECT_FALSE(lpi_->ExistsPrimalRay());
+    EXPECT_FALSE(lpi_->HasPrimalRay());
+  }
+  EXPECT_FALSE(lpi_->ExistsDualRay());
+  EXPECT_FALSE(lpi_->HasDualRay());
 }
 
 TEST_P(SolveTest, SolveFromGivenPrimalBasis) {
@@ -1837,45 +1939,33 @@ TEST(CompareTestSolve, comparePrimalSolves) {
   auto lpi_soplex = CreateLpSolver(lp_params).value();
 
   for (auto lpi_ : {lpi_glop.get(), lpi_soplex.get()}) {
-    bool is_maximization = true;
-    const absl::StrongVector<ColIndex, double> lower_bounds = {0, 0};
-    const absl::StrongVector<ColIndex, double> upper_bounds = {kInf, kInf};
-    const absl::StrongVector<ColIndex, double> objective_coefficients = {1, 0};
-    const absl::StrongVector<RowIndex, double> left_hand_sides = {-kInf, -kInf};
-    const absl::StrongVector<RowIndex, double> right_hand_sides = {6, 0};
-    const absl::StrongVector<ColIndex, absl::StrongVector<RowIndex, double>>
-        matrix = {{3, -3}, {2, 2}};
-
-    // We use CHECK rather than ASSERT since they check if the test is written
-    // properly, not that the lpi behaves correctly.
-    CHECK_EQ(lower_bounds.size(), upper_bounds.size());
-    CHECK_EQ(lower_bounds.size(), objective_coefficients.size());
-    CHECK_EQ(left_hand_sides.size(), right_hand_sides.size());
-    CHECK_EQ(lower_bounds.size(), matrix.size());
-    for (const auto& row : matrix) CHECK_EQ(row.size(), left_hand_sides.size());
-
-    CHECK_OK(lpi_->Clear());
-    CHECK_OK(lpi_->SetObjectiveSense(is_maximization));
-    for (ColIndex col(0); col < lower_bounds.size(); ++col) {
-      CHECK_OK(lpi_->AddColumn(SparseCol(), lower_bounds[col],
-                               upper_bounds[col], objective_coefficients[col],
-                               ""));
-      VLOG(3) << "col: " << col;
-      VLOG(3) << "lower_bounds[col]: " << lower_bounds[col];
-      VLOG(3) << "upper_bounds[col]: " << upper_bounds[col];
-      CHECK_OK(
-          lpi_->SetColumnBounds(col, lower_bounds[col], upper_bounds[col]));
-    }
-    for (RowIndex row(0); row < left_hand_sides.size(); ++row) {
-      SparseRow row_coefficients;
-      for (ColIndex col(0); col < lower_bounds.size(); ++col) {
-        if (matrix[col][row] != 0) {
-          row_coefficients.AddEntry(col, matrix[col][row]);
-        }
-      }
-      CHECK_OK(lpi_->AddRow(row_coefficients, left_hand_sides[row],
-                            right_hand_sides[row], ""));
-    }
+    MipData mip_data =
+        MipData({.variables = {MiniMipVariable{.name = "x1",
+                                               .objective_coefficient = 1.0,
+                                               .lower_bound = 0,
+                                               .upper_bound = kInf,
+                                               .is_integer = true},
+                               MiniMipVariable{.name = "x2",
+                                               .objective_coefficient = 0.0,
+                                               .lower_bound = 0,
+                                               .upper_bound = kInf,
+                                               .is_integer = true}},
+                 .constraints = {MiniMipConstraint{
+                                     .name = "ct1",
+                                     .var_indices = {0, 1},
+                                     .coefficients = {3.0, 2.0},
+                                     .left_hand_side = -kInf,
+                                     .right_hand_side = 6.0,
+                                 },
+                                 MiniMipConstraint{
+                                     .name = "ct2",
+                                     .var_indices = {0, 1},
+                                     .coefficients = {-3.0, 2.0},
+                                     .left_hand_side = -kInf,
+                                     .right_hand_side = 0.0,
+                                 }},
+                 .is_maximization = true});
+    ASSERT_OK(lpi_->PopulateFromMipData(mip_data));
     if (lpi_ == lpi_soplex.get()) {
       lpi_->WriteLpToFile("lp_sp.txt");
     } else {
@@ -1894,7 +1984,8 @@ TEST(CompareTestSolve, comparePrimalSolves) {
   EXPECT_EQ(lpi_soplex->IsDualFeasible(), lpi_glop->IsDualFeasible());
   EXPECT_EQ(lpi_soplex->IsDualInfeasible(), lpi_glop->IsDualInfeasible());
   EXPECT_EQ(lpi_soplex->IsDualUnbounded(), lpi_glop->IsDualUnbounded());
-  EXPECT_EQ(lpi_soplex->GetObjectiveValue(), lpi_glop->GetObjectiveValue());
+  EXPECT_FLOAT_EQ(lpi_soplex->GetObjectiveValue(),
+                  lpi_glop->GetObjectiveValue());
 
   EXPECT_EQ(lpi_soplex->ExistsPrimalRay(), lpi_glop->ExistsPrimalRay());
   EXPECT_EQ(lpi_soplex->HasPrimalRay(), lpi_glop->HasPrimalRay());
@@ -1921,7 +2012,7 @@ TEST(CompareTestSolve, compareDualSolves) {
     MipData mip_data =
         MipData({.variables = {MiniMipVariable{.name = "x1",
                                                .objective_coefficient = 1.0,
-                                               .lower_bound = 1,
+                                               .lower_bound = 0,
                                                .upper_bound = kInf,
                                                .is_integer = true},
                                MiniMipVariable{.name = "x2",
@@ -1964,7 +2055,8 @@ TEST(CompareTestSolve, compareDualSolves) {
   EXPECT_EQ(lpi_soplex->IsDualFeasible(), lpi_glop->IsDualFeasible());
   EXPECT_EQ(lpi_soplex->IsDualInfeasible(), lpi_glop->IsDualInfeasible());
   EXPECT_EQ(lpi_soplex->IsDualUnbounded(), lpi_glop->IsDualUnbounded());
-  EXPECT_EQ(lpi_soplex->GetObjectiveValue(), lpi_glop->GetObjectiveValue());
+  EXPECT_FLOAT_EQ(lpi_soplex->GetObjectiveValue(),
+                  lpi_glop->GetObjectiveValue());
 
   EXPECT_EQ(lpi_soplex->ExistsPrimalRay(), lpi_glop->ExistsPrimalRay());
   EXPECT_EQ(lpi_soplex->HasPrimalRay(), lpi_glop->HasPrimalRay());

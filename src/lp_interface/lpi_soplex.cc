@@ -157,6 +157,9 @@ absl::Status LpSoplexInterface::SoPlexSolve() {
 
   CHECK(PreStrongBranchingBasisFreed());
 
+  // TODO (CG): Find better way to check this and also add debug compile mode.
+  //spx_->setIntParam(soplex::SoPlex::VERBOSITY, 5);
+  spx_->setIntParam(soplex::SoPlex::SIMPLIFIER, 0);
   // Delete the starting basis if solving from scratch.
   if (solve_from_scratch_) {
     try {
@@ -1026,12 +1029,14 @@ bool LpSoplexInterface::IsPrimalUnbounded() const {
   // If SoPlex returns unbounded, this may only mean that an unbounded ray is
   // available, not necessarily a primal
   //* feasible point; hence we have to check the perturbation.
+  auto status = spx_->status();
   return spx_->status() == soplex::SPxSolver::UNBOUNDED;
 }
 
 bool LpSoplexInterface::IsPrimalInfeasible() const {
   VLOG(10) << "calling IsPrimalInfeasible().";
 
+  auto status = spx_->status();
   return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
@@ -1049,6 +1054,7 @@ bool LpSoplexInterface::IsPrimalFeasible() const {
 bool LpSoplexInterface::ExistsDualRay() const {
   VLOG(10) << "calling ExistsDualRay().";
 
+  auto status = spx_->status();
   return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
@@ -1064,6 +1070,8 @@ bool LpSoplexInterface::HasDualRay() const {
 bool LpSoplexInterface::IsDualUnbounded() const {
   VLOG(10) << "calling IsDualUnbounded().";
 
+  auto status = spx_->status();
+  auto basis_status = spx_->basisStatus();
   return spx_->status() == soplex::SPxSolver::INFEASIBLE &&
          spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
@@ -1135,20 +1143,30 @@ double LpSoplexInterface::GetObjectiveValue() const {
 // Before calling this function, the caller must ensure that the LP has been
 // solved to optimality, i.e., that minimip::LpInterface.IsOptimal() returns
 // true.
-
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpSoplexInterface::GetPrimalValues() const {
   VLOG(10) << "calling GetPrimalValues().";
   CHECK(IsOptimal());
-  absl::StrongVector<ColIndex, double> primal_values(spx_->numColsReal());
+
+  // Create a std::vector to hold the primal values
+  std::vector<double> primal_values(spx_->numColsReal());
+
   try {
-    static_cast<void>(
-        spx_->getPrimalReal(primal_values.data(), spx_->numColsReal()));
+    if (!spx_->getPrimalReal(primal_values.data(), spx_->numColsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getPrimalReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return primal_values;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<ColIndex, double> strong_primal_values(
+      std::make_move_iterator(primal_values.begin()),
+      std::make_move_iterator(primal_values.end()));
+
+  return strong_primal_values;
 }
 
 // Before calling this function, the caller must ensure that the LP has been
@@ -1158,75 +1176,126 @@ absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpSoplexInterface::GetDualValues() const {
   VLOG(10) << "calling GetDualSolution().";
   CHECK(IsOptimal());
-  absl::StrongVector<RowIndex, double> dual_values(spx_->numRowsReal());
+
+  // Create a std::vector to hold the dual values
+  std::vector<double> dual_values(spx_->numRowsReal());
+
   try {
-    static_cast<void>(
-        spx_->getDualReal(dual_values.data(), spx_->numRowsReal()));
+    if (!spx_->getDualReal(dual_values.data(), spx_->numRowsReal())) {
+      return absl::Status(absl::StatusCode::kInternal, "Error in getDualReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return dual_values;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<RowIndex, double> strong_dual_values(
+      std::make_move_iterator(dual_values.begin()),
+      std::make_move_iterator(dual_values.end()));
+
+  return strong_dual_values;
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpSoplexInterface::GetRowActivities() const {
   VLOG(10) << "calling GetRowActivities().";
-  absl::StrongVector<RowIndex, double> row_activities(spx_->numRowsReal());
+
+  // Create a std::vector to hold the row activities (slacks)
+  std::vector<double> row_activities(spx_->numRowsReal());
+
   try {
-    static_cast<void>(
-        spx_->getSlacksReal(row_activities.data(),
-                            spx_->numRowsReal()));  // in SoPlex, the activities
-    // are called "slacks"
+    if (!spx_->getSlacksReal(row_activities.data(), spx_->numRowsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getSlacksReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return row_activities;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<RowIndex, double> strong_row_activities(
+      std::make_move_iterator(row_activities.begin()),
+      std::make_move_iterator(row_activities.end()));
+
+  return strong_row_activities;
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpSoplexInterface::GetReducedCosts() const {
   VLOG(10) << "calling GetReducedCosts().";
-  absl::StrongVector<ColIndex, double> reduced_costs(spx_->numColsReal());
+
+  // Create a std::vector to hold the reduced costs
+  std::vector<double> reduced_costs(spx_->numColsReal());
+
   try {
-    static_cast<void>(
-        spx_->getRedCostReal(reduced_costs.data(), spx_->numColsReal()));
+    if (!spx_->getRedCostReal(reduced_costs.data(), spx_->numColsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getRedCostReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return reduced_costs;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<ColIndex, double> strong_reduced_costs(
+      std::make_move_iterator(reduced_costs.begin()),
+      std::make_move_iterator(reduced_costs.end()));
+
+  return strong_reduced_costs;
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpSoplexInterface::GetPrimalRay() const {
   VLOG(10) << "calling GetPrimalRay().";
-  absl::StrongVector<ColIndex, double> primal_ray;
   CHECK(spx_->hasPrimalRay());
+
+  // Create a std::vector to hold the primal ray
+  std::vector<double> primal_ray(spx_->numColsReal());
+
   try {
-    static_cast<void>(
-        spx_->getPrimalRayReal(primal_ray.data(), spx_->numColsReal()));
+    if (!spx_->getPrimalRayReal(primal_ray.data(), spx_->numColsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getPrimalRayReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return primal_ray;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<ColIndex, double> strong_primal_ray(
+      std::make_move_iterator(primal_ray.begin()),
+      std::make_move_iterator(primal_ray.end()));
+
+  return strong_primal_ray;
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpSoplexInterface::GetDualRay() const {
   VLOG(10) << "calling GetDualRay().";
   CHECK(spx_->hasDualFarkas());
-  absl::StrongVector<RowIndex, double> dual_ray;
+
+  // Create a std::vector to hold the dual ray
+  std::vector<double> dual_ray(spx_->numRowsReal());
+
   try {
-    static_cast<void>(
-        spx_->getDualFarkasReal(dual_ray.data(), spx_->numRowsReal()));
+    if (!spx_->getDualFarkasReal(dual_ray.data(), spx_->numRowsReal())) {
+      return absl::Status(absl::StatusCode::kInternal, "Error in getDualReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return dual_ray;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<RowIndex, double> strong_dual_ray(
+      std::make_move_iterator(dual_ray.begin()),
+      std::make_move_iterator(dual_ray.end()));
+
+  return strong_dual_ray;
 }
 
 // Gets the number of LP iterations of the last solve call.

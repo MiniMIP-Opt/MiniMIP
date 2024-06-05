@@ -36,7 +36,7 @@ build --subcommands=pretty_print
 #test --verbose_failures
 
 # Increase verbosity level for test logs.
-test --test_output=all --test_arg=--v=3
+#test --test_output=all --test_arg=--v=3
 
 # Import user-specific options from .bazelrc.user if it exists.
 try-import %workspace%/.bazelrc.user
