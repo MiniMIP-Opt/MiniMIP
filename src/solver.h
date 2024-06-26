@@ -58,8 +58,8 @@ class Solver : public SolverContextInterface {
     ASSIGN_OR_RETURN(std::unique_ptr<CutRunnerInterface> cut_runner,
                      CreateCutRunner(params.cut_runner()));
 
-    ASSIGN_OR_RETURN(std::unique_ptr<BranchingInterface> branching_interface,
-                     CreateBranching(params.branching_parameters()));
+    ASSIGN_OR_RETURN(std::unique_ptr<BranchingRuleInterface> branching_interface,
+                     CreateBranchingRule(params.branching_parameters()));
 
     auto solver = std::unique_ptr<Solver>(new Solver(
         params, std::move(mip_data), std::move(result), std::move(mip_tree),
@@ -90,7 +90,7 @@ class Solver : public SolverContextInterface {
     return cut_runner_.get();
   }
 
-  const BranchingInterface* branching_interface() const override {
+  const BranchingRuleInterface* branching_interface() const override {
     return branching_interface_.get();
   }
 
@@ -133,7 +133,7 @@ class Solver : public SolverContextInterface {
   std::unique_ptr<CutRunnerInterface> cut_runner_;
 
   // Handle Branching Candidate selection.
-  std::unique_ptr<BranchingInterface> branching_interface_;
+  std::unique_ptr<BranchingRuleInterface> branching_interface_;
 
   // Handle to an LP solver.
   std::unique_ptr<LpInterface> lpi_;
@@ -142,7 +142,7 @@ class Solver : public SolverContextInterface {
   Solver(MiniMipParameters params, MipData mip_data, MiniMipResult result,
          MipTree mip_tree, CutRegistry cut_registry,
          std::unique_ptr<CutRunnerInterface> cut_runner,
-         std::unique_ptr<BranchingInterface> branching_interface,
+         std::unique_ptr<BranchingRuleInterface> branching_interface,
          std::unique_ptr<LpInterface> lpi)
       : params_{std::move(params)},
         mip_data_{std::move(mip_data)},

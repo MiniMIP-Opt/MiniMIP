@@ -21,12 +21,12 @@
 
 namespace minimip {
 
-class MaxFractionalBranching : public BranchingInterface {
+class MaxFractionalBranching : public BranchingRuleInterface {
  public:
   explicit MaxFractionalBranching(const BranchingParameters& params)
       : params_(std::move(params)) {}
 
-  const absl::StatusOr<ColIndex> NextBranchingVariable(
+  const absl::StatusOr<BranchingVariable> NextBranchingVariable(
       const SolverContextInterface& context) const final;
 
  private:

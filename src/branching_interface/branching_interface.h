@@ -25,11 +25,16 @@ namespace minimip {
 // dependency between the solver and the cutting interface.
 class SolverContextInterface;
 
-class BranchingInterface {
- public:
-  virtual ~BranchingInterface() = default;
+struct BranchingVariable {
+  ColIndex index;
+  bool branching_up_first;
+};
 
-  virtual const absl::StatusOr<ColIndex> NextBranchingVariable(
+class BranchingRuleInterface {
+ public:
+  virtual ~BranchingRuleInterface() = default;
+
+  virtual const absl::StatusOr<BranchingVariable> NextBranchingVariable(
       const SolverContextInterface& context) const = 0;
 };
 

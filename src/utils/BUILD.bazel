@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "reader",
+    srcs = ["reader.cc"],
+    hdrs = ["reader.h"],
+    deps = [
+        "//src/data_structures:problem",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_ortools//ortools/lp_data:mps_reader",
+    ],
+)

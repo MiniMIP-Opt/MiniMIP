@@ -22,8 +22,8 @@
 
 namespace minimip {
 
-inline absl::StatusOr<std::unique_ptr<BranchingInterface>> CreateBranching(
-    const BranchingParameters& branching_parameters) {
+inline absl::StatusOr<std::unique_ptr<BranchingRuleInterface>>
+CreateBranchingRule(const BranchingParameters& branching_parameters) {
   if (branching_parameters.has_random_branching_parameters()) {
     return std::make_unique<RandomBranching>(branching_parameters);
   }

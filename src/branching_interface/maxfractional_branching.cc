@@ -16,13 +16,14 @@
 
 namespace minimip {
 
-const absl::StatusOr<ColIndex> MaxFractionalBranching::NextBranchingVariable(
+const absl::StatusOr<BranchingVariable>
+MaxFractionalBranching::NextBranchingVariable(
     const SolverContextInterface& context) const {
   // Return a random variable.
   auto integer_variables = context.mip_data().integer_variables();
 
+  BranchingVariable branching_variable;
   if (!integer_variables.empty()) {
-    ColIndex branching_variable;
     double max_fractional_part = 0.0;
     absl::StrongVector<ColIndex, double> primal_values =
         context.lpi()->GetPrimalValues().value();
@@ -33,9 +34,17 @@ const absl::StatusOr<ColIndex> MaxFractionalBranching::NextBranchingVariable(
         double fractional_part = abs(value - std::floor(value));
         if (fractional_part > max_fractional_part) {
           max_fractional_part = fractional_part;
-          branching_variable = col;
+          branching_variable.index = col;
         }
       }
+    }
+    branching_variable.branching_up_first =
+        (params_.branching_direction() ==
+         BranchingParameters_BranchingDirection_UP);
+
+    if (params_.branching_direction() ==
+        BranchingParameters_BranchingDirection_UNSPECIFIED) {
+      branching_variable.branching_up_first = (max_fractional_part <= 0.5);
     }
     return branching_variable;
   }
