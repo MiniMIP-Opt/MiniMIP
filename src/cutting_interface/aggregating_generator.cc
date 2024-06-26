@@ -62,26 +62,19 @@ double CGRoundInteger(const SolverContextInterface& context, double coefficient,
   const double fj = Fractionality(context, coefficient);
   const double p = fj <= f0 ? 0 : std::ceil(k * (fj - f0) / (1 - f0));
 
-  LOG(INFO) << "Coefficient: " << coefficient << ", k: " << k << ", f0: " << f0
-            << ", fj: " << fj << ", p: " << p;
-
-  if (fj <= f0) {
-    DCHECK_EQ(p, 0.0) << "p should be zero if fj <= f0";
-  } else {
-    // Ensure the conditions involving `k` are correctly met.
-    DCHECK_LT(f0 + (1.0 / k) * (p - 1) * (1 - f0), fj)
-        << "Lower bound violated: " << (f0 + (1.0 / k) * (p - 1) * (1 - f0))
-        << " >= " << fj;
-    DCHECK_LE(fj, f0 + (1.0 / k) * p * (1 - f0))
-        << "Upper bound violated: " << fj << " > "
-        << (f0 + (1.0 / k) * p * (1 - f0));
+  VLOG(3) << "Coefficient: " << coefficient << ", k: " << k << ", f0: " << f0
+          << ", fj: " << fj << ", p: " << p;
+  if (fj <= f0) DCHECK_EQ(p, 0.0);
+  if (fj > f0) {
+    DCHECK_LT(f0 + 1 / k * (p - 1) * (1 - f0), fj);
+    DCHECK_LE(fj, f0 + 1 / k * p * (1 - f0));
   }
 
   double result = context.FloorWithTolerance(coefficient) + p / (k + 1);
 
-  LOG(INFO) << "Result of CG rounding! Coefficient: " << coefficient
-            << ", k: " << k << ", f0: " << f0 << ", fj: " << fj << ", p: " << p
-            << ", result: " << result;
+  VLOG(3) << "Result of CG rounding! Coefficient: " << coefficient
+          << ", k: " << k << ", f0: " << f0 << ", fj: " << fj << ", p: " << p
+          << ", result: " << result;
 
   // Check the final result is non-negative as required.
   DCHECK_GE(result, 0.0) << "Negative result found in CG rounding!";
@@ -99,16 +92,7 @@ AggregatedRow AggregateByWeight(
     const double side_value = use_right_hand_side[row]
                                   ? context.lpi()->GetRightHandSide(row)
                                   : context.lpi()->GetLeftHandSide(row);
-    LOG(INFO) << "Row: " << row;
-    LOG(INFO) << "Weight: " << weight;
-    LOG(INFO) << "Side Value: " << side_value;
-
     const double slack_sign = use_right_hand_side[row] ? 1 : -1;
-
-    LOG(INFO) << "slack_sign: " << slack_sign;
-
-    LOG(INFO) << "Variable Coefficients: "
-              << context.lpi()->GetSparseRowCoefficients(row);
 
     aggregated_row.variable_coefficients.AddMultipleOfVector(
         weight, context.lpi()->GetSparseRowCoefficients(row));
@@ -116,12 +100,12 @@ AggregatedRow AggregateByWeight(
     aggregated_row.slack_signs.AddEntry(row, slack_sign);
     aggregated_row.side_values.AddEntry(row, side_value);
     aggregated_row.right_hand_side += weight * side_value;
-    LOG(INFO) << "Aggregated Row: " << aggregated_row.DebugString();
+    VLOG(5) << "Aggregated Row: " << aggregated_row.DebugString();
   }
   aggregated_row.slack_coefficients.CleanUpIfNeeded();
   aggregated_row.slack_signs.CleanUpIfNeeded();
   aggregated_row.side_values.CleanUpIfNeeded();
-  LOG(INFO) << "Aggregated Row: " << aggregated_row.DebugString();
+  VLOG(3) << "Aggregated Row: " << aggregated_row.DebugString();
   return aggregated_row;
 }
 
@@ -135,7 +119,6 @@ AggregatedRow AggregateByWeight(
     const SolverContextInterface& context, AggregatedRow& aggregated_row) {
   VLOG(10) << "calling TransformToNonNegativeVariables().";
   bool success = true;
-  LOG(INFO) << "Aggregated Row: " << aggregated_row.DebugString();
   aggregated_row.variable_coefficients.Transform([&context, &aggregated_row,
                                                   &success](
                                                      ColIndex column,
@@ -143,21 +126,11 @@ AggregatedRow AggregateByWeight(
     const double lb = context.lpi()->GetLowerBound(column);
     const double ub = context.lpi()->GetUpperBound(column);
 
-    // Log variable information
-    LOG(INFO) << "Column: " << column;
-    LOG(INFO) << "Coefficient: " << coefficient;
-    LOG(INFO) << "Lower Bound: " << lb;
-    LOG(INFO) << "Upper Bound: " << ub;
-
     // Variable is already positive, no transformation needed.
-    if (lb >= 0.0) {
-      LOG(INFO)
-          << "No transformation needed. Variable is already non-negative.";
-      return coefficient;
-    }
+    if (lb >= 0.0) return coefficient;
 
     if (!context.lpi()->IsInfinity(-lb)) {
-      LOG(INFO)
+      VLOG(3)
           << "Transforming variable to non-negative form using lower bound.";
 
       // We have x[j] >= lb <-> x[j] - lb >= 0 and can define the new
@@ -170,9 +143,7 @@ AggregatedRow AggregateByWeight(
       // c[j] * x[j] = c[j] * (x[j]' + lb) <= r
       // <->
       // c[j] * x[j]' <= r - c[j] * lb
-      LOG(INFO) << "Right-hand Side before: " << aggregated_row.right_hand_side;
       aggregated_row.right_hand_side -= coefficient * lb;
-      LOG(INFO) << "Right-hand Side after: " << aggregated_row.right_hand_side;
       return coefficient;
     }
 
@@ -190,9 +161,7 @@ AggregatedRow AggregateByWeight(
       // c[j] * x[j] = c[j] * (ub - x[j]') <= r
       // <->
       // -c[j] * x[j]' <= r - c[j] * ub
-      LOG(INFO) << "Right-hand Side before: " << aggregated_row.right_hand_side;
       aggregated_row.right_hand_side -= coefficient * ub;
-      LOG(INFO) << "Right-hand Side after: " << aggregated_row.right_hand_side;
       return -coefficient;
     }
 
@@ -254,24 +223,17 @@ void SubstituteSlackVariables(const SolverContextInterface& context,
   VLOG(10) << "calling SubstituteSlackVariables().";
   for (const auto [row, slack_coefficient] :
        aggregated_row.slack_coefficients.entries()) {
-    const double slack_sign = aggregated_row.slack_signs[row];
-    const double side_value = aggregated_row.side_values[row];
-    LOG(INFO) << "Substituting slack variable. Row: " << row;
-    LOG(INFO) << "Slack Coefficient: " << slack_coefficient;
-    LOG(INFO) << "Slack Sign: " << slack_sign;
-    LOG(INFO) << "aggregated_row.right_hand_side before: "
-              << aggregated_row.right_hand_side;
-
     aggregated_row.variable_coefficients -=
-        slack_sign * slack_coefficient *
+        aggregated_row.slack_signs[row] * slack_coefficient *
         context.lpi()->GetSparseRowCoefficients(row);
-    LOG(INFO) << "Updated aggregated_row.variable_coefficients: "
-              << aggregated_row.variable_coefficients;
+    VLOG(3) << "Updated aggregated_row.variable_coefficients: "
+            << aggregated_row.variable_coefficients;
 
-    aggregated_row.right_hand_side -=
-        slack_sign * slack_coefficient * side_value;
-    LOG(INFO) << "aggregated_row.right_hand_side after: "
-              << aggregated_row.right_hand_side;
+    aggregated_row.right_hand_side -= aggregated_row.slack_signs[row] *
+                                      slack_coefficient *
+                                      aggregated_row.side_values[row];
+    VLOG(3) << "aggregated_row.right_hand_side after: "
+            << aggregated_row.right_hand_side;
   }
   aggregated_row.slack_coefficients.Clear();
   aggregated_row.slack_signs.Clear();
@@ -320,7 +282,6 @@ absl::StatusOr<absl::StrongVector<RowIndex, bool>> ChooseActiveSidesByBasis(
 bool RemovesLPOptimum(const SparseRow& row, double right_hand_side,
                       const SparseRow& lp_optimum) {
   VLOG(10) << "calling RemovesLPOptimum().";
-  std::cout << "row.DotProduct: " << row.DotProduct(lp_optimum) << std::endl;
   return row.DotProduct(lp_optimum) > right_hand_side;
 }
 
@@ -353,7 +314,6 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
   VLOG(10) << "calling StrongCGRounder::RoundAggregatedRow().";
   // CG rounding cannot be applied if there are continuous variables with
   // negative coefficients.
-  LOG(INFO) << "Aggregated Row: " << aggregated_row.DebugString();
   if (!std::all_of(aggregated_row.slack_coefficients.entries().begin(),
                    aggregated_row.slack_coefficients.entries().end(),
                    [&context](const SparseEntry<RowIndex>& entry) {
@@ -379,35 +339,25 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
 
   const double f0 = Fractionality(context, aggregated_row.right_hand_side);
   const double k = std::ceil(1 / f0) - 1;
-  LOG(INFO) << "f0: " << f0 << ", k: " << k;
 
   DCHECK_LE(1 / (k + 1), f0);
   DCHECK_LT(f0, 1 / k);
 
-  LOG(INFO) << "1 / (k + 1) (=" << 1 / (k + 1) << ") <= f0 (=" << f0
-            << ") < 1/k (=" << 1 / k << ")";
   aggregated_row.slack_coefficients.Transform(
       [&context, k, f0](RowIndex row, double val) {
-        double original_val = val;
-        double transformed_val = HasIntegralSlackVariable(context, row)
-                                     ? CGRoundInteger(context, val, k, f0)
-                                     : 0.0;
-        LOG(INFO) << "Row: " << row << ", Original: " << original_val
-                  << ", Transformed: " << transformed_val;
-        DCHECK(transformed_val >= 0.0);
-        return transformed_val;
+        if (HasIntegralSlackVariable(context, row)) {
+          return CGRoundInteger(context, val, k, f0);
+        }
+        DCHECK(val >= 0.0);
+        return 0.0;
       });
   aggregated_row.variable_coefficients.Transform(
       [&context, k, f0](ColIndex col, double val) {
-        double original_val = val;
-        double transformed_val =
-            context.mip_data().integer_variables().contains(col)
-                ? CGRoundInteger(context, val, k, f0)
-                : 0.0;
-        LOG(INFO) << "Column: " << col << ", Original: " << original_val
-                  << ", Transformed: " << transformed_val;
-        DCHECK(transformed_val >= 0.0);
-        return transformed_val;
+        if (context.mip_data().integer_variables().contains(col)) {
+          return CGRoundInteger(context, val, k, f0);
+        }
+        DCHECK(val >= 0.0);
+        return 0.0;
       });
   aggregated_row.right_hand_side =
       context.FloorWithTolerance(aggregated_row.right_hand_side);
@@ -482,7 +432,6 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
     SparseCol row_weights;
 
     for (auto [index, value] : basis_row.entries()) {
-      LOG(INFO) << "Index: " << index << ", Value: " << value;
       row_weights.AddEntry(RowIndex(index.value()), value);
     }
     AggregatedRow aggregated_row =
