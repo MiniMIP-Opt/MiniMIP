@@ -158,7 +158,7 @@ absl::Status LpSoplexInterface::SoPlexSolve() {
   CHECK(PreStrongBranchingBasisFreed());
 
   // TODO (CG): Find better way to check this and also add debug compile mode.
-  //spx_->setIntParam(soplex::SoPlex::VERBOSITY, 5);
+  // spx_->setIntParam(soplex::SoPlex::VERBOSITY, 5);
   spx_->setIntParam(soplex::SoPlex::SIMPLIFIER, 0);
   // Delete the starting basis if solving from scratch.
   if (solve_from_scratch_) {
