@@ -187,6 +187,7 @@ class MipTree {
 
   // Get the next free node index.
   NodeIndex get_next_free_node() const { return next_free_node_; }
+
  private:
   // A helper function used in checks.
   bool NodeIsActive(NodeIndex n) const {
