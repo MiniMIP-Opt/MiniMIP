@@ -61,13 +61,12 @@ message HybridSelectorParameters {
   // The maximum tree depth at which the selector is active, -1 means no limit.
   optional int64 maximum_tree_depth = 8 [default = -1];
 
+  // The maximum number of cuts this Selector should add per separation round. Zero value means
+  // the Selector is turned off, -1 means no limit.
+  optional int32 max_num_cuts = 9 [default = -1];
 }
 
 message CutSelectorParameters {
-
-  // The maximum number of cuts this Selector should add per separation round. Zero value means
-  // the Selector is turned off, -1 means no limit.
-  optional int32 max_num_cuts = 1 [default = -1];
 
   oneof selector_specific {
     HybridSelectorParameters hybrid_selector_parameters = 2;
@@ -80,10 +79,11 @@ message DefaultRunnerParameters {
   optional int32 max_iterations = 1 [default = 100];
   optional int32 max_num_cuts = 2 [default = 100];
   optional int32 max_num_cuts_root = 3 [default = 100];
+  optional int32 max_num_cuts_at_node = 4 [default = 100];
+  optional int32 max_num_cuts_at_root = 5 [default = 100];
 }
 
 message CutRunnerParameters {
-
   repeated CutGeneratorParameters generator_parameters = 1;
   repeated CutSelectorParameters selector_parameters = 2;
 

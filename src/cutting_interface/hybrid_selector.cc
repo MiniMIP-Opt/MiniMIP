@@ -99,7 +99,7 @@ absl::StatusOr<std::vector<CutData>> HybridSelector::SelectCuttingPlanes(
     // 2.2 Add the current best cut to the selected cuts.
     selected_cuts.push_back(cut_reference);
 
-    if (selected_cuts.size() == max_num_cuts_) {
+    if (selected_cuts.size() == params_.max_num_cuts()) {
       break;
     }
 

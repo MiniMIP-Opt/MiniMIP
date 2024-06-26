@@ -26,38 +26,73 @@ bool DefaultRunner::CutCondition(const SolverContextInterface& context) {
    * (the global limits are only checked at the root node in order to not query
    * system time too often)
    */
+  if (context.lpi()->IsPrimalInfeasible() ||
+      context.lpi()->IsPrimalUnbounded() || context.lpi()->IsDualInfeasible() ||
+      context.lpi()->IsDualUnbounded() ||
+      context.lpi()->TimeLimitIsExceeded() ||
+      context.lpi()->IterationLimitIsExceeded() ||
+      context.lpi()->ObjectiveLimitIsExceeded()) {
+    VLOG(3) << "CutRunner: LP is infeasible, unbounded, or reached a limit.";
+    return false;
+  }
 
-  return false;
+  if (!context.lpi()->IsSolved()) {
+    VLOG(3) << "CutRunner: No cuts were added to LP in the last round.";
+    return false;
+  }
+
+  if (num_cutrounds >= params_.max_iterations()) {
+    VLOG(3) << "CutRunner: Maximum number of cut rounds.";
+    return false;
+  }
+
+  if (num_of_cuts_added_since_last_run >= params_.max_num_cuts_at_node()) {
+    VLOG(3) << "CutRunner: Maximum number of cuts added in this node.";
+    return false;
+  }
+  if (context.cut_registry().active_cuts().size() >= params_.max_num_cuts()) {
+    VLOG(3) << "CutRunner: Maximum number of active cuts in the LP.";
+    return false;
+  }
+
+  // Continue the cut separation.
+  return true;
 }
 
 absl::Status DefaultRunner::SeparateCurrentLPSolution(
     SolverContextInterface& context) {
   VLOG(10) << "calling SeparateCurrentLPSolution().";
-  int i = 0;
   LpInterface* mutable_lpi = context.mutable_lpi();
 
-  while (i < 1) {  // CutCondition(context)
+  bool should_separate = CutCondition(context);
+
+  while (should_separate) {
     std::vector<int> new_cut_indices;
 
     for (const std::unique_ptr<CutGeneratorInterface>& generator :
          generators_) {
-      absl::StatusOr<std::vector<CutData>> cuts =
-          generator->GenerateCuttingPlanes(context);
-      if (cuts.status() != absl::OkStatus()) {
-        return cuts.status();
+      ASSIGN_OR_RETURN(std::vector<CutData> cuts,
+                       generator->GenerateCuttingPlanes(context));
+      if (cuts.empty()) {
+        continue;
       }
 
-      absl::StatusOr<std::vector<CutData>> filtered_cuts =
-          selector_->SelectCuttingPlanes(context, cuts.value());
+      ASSIGN_OR_RETURN(std::vector<CutData> filtered_cuts,
+                       selector_->SelectCuttingPlanes(context, cuts));
 
-      if (filtered_cuts.status() != absl::OkStatus()) {
-        return filtered_cuts.status();
+      if (filtered_cuts.empty()) {
+        continue;
       }
 
-      for (CutData& cut : filtered_cuts.value()) {
+      for (CutData& cut : filtered_cuts) {
         new_cut_indices.push_back(
             context.mutable_cut_registry().AddCut(std::move(cut)));
       }
+    }
+
+    // If no new cuts have been added to the LP, we can stop the cut separation.
+    if (new_cut_indices.empty()) {
+      break;
     }
 
     for (int cut_index : new_cut_indices) {
@@ -65,8 +100,10 @@ absl::Status DefaultRunner::SeparateCurrentLPSolution(
       RETURN_IF_ERROR(mutable_lpi->AddRow(cut.row(), -mutable_lpi->Infinity(),
                                           cut.right_hand_side(), cut.name()));
     }
+
     RETURN_IF_ERROR(mutable_lpi->SolveLpWithDualSimplex());
-    i++;
+    num_cutrounds++;
+    should_separate = CutCondition(context);
   }
   return absl::OkStatus();
 };

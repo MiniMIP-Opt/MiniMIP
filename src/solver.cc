@@ -73,6 +73,10 @@ absl::Status Solver::Solve() {
     // TODO(CG): First run the cutting loop to add cuts to the LP before setting the node data
     CHECK_OK(lp->SolveLpWithDualSimplex());
 
+    if (lp->IsOptimal()) {
+      CHECK_OK(cut_runner_->SeparateCurrentLPSolution(*this));
+    }
+
     if (!lp->IsOptimal()) {
       if (current_node == kRootNode) {
         // If the root node's lpi_ solution is not optimal, return the problem

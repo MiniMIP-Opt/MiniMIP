@@ -67,12 +67,13 @@ TEST(SolveLoopTest, RootNode) {
                        Solver::Create(problem));
 
   ASSERT_OK(solver->Solve());
-
   ASSERT_EQ(solver->result().solve_status, MiniMipSolveStatus::kOptimal);
   ASSERT_FLOAT_EQ(solver->result().best_solution.objective_value, -1.0);
   ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[0], 1.0);
   ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[1], 1.0);
 
 }
+//TODO(CG): Add Test for multiple rounds of main loop, as cutting solves
+//          the rootnode to optimality and branching is not tested anymore.
 
 }  // namespace minimip

@@ -68,7 +68,7 @@ TEST(CutRunnerTests, CreateCutRunner) {
   ASSERT_TRUE(runner->selector() != nullptr);
 }
 
-TEST(CutRunnerTests, SimpleSolve) {
+TEST(CutRunnerTests, SingleCutRoundSolve) {
   MiniMipProblem problem;
 
   // Another small integer problem that requires proper use of slack
@@ -108,6 +108,11 @@ TEST(CutRunnerTests, SimpleSolve) {
   });
 
   problem.is_maximization = true;
+  CutRunnerParameters params = DefaultCutRunnerParameters();
+  params.mutable_default_runner_parameters()->set_max_iterations(1);
+
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<CutRunnerInterface> runner,
+                       CreateCutRunner(params));
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
@@ -120,8 +125,7 @@ TEST(CutRunnerTests, SimpleSolve) {
   ASSERT_TRUE(solver->IsEqualToWithinTolerance(
       solver->lpi()->GetObjectiveValue(), -28.0 / 3.0));
 
-  ASSERT_OK(
-      solver->mutable_cut_runner()->SeparateCurrentLPSolution(*solver.get()));
+  ASSERT_OK(runner->SeparateCurrentLPSolution(*solver.get()));
 
   ASSERT_TRUE(solver->IsEqualToWithinTolerance(
       solver->lpi()->GetObjectiveValue(), -9.0));
