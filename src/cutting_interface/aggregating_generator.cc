@@ -61,9 +61,6 @@ double CGRoundInteger(const SolverContextInterface& context, double coefficient,
   VLOG(10) << "calling CGRoundInteger().";
   const double fj = Fractionality(context, coefficient);
   const double p = fj <= f0 ? 0 : std::ceil(k * (fj - f0) / (1 - f0));
-
-  VLOG(3) << "Coefficient: " << coefficient << ", k: " << k << ", f0: " << f0
-          << ", fj: " << fj << ", p: " << p;
   if (fj <= f0) DCHECK_EQ(p, 0.0);
   if (fj > f0) {
     DCHECK_LT(f0 + 1 / k * (p - 1) * (1 - f0), fj);
@@ -148,7 +145,7 @@ AggregatedRow AggregateByWeight(
     }
 
     if (!context.lpi()->IsInfinity(ub)) {
-      LOG(INFO)
+      VLOG(3)
           << "Transforming variable to non-negative form using upper bound.";
 
       // We have x[j] <= ub <-> ub - x[j] >= 0 and can define the new
@@ -415,7 +412,7 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
       continue;
     }
     if (!context.mip_data().integer_variables().contains(basic_column)) {
-      VLOG(3) << "SKIP row " << tableau_row
+      VLOG(5) << "SKIP row " << tableau_row
               << ": corresponds to a continuous variable";
       continue;
     }
