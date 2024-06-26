@@ -1,3 +1,0 @@
-digraph G {
-  0 [label="Node 0\nLP: -inf\nCuts: 0"];
-}
