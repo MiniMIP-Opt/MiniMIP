@@ -213,8 +213,7 @@ void MipTree::GenerateDotFile(const NodeIndex& current_node,
     // application.
     std::cerr << "Failed to execute command: " << command << "\n";
   } else {
-    std::cout << "Graph visualization generated: " << filepath + ".png"
-              << "\n";
+    std::cout << "Graph visualization generated: " << filepath + ".png" << "\n";
   }
 }
 
