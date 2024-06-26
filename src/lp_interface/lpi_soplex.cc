@@ -159,7 +159,11 @@ absl::Status LpSoplexInterface::SoPlexSolve() {
 
   // TODO (CG): Find better way to check this and also add debug compile mode.
   // spx_->setIntParam(soplex::SoPlex::VERBOSITY, 5);
+
+  // Turn off the presolver of soplex, to avoid early termination without
+  // setting the relevant fields in the lpi.
   spx_->setIntParam(soplex::SoPlex::SIMPLIFIER, 0);
+
   // Delete the starting basis if solving from scratch.
   if (solve_from_scratch_) {
     try {
@@ -1010,7 +1014,6 @@ bool LpSoplexInterface::IsSolved() const {
 // solver knows and can return the primal ray.
 bool LpSoplexInterface::ExistsPrimalRay() const {
   VLOG(10) << "calling ExistsPrimalRay().";
-
   return (spx_->status() == soplex::SPxSolver::UNBOUNDED);
 }
 
@@ -1019,7 +1022,6 @@ bool LpSoplexInterface::ExistsPrimalRay() const {
 // primal ray.
 bool LpSoplexInterface::HasPrimalRay() const {
   VLOG(10) << "calling HasPrimalRay().";
-
   return spx_->hasPrimalRay();
 }
 
@@ -1029,20 +1031,16 @@ bool LpSoplexInterface::IsPrimalUnbounded() const {
   // If SoPlex returns unbounded, this may only mean that an unbounded ray is
   // available, not necessarily a primal
   //* feasible point; hence we have to check the perturbation.
-  auto status = spx_->status();
   return spx_->status() == soplex::SPxSolver::UNBOUNDED;
 }
 
 bool LpSoplexInterface::IsPrimalInfeasible() const {
   VLOG(10) << "calling IsPrimalInfeasible().";
-
-  auto status = spx_->status();
   return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
 bool LpSoplexInterface::IsPrimalFeasible() const {
   VLOG(10) << "calling IsPrimalFeasible().";
-
   return spx_->basisStatus() == soplex::SPxBasis::OPTIMAL or
          spx_->basisStatus() == soplex::SPxBasis::PRIMAL;
 }
@@ -1053,8 +1051,6 @@ bool LpSoplexInterface::IsPrimalFeasible() const {
 // dual ray.
 bool LpSoplexInterface::ExistsDualRay() const {
   VLOG(10) << "calling ExistsDualRay().";
-
-  auto status = spx_->status();
   return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
@@ -1063,28 +1059,22 @@ bool LpSoplexInterface::ExistsDualRay() const {
 //*  and the solver knows and can return the dual ray
 bool LpSoplexInterface::HasDualRay() const {
   VLOG(10) << "calling HasDualRay().";
-
   return spx_->hasDualFarkas();
 }
 
 bool LpSoplexInterface::IsDualUnbounded() const {
   VLOG(10) << "calling IsDualUnbounded().";
-
-  auto status = spx_->status();
-  auto basis_status = spx_->basisStatus();
   return spx_->status() == soplex::SPxSolver::INFEASIBLE &&
          spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
 
 bool LpSoplexInterface::IsDualInfeasible() const {
   VLOG(10) << "calling IsDualInfeasible().";
-
   return (spx_->status() == soplex::SPxSolver::UNBOUNDED);
 }
 
 bool LpSoplexInterface::IsDualFeasible() const {
   VLOG(10) << "calling IsDualFeasible().";
-
   return (spx_->basisStatus() == soplex::SPxBasis::OPTIMAL) or
          spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
@@ -1514,20 +1504,6 @@ absl::StatusOr<SparseRow> LpSoplexInterface::GetSparseRowOfBInverted(
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
 
-  absl::StrongVector<RowIndex, double> row_activities =
-      GetRowActivities().value();
-
-  LOG(INFO) << "Row activities: ";
-  for (RowIndex row_index(0); row_index < row_activities.size(); ++row_index) {
-    LOG(INFO) << "Row " << row_index << ": " << row_activities[row_index];
-  }
-
-  // TODO (CG): Check if this should be applied automatically.
-  int slack = row_activities.at(row_in_basis) < 0 ? -1 : 1;
-  if (slack == -1) {
-    LOG(INFO) << "SLACK IS NEGATIVE";
-  }
-
   SparseRow sparse_row;
   if (num_indices == -1) {
     // This means that Soplex used a dense representation. If so, the result
@@ -1541,8 +1517,7 @@ absl::StatusOr<SparseRow> LpSoplexInterface::GetSparseRowOfBInverted(
     }
   }
   sparse_row.CleanUpIfNeeded();
-  LOG(INFO) << "Sparse row: " << sparse_row;
-  WriteLpToFile("lp_s.txt");
+  VLOG(3) << "Sparse row: " << sparse_row;
   return sparse_row;
 }
 

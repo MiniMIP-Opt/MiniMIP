@@ -1028,13 +1028,6 @@ absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
   scaler_.UnscaleUnitRowLeftSolve(
       solver_.GetBasis(GlopRowIndex(row_in_basis.value())), tmp_row_.get());
 
-  // DCHECK_EQ(tmp_row_->values.size(), lp_.num_constraints().value());
-  absl::StrongVector<RowIndex, double> row_activities =
-      GetRowActivities().value();
-  LOG(INFO) << "Row activities: ";
-  for (RowIndex row_index(0); row_index < row_activities.size(); ++row_index) {
-    LOG(INFO) << "Row " << row_index << ": " << row_activities[row_index];
-  }
   // Vectors in Glop might be stored in dense or sparse format depending on
   // the values. If non_zeros are given, we can directly loop over the
   // non_zeros, otherwise we have to collect the nonzeros.
@@ -1058,7 +1051,6 @@ absl::StatusOr<SparseRow> LpGlopInterface::GetSparseRowOfBInverted(
     }
   }
   VLOG(3) << "Sparse row: " << sparse_row;
-  WriteLpToFile("lp_g.txt");
   return sparse_row;
 }
 
