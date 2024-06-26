@@ -52,6 +52,14 @@ inline CutRunnerParameters DefaultCutRunnerParameters() {
   return runner_params;
 }
 
+// Create the default BranchingParameters
+// As of 30.04.24: The MaxFractionalBranching is the default.
+inline BranchingParameters DefaultBranchingParameters() {
+  BranchingParameters params = BranchingParameters();
+  params.mutable_max_fractional_branching_parameters();
+  return params;
+}
+
 // Unified factory method to create default parameters
 inline MiniMipParameters DefaultMiniMipParameters() {
   VLOG(10) << "calling DefaultMiniMipParameters().";
@@ -59,6 +67,9 @@ inline MiniMipParameters DefaultMiniMipParameters() {
 
   // initialize LP parameters.
   default_params.mutable_lp_parameters();
+
+  // initialize branching parameters.
+  *default_params.mutable_branching_parameters() = DefaultBranchingParameters();
 
   // Initialize the default CutRunner parameters.
   *default_params.mutable_cut_runner() = DefaultCutRunnerParameters();

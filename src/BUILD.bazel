@@ -26,6 +26,7 @@ cc_library(
     hdrs = ["solver_context_interface.h"],
     deps = [
         "//src/cutting_interface:cuts_runner",
+        "//src/branching_interface:branching_interface",
         "//src/data_structures:cuts_data",
         "//src/data_structures:mip_data",
         "//src/data_structures:mip_tree",
@@ -43,5 +44,6 @@ cc_library(
         ":solver_context_interface",
         "//src/lp_interface:lpi_factory",
         "//src/cutting_interface:runner_factory",
+        "//src/branching_interface:branching_factory"
     ],
 )
