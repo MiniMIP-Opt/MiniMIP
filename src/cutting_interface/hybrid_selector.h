@@ -35,15 +35,13 @@ namespace minimip {
 
 class HybridSelector : public CutSelectorInterface {
  public:
-  explicit HybridSelector(const CutSelectorParameters& params)
-      : max_num_cuts_(params.max_num_cuts()),
-        params_(params.hybrid_selector_parameters()) {}
+  explicit HybridSelector(CutSelectorParameters params)
+      : params_(std::move(params.hybrid_selector_parameters())) {}
 
   absl::StatusOr<std::vector<CutData>> SelectCuttingPlanes(
       const SolverContextInterface& context, std::vector<CutData>& cuts) final;
 
  private:
-  int max_num_cuts_;
   const HybridSelectorParameters params_;
 };
 

@@ -31,8 +31,8 @@ class SolverContextInterface;
 
 class DefaultRunner : public CutRunnerInterface {
  public:
-  explicit DefaultRunner(const CutRunnerParameters& params)
-      : params_(params.default_runner_parameters()) {
+  explicit DefaultRunner(CutRunnerParameters params)
+      : params_(std::move(params.default_runner_parameters())) {
     VLOG(10) << "calling DefaultRunner().";
     // Check and initialize the cut generators.
     for (const auto& generator_params : params.generator_parameters()) {
@@ -54,12 +54,13 @@ class DefaultRunner : public CutRunnerInterface {
     AddSelector(std::move(selector_or_status.value()));
   }
 
-  bool CutCondition(const SolverContextInterface& context) final;
+  bool MayRunOneMoreSeperationRound(
+      const SolverContextInterface& context) final;
 
   absl::Status SeparateCurrentLPSolution(SolverContextInterface& context) final;
 
  private:
-  const DefaultRunnerParameters& params_;
+  const DefaultRunnerParameters params_;
 };
 
 }  // namespace minimip

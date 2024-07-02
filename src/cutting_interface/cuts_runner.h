@@ -41,7 +41,8 @@ class CutRunnerInterface {
   virtual absl::Status SeparateCurrentLPSolution(
       SolverContextInterface& context) = 0;
 
-  virtual bool CutCondition(const SolverContextInterface& context) = 0;
+  virtual bool MayRunOneMoreSeperationRound(
+      const SolverContextInterface& context) = 0;
 
   void AddGenerator(std::unique_ptr<CutGeneratorInterface> generator) {
     generators_.push_back(std::move(generator));
@@ -69,6 +70,8 @@ class CutRunnerInterface {
   std::vector<std::unique_ptr<CutGeneratorInterface>> generators_;
   std::unique_ptr<CutSelectorInterface> selector_;
   int num_generators_ = 0;
+  int num_cutrounds_ = 0;
+  int num_of_cuts_added_since_last_run_ = 0;
 };
 
 }  // namespace minimip

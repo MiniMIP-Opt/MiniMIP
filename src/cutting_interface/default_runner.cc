@@ -16,7 +16,11 @@
 
 namespace minimip {
 
-bool DefaultRunner::CutCondition(const SolverContextInterface& context) {
+// If the function returns a true value, a single round of cut separation is
+// executed, querying all available generators once. If the function returns a
+// false value, the cut separation loop is stopped.
+bool DefaultRunner::MayRunOneMoreSeperationRound(
+    const SolverContextInterface& context) {
   VLOG(10) << "calling CutCondition().";
   // max cutrounds per node
 
@@ -26,38 +30,79 @@ bool DefaultRunner::CutCondition(const SolverContextInterface& context) {
    * (the global limits are only checked at the root node in order to not query
    * system time too often)
    */
+  // TODO(CG): catch numerical errors (problem should never turn unbounded in
+  // this component) as well as possible recovery methods like removing cuts
+  // that have been added once an error has been encountered or resolve from
+  // scratch etc. It might be better to pass the status directly to the output
+  // and collect error nodes for further analysis.
+  // TODO: Add cutrunner specific limit parameters to avoid infinite loops in
+  // case of possible issues.
 
-  return false;
+  if (context.lpi()->IsPrimalInfeasible() ||
+      context.lpi()->IsPrimalUnbounded() || context.lpi()->IsDualInfeasible() ||
+      context.lpi()->IsDualUnbounded() ||
+      context.lpi()->TimeLimitIsExceeded() ||
+      context.lpi()->IterationLimitIsExceeded() ||
+      context.lpi()->ObjectiveLimitIsExceeded()) {
+    VLOG(3) << "CutRunner: LP is infeasible, unbounded, or reached a limit.";
+    return false;
+  }
+
+  if (!context.lpi()->IsSolved()) {
+    VLOG(3) << "CutRunner: No cuts were added to LP in the last round.";
+    return false;
+  }
+
+  if (num_cutrounds_ >= params_.max_iterations()) {
+    VLOG(3) << "CutRunner: Maximum number of cut rounds.";
+    return false;
+  }
+
+  if (num_of_cuts_added_since_last_run_ >= params_.max_num_cuts_per_node()) {
+    VLOG(3) << "CutRunner: Maximum number of cuts added in this node.";
+    return false;
+  }
+  if (context.cut_registry().active_cuts().size() >=
+      params_.max_num_cuts_total()) {
+    VLOG(3) << "CutRunner: Maximum number of total active cuts in the LP.";
+    return false;
+  }
+
+  return true;
 }
 
 absl::Status DefaultRunner::SeparateCurrentLPSolution(
     SolverContextInterface& context) {
   VLOG(10) << "calling SeparateCurrentLPSolution().";
-  int i = 0;
   LpInterface* mutable_lpi = context.mutable_lpi();
 
-  while (i < 1) {  // CutCondition(context)
+  while (MayRunOneMoreSeperationRound(context)) {
     std::vector<int> new_cut_indices;
 
     for (const std::unique_ptr<CutGeneratorInterface>& generator :
          generators_) {
-      absl::StatusOr<std::vector<CutData>> cuts =
-          generator->GenerateCuttingPlanes(context);
-      if (cuts.status() != absl::OkStatus()) {
-        return cuts.status();
+      ASSIGN_OR_RETURN(std::vector<CutData> cuts,
+                       generator->GenerateCuttingPlanes(context));
+      if (cuts.empty()) {
+        continue;
       }
 
-      absl::StatusOr<std::vector<CutData>> filtered_cuts =
-          selector_->SelectCuttingPlanes(context, cuts.value());
+      ASSIGN_OR_RETURN(std::vector<CutData> filtered_cuts,
+                       selector_->SelectCuttingPlanes(context, cuts));
 
-      if (filtered_cuts.status() != absl::OkStatus()) {
-        return filtered_cuts.status();
+      if (filtered_cuts.empty()) {
+        continue;
       }
 
-      for (CutData& cut : filtered_cuts.value()) {
+      for (CutData& cut : filtered_cuts) {
         new_cut_indices.push_back(
             context.mutable_cut_registry().AddCut(std::move(cut)));
       }
+    }
+
+    // If no new cuts have been added to the LP, we can stop the cut separation.
+    if (new_cut_indices.empty()) {
+      break;
     }
 
     for (int cut_index : new_cut_indices) {
@@ -65,8 +110,9 @@ absl::Status DefaultRunner::SeparateCurrentLPSolution(
       RETURN_IF_ERROR(mutable_lpi->AddRow(cut.row(), -mutable_lpi->Infinity(),
                                           cut.right_hand_side(), cut.name()));
     }
+
     RETURN_IF_ERROR(mutable_lpi->SolveLpWithDualSimplex());
-    i++;
+    num_cutrounds_++;
   }
   return absl::OkStatus();
 };
