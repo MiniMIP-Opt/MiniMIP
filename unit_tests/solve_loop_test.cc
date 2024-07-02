@@ -17,6 +17,7 @@
 
 #include "absl/status/status.h"
 #include "ortools/base/status_macros.h"
+#include "src/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
