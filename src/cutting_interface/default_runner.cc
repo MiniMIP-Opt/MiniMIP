@@ -17,7 +17,7 @@
 namespace minimip {
 
 // If the function returns a true value, a single round of cut separation is executed, querying all available generators once. If the function returns a false value, the cut separation loop is stopped.
-bool DefaultRunner::ShouldRunSeperationRound(const SolverContextInterface& context) {
+bool DefaultRunner::MayRunOneMoreSeperationRound(const SolverContextInterface& context) {
   VLOG(10) << "calling CutCondition().";
   // max cutrounds per node
 
@@ -67,7 +67,7 @@ absl::Status DefaultRunner::SeparateCurrentLPSolution(
   VLOG(10) << "calling SeparateCurrentLPSolution().";
   LpInterface* mutable_lpi = context.mutable_lpi();
 
-  while (ShouldRunSeperationRound(context)) {
+  while (MayRunOneMoreSeperationRound(context)) {
     std::vector<int> new_cut_indices;
 
     for (const std::unique_ptr<CutGeneratorInterface>& generator :
