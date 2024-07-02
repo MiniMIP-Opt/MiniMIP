@@ -54,7 +54,7 @@ class DefaultRunner : public CutRunnerInterface {
     AddSelector(std::move(selector_or_status.value()));
   }
 
-  bool CutCondition(const SolverContextInterface& context) final;
+  bool ShouldRunSeperationRound(const SolverContextInterface& context) final;
 
   absl::Status SeparateCurrentLPSolution(SolverContextInterface& context) final;
 

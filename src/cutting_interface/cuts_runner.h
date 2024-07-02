@@ -41,7 +41,7 @@ class CutRunnerInterface {
   virtual absl::Status SeparateCurrentLPSolution(
       SolverContextInterface& context) = 0;
 
-  virtual bool CutCondition(const SolverContextInterface& context) = 0;
+  virtual bool ShouldRunSeperationRound(const SolverContextInterface& context) = 0;
 
   void AddGenerator(std::unique_ptr<CutGeneratorInterface> generator) {
     generators_.push_back(std::move(generator));
