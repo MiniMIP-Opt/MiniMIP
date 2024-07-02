@@ -16,78 +16,11 @@
 
 #include <fstream>
 
-#include "ortools/linear_solver/linear_solver.pb.h"
-#include "ortools/lp_data/mps_reader.h"
-
 namespace minimip {
-namespace {
-
-absl::StatusOr<MiniMipProblem> MPModelProtoToMiniMipProblem(
-    const operations_research::MPModelProto& model_proto) {
-  VLOG(10) << "calling MPModelProtoToMiniMipProblem().";
-  using operations_research::MPConstraintProto;
-  using operations_research::MPVariableProto;
-
-  if (model_proto.general_constraint_size() != 0) {
-    return absl::InvalidArgumentError(
-        "MiniMIP only supports linear constraints.");
-  }
-  if (model_proto.has_quadratic_objective()) {
-    return absl::InvalidArgumentError(
-        "MiniMIP only supports linear objectives.");
-  }
-  if (model_proto.annotation_size()) {
-    return absl::InvalidArgumentError("MiniMIP doesn't support annotations.");
-  }
-
-  MiniMipProblem problem;
-  problem.name = model_proto.name();
-  problem.is_maximization = model_proto.maximize();
-  problem.objective_offset = model_proto.objective_offset();
-
-  problem.variables.reserve(model_proto.variable_size());
-  for (const MPVariableProto& variable_proto : model_proto.variable()) {
-    problem.variables.push_back(
-        {.name = variable_proto.name(),
-         .objective_coefficient = variable_proto.objective_coefficient(),
-         .lower_bound = variable_proto.lower_bound(),
-         .upper_bound = variable_proto.upper_bound(),
-         .is_integer = variable_proto.is_integer()});
-  }
-  problem.constraints.reserve(model_proto.constraint_size());
-  for (const MPConstraintProto& constraint_proto : model_proto.constraint()) {
-    problem.constraints.push_back(
-        {.name = constraint_proto.name(),
-         .var_indices = {constraint_proto.var_index().begin(),
-                         constraint_proto.var_index().end()},
-         .coefficients = {constraint_proto.coefficient().begin(),
-                          constraint_proto.coefficient().end()},
-         .left_hand_side = constraint_proto.lower_bound(),
-         .right_hand_side = constraint_proto.upper_bound()});
-  }
-  if (model_proto.has_solution_hint()) {
-    problem.hints.push_back(
-        {.var_indices = {model_proto.solution_hint().var_index().begin(),
-                         model_proto.solution_hint().var_index().end()},
-         .values = {model_proto.solution_hint().var_value().begin(),
-                    model_proto.solution_hint().var_value().end()}});
-  }
-
-  const std::string error_string = FindErrorInMiniMipProblem(problem);
-  if (!error_string.empty()) {
-    return util::InvalidArgumentErrorBuilder()
-           << "MiniMipProblem converted from MPModelProto was invalid: "
-           << error_string;
-  }
-  return problem;
-}
-
-}  // namespace
 
 // Returns the first error encountered while validating MiniMipProblem.
 // Returns empty string if `problem` is valid.
 std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem) {
-  VLOG(10) << "calling FindErrorInMiniMipProblem().";
   for (const MiniMipVariable& variable : problem.variables) {
     if (variable.name.empty()) {
       return "No variable name given.";
@@ -131,30 +64,6 @@ std::string FindErrorInMiniMipProblem(const MiniMipProblem& problem) {
     }
   }
   return "";
-}
-
-absl::StatusOr<MiniMipProblem> ReadProblemFromMPSFile(
-    const std::string& file_name) {
-  VLOG(10) << "calling ReadProblemFromMPSFile().";
-  // If the file isn't found, ortools only logs a warning and returns an empty
-  // problem. This may lead to silent failures, so we issue a proper error.
-  std::fstream fs(file_name, std::ios_base::in);
-  if (!fs.good()) {
-    return util::InvalidArgumentErrorBuilder()
-           << "File not found: " << file_name;
-  }
-
-  ASSIGN_OR_RETURN(const operations_research::MPModelProto model_proto,
-                   operations_research::glop::MpsFileToMPModelProto(file_name));
-  return MPModelProtoToMiniMipProblem(model_proto);
-}
-
-absl::StatusOr<MiniMipProblem> ReadProblemFromMPSData(
-    const std::string& mps_data) {
-  VLOG(10) << "calling ReadProblemFromMPSData().";
-  ASSIGN_OR_RETURN(const operations_research::MPModelProto model_proto,
-                   operations_research::glop::MpsDataToMPModelProto(mps_data));
-  return MPModelProtoToMiniMipProblem(model_proto);
 }
 
 }  // namespace minimip
