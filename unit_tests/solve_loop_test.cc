@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#include "src/solver.h"
-
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-
 #include "absl/status/status.h"
 #include "ortools/base/status_macros.h"
+#include "src/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
@@ -38,18 +34,16 @@ TEST(SolveLoopTest, RootNode) {
   // -3*x1 + 2*x2 <= 0
   // x1, x2 >= 0
   // x1, x2 integer
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x1",
-          .objective_coefficient = 0.0,
-          .lower_bound = 0,
-          .upper_bound = kInf,
-          .is_integer = true});
-  problem.variables.push_back(
-      MiniMipVariable{.name = "x2",
-          .objective_coefficient = 1.0,
-          .lower_bound = 0,
-          .upper_bound = kInf,
-          .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x1",
+                                              .objective_coefficient = 0.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
+  problem.variables.push_back(MiniMipVariable{.name = "x2",
+                                              .objective_coefficient = 1.0,
+                                              .lower_bound = 0,
+                                              .upper_bound = kInf,
+                                              .is_integer = true});
   problem.constraints.push_back(MiniMipConstraint{
       .name = "ct1",
       .var_indices = {0, 1},
@@ -67,17 +61,15 @@ TEST(SolveLoopTest, RootNode) {
   problem.is_maximization = true;
 
   // Call the Create function to create a Solver object
-  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver,
-                       Solver::Create(problem));
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));
 
   ASSERT_OK(solver->Solve());
   ASSERT_EQ(solver->result().solve_status, MiniMipSolveStatus::kOptimal);
   ASSERT_FLOAT_EQ(solver->result().best_solution.objective_value, -1.0);
   ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[0], 1.0);
   ASSERT_FLOAT_EQ(solver->result().best_solution.variable_values[1], 1.0);
-
 }
-//TODO(CG): Add Test for multiple rounds of main loop, as cutting solves
-//          the rootnode to optimality and branching is not tested anymore.
+// TODO(CG): Add Test for multiple rounds of main loop, as cutting solves
+//           the rootnode to optimality and branching is not tested anymore.
 
 }  // namespace minimip

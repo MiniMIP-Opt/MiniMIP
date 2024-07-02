@@ -67,10 +67,11 @@ absl::Status Solver::Solve() {
 
     for (ColIndex col : mip_data_.integer_variables()) {
       CHECK_OK(lp->SetColumnBounds(col, current_lower_bounds[col],
-                                     current_upper_bounds[col]));
+                                   current_upper_bounds[col]));
     }
 
-    // TODO(CG): First run the cutting loop to add cuts to the LP before setting the node data
+    // TODO(CG): First run the cutting loop to add cuts to the LP before setting
+    // the node data
     CHECK_OK(lp->SolveLpWithDualSimplex());
 
     if (lp->IsOptimal()) {
@@ -103,7 +104,8 @@ absl::Status Solver::Solve() {
     const double objective_value = lp->GetObjectiveValue();
     mip_tree_.SetLpRelaxationDataInNode(current_node, objective_value);
 
-    absl::StrongVector<ColIndex, double> primal_values = lp->GetPrimalValues().value();
+    absl::StrongVector<ColIndex, double> primal_values =
+        lp->GetPrimalValues().value();
     const bool solution_is_incumbent = mip_data_.SolutionIsIntegral(
         primal_values, params_.integrality_tolerance());
 
@@ -128,7 +130,8 @@ absl::Status Solver::Solve() {
     // ==========================================================================
 
     // Find the variable with the maximum fractional part to branch on
-    BranchingVariable branching_variable = branching_interface_->NextBranchingVariable(*this).value();
+    BranchingVariable branching_variable =
+        branching_interface_->NextBranchingVariable(*this).value();
 
     // Create binary child nodes for chosen branching variable
     const NodeIndex down_child = mip_tree_.AddNodeByBranchingFromParent(
@@ -142,8 +145,7 @@ absl::Status Solver::Solve() {
     if (branching_variable.branching_up_first) {
       node_queue.push_front(up_child);
       node_queue.push_back(down_child);
-    }
-    else {
+    } else {
       node_queue.push_front(down_child);
       node_queue.push_back(up_child);
     }

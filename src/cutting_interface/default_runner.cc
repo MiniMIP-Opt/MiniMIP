@@ -16,8 +16,11 @@
 
 namespace minimip {
 
-// If the function returns a true value, a single round of cut separation is executed, querying all available generators once. If the function returns a false value, the cut separation loop is stopped.
-bool DefaultRunner::MayRunOneMoreSeperationRound(const SolverContextInterface& context) {
+// If the function returns a true value, a single round of cut separation is
+// executed, querying all available generators once. If the function returns a
+// false value, the cut separation loop is stopped.
+bool DefaultRunner::MayRunOneMoreSeperationRound(
+    const SolverContextInterface& context) {
   VLOG(10) << "calling CutCondition().";
   // max cutrounds per node
 
@@ -27,8 +30,13 @@ bool DefaultRunner::MayRunOneMoreSeperationRound(const SolverContextInterface& c
    * (the global limits are only checked at the root node in order to not query
    * system time too often)
    */
-  // TODO(CG): catch numerical errors (problem should never turn unbounded in this component) as well as possible recovery methods like removing cuts that have been added once an error has been encountered or resolve from scratch etc. It might be better to pass the status directly to the output and collect error nodes for further analysis.
-  // TODO: Add cutrunner specific limit parameters to avoid infinite loops in case of possible issues.
+  // TODO(CG): catch numerical errors (problem should never turn unbounded in
+  // this component) as well as possible recovery methods like removing cuts
+  // that have been added once an error has been encountered or resolve from
+  // scratch etc. It might be better to pass the status directly to the output
+  // and collect error nodes for further analysis.
+  // TODO: Add cutrunner specific limit parameters to avoid infinite loops in
+  // case of possible issues.
 
   if (context.lpi()->IsPrimalInfeasible() ||
       context.lpi()->IsPrimalUnbounded() || context.lpi()->IsDualInfeasible() ||
@@ -54,7 +62,8 @@ bool DefaultRunner::MayRunOneMoreSeperationRound(const SolverContextInterface& c
     VLOG(3) << "CutRunner: Maximum number of cuts added in this node.";
     return false;
   }
-  if (context.cut_registry().active_cuts().size() >= params_.max_num_cuts_total()) {
+  if (context.cut_registry().active_cuts().size() >=
+      params_.max_num_cuts_total()) {
     VLOG(3) << "CutRunner: Maximum number of total active cuts in the LP.";
     return false;
   }
