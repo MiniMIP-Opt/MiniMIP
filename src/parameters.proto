@@ -72,10 +72,9 @@ message CutSelectorParameters {
 // Cutrunner Parameters
 message DefaultRunnerParameters {
   optional int32 max_iterations = 1 [default = 100];
-  optional int32 max_num_cuts = 2 [default = 100];
-  optional int32 max_num_cuts_root = 3 [default = 100];
-  optional int32 max_num_cuts_at_node = 4 [default = 100];
-  optional int32 max_num_cuts_at_root = 5 [default = 100];
+  optional int32 max_num_cuts_total = 2 [default = 100];
+  optional int32 max_num_cuts_at_root = 3 [default = 100];
+  optional int32 max_num_cuts_per_node = 4 [default = 100];
 }
 
 message CutRunnerParameters {

@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "src/solver.h"
-
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 
 #include "absl/status/status.h"
 #include "ortools/base/status_macros.h"
@@ -81,7 +78,8 @@ TEST(SolverTest, InitializeSolver) {
 
   LpInterface* lp = solver->mutable_lpi();
 
-  std::unique_ptr<LpInterface> lp_compare = CreateLpSolver(lp->GetLpParameters()).value();
+  std::unique_ptr<LpInterface> lp_compare =
+      CreateLpSolver(lp->GetLpParameters()).value();
   ASSERT_OK(lp_compare->PopulateFromMipData(mip_data));
 
   for (ColIndex col : mip_data.objective().indices()) {
@@ -105,6 +103,6 @@ TEST(SolverTest, InitializeSolver) {
     ASSERT_EQ(lp->GetUpperBound(col), lp_compare->GetUpperBound(col));
   }
 }
-}
+}  // namespace
 
 }  // namespace minimip
