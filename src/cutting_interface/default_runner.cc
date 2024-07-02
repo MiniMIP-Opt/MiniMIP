@@ -50,12 +50,12 @@ bool DefaultRunner::MayRunOneMoreSeperationRound(const SolverContextInterface& c
     return false;
   }
 
-  if (num_of_cuts_added_since_last_run_ >= params_.max_num_cuts_at_node()) {
+  if (num_of_cuts_added_since_last_run_ >= params_.max_num_cuts_per_node()) {
     VLOG(3) << "CutRunner: Maximum number of cuts added in this node.";
     return false;
   }
-  if (context.cut_registry().active_cuts().size() >= params_.max_num_cuts()) {
-    VLOG(3) << "CutRunner: Maximum number of active cuts in the LP.";
+  if (context.cut_registry().active_cuts().size() >= params_.max_num_cuts_total()) {
+    VLOG(3) << "CutRunner: Maximum number of total active cuts in the LP.";
     return false;
   }
 
