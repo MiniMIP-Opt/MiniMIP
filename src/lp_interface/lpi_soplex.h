@@ -33,6 +33,9 @@ class LpSoplexInterface : public LpInterface {
 
   ~LpSoplexInterface() override;
 
+  LpParameters::SolverType GetSolverType() const override {
+    return LpParameters::LP_SOPLEX;
+  }
   // ==========================================================================
   // LP model setters.
   // ==========================================================================

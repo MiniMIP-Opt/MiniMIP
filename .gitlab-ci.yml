@@ -24,6 +24,7 @@ build:
     - if [ ! -f /usr/local/bin/bazel ]; then wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-linux-x86_64 -O /usr/local/bin/bazel; fi
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
+    - clang-format-18 --version
     - clang-format-18 -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
     - git diff --exit-code
     - bazel build //src/...

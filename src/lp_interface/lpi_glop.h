@@ -39,6 +39,9 @@ class LpGlopInterface : public LpInterface {
  public:
   LpGlopInterface();
 
+  LpParameters::SolverType GetSolverType() const override {
+    return LpParameters::LP_GLOP;
+  }
   // ==========================================================================
   // LP model setters.
   // ==========================================================================

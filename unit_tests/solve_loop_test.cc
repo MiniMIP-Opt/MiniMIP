@@ -24,9 +24,6 @@ namespace minimip {
 
 TEST(SolveLoopTest, RootNode) {
   // Run a single round of main loop
-
-  MiniMipProblem problem;
-  SparseRow optimum;
   // Creates a very simple model where all variables are non-negative.
   //
   // max: z = x2
@@ -34,31 +31,32 @@ TEST(SolveLoopTest, RootNode) {
   // -3*x1 + 2*x2 <= 0
   // x1, x2 >= 0
   // x1, x2 integer
-  problem.variables.push_back(MiniMipVariable{.name = "x1",
-                                              .objective_coefficient = 0.0,
-                                              .lower_bound = 0,
-                                              .upper_bound = kInf,
-                                              .is_integer = true});
-  problem.variables.push_back(MiniMipVariable{.name = "x2",
-                                              .objective_coefficient = 1.0,
-                                              .lower_bound = 0,
-                                              .upper_bound = kInf,
-                                              .is_integer = true});
-  problem.constraints.push_back(MiniMipConstraint{
-      .name = "ct1",
-      .var_indices = {0, 1},
-      .coefficients = {3.0, 2.0},
-      .left_hand_side = -kInf,
-      .right_hand_side = 6.0,
-  });
-  problem.constraints.push_back(MiniMipConstraint{
-      .name = "ct2",
-      .var_indices = {0, 1},
-      .coefficients = {-3.0, 2.0},
-      .left_hand_side = -kInf,
-      .right_hand_side = 0.0,
-  });
-  problem.is_maximization = true;
+  MiniMipProblem problem{
+      .variables = {MiniMipVariable{.name = "x1",
+                                    .objective_coefficient = 0.0,
+                                    .lower_bound = 0,
+                                    .upper_bound = kInf,
+                                    .is_integer = true},
+                    MiniMipVariable{.name = "x2",
+                                    .objective_coefficient = 1.0,
+                                    .lower_bound = 0,
+                                    .upper_bound = kInf,
+                                    .is_integer = true}},
+      .constraints = {MiniMipConstraint{
+                          .name = "ct1",
+                          .var_indices = {0, 1},
+                          .coefficients = {3.0, 2.0},
+                          .left_hand_side = -kInf,
+                          .right_hand_side = 6.0,
+                      },
+                      MiniMipConstraint{
+                          .name = "ct2",
+                          .var_indices = {0, 1},
+                          .coefficients = {-3.0, 2.0},
+                          .left_hand_side = -kInf,
+                          .right_hand_side = 0.0,
+                      }},
+      .is_maximization = true};
 
   // Call the Create function to create a Solver object
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));

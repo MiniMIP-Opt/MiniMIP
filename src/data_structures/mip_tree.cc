@@ -162,5 +162,4 @@ DenseRow MipTree::RetrieveUpperBounds(NodeIndex n,
   }
   return upper_bounds;
 }
-
 }  // namespace minimip

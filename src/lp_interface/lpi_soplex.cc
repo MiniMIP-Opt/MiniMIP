@@ -123,7 +123,7 @@ soplex::SPxSolver::Status LpSoplexInterface::LpSolve(
     CHECK_NE(spx_->status(), soplex::SPxSolver::OPTIMAL);
   }
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  CHECK(spx_->intParam(soplex::SoPlex::ITERLIMIT) < 0 ||
+  CHECK(spx_->intParam(soplex::SoPlex::ITERLIMIT) < 0 or
         spx_->numIterations() <= spx_->intParam(soplex::SoPlex::ITERLIMIT));
   // NOLINTEND(readability-simplify-boolean-expr)
 
@@ -157,6 +157,13 @@ absl::Status LpSoplexInterface::SoPlexSolve() {
 
   CHECK(PreStrongBranchingBasisFreed());
 
+  // TODO (CG): Find better way to check this and also add debug compile mode.
+  // spx_->setIntParam(soplex::SoPlex::VERBOSITY, 5);
+
+  // Turn off the presolver of soplex, to avoid early termination without
+  // setting the relevant fields in the lpi.
+  spx_->setIntParam(soplex::SoPlex::SIMPLIFIER, 0);
+
   // Delete the starting basis if solving from scratch.
   if (solve_from_scratch_) {
     try {
@@ -172,13 +179,13 @@ absl::Status LpSoplexInterface::SoPlexSolve() {
   }
 
   // NOLINTBEGIN(readability-simplify-boolean-expr)
-  CHECK(!solve_from_scratch_ ||
+  CHECK(!solve_from_scratch_ or
         spx_->status() == soplex::SPxSolver::NO_PROBLEM);
   // NOLINTEND(readability-simplify-boolean-expr)
 
   const soplex::SPxSolver::Status status = LpSolve();
 
-  VLOG(3) << " -> SoPlex status: " << spx_->status()
+  VLOG(3) << " -> SoPlex status: " << status
           << ", basis status: " << spx_->basisStatus() << ".";
   is_solved_ = true;
 
@@ -401,8 +408,9 @@ LpSoplexInterface::SolveDownAndUpStrongBranch(ColIndex col, double primal_value,
 // ==========================================================================
 
 absl::Status LpSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
-  VLOG(10) << "calling LoadColumnLP().";
+  VLOG(10) << "calling PopulateFromMipData().";
 
+  RETURN_IF_ERROR(Clear());
   DCHECK_EQ(mip_data.constraint_names().size(),
             mip_data.left_hand_sides().size());
   DCHECK_EQ(mip_data.left_hand_sides().size(),
@@ -415,7 +423,7 @@ absl::Status LpSoplexInterface::PopulateFromMipData(const MipData& mip_data) {
   CHECK(PreStrongBranchingBasisFreed());
 
   try {
-    int num_rows = mip_data.matrix().num_rows().value();
+    int num_rows = mip_data.left_hand_sides().size();
     soplex::LPRowSet rowset(num_rows);
     soplex::DSVector empty_vector(0);
 
@@ -453,6 +461,11 @@ absl::Status LpSoplexInterface::AddColumn(const SparseCol& col_data,
                                           double objective_coefficient,
                                           const std::string& /*unused*/) {
   VLOG(10) << "calling AddColumn().";
+  DCHECK(!col_data.MayNeedCleaning());
+  DCHECK(std::all_of(col_data.entries().begin(), col_data.entries().end(),
+                     [num_rows = GetNumberOfRows()](const ColEntry& e) {
+                       return RowIndex(0) <= e.index and e.index < num_rows;
+                     }));
   InvalidateSolution();
 
   CHECK(PreStrongBranchingBasisFreed());
@@ -473,6 +486,9 @@ absl::Status LpSoplexInterface::AddColumn(const SparseCol& col_data,
       DCHECK(!IsInfinity(std::abs(entry.value)));
       col_vector.add(entry.index.value(), entry.value);
     }
+    VLOG(3) << "Adding column with objective coefficient = "
+            << objective_coefficient << ", lower bound = " << lower_bound
+            << ", upper bound = " << upper_bound << ".";
     spx_->addColReal(soplex::LPCol(objective_coefficient, col_vector,
                                    upper_bound, lower_bound));
   } catch (const soplex::SPxException& x) {
@@ -499,11 +515,11 @@ absl::Status LpSoplexInterface::AddColumns(
     if (!(matrix.num_cols() == 0) and matrix.AllColsAreClean()) {
       // Perform a check to ensure that no new rows have been added.
       int num_rows = spx_->numRowsReal();
-      for (ColIndex i(0); i < matrix.num_cols(); ++i) {
-        for (int j = 0; j < matrix.col(i).entries().size(); ++j) {
-          DCHECK_LE(0, matrix.col(i).indices()[j]);
-          DCHECK_LT(matrix.col(i).indices()[j], num_rows);
-          DCHECK_NE(matrix.col(i).values()[j], 0.0);
+      for (ColIndex col(0); col < matrix.num_cols(); ++col) {
+        for (int row = 0; row < matrix.col(col).entries().size(); ++row) {
+          DCHECK_LE(0, matrix.col(col).indices()[row]);
+          DCHECK_LT(matrix.col(col).indices()[row], num_rows);
+          DCHECK_NE(matrix.col(col).values()[row], 0.0);
         }
       }
     }
@@ -998,7 +1014,6 @@ bool LpSoplexInterface::IsSolved() const {
 // solver knows and can return the primal ray.
 bool LpSoplexInterface::ExistsPrimalRay() const {
   VLOG(10) << "calling ExistsPrimalRay().";
-
   return (spx_->status() == soplex::SPxSolver::UNBOUNDED);
 }
 
@@ -1007,7 +1022,6 @@ bool LpSoplexInterface::ExistsPrimalRay() const {
 // primal ray.
 bool LpSoplexInterface::HasPrimalRay() const {
   VLOG(10) << "calling HasPrimalRay().";
-
   return spx_->hasPrimalRay();
 }
 
@@ -1022,14 +1036,12 @@ bool LpSoplexInterface::IsPrimalUnbounded() const {
 
 bool LpSoplexInterface::IsPrimalInfeasible() const {
   VLOG(10) << "calling IsPrimalInfeasible().";
-
   return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
 bool LpSoplexInterface::IsPrimalFeasible() const {
   VLOG(10) << "calling IsPrimalFeasible().";
-
-  return spx_->basisStatus() == soplex::SPxBasis::OPTIMAL ||
+  return spx_->basisStatus() == soplex::SPxBasis::OPTIMAL or
          spx_->basisStatus() == soplex::SPxBasis::PRIMAL;
 }
 
@@ -1039,7 +1051,6 @@ bool LpSoplexInterface::IsPrimalFeasible() const {
 // dual ray.
 bool LpSoplexInterface::ExistsDualRay() const {
   VLOG(10) << "calling ExistsDualRay().";
-
   return (spx_->status() == soplex::SPxSolver::INFEASIBLE);
 }
 
@@ -1048,27 +1059,23 @@ bool LpSoplexInterface::ExistsDualRay() const {
 //*  and the solver knows and can return the dual ray
 bool LpSoplexInterface::HasDualRay() const {
   VLOG(10) << "calling HasDualRay().";
-
   return spx_->hasDualFarkas();
 }
 
 bool LpSoplexInterface::IsDualUnbounded() const {
   VLOG(10) << "calling IsDualUnbounded().";
-
   return spx_->status() == soplex::SPxSolver::INFEASIBLE &&
          spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
 
 bool LpSoplexInterface::IsDualInfeasible() const {
   VLOG(10) << "calling IsDualInfeasible().";
-
   return (spx_->status() == soplex::SPxSolver::UNBOUNDED);
 }
 
 bool LpSoplexInterface::IsDualFeasible() const {
   VLOG(10) << "calling IsDualFeasible().";
-
-  return (spx_->basisStatus() == soplex::SPxBasis::OPTIMAL) ||
+  return (spx_->basisStatus() == soplex::SPxBasis::OPTIMAL) or
          spx_->basisStatus() == soplex::SPxBasis::DUAL;
 }
 
@@ -1089,7 +1096,7 @@ bool LpSoplexInterface::IsOptimal() const {
 bool LpSoplexInterface::IsStable() const {
   VLOG(10) << "calling IsStable().";
 
-  if (spx_->status() == soplex::SPxSolver::ERROR ||
+  if (spx_->status() == soplex::SPxSolver::ERROR or
       spx_->status() == soplex::SPxSolver::SINGULAR) {
     return false;
   }
@@ -1126,20 +1133,30 @@ double LpSoplexInterface::GetObjectiveValue() const {
 // Before calling this function, the caller must ensure that the LP has been
 // solved to optimality, i.e., that minimip::LpInterface.IsOptimal() returns
 // true.
-
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpSoplexInterface::GetPrimalValues() const {
   VLOG(10) << "calling GetPrimalValues().";
   CHECK(IsOptimal());
-  absl::StrongVector<ColIndex, double> primal_values(spx_->numColsReal());
+
+  // Create a std::vector to hold the primal values
+  std::vector<double> primal_values(spx_->numColsReal());
+
   try {
-    static_cast<void>(
-        spx_->getPrimalReal(primal_values.data(), spx_->numColsReal()));
+    if (!spx_->getPrimalReal(primal_values.data(), spx_->numColsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getPrimalReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return primal_values;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<ColIndex, double> strong_primal_values(
+      std::make_move_iterator(primal_values.begin()),
+      std::make_move_iterator(primal_values.end()));
+
+  return strong_primal_values;
 }
 
 // Before calling this function, the caller must ensure that the LP has been
@@ -1149,75 +1166,126 @@ absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpSoplexInterface::GetDualValues() const {
   VLOG(10) << "calling GetDualSolution().";
   CHECK(IsOptimal());
-  absl::StrongVector<RowIndex, double> dual_values(spx_->numRowsReal());
+
+  // Create a std::vector to hold the dual values
+  std::vector<double> dual_values(spx_->numRowsReal());
+
   try {
-    static_cast<void>(
-        spx_->getDualReal(dual_values.data(), spx_->numRowsReal()));
+    if (!spx_->getDualReal(dual_values.data(), spx_->numRowsReal())) {
+      return absl::Status(absl::StatusCode::kInternal, "Error in getDualReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return dual_values;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<RowIndex, double> strong_dual_values(
+      std::make_move_iterator(dual_values.begin()),
+      std::make_move_iterator(dual_values.end()));
+
+  return strong_dual_values;
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpSoplexInterface::GetRowActivities() const {
   VLOG(10) << "calling GetRowActivities().";
-  absl::StrongVector<RowIndex, double> row_activities(spx_->numRowsReal());
+
+  // Create a std::vector to hold the row activities (slacks)
+  std::vector<double> row_activities(spx_->numRowsReal());
+
   try {
-    static_cast<void>(
-        spx_->getSlacksReal(row_activities.data(),
-                            spx_->numRowsReal()));  // in SoPlex, the activities
-    // are called "slacks"
+    if (!spx_->getSlacksReal(row_activities.data(), spx_->numRowsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getSlacksReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return row_activities;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<RowIndex, double> strong_row_activities(
+      std::make_move_iterator(row_activities.begin()),
+      std::make_move_iterator(row_activities.end()));
+
+  return strong_row_activities;
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpSoplexInterface::GetReducedCosts() const {
   VLOG(10) << "calling GetReducedCosts().";
-  absl::StrongVector<ColIndex, double> reduced_costs(spx_->numColsReal());
+
+  // Create a std::vector to hold the reduced costs
+  std::vector<double> reduced_costs(spx_->numColsReal());
+
   try {
-    static_cast<void>(
-        spx_->getRedCostReal(reduced_costs.data(), spx_->numColsReal()));
+    if (!spx_->getRedCostReal(reduced_costs.data(), spx_->numColsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getRedCostReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return reduced_costs;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<ColIndex, double> strong_reduced_costs(
+      std::make_move_iterator(reduced_costs.begin()),
+      std::make_move_iterator(reduced_costs.end()));
+
+  return strong_reduced_costs;
 }
 
 absl::StatusOr<absl::StrongVector<ColIndex, double>>
 LpSoplexInterface::GetPrimalRay() const {
   VLOG(10) << "calling GetPrimalRay().";
-  absl::StrongVector<ColIndex, double> primal_ray;
   CHECK(spx_->hasPrimalRay());
+
+  // Create a std::vector to hold the primal ray
+  std::vector<double> primal_ray(spx_->numColsReal());
+
   try {
-    static_cast<void>(
-        spx_->getPrimalRayReal(primal_ray.data(), spx_->numColsReal()));
+    if (!spx_->getPrimalRayReal(primal_ray.data(), spx_->numColsReal())) {
+      return absl::Status(absl::StatusCode::kInternal,
+                          "Error in getPrimalRayReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return primal_ray;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<ColIndex, double> strong_primal_ray(
+      std::make_move_iterator(primal_ray.begin()),
+      std::make_move_iterator(primal_ray.end()));
+
+  return strong_primal_ray;
 }
 
 absl::StatusOr<absl::StrongVector<RowIndex, double>>
 LpSoplexInterface::GetDualRay() const {
   VLOG(10) << "calling GetDualRay().";
   CHECK(spx_->hasDualFarkas());
-  absl::StrongVector<RowIndex, double> dual_ray;
+
+  // Create a std::vector to hold the dual ray
+  std::vector<double> dual_ray(spx_->numRowsReal());
+
   try {
-    static_cast<void>(
-        spx_->getDualFarkasReal(dual_ray.data(), spx_->numRowsReal()));
+    if (!spx_->getDualFarkasReal(dual_ray.data(), spx_->numRowsReal())) {
+      return absl::Status(absl::StatusCode::kInternal, "Error in getDualReal");
+    }
   } catch (const soplex::SPxException& x) {
     LOG(WARNING) << "SoPlex threw an exception: " << x.what() << ".";
     return absl::Status(absl::StatusCode::kInternal, "Error");
   }
-  return dual_ray;
+
+  // Create a StrongVector and move the contents of std::vector into it
+  absl::StrongVector<RowIndex, double> strong_dual_ray(
+      std::make_move_iterator(dual_ray.begin()),
+      std::make_move_iterator(dual_ray.end()));
+
+  return strong_dual_ray;
 }
 
 // Gets the number of LP iterations of the last solve call.
@@ -1403,8 +1471,9 @@ std::vector<ColOrRowIndex> LpSoplexInterface::GetColumnsAndRowsInBasis() const {
   spx_->getBasisInd(basis_indices.data());
 
   for (int index : basis_indices) {
-    basis.push_back(index < 0 ? ColOrRowIndex(RowIndex(-1 * index + 1))
+    basis.push_back(index < 0 ? ColOrRowIndex(RowIndex(-1 * index - 1))
                               : ColOrRowIndex(ColIndex(index)));
+    VLOG(3) << "Basis index: " << basis.back() << " from (row)Index: " << index;
   }
   return basis;
 }
@@ -1448,6 +1517,7 @@ absl::StatusOr<SparseRow> LpSoplexInterface::GetSparseRowOfBInverted(
     }
   }
   sparse_row.CleanUpIfNeeded();
+  VLOG(3) << "Sparse row: " << sparse_row;
   return sparse_row;
 }
 
@@ -1693,7 +1763,7 @@ absl::Status LpParametersAreSupportedBySoPlex(const LpParameters& params) {
     return absl::InvalidArgumentError("Unsupported scaling strategy.");
   }
   if (params.min_markowitz_threshold() != -1) {
-    if (params.min_markowitz_threshold() < 1e-4 ||
+    if (params.min_markowitz_threshold() < 1e-4 or
         params.min_markowitz_threshold() > 1.0 - 1e-4) {
       return absl::InvalidArgumentError(
           "Markowitz threshold must be between 1e-4 and 1-1e-4 (or -1).");

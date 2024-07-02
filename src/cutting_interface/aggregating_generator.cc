@@ -66,7 +66,16 @@ double CGRoundInteger(const SolverContextInterface& context, double coefficient,
     DCHECK_LT(f0 + 1 / k * (p - 1) * (1 - f0), fj);
     DCHECK_LE(fj, f0 + 1 / k * p * (1 - f0));
   }
-  return context.FloorWithTolerance(coefficient) + p / (k + 1);
+
+  double result = context.FloorWithTolerance(coefficient) + p / (k + 1);
+
+  VLOG(3) << "Result of CG rounding! Coefficient: " << coefficient
+          << ", k: " << k << ", f0: " << f0 << ", fj: " << fj << ", p: " << p
+          << ", result: " << result;
+
+  // Check the final result is non-negative as required.
+  DCHECK_GE(result, 0.0) << "Negative result found in CG rounding!";
+  return result;
 }
 
 // Creates a row aggregation by summing rows with the given weights. See the
@@ -88,10 +97,12 @@ AggregatedRow AggregateByWeight(
     aggregated_row.slack_signs.AddEntry(row, slack_sign);
     aggregated_row.side_values.AddEntry(row, side_value);
     aggregated_row.right_hand_side += weight * side_value;
+    VLOG(5) << "Aggregated Row: " << aggregated_row.DebugString();
   }
   aggregated_row.slack_coefficients.CleanUpIfNeeded();
   aggregated_row.slack_signs.CleanUpIfNeeded();
   aggregated_row.side_values.CleanUpIfNeeded();
+  VLOG(3) << "Aggregated Row: " << aggregated_row.DebugString();
   return aggregated_row;
 }
 
@@ -116,6 +127,9 @@ AggregatedRow AggregateByWeight(
     if (lb >= 0.0) return coefficient;
 
     if (!context.lpi()->IsInfinity(-lb)) {
+      VLOG(3)
+          << "Transforming variable to non-negative form using lower bound.";
+
       // We have x[j] >= lb <-> x[j] - lb >= 0 and can define the new
       // variable
       //
@@ -131,6 +145,9 @@ AggregatedRow AggregateByWeight(
     }
 
     if (!context.lpi()->IsInfinity(ub)) {
+      VLOG(3)
+          << "Transforming variable to non-negative form using upper bound.";
+
       // We have x[j] <= ub <-> ub - x[j] >= 0 and can define the new
       // variable
       //
@@ -203,13 +220,17 @@ void SubstituteSlackVariables(const SolverContextInterface& context,
   VLOG(10) << "calling SubstituteSlackVariables().";
   for (const auto [row, slack_coefficient] :
        aggregated_row.slack_coefficients.entries()) {
-    const double slack_sign = aggregated_row.slack_signs[row];
-    const double side_value = aggregated_row.side_values[row];
     aggregated_row.variable_coefficients -=
-        slack_sign * slack_coefficient *
+        aggregated_row.slack_signs[row] * slack_coefficient *
         context.lpi()->GetSparseRowCoefficients(row);
-    aggregated_row.right_hand_side -=
-        slack_sign * slack_coefficient * side_value;
+    VLOG(3) << "Updated aggregated_row.variable_coefficients: "
+            << aggregated_row.variable_coefficients;
+
+    aggregated_row.right_hand_side -= aggregated_row.slack_signs[row] *
+                                      slack_coefficient *
+                                      aggregated_row.side_values[row];
+    VLOG(3) << "aggregated_row.right_hand_side after: "
+            << aggregated_row.right_hand_side;
   }
   aggregated_row.slack_coefficients.Clear();
   aggregated_row.slack_signs.Clear();
@@ -293,7 +314,7 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
   if (!std::all_of(aggregated_row.slack_coefficients.entries().begin(),
                    aggregated_row.slack_coefficients.entries().end(),
                    [&context](const SparseEntry<RowIndex>& entry) {
-                     return HasIntegralSlackVariable(context, entry.index) ||
+                     return HasIntegralSlackVariable(context, entry.index) and
                             entry.value >= 0.0;
                    })) {
     VLOG(3)
@@ -305,7 +326,7 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
                    aggregated_row.variable_coefficients.entries().end(),
                    [&context](const SparseEntry<ColIndex>& entry) {
                      return !context.mip_data().integer_variables().contains(
-                                entry.index) ||
+                                entry.index) or
                             entry.value >= 0.0;
                    })) {
     VLOG(3) << "SKIP: Rows containing negative weight continuous variables "
@@ -315,8 +336,10 @@ std::optional<AggregatedRow> StrongCGRounder::RoundAggregatedRow(
 
   const double f0 = Fractionality(context, aggregated_row.right_hand_side);
   const double k = std::ceil(1 / f0) - 1;
+
   DCHECK_LE(1 / (k + 1), f0);
   DCHECK_LT(f0, 1 / k);
+
   aggregated_row.slack_coefficients.Transform(
       [&context, k, f0](RowIndex row, double val) {
         if (HasIntegralSlackVariable(context, row)) {
@@ -355,11 +378,13 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
 
   // Extract data from the LP context.
   const RowIndex num_rows = context.lpi()->GetNumberOfRows();
+  VLOG(3) << "Number of rows: " << num_rows;
   ASSIGN_OR_RETURN(
       (const absl::StrongVector<RowIndex, bool> use_right_hand_side),
       ChooseActiveSidesByBasis(context));
   const std::vector<ColOrRowIndex> col_or_row_in_basis =
       context.lpi()->GetColumnsAndRowsInBasis();
+
   ASSIGN_OR_RETURN(
       const SparseRow lp_optimum, ([&context]() -> absl::StatusOr<SparseRow> {
         ASSIGN_OR_RETURN(
@@ -367,6 +392,7 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
             context.lpi()->GetPrimalValues());
         return SparseRow(primal_values);
       }()));
+  VLOG(3) << "LP optimum: " << lp_optimum;
 
   // Generate the cuts.
   std::vector<CutData> cutting_planes;
@@ -379,13 +405,14 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
     // the LP solution.
     const ColIndex basic_column =
         col_or_row_in_basis[tableau_row.value()].col();
+    VLOG(3) << "Basic column: " << basic_column;
     if (basic_column == kInvalidCol) {
       VLOG(3) << "SKIP row " << tableau_row
               << ": corresponds to a slack variable";
       continue;
     }
     if (!context.mip_data().integer_variables().contains(basic_column)) {
-      VLOG(3) << "SKIP row " << tableau_row
+      VLOG(5) << "SKIP row " << tableau_row
               << ": corresponds to a continuous variable";
       continue;
     }
@@ -400,6 +427,7 @@ TableauRoundingGenerator::GenerateCuttingPlanes(
     ASSIGN_OR_RETURN(const SparseRow basis_row,
                      context.lpi()->GetSparseRowOfBInverted(tableau_row));
     SparseCol row_weights;
+
     for (auto [index, value] : basis_row.entries()) {
       row_weights.AddEntry(RowIndex(index.value()), value);
     }

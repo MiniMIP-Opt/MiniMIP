@@ -57,6 +57,8 @@ class LpInterface {
  public:
   virtual ~LpInterface() = default;
 
+  virtual LpParameters::SolverType GetSolverType() const = 0;
+
   // ==========================================================================
   // LP model setters.
   // ==========================================================================
