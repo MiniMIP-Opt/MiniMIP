@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
+#include "minimip/solver.h"
 #include "ortools/base/status_macros.h"
-#include "src/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {

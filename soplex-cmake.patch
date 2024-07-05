@@ -1,0 +1,15 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 6cc38b51..9782c2e6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,10 @@
+ cmake_minimum_required(VERSION 3.9)
+ 
++# option() honors normal variables.
++if (POLICY CMP0077)
++  cmake_policy(SET CMP0077 NEW)
++endif (POLICY CMP0077)
++
+ set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_DEBUG} ${CMAKE_C_FLAGS_RELEASE}")
+ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_RELEASE}")
+ 

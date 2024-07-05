@@ -1,0 +1,49 @@
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+proto_library(
+    name = "parameters_proto",
+    srcs = ["parameters.proto"],
+    deps = [],
+)
+
+cc_proto_library(
+    name = "parameters_cc_proto",
+    deps = [
+        ":parameters_proto",
+    ],
+)
+
+cc_library(
+    name = "parameters_factory",
+    hdrs = ["parameters_factory.h"],
+    deps = [":parameters_cc_proto"],
+)
+
+cc_library(
+    name = "solver_context_interface",
+    hdrs = ["solver_context_interface.h"],
+    deps = [
+        "//minimip/cutting_interface:cuts_runner",
+        "//minimip/branching_interface:branching_interface",
+        "//minimip/data_structures:cuts_data",
+        "//minimip/data_structures:mip_data",
+        "//minimip/data_structures:mip_tree",
+        "//minimip/data_structures:problem",
+        "//minimip/lp_interface:lpi",
+    ],
+)
+
+cc_library(
+    name = "solver",
+    srcs = ["solver.cc"],
+    hdrs = ["solver.h"],
+    deps = [
+        ":parameters_factory",
+        ":solver_context_interface",
+        "//minimip/lp_interface:lpi_factory",
+        "//minimip/cutting_interface:runner_factory",
+        "//minimip/branching_interface:branching_factory"
+    ],
+)

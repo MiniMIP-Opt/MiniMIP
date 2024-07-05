@@ -6,7 +6,7 @@ cc_test(
     name = "problem_test",
     srcs = ["problem_test.cc"],
     deps = [
-        "//src/data_structures:problem",
+        "//minimip/data_structures:problem",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",
@@ -19,7 +19,7 @@ cc_test(
     size = "small",
     srcs = ["mip_data_test.cc"],
     deps = [
-        "//src/data_structures:mip_data",
+        "//minimip/data_structures:mip_data",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",
@@ -31,8 +31,8 @@ cc_test(
     size = "small",
     srcs = ["mip_tree_test.cc"],
     deps = [
-        "//src/data_structures:mip_tree",
-        "//src/data_structures:strong_sparse_vector",
+        "//minimip/data_structures:mip_tree",
+        "//minimip/data_structures:strong_sparse_vector",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",
@@ -45,7 +45,7 @@ cc_test(
     size = "small",
     srcs = ["cuts_data_test.cc"],
     deps = [
-        "//src/data_structures:cuts_data",
+        "//minimip/data_structures:cuts_data",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",
@@ -58,7 +58,7 @@ cc_test(
     size = "small",
     srcs = ["strong_sparse_vector_test.cc"],
     deps = [
-        "//src/data_structures:strong_sparse_vector",
+        "//minimip/data_structures:strong_sparse_vector",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_googletest//:gtest",
@@ -73,7 +73,7 @@ cc_test(
     size = "small",
     srcs = ["strong_sparse_matrix_test.cc"],
     deps = [
-        "//src/data_structures:strong_sparse_matrix",
+        "//minimip/data_structures:strong_sparse_matrix",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_googletest//:gtest",

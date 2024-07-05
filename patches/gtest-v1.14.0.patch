@@ -1,0 +1,18 @@
+diff --git a/googletest/cmake/internal_utils.cmake b/googletest/cmake/internal_utils.cmake
+index 64fa340f..714fa325 100644
+--- a/googletest/cmake/internal_utils.cmake
++++ b/googletest/cmake/internal_utils.cmake
+@@ -185,6 +185,13 @@ function(cxx_library_with_type name type cxx_flags)
+     COMPILE_PDB_NAME_DEBUG "${name}${pdb_debug_postfix}")
+ 
+   if (BUILD_SHARED_LIBS OR type STREQUAL "SHARED")
++    if(APPLE)
++      set_target_properties(${name} PROPERTIES
++        INSTALL_RPATH "@loader_path")
++    elseif(UNIX)
++      set_target_properties(${name} PROPERTIES
++        INSTALL_RPATH "$ORIGIN")
++    endif()
+     set_target_properties(${name}
+       PROPERTIES
+       COMPILE_DEFINITIONS "GTEST_CREATE_SHARED_LIBRARY=1")

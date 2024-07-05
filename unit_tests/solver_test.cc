@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/solver.h"
+#include "minimip/solver.h"
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"

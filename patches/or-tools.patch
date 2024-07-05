@@ -1,0 +1,18 @@
+diff --git a/cmake/cpp.cmake b/cmake/cpp.cmake
+index 705986209a..bd7aa487dc 100644
+--- a/cmake/cpp.cmake
++++ b/cmake/cpp.cmake
+@@ -349,6 +349,13 @@ target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:${PROJECT_NAME}_linear_s
+ add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_linear_solver_proto_solver)
+ 
+ # Dependencies
++if(APPLE)
++  set_target_properties(${PROJECT_NAME} PROPERTIES
++    INSTALL_RPATH "@loader_path")
++elseif(UNIX)
++  set_target_properties(${PROJECT_NAME} PROPERTIES
++    INSTALL_RPATH "$ORIGIN")
++endif()
+ target_link_libraries(${PROJECT_NAME} PUBLIC
+   ${CMAKE_DL_LIBS}
+   ZLIB::ZLIB

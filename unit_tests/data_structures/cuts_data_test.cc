@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/data_structures/cuts_data.h"
+#include "minimip/data_structures/cuts_data.h"
 
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "src/data_structures/mip_data.h"
+#include "minimip/data_structures/mip_data.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {

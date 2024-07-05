@@ -14,12 +14,12 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/branching_interface/branching_factory.h"
-#include "src/branching_interface/branching_interface.h"
-#include "src/branching_interface/maxfractional_branching.h"
-#include "src/branching_interface/random_branching.h"
-#include "src/parameters.pb.h"
-#include "src/solver.h"
+#include "minimip/branching_interface/branching_factory.h"
+#include "minimip/branching_interface/branching_interface.h"
+#include "minimip/branching_interface/maxfractional_branching.h"
+#include "minimip/branching_interface/random_branching.h"
+#include "minimip/parameters.pb.h"
+#include "minimip/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
@@ -89,10 +89,10 @@ TEST(RandomBranchingTest, NextBranchingVariableReturnsValidVariable) {
 
   MiniMipProblem problem;
   problem.variables = std::vector<MiniMipVariable>{
-      MiniMipVariable{name : "1", is_integer : true},
-      MiniMipVariable{name : "2", is_integer : true},
-      MiniMipVariable{name : "3", is_integer : true},
-      MiniMipVariable{name : "4", is_integer : false},
+      MiniMipVariable{.name = "1", .is_integer = true},
+      MiniMipVariable{.name = "2", .is_integer = true},
+      MiniMipVariable{.name = "3", .is_integer = true},
+      MiniMipVariable{.name = "4", .is_integer = false},
   };
 
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<Solver> solver, Solver::Create(problem));

@@ -76,9 +76,17 @@ bazel build -c dbg //minimip/example:example_main
 See the [bazel doc](https://docs.bazel.build/versions/master/user-manual.html#flag--compilation_mode)
 for more details.
 
+## CMake
+We also provide a `CMakeLists.txt` file for building the project with CMake.
+To build the project with CMake, you can run the following commands:
+```
+cmake -S. -Bbuild
+cmake --build build -v -j 12
+(cd build && ctest)
+```
 
 ## Dependencies
-See WORKSPACE file for a list of dependencies and extra information. These
+See `WORKSPACE` or `CMakeLists.txt` file for a list of dependencies and extra information. These
 dependencies are automatically pulled by `bazel`.
 
 **Important**

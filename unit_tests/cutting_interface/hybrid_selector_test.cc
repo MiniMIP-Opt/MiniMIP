@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cutting_interface/hybrid_selector.h"
+#include "minimip/cutting_interface/hybrid_selector.h"
 
 #include <algorithm>
 
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "src/parameters.pb.h"
-#include "src/solver.h"
+#include "minimip/parameters.pb.h"
+#include "minimip/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {

@@ -8,9 +8,9 @@ cc_test(
     srcs = ["lpi_test.cc"],
     linkstatic = True,
     deps = [
-        "//src/data_structures:strong_sparse_vector",
-        "//src/lp_interface:lpi",
-        "//src/lp_interface:lpi_factory",
+        "//minimip/data_structures:strong_sparse_vector",
+        "//minimip/lp_interface:lpi",
+        "//minimip/lp_interface:lpi_factory",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",

@@ -9,9 +9,9 @@ cc_test(
     size = "small",
     srcs = ["branching_test.cc"],
     deps = [
-        "//src/branching_interface:branching_interface",
-        "//src/branching_interface:branching_factory",
-        "//src:solver",
+        "//minimip/branching_interface:branching_interface",
+        "//minimip/branching_interface:branching_factory",
+        "//minimip:solver",
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
         "@com_google_absl//absl/status",

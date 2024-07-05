@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/utils/reader.h"
+#include "minimip/utils/reader.h"
 
 #include <fstream>
 #include <ios>
@@ -22,8 +22,8 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "minimip/data_structures/problem.h"
 #include "ortools/base/status_macros.h"
-#include "src/data_structures/problem.h"
 #include "unit_tests/utils.h"
 
 // TODO(CGraczyk): add randomized O(1000) init tests for mip data.

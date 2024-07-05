@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/data_structures/mip_data.h"
+#include "minimip/data_structures/mip_data.h"
 
 #include <limits>
 #include <vector>

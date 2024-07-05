@@ -16,9 +16,9 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
+#include "minimip/data_structures/strong_sparse_vector.h"
+#include "minimip/lp_interface/lpi.h"
 #include "ortools/base/status_macros.h"
-#include "src/data_structures/strong_sparse_vector.h"
-#include "src/lp_interface/lpi.h"
 
 #ifndef UNIT_TESTS_UTILS_H_
 #define UNIT_TESTS_UTILS_H_
