@@ -1,0 +1,34 @@
+diff --git a/CMake/AbseilHelpers.cmake b/CMake/AbseilHelpers.cmake
+index c53b3584..158ac30f 100644
+--- a/CMake/AbseilHelpers.cmake
++++ b/CMake/AbseilHelpers.cmake
+@@ -256,6 +256,17 @@ Cflags: -I\${includedir}${PC_CFLAGS}\n")
+         ${ABSL_CC_LIB_LINKOPTS}
+         ${ABSL_DEFAULT_LINKOPTS}
+       )
++      include(GNUInstallDirs)
++      if(APPLE)
++        set_target_properties(${_NAME} PROPERTIES INSTALL_RPATH
++          "@loader_path/../${CMAKE_INSTALL_LIBDIR};@loader_path")
++      elseif(UNIX)
++        cmake_path(RELATIVE_PATH CMAKE_INSTALL_FULL_LIBDIR
++          BASE_DIRECTORY ${CMAKE_INSTALL_FULL_BINDIR}
++          OUTPUT_VARIABLE libdir_relative_path)
++        set_target_properties(${_NAME} PROPERTIES
++          INSTALL_RPATH "$ORIGIN/${libdir_relative_path}")
++      endif()
+     else()
+       message(FATAL_ERROR "Invalid build type: ${_build_type}")
+     endif()
+diff --git a/absl/container/CMakeLists.txt b/absl/container/CMakeLists.txt
+index 128cc0e9..11d65d55 100644
+--- a/absl/container/CMakeLists.txt
++++ b/absl/container/CMakeLists.txt
+@@ -213,6 +213,7 @@ absl_cc_library(
+   DEPS
+     absl::config
+     GTest::gmock
++  TESTONLY
+ )
+ 
+ absl_cc_test(

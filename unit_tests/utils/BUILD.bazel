@@ -18,7 +18,7 @@ cc_test(
     deps = [
         "//unit_tests:gtest_main",
         "//unit_tests:utils",
-        "//src/utils:reader",
+        "//minimip/utils:reader",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],

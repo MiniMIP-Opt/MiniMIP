@@ -1,80 +1,107 @@
+workspace(name = "de_zib_minimip")
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 
-# Rules for building C/C++ projects using foreign build systems inside Bazel projects.
-http_archive(
-    name = "rules_foreign_cc",
-    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/refs/tags/0.9.0.tar.gz",
-    sha256 = "2a4d07cd64b0719b39a7c12218a3e507672b82a97b98c6a89d38565894cf7c51",
-    strip_prefix = "rules_foreign_cc-0.9.0",
-)
-load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
-rules_foreign_cc_dependencies()
-
-# Extra Bazel utilities that may be handy.
-http_archive(
+# Bazel Extensions
+## Bazel Skylib rules.
+git_repository(
     name = "bazel_skylib",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.4.1/bazel-skylib-1.4.1.tar.gz",
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.4.1/bazel-skylib-1.4.1.tar.gz",
-    ],
-    sha256 = "b8a1527901774180afc798aeb28c4634bdccf19c4d98e7bdd1ce79d1fe9aaad7",
+    tag = "1.5.0",
+    remote = "https://github.com/bazelbuild/bazel-skylib.git",
 )
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
+## Bazel rules.
+git_repository(
+    name = "platforms",
+    tag = "0.0.9",
+    remote = "https://github.com/bazelbuild/platforms.git",
+)
+
+git_repository(
+    name = "rules_cc",
+    tag = "0.0.9",
+    remote = "https://github.com/bazelbuild/rules_cc.git",
+)
+
+git_repository(
+    name = "rules_proto",
+    tag = "5.3.0-21.7",
+    remote = "https://github.com/bazelbuild/rules_proto.git",
+)
+
 # Support for building Python targets in Bazel.
-http_archive(
+git_repository(
     name = "rules_python",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.18.1/rules_python-0.18.1.tar.gz",
-    sha256 = "29a801171f7ca190c543406f9894abf2d483c206e14d6acbd695623662320097",
-    strip_prefix = "rules_python-0.18.1",
+    tag = "0.31.0",
+    remote = "https://github.com/bazelbuild/rules_python.git",
 )
 
-# Google unit testing framework.
-# See: https://google.github.io/googletest/primer.html for introduction.
-http_archive(
-  name = "com_google_googletest",
-  urls = ["https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"],
-  sha256 = "ffa17fbc5953900994e2deec164bb8949879ea09b411e07f215bfbb1f87f4632",
-  strip_prefix = "googletest-1.13.0",
+# Dependencies
+## ZLIB
+new_git_repository(
+    name = "zlib",
+    build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
+    tag = "v1.2.13",
+    remote = "https://github.com/madler/zlib.git",
 )
 
-# Google protocol buffers (structs on "steroids", useful to serialize to files
-# and on wire).
-http_archive(
+## Abseil-cpp
+git_repository(
+    name = "com_google_absl",
+    tag = "20240116.2",
+    #patches = ["//patches:abseil-cpp-20240116.2.patch"],
+    #patch_args = ["-p1"],
+    remote = "https://github.com/abseil/abseil-cpp.git",
+)
+
+## Re2
+git_repository(
+    name = "com_google_re2",
+    tag = "2024-04-01",
+    remote = "https://github.com/google/re2.git",
+    repo_mapping = {"@abseil-cpp": "@com_google_absl"},
+)
+
+## Protobuf
+# proto_library, cc_proto_library, and java_proto_library rules implicitly
+# depend on @com_google_protobuf for protoc and proto runtimes.
+# This statement defines the @com_google_protobuf repo.
+git_repository(
     name = "com_google_protobuf",
-    urls = [
-        "https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.19.4.zip",
-    ],
-    strip_prefix = "protobuf-3.19.4",
-    sha256 = "25680843adf0c3302648d35f744e38cc3b6b05a6c77a927de5aea3e1c2e36106",
+    #patches = ["//patches:protobuf-v26.1.patch"],
+    #patch_args = ["-p1"],
+    tag = "v26.1",
+    #tag = "v25.3",
+    remote = "https://github.com/protocolbuffers/protobuf.git",
 )
 # Load common dependencies.
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
-# Google abseil library with many useful utilities (e.g., flags, status).
-# See: https://abseil.io/docs/cpp/guides/
-#
-# Note, some utilities are not yet (fully) covered (e.g., logging) and are thus
-# provided in OR-Tools below.
-http_archive(
-    name = "com_google_absl",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20220623.1.zip"],
-    strip_prefix = "abseil-cpp-20220623.1",
-    sha256 = "54707f411cb62a26a776dad5fd60829098c181700edcd022ea5c2ca49e9b7ef1",
+## Python
+load("@rules_python//python:repositories.bzl", "py_repositories")
+py_repositories()
+
+load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
+system_python(
+    name = "system_python",
+    minimum_python_version = "3.8",
 )
 
-# Abseil uses this to check the current platform of the system. It must be
-# explicitly loaded here, since Jenkins doesn't do it automatically for some
-# reason.
-http_archive(
-    name = "platforms",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
-        "https://github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
-    ],
-    sha256 = "5308fc1d8865406a49427ba24a9ab53087f17f5266a7aabbfc28823f3916e1ca",
+## Testing
+git_repository(
+    name = "com_google_googletest",
+    tag = "v1.14.0",
+    remote = "https://github.com/google/googletest.git",
+)
+
+git_repository(
+    name = "com_google_benchmark",
+    tag = "v1.8.3",
+    remote = "https://github.com/google/benchmark.git",
 )
 
 # Google OR-Tools. Contains many LP/MIP related utilities, including GLOP
@@ -85,42 +112,33 @@ http_archive(
 # In particular, OR-Tools includes logging routines, which are not part of
 # abseil yet. Importantly, we do not depend on and use "glog", because it's old
 # and depends on  "gflags" (now replaced by abseil/Flags).
-http_archive(
+git_repository(
     name = "com_google_ortools",
-    urls = ["https://github.com/google/or-tools/archive/refs/tags/v9.4.zip"],
-    strip_prefix = "or-tools-9.4",
-    sha256 = "c547ac48ac2605e42ec9b003a0adf9345fbe04831fa0858b0d7479125480f93a",
-)
-
-# zlib -- needed to compile SCIP.
-http_archive(
-    name = "zlib",
-    build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
-    sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
-    strip_prefix = "zlib-1.2.11",
-    urls = [
-        "https://mirror.bazel.build/zlib.net/zlib-1.2.11.tar.gz",
-        "https://zlib.net/zlib-1.2.11.tar.gz",
-    ],
+    #tag = "v9.9",
+    tag = "v9.10",
+    remote = "https://github.com/google/or-tools.git",
 )
 
 # bliss -- needed to compile SCIP with symmetry breaking.
 http_archive(
     name = "bliss",
-    build_file = "@com_google_ortools//bazel:bliss.BUILD",
+    build_file = "@com_google_ortools//bazel:bliss.BUILD.bazel",
     patches = ["@com_google_ortools//bazel:bliss-0.73.patch"],
     sha256 = "f57bf32804140cad58b1240b804e0dbd68f7e6bf67eba8e0c0fa3a62fd7f0f84",
     url = "http://www.tcs.hut.fi/Software/bliss/bliss-0.73.zip",
 )
 
-http_archive(
+# OR-Tools v9.9 depends on scip v810
+# OR-Tools v9.10 will depends on scip v900
+new_git_repository(
     name = "scip",
-    build_file = "@com_google_ortools//bazel:scip.BUILD",
+    build_file = "@com_google_ortools//bazel:scip.BUILD.bazel",
     patches = ["@com_google_ortools//bazel:scip.patch"],
+    #patches = ["@com_google_ortools//bazel:scip-v900.patch"],
     patch_args = ["-p1"],
-    sha256 = "ed5535c5def3ebb29cf12ae0309c88e679a6bfee97f7b314b3c342fc7dfbf083",
-    strip_prefix = "scip-801",
-    url = "https://github.com/scipopt/scip/archive/refs/tags/v801.zip",
+    #tag = "v810",
+    tag = "v900",
+    remote = "https://github.com/scipopt/scip.git",
 )
 
 # Eigen is needed by ortools to compile the PDLP solver, which isn't used by
@@ -137,30 +155,16 @@ cc_library(
     srcs = [],
     includes = ['.'],
     hdrs = glob(['Eigen/**']),
+    defines = ["EIGEN_MPL2_ONLY",],
     visibility = ['//visibility:public'],
 )
 """)
 
-# SoPlex -- available from source code repository and compiled via `cmake` rule.
-# TODO(lpawel): See if we can get SoPlex from OR-Tools (since it contains SCIP).
-_ALL_CONTENT = """\
-filegroup(
-    name = "all_srcs",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)
-"""
-
-http_archive(
+new_git_repository(
     name = "soplex",
-    build_file_content = _ALL_CONTENT,
-    # There was an issue with the master, use a stable release instead.
-    # strip_prefix = "soplex-master",
-    strip_prefix = "soplex-release-604",
-    urls = [
-        # There was an issue with the master, use a stable release instead.
-        # "https://github.com/scipopt/soplex/archive/refs/heads/master.zip",
-        "https://github.com/scipopt/soplex/archive/refs/tags/release-604.zip",
-    ],
-    # sha256 = "0b8e7465dc5e98c757cc3650a20a7843ee4c3edf50aaf60bb33fd879690d2c73",
+    build_file = "//:soplex.BUILD",
+    patches = ["//:soplex-bazel.patch"],
+    patch_args = ["-p1"],
+    tag = "release-710",
+    remote = "https://github.com/scipopt/soplex.git",
 )

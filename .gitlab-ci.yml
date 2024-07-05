@@ -25,7 +25,7 @@ build:
     - chmod +x /usr/local/bin/bazel
     - echo "Bazel setup done."
     - clang-format-18 --version
-    - clang-format-18 -i src/*/*.h src/*/*.cc unit_tests/*/*.cc unit_tests/utils.h
+    - clang-format-18 -i minimip/*/*.h minimip/*/*.cc unit_tests/*/*.cc unit_tests/utils.h unit_tests/*.cc
     - git diff --exit-code
-    - bazel build //src/...
+    - bazel build //minimip/...
     - bazel test //unit_tests/...

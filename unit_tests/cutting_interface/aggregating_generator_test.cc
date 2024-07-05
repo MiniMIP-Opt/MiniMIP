@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cutting_interface/aggregating_generator.h"
+#include "minimip/cutting_interface/aggregating_generator.h"
 
 #include <algorithm>
 
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-#include "src/cutting_interface/cuts_generator.h"
-#include "src/parameters.pb.h"
-#include "src/solver.h"
+#include "minimip/cutting_interface/cuts_generator.h"
+#include "minimip/parameters.pb.h"
+#include "minimip/solver.h"
 #include "unit_tests/utils.h"
 
 namespace minimip {
@@ -323,8 +323,8 @@ TEST_P(SmallModelSmokeTest, SmokeTest) {
   // expect that the MIP is solved. Note that this is not guaranteed for all
   // generator families.
   ASSERT_OK_AND_ASSIGN(bool is_mip_feasible, SolutionIsMipFeasible());
-  LOG(INFO) << is_mip_feasible ? "Mip feasible solution."
-                               : "Mip infeasible solution.";
+  LOG(INFO) << (is_mip_feasible ? "Mip feasible solution."
+                                : "Mip infeasible solution.");
 }
 }  // namespace
 }  // namespace minimip

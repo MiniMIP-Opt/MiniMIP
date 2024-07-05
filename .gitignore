@@ -33,7 +33,7 @@ MODULE.*
 #specific
 .clwb/
 .idea/
-src/lp_interface/main/
+minimip/lp_interface/main/
 
 bazel-*
 minimip/testing/minimip.code-workspace
